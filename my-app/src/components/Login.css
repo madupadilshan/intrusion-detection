@@ -1,0 +1,523 @@
+/* Main container for the Login page */
+.login-container {
+  background-color: #000;
+  color: #0f0; /* Hacker green */
+  min-height: 100vh; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  margin: 0;
+  overflow: hidden;
+  font-family: monospace, 'Courier New', Courier;
+  position: relative;
+}
+
+/* Matrix-like background */
+.matrix-background {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0.2;
+  z-index: 0;
+}
+
+.matrix-code {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 200%;
+  background: linear-gradient(180deg, transparent, rgba(0, 255, 0, 0.2));
+  animation: matrix-rain 20s linear infinite;
+  background-size: 100% 100%;
+  background-position: 0 0;
+}
+
+@keyframes matrix-rain {
+  0% {
+    transform: translateY(-50%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.login-card-container {
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Security shield logo */
+.shield-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+  animation: pulse 2s infinite;
+}
+
+.shield-icon {
+  width: 4rem;
+  height: 4rem;
+  color: #0f0;
+}
+
+.shield-icon.alert {
+  color: #f00;
+  animation: alert-flash 0.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.7;
+    filter: drop-shadow(0 0 5px rgba(0, 255, 0, 0.5));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px rgba(0, 255, 0, 0.8));
+  }
+  100% {
+    opacity: 0.7;
+    filter: drop-shadow(0 0 5px rgba(0, 255, 0, 0.5));
+  }
+}
+
+@keyframes alert-flash {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px rgba(255, 0, 0, 0.8));
+  }
+  50% {
+    opacity: 0.7;
+    filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.5));
+  }
+}
+
+/* Login card styling */
+.login-card {
+  background-color: rgba(10, 10, 10, 0.9);
+  padding: 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(0, 255, 0, 0.3);
+  box-shadow: 
+    0 0 20px rgba(0, 255, 0, 0.2),
+    inset 0 0 10px rgba(0, 255, 0, 0.1);
+  backdrop-filter: blur(5px);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Security scan animation */
+.security-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.scan-line {
+  position: absolute;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 255, 0, 0.5) 20%, 
+    #0f0 50%, 
+    rgba(0, 255, 0, 0.5) 80%, 
+    transparent 100%);
+  top: 0;
+  left: 0;
+  box-shadow: 0 0 15px #0f0;
+  animation: scan-animation 2s ease-in-out infinite;
+}
+
+@keyframes scan-animation {
+  0% {
+    top: 0;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+.login-title {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+.terminal-icon, .lock-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Form styling */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.input-group {
+  position: relative;
+  padding-right: 53px;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.25rem;
+  height: 1.25rem;
+  color: rgba(0, 255, 0, 0.5);
+}
+
+.login-form input {
+  width: 100%;
+  background-color: #000;
+  border: 1px solid rgba(0, 255, 0, 0.3);
+  border-radius: 0.25rem;
+  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  color: #0f0;
+  font-family: monospace, 'Courier New', Courier;
+  transition: all 0.3s;
+}
+
+.login-form input::placeholder {
+  color: rgba(0, 255, 0, 0.5);
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: #0f0;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.login-form input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-form button {
+  padding: 0.75rem;
+  background-color: rgba(0, 255, 0, 0.2);
+  color: #0f0;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  font-family: monospace, 'Courier New', Courier;
+  font-weight: bold;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.5px;
+}
+
+.login-form button:before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to bottom right,
+    rgba(0, 255, 0, 0),
+    rgba(0, 255, 0, 0.1),
+    rgba(0, 255, 0, 0)
+  );
+  transform: rotate(45deg);
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  0% {
+    left: -50%;
+    top: -50%;
+  }
+  100% {
+    left: 150%;
+    top: 150%;
+  }
+}
+
+.login-form button:hover {
+  background-color: rgba(0, 255, 0, 0.3);
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.login-form button:active {
+  transform: scale(0.98);
+}
+
+.login-form button.loading {
+  background-color: rgba(255, 0, 0, 0.2);
+  cursor: wait;
+}
+
+.loading-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.loading-dots {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Message styling */
+.message {
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  animation: message-fade 0.3s ease-in;
+}
+
+@keyframes message-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message.success {
+  color: #0f0;
+  background-color: rgba(0, 255, 0, 0.1);
+  border: 1px solid rgba(0, 255, 0, 0.3);
+  animation: success-pulse 2s infinite;
+}
+
+.message.error {
+  color: #f00;
+  background-color: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+}
+
+.message.scanning {
+  color: #0ff;
+  background-color: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  animation: scanning-pulse 1s infinite;
+}
+
+@keyframes success-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+  }
+}
+
+@keyframes scanning-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+  }
+}
+
+/* Footer styling */
+.footer-text {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(0, 255, 0, 0.5);
+  letter-spacing: 1px;
+}
+
+.register-link {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.register-link a {
+  color: #0f0;
+  text-decoration: none;
+  border-bottom: 1px dotted #0f0;
+  transition: all 0.3s;
+}
+
+.register-link a:hover {
+  /* color: #fff; */
+  border-bottom-style: solid;
+  text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
+}
+
+/* Binary code background animation */
+.binary-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  opacity: 0.05;
+  overflow: hidden;
+}
+
+.binary-text {
+  position: absolute;
+  color: #0f0;
+  font-family: monospace;
+  font-size: 10px;
+  white-space: nowrap;
+  animation: binary-fall 20s linear infinite;
+}
+
+@keyframes binary-fall {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(100vh);
+  }
+}
+
+/* Glitch effect for error messages */
+.message.error {
+  position: relative;
+}
+
+.message.error::before {
+  content: attr(data-text);
+  position: absolute;
+  left: -2px;
+  text-shadow: 1px 0 #f00;
+  top: 0;
+  color: #f00;
+  overflow: hidden;
+  clip: rect(0, 900px, 0, 0);
+  animation: glitch-effect 2s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-effect {
+  0% {
+    clip: rect(44px, 9999px, 56px, 0);
+  }
+  5% {
+    clip: rect(12px, 9999px, 23px, 0);
+  }
+  10% {
+    clip: rect(42px, 9999px, 78px, 0);
+  }
+  15% {
+    clip: rect(22px, 9999px, 35px, 0);
+  }
+  20% {
+    clip: rect(15px, 9999px, 28px, 0);
+  }
+  25% {
+    clip: rect(5px, 9999px, 15px, 0);
+  }
+  30% {
+    clip: rect(45px, 9999px, 65px, 0);
+  }
+  35% {
+    clip: rect(24px, 9999px, 33px, 0);
+  }
+  40% {
+    clip: rect(38px, 9999px, 52px, 0);
+  }
+  45% {
+    clip: rect(18px, 9999px, 29px, 0);
+  }
+  50% {
+    clip: rect(7px, 9999px, 16px, 0);
+  }
+  55% {
+    clip: rect(34px, 9999px, 48px, 0);
+  }
+  60% {
+    clip: rect(27px, 9999px, 37px, 0);
+  }
+  65% {
+    clip: rect(9px, 9999px, 18px, 0);
+  }
+  70% {
+    clip: rect(41px, 9999px, 58px, 0);
+  }
+  75% {
+    clip: rect(19px, 9999px, 31px, 0);
+  }
+  80% {
+    clip: rect(33px, 9999px, 47px, 0);
+  }
+  85% {
+    clip: rect(14px, 9999px, 25px, 0);
+  }
+  90% {
+    clip: rect(36px, 9999px, 50px, 0);
+  }
+  95% {
+    clip: rect(29px, 9999px, 40px, 0);
+  }
+  100% {
+    clip: rect(11px, 9999px, 21px, 0);
+  }
+}
+
+/* Typing animation effect for success message */
+.message.success {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid #0f0;
+  width: fit-content;
+  margin: 0 auto 1rem auto;
+  animation: 
+    typing 3.5s steps(40, end),
+    blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: #0f0 }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 1.5rem;
+  }
+  
+  .login-title {
+    font-size: 1.25rem;
+  }
+  
+  .shield-icon {
+    width: 3rem;
+    height: 3rem;
+  }
+}

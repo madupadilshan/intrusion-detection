@@ -1,0 +1,205 @@
+/* General Body Styles */
+body {
+    font-family: 'Arial', sans-serif; /* Set Arial font for body */
+    background-color: #1a202c; /* Dark background */
+    color: #fff; /* Light text color for readability */
+  }
+  
+  /* Header */
+  h2 {
+    font-size: 2rem; /* Medium header font size */
+    font-weight: bold; /* Bold text */
+    color: #ffffff; /* White text color */
+    margin-bottom: 1rem; /* Margin bottom for spacing */
+  }
+  
+  /* Table Styles */
+  table {
+    border-collapse: collapse; /* Collapse table borders */
+    width: 100%; /* Full width */
+  }
+  
+  th, td {
+    padding: 12px; /* Padding inside cells */
+    text-align: left; /* Align text to the left */
+  }
+  
+  th {
+    background-color: #333; /* Dark background for header */
+    color: #ffffff; /* White text */
+    font-weight: bold; /* Bold font for headers */
+  }
+  
+  tr:nth-child(even) {
+    background-color: #2d3748; /* Dark background for even rows */
+  }
+  
+  tr:nth-child(odd) {
+    background-color: #1a202c; /* Darker background for odd rows */
+  }
+  
+  tr:hover {
+    background-color: #4a5568; /* Hover color */
+  }
+  
+  /* Buttons */
+  button {
+    background-color: #1d4ed8; /* Tailwind blue-500 */
+    padding: 6px 14px; /* Padding inside button */
+    border-radius: 4px; /* Rounded corners */
+    color: white; /* White text */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease; /* Smooth transition */
+  }
+  
+  button:hover {
+    background-color: #2563eb; /* Tailwind blue-600 on hover */
+  }
+  
+  button:focus {
+    outline: none;
+  }
+  
+  /* Toast Notifications */
+  .toast {
+    position: fixed; /* Fixed position */
+    top: 20px; /* From the top */
+    right: 20px; /* From the right */
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+    color: white; /* White text */
+    padding: 10px; /* Padding around text */
+    border-radius: 4px; /* Rounded corners */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); /* Shadow effect */
+    z-index: 999; /* Ensure it is above other elements */
+  }
+  
+  /* Tab Navigation Styles */
+  .tab-container {
+    display: flex; /* Flexbox layout for tabs */
+    margin-bottom: 1rem; /* Margin below the tab bar */
+  }
+  
+  .tab {
+    background-color: #2d3748; /* Dark background for tabs */
+    color: #cbd5e0; /* Light gray text */
+    padding: 10px 20px; /* Padding for each tab */
+    margin-right: 10px; /* Space between tabs */
+    cursor: pointer; /* Pointer cursor on hover */
+    border-radius: 4px; /* Rounded corners */
+    transition: background-color 0.3s ease; /* Smooth transition */
+  }
+  
+  .tab:hover {
+    background-color: #4a5568; /* Hover color */
+  }
+  
+  .tab.active {
+    background-color: #3182ce; /* Active tab color (Tailwind blue-500) */
+    color: white; /* White text for active tab */
+    font-weight: bold; /* Bold text for active tab */
+  }
+  
+  /* Card Styles (for real-time terminal or data cards) */
+  .card {
+    background-color: #2d3748; /* Dark background for cards */
+    padding: 20px; /* Padding inside the card */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Shadow effect */
+    margin-bottom: 1.5rem; /* Space below each card */
+  }
+  
+  .card-header {
+    font-size: 1.25rem; /* Header font size */
+    font-weight: bold; /* Bold text */
+    margin-bottom: 10px; /* Margin below header */
+  }
+  
+  /* Real-Time Terminal Styles */
+  .real-time-terminal {
+    background-color: #333; /* Dark background for terminal */
+    color: white; /* White text */
+    padding: 15px; /* Padding inside terminal */
+    font-family: 'Courier New', monospace; /* Monospace font for terminal text */
+    height: 250px; /* Fixed height */
+    overflow-y: auto; /* Enable scrolling if content exceeds */
+    border-radius: 8px; /* Rounded corners */
+  }
+  
+  .real-time-terminal div {
+    margin-bottom: 10px; /* Space between messages */
+  }
+  
+  /* Attack Frequency Chart */
+  .attack-frequency-chart {
+    margin-top: 20px;
+  }
+  
+  .attack-frequency-chart .chart-container {
+    padding: 20px;
+    background-color: #2d3748;
+    border-radius: 5px;
+  }
+  
+  .attack-frequency-chart h3 {
+    color: white;
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+  
+  /* Attack History Table */
+  .attack-history-table {
+    margin-top: 20px;
+  }
+  
+  .attack-history-table h3 {
+    font-size: 20px;
+    color: white;
+  }
+  
+  .attack-history-table table {
+    width: 100%;
+    border: 1px solid #333;
+    border-radius: 5px;
+    margin-top: 10px;
+  }
+  
+  .attack-history-table th, .attack-history-table td {
+    padding: 12px;
+  }
+  
+  .attack-history-table th {
+    background-color: #333;
+    color: #fff;
+  }
+  
+  .attack-history-table tr:nth-child(even) {
+    background-color: #2a2a2a;
+  }
+  
+  .attack-history-table tr:nth-child(odd) {
+    background-color: #1f1f1f;
+  }
+  
+  .attack-history-table tr:hover {
+    background-color: #444;
+  }
+  
+  /* Paragraph Styling for Attack Types */
+  .attack-details p {
+    margin-top: 10px;
+    color: #ddd;
+    font-size: 16px;
+  }
+  
+  .attack-details strong {
+    color: #ffffff;
+  }
+  
+  .attack-details {
+    margin-top: 30px;
+  }
+  
+  .attack-details p {
+    margin-top: 10px;
+  }
+  
