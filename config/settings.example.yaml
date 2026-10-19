@@ -29,3 +29,4 @@ zeek:
 database:
   uri: "mongodb://localhost:27017/"
   name: "iot_ids_db"
+
