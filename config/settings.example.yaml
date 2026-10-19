@@ -1,0 +1,31 @@
+# Lab & Network Settings
+network:
+  subnet: "192.168.8.0/24"
+  gateway_ip: "192.168.8.1"
+  sensor_interface: "eth0"
+  deployment_mode: "passive" # "passive" (SPAN/mirror) or "inline"
+
+# Safety Allowlist (These IPs will NEVER be blocked)
+allowlist:
+  - "127.0.0.1"
+  - "192.168.8.1"   # Default Gateway / Router
+  - "192.168.8.100" # Admin Workstation
+  - "192.168.8.10"  # NVR (Network Video Recorder)
+
+# Automated Response Policy
+response_policy:
+  confidence_threshold: 0.85
+  repetition_window_seconds: 10
+  min_repetition_count: 3
+  rule_expiry_minutes: 15
+  firewall_backend: "nftables" # "nftables", "iptables", "router_api", or "simulation"
+
+# Zeek Logging Configuration
+zeek:
+  conn_log_path: "/var/log/zeek/current/conn.log"
+  batch_interval_seconds: 1.0
+
+# Database
+database:
+  uri: "mongodb://localhost:27017/"
+  name: "iot_ids_db"

@@ -1,0 +1,23 @@
+# Data and models (large files)
+data/
+archive/
+*.pkl
+*.joblib
+*.pcap
+*.log
+*.csv
+
+# Secrets and environment configurations
+.env
+config/settings.yaml
+
+# Dependencies and caches
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/

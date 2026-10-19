@@ -1,0 +1,33 @@
+# Official IoT-23 Label Mapping to 5 Target Classes (Proposal Table 5)
+# This mapping must remain frozen before model training and validation.
+
+mapping:
+  Benign: "Benign"
+  
+  # DDoS / DoS Class
+  DDoS: "DDoS"
+  Attack: "DDoS"
+  
+  # Port Scanning Class
+  PartOfAHorizontalPortScan: "PortScan"
+  
+  # Command and Control (C&C) Class
+  C&C: "C&C"
+  "C&C-HeartBeat": "C&C"
+  "C&C-Torii": "C&C"
+  "C&C-FileDownload": "C&C"
+  "C&C-HeartBeat-FileDownload": "C&C"
+  "C&C-Mirai": "C&C"
+  
+  # Malware / FileDownload Class
+  Okiru: "MalwareDownload"
+  "Okiru-Attack": "MalwareDownload"
+  Mirai: "MalwareDownload"
+  FileDownload: "MalwareDownload"
+
+target_classes:
+  0: "Benign"
+  1: "DDoS"
+  2: "PortScan"
+  3: "C&C"
+  4: "MalwareDownload"
