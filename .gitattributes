@@ -1,0 +1,17 @@
+# Store text files with LF line endings in Git.
+* text=auto
+
+# Files that run on the Linux sensor must keep LF, even when checked out on Windows.
+*.sh    text eol=lf
+*.nft   text eol=lf
+*.zeek  text eol=lf
+*.py    text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+
+# Binary files: never change them.
+*.png    binary
+*.jpg    binary
+*.ico    binary
+*.pdf    binary
+*.joblib binary

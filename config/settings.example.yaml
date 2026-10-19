@@ -1,32 +1,36 @@
-# Lab & Network Settings
-network:
-  subnet: "192.168.8.0/24"
-  gateway_ip: "192.168.8.1"
-  sensor_interface: "eth0"
-  deployment_mode: "passive" # "passive" (SPAN/mirror) or "inline"
+# Lab settings (guide Step 4). Copy to config/settings.yaml for real use (not in Git).
+# The IP addresses are EXAMPLES. Replace them with your own lab plan from Step 5.
+# The lab must be a separate network: no university, home or public network.
 
-# Safety Allowlist (These IPs will NEVER be blocked)
-allowlist:
-  - "127.0.0.1"
-  - "192.168.8.1"   # Default Gateway / Router
-  - "192.168.8.100" # Admin Workstation
-  - "192.168.8.10"  # NVR (Network Video Recorder)
+lab:
+  approved_scan_subnets: ["192.168.50.0/24"]  # Nmap may scan ONLY these (Section 3.7)
+  local_networks: ["192.168.50.0/24"]         # used to decide traffic direction (in / out)
+  sensor_mirror_interface: "eth1"             # sensor port that receives the switch mirror (no IP)
 
-# Automated Response Policy
-response_policy:
-  confidence_threshold: 0.85
-  repetition_window_seconds: 10
-  min_repetition_count: 3
-  rule_expiry_minutes: 15
-  firewall_backend: "nftables" # "nftables", "iptables", "router_api", or "simulation"
+allowlist:            # management IPs that are NEVER blocked (checked on the source IP)
+  - 192.168.50.1      # lab router / gateway
+  - 192.168.50.5      # IDS sensor
+  - 192.168.50.10     # admin workstation
+  - 192.168.50.20     # NVR
 
-# Zeek Logging Configuration
+response:
+  deployment_mode: passive      # passive is the default (Table 11); or inline
+  adapter: router               # router (passive) | nftables (inline) | iptables | simulation
+  auto_response: false          # ➕ Extra: master switch; turn on only in approved tests
+  min_confidence: 0.85          # START value; final value chosen in Step 17
+  min_repeats: 3                # START value; final value chosen in Step 17
+  repeat_window_seconds: 60     # START value; final value chosen in Step 17
+  max_rule_minutes: 30          # every rule expires (maximum rule time)
+  allow_device_isolation: false # isolate a local device only if the policy allows
+
 zeek:
-  conn_log_path: "/var/log/zeek/current/conn.log"
-  batch_interval_seconds: 1.0
+  conn_log_path: /var/log/ids-zeek/conn.log  # Zeek is started in this folder (Step 19)
 
-# Database
-database:
-  uri: "mongodb://localhost:27017/"
-  name: "iot_ids_db"
+model:
+  bundle_path: ml_engine/models/ids_bundle_v1.joblib
+  random_seed: 42
 
+retention_days:   # fill in from the agreed retention plan (Step 1). Do not guess.
+  attack_events: null
+  traffic_summaries: null
+  system_logs: null

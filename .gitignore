@@ -1,18 +1,47 @@
-# Data and models (large files)
-data/
+# Data (large and private). Keep only the empty folder layout (.gitkeep files),
+# so a fresh clone on the sensor has the same folders.
+data/**
+!data/**/
+!data/**/.gitkeep
+
+# Old code and files we no longer use
 archive/
+
+# Models and captures (large files)
 *.pkl
 *.joblib
 *.pcap
+*.pcapng
 *.log
-*.csv
 
-# Secrets and environment configurations
+# CSV files are usually data. Result tables in reports/ ARE kept
+# (for example reports/dataset_manifest.csv in Step 7).
+*.csv
+!reports/**/*.csv
+
+# Local databases (they can hold user names and password hashes)
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Binaries and archives (not source code)
+*.exe
+*.msi
+*.zip
+*.7z
+*.tar
+*.gz
+
+# Secrets and real lab settings
 .env
+.env.*
+!.env.example
 config/settings.yaml
 
-# Dependencies and caches
+# Dependencies, caches and build output
 node_modules/
+my-app/build/
 __pycache__/
 *.pyc
 .venv/
@@ -21,6 +50,15 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+.ipynb_checkpoints/
+
+# Editor and OS files
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+
 # Documentation files
 PROJECT_EXPLANATION_EN.md
 PROJECT_EXPLANATION.md

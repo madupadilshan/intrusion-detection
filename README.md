@@ -20,9 +20,10 @@ This repository contains the prototype implementation of a real-time network int
 
 ## Documentation
 
-* [**`STEP_BY_STEP_GUIDE.md`**](file:///d:/intrusion%20detection/STEP_BY_STEP_GUIDE.md): The definitive master guide covering all 43 execution steps from setup to evaluation.
-* [**`PROJECT_EXPLANATION.md`**](file:///d:/intrusion%20detection/PROJECT_EXPLANATION.md): Complete architectural breakdown and gap analysis (Sinhala).
-* [**`PROJECT_EXPLANATION_EN.md`**](file:///d:/intrusion%20detection/PROJECT_EXPLANATION_EN.md): Complete architectural breakdown and gap analysis (English).
+* [`STEP_BY_STEP_GUIDE.md`](STEP_BY_STEP_GUIDE.md): the master guide (Steps 0-42), from setup to evaluation. Follow the steps in order.
+* [`PROJECT_EXPLANATION_EN.md`](PROJECT_EXPLANATION_EN.md) (English) and [`PROJECT_EXPLANATION.md`](PROJECT_EXPLANATION.md) (Sinhala): what the system is and why it is designed this way. Rewritten on 19 Oct 2026 to follow the proposal.
+
+Note: these documentation files are listed in `.gitignore`, so they are not shared through Git. Share them with the team another way, or remove them from `.gitignore`.
 
 ---
 
@@ -40,7 +41,7 @@ This repository contains the prototype implementation of a real-time network int
 ├── my-app/                  # React dashboard web application
 ├── reports/                 # Evaluation metrics, data-quality reports, and figures
 ├── docs/                    # Ethics clearance, retention plan, lab logbook, and research notes
-└── archive/                 # Preserved legacy prototypes and baseline materials
+└── archive/                 # Old code and files we no longer use (local only, not in Git)
 ```
 
 ---
@@ -48,16 +49,20 @@ This repository contains the prototype implementation of a real-time network int
 ## Quick Start
 
 ### 1. Install Dependencies
-```bash
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
 ### 2. Configure Environment
-Copy `.env.example` to `.env` and adjust your network interface and MongoDB parameters:
-```bash
-cp .env.example .env
+Copy `.env.example` to `.env` and fill in the secrets (never commit `.env`).
+Copy `config/settings.example.yaml` to `config/settings.yaml` and fill in your lab plan (guide Steps 4 and 5).
+```powershell
+copy .env.example .env
+copy config\settings.example.yaml config\settings.yaml
 ```
 
 ### 3. Follow the Step-by-Step Guide
-Refer to [**`STEP_BY_STEP_GUIDE.md`**](file:///d:/intrusion%20detection/STEP_BY_STEP_GUIDE.md) to proceed through each milestone systematically.
+Refer to [`STEP_BY_STEP_GUIDE.md`](STEP_BY_STEP_GUIDE.md) to proceed through each milestone systematically.
 
