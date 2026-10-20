@@ -29,7 +29,7 @@
 | 10 | Yang et al. (2022) | Yes | Proposal 2.2 |
 | 11 | Zeek Project (2026), conn.log | Yes | Proposal 2.5; Zeek docs |
 | 12 | **Santos et al. (2023)** | **No — missing** | **Found and checked** (Crossref, abstract) |
-| 13 | **Almashhadani et al. (2024)** | **No — missing** | **Not found** (see Section B) |
+| 13 | **Almashhadani et al. (2024)** | **No — missing** | **Not found → removed, not cited** (decision D-009) |
 
 ---
 
@@ -154,7 +154,7 @@ Neither reference is in the proposal's reference list. We searched for both on 1
 - **Why we are sure this is the right paper:** Leonel Santos is the **first author**, the year (2023 issue) and the topic match the proposal's sentence exactly, and its abstract says "real-time", "flow-based" and "0% of false positives".
 - **Another 2023 paper with Santos as co-author (not first author):** Prazeres, N., Costa, R.L.de C., Santos, L. and Rabadão, C. (2023) 'Engineering the application of machine learning in an IDS based on IoT traffic flow', *Intelligent Systems with Applications*, 17, 200189. doi:10.1016/j.iswa.2023.200189. It uses deep neural networks on IoT flows. It would be cited as "Prazeres et al., 2023", **not** "Santos et al., 2023". It may still be useful as an extra ML-based reference.
 
-### 13. Almashhadani et al. (2024) — ⚠️ NOT FOUND
+### 13. Almashhadani et al. (2024) — ❌ NOT FOUND — REMOVED (decision D-009)
 
 **We could not find any 2024 paper by Almashhadani (or Al-Mashhadani) about IoT intrusion detection.**
 
@@ -168,14 +168,13 @@ The closest real matches, which are **not** this reference:
 - Ahmad O. Almashhadani works on **network-based malware detection**, for example: Almashhadani, A.O., Kaiiali, M., Sezer, S. and O'Kane, P. (2019) 'A Multi-Classifier Network-Based Crypto Ransomware Detection System: A Case Study of Locky Ransomware', *IEEE Access*, 7, pp. 47053–47067. doi:10.1109/ACCESS.2019.2907485. It is from **2019**, and it is about **ransomware**, not IoT.
 - An Almashhadani paper on **edge computing scheduling for IoT** (2023, *Materials Today: Proceedings*). It is **not** about intrusion detection.
 
-**What the team must do:**
+**Decision (20 Oct 2026) — see `docs/decision_log.md`, D-009:**
 
-1. Ask the team member who wrote this sentence in Section 1.4 **where the reference came from**: the title, journal or link.
-2. If the real paper is found, add its full notes here.
-3. If it cannot be found, **do not cite it** in the final report. Talk to the supervisor, then either:
-   - **remove it** and keep only Santos et al. (2023), which supports the sentence on its own; or
-   - **replace it** with a checked 2024 paper on the same topic. One verified option: Mutambik, I. (2024) 'An Efficient Flow-Based Anomaly Detection System for Enhanced Security in IoT Networks', *Sensors*, 24(22), 7408. doi:10.3390/s24227408. It proposes **IoT-FIDS**, a lightweight flow-based anomaly detector that builds profiles of normal device traffic. It is **not** a machine-learning model, and it was tested on UNSW-NB15 and BoT-IoT. If you use it, the citation in the text becomes "(Santos et al., 2023; Mutambik, 2024)".
-4. Write the decision in `docs/decision_log.md` (guide Step 4).
+- **No team member has this paper or knows its source.** So we do **not** cite "Almashhadani et al., 2024" anywhere.
+- The sentence in Section 1.4 is supported by **Santos et al. (2023)** alone. In the final report it will end: "…and limiting false positives (Santos et al., 2023)."
+- The full Santos et al. (2023) reference must be **added to the final report's reference list**, because it is missing from the proposal's list.
+- The supervisor will be told at the Step 1 meeting.
+- **Extra reading (not cited in Section 1.4):** Mutambik, I. (2024) 'An Efficient Flow-Based Anomaly Detection System for Enhanced Security in IoT Networks', *Sensors*, 24(22), 7408. doi:10.3390/s24227408. It proposes **IoT-FIDS**, a lightweight flow-based anomaly detector that builds profiles of normal device traffic. It is not a machine-learning model, and it was tested on UNSW-NB15 and BoT-IoT. It may be useful in the related-work section of the final report.
 
 **Never cite a paper that nobody on the team has seen.** Examiners may check the references.
 
