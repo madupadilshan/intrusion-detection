@@ -78,5 +78,5 @@ Every important project decision is written here: the date, the decision, the re
 - **Other options looked at:** replacing it with Mutambik, I. (2024) 'An Efficient Flow-Based Anomaly Detection System for Enhanced Security in IoT Networks', *Sensors*, 24(22), 7408. Not chosen, because Santos et al. (2023) already supports the sentence. It stays in the literature notes as an extra reading.
 - **Also:** add the full Santos et al. (2023) reference to the final report's reference list (it is missing from the proposal's list):
   > Santos, L., Gonçalves, R., Rabadão, C. and Martins, J. (2023) 'A flow-based intrusion detection framework for internet of things networks', *Cluster Computing*, 26(1), pp. 37–57. doi:10.1007/s10586-021-03238-y.
-- **Who agreed:** project owner and team (20 Oct 2026). **To tell the supervisor** at the Step 1 meeting.
+- **Who agreed:** project owner and team (20 Oct 2026). **To tell the supervisor** at the next meeting.
 - **Proposal link:** Section 1.4; References.

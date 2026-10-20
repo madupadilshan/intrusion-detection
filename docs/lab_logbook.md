@@ -15,9 +15,9 @@
    - data deletion.
 3. Write the **exact command** or tool, and the **exact target** (IP address or subnet).
 4. **Never write passwords or secret keys** here. This file is in Git, and the repository is public.
-5. **Approved by** = the lab permission note (once it is approved), or the supervisor for anything new.
-6. **Until the supervisor approves the lab permission note, do not run any scan, capture or attack test.** Only planning entries are allowed.
-7. If something unexpected happens, **stop**, write it in "Result / notes", and tell the supervisor.
+5. **Person** must be a team member who has that permission in the lab plan (`docs/ethics/lab_plan_and_rules.md`, Section 4).
+6. Every activity must follow the lab plan: only the separated lab, only the activities in Section 5, and the safety rules in Section 7.
+7. If something unexpected happens, **stop**, write it in "Result / notes", and tell the team.
 
 **Activity types:** `PLAN` · `SCAN` · `CAPTURE` · `ATTACK-TEST` · `FIREWALL` · `NETWORK-CHANGE` · `DATA-DELETE` · `OTHER`
 
@@ -25,6 +25,6 @@
 
 ## Log
 
-| No. | Date | Time (start–end) | Person | Activity type | What (exact command / tool) | Target (IP / subnet) | Mode | Why (guide step / Table 10 scenario) | Approved by | Result / notes |
-| --- | ---- | ---------------- | ------ | ------------- | --------------------------- | -------------------- | ---- | ------------------------------------ | ----------- | -------------- |
-| 1 | 2026-10-20 | — | Team | PLAN | Logbook created; lab permission note and data retention plan drafted | — | — | Step 1 | — | No tests run. Waiting for supervisor approval. |
+| No. | Date | Time (start–end) | Person | Activity type | What (exact command / tool) | Target (IP / subnet) | Mode | Why (guide step / Table 10 scenario) | Result / notes |
+| --- | ---- | ---------------- | ------ | ------------- | --------------------------- | -------------------- | ---- | ------------------------------------ | -------------- |
+| 1 | 2026-10-20 | — | Team | PLAN | Logbook created; lab plan and rules, and data retention plan written | — | — | Step 1 | No tests run yet. |

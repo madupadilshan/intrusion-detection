@@ -173,7 +173,7 @@ The closest real matches, which are **not** this reference:
 - **No team member has this paper or knows its source.** So we do **not** cite "Almashhadani et al., 2024" anywhere.
 - The sentence in Section 1.4 is supported by **Santos et al. (2023)** alone. In the final report it will end: "…and limiting false positives (Santos et al., 2023)."
 - The full Santos et al. (2023) reference must be **added to the final report's reference list**, because it is missing from the proposal's list.
-- The supervisor will be told at the Step 1 meeting.
+- The supervisor will be told at the next meeting.
 - **Extra reading (not cited in Section 1.4):** Mutambik, I. (2024) 'An Efficient Flow-Based Anomaly Detection System for Enhanced Security in IoT Networks', *Sensors*, 24(22), 7408. doi:10.3390/s24227408. It proposes **IoT-FIDS**, a lightweight flow-based anomaly detector that builds profiles of normal device traffic. It is not a machine-learning model, and it was tested on UNSW-NB15 and BoT-IoT. It may be useful in the related-work section of the final report.
 
 **Never cite a paper that nobody on the team has seen.** Examiners may check the references.

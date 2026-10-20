@@ -40,7 +40,7 @@ Note: these documentation files are listed in `.gitignore`, so they are not shar
 ├── tests/                   # Unit tests, integration tests, and attack simulation scripts
 ├── my-app/                  # React dashboard web application
 ├── reports/                 # Evaluation metrics, data-quality reports, and figures
-├── docs/                    # Ethics clearance, retention plan, lab logbook, and research notes
+├── docs/                    # Lab plan and rules, data retention plan, lab logbook, decision log, research notes
 └── archive/                 # Old code and files we no longer use (local only, not in Git)
 ```
 
