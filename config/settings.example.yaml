@@ -30,7 +30,7 @@ model:
   bundle_path: ml_engine/models/ids_bundle_v1.joblib
   random_seed: 42
 
-retention_days:   # fill in from the agreed retention plan (Step 1). Do not guess.
-  attack_events: null
-  traffic_summaries: null
-  system_logs: null
+retention_days:   # filled in from agreed retention plan (Step 1)
+  attack_events: 90
+  traffic_summaries: 30
+  system_logs: 90

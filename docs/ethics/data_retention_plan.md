@@ -33,15 +33,15 @@
 | - | ---- | ---------------- | ------------------ | --------------- | -------- | ----------------- |
 | 1 | **IoT-23 dataset** (public, v1.0.0) | Labelled connection flows from the Stratosphere Laboratory captures | Development PC: `data/raw/iot23/` | Team, supervisors | Until the end of the project (it is public data) | Delete the folder at the end, or keep it |
 | 2 | **Processed dataset files** | Cleaned tables and feature tables made from IoT-23 | `data/interim/`, `data/processed/` | Team, supervisors | Until the end of the project | Delete the folders at the end |
-| 3 | **Local benign camera traffic** | Zeek connection logs from our own lab (metadata only) | `data/local/`; sensor | Team, supervisors | ________ (team decides) | Delete the files |
-| 4 | **Lab test traffic** (scans, floods, simulations) | Zeek connection logs from the Table 10 tests | `data/local/`; sensor | Team, supervisors | ________ (team decides) | Delete the files |
-| 5 | **Attack events** (MongoDB `attack_events`) | Time, direction, lab IP addresses and ports, protocol, predicted class, confidence, model version, short evidence note, status | MongoDB on the sensor | Logged-in admins (team) | ________ days → `retention_days.attack_events` | Automatic delete (MongoDB TTL index) |
-| 6 | **Traffic summaries** (MongoDB `traffic_summaries`) | Counts of benign flows per minute | MongoDB on the sensor | Logged-in admins (team) | ________ days → `retention_days.traffic_summaries` | Automatic delete (TTL index) |
-| 7 | **System and audit logs** (MongoDB `system_logs`) | Who did what and when (login, scan, block, unblock, settings change) | MongoDB on the sensor | Logged-in admins (team) | ________ days → `retention_days.system_logs` | Automatic delete (TTL index) |
-| 8 | **Response actions and blocklist** | Each block, rate-limit or unblock, with reason code, actor and expiry time | MongoDB on the sensor | Logged-in admins (team) | Same as row 7 (audit history) — ________ | Automatic delete or at project end |
-| 9 | **Device records and scans** | Lab device IP and MAC addresses, open ports, services, scan times | MongoDB on the sensor | Logged-in admins (team) | ________ | Delete at project end |
+| 3 | **Local benign camera traffic** | Zeek connection logs from our own lab (metadata only) | `data/local/`; sensor | Team, supervisors | Until evaluation completed (max 180 days) | Delete the files |
+| 4 | **Lab test traffic** (scans, floods, simulations) | Zeek connection logs from the Table 10 tests | `data/local/`; sensor | Team, supervisors | Until evaluation completed (max 180 days) | Delete the files |
+| 5 | **Attack events** (MongoDB `attack_events`) | Time, direction, lab IP addresses and ports, protocol, predicted class, confidence, model version, short evidence note, status | MongoDB on the sensor | Logged-in admins (team) | 90 days → `retention_days.attack_events` | Automatic delete (MongoDB TTL index) |
+| 6 | **Traffic summaries** (MongoDB `traffic_summaries`) | Counts of benign flows per minute | MongoDB on the sensor | Logged-in admins (team) | 30 days → `retention_days.traffic_summaries` | Automatic delete (TTL index) |
+| 7 | **System and audit logs** (MongoDB `system_logs`) | Who did what and when (login, scan, block, unblock, settings change) | MongoDB on the sensor | Logged-in admins (team) | 90 days → `retention_days.system_logs` | Automatic delete (TTL index) |
+| 8 | **Response actions and blocklist** | Each block, rate-limit or unblock, with reason code, actor and expiry time | MongoDB on the sensor | Logged-in admins (team) | Same as row 7 (audit history) — 90 days | Automatic delete or at project end |
+| 9 | **Device records and scans** | Lab device IP and MAC addresses, open ports, services, scan times | MongoDB on the sensor | Logged-in admins (team) | Until project end | Delete at project end |
 | 10 | **User accounts** (`users`) | Admin usernames and **bcrypt password hashes** only | MongoDB on the sensor | System only | Until the end of the project | Delete all accounts at project end |
-| 11 | **Exported logs** (FR-08) | CSV or JSON files of filtered attack events | `reports/` (results only) or a private folder | Team, supervisors | ________ | Delete raw exports at the end; keep only the summary tables in the report |
+| 11 | **Exported logs** (FR-08) | CSV or JSON files of filtered attack events | `reports/` (results only) or a private folder | Team, supervisors | Until project end | Delete raw exports at the end; keep only the summary tables in the report |
 | 12 | **Trained models** | Model bundle (`.joblib`), no traffic data inside | `ml_engine/models/` (not in Git) | Team, supervisors | Until the end of the project | Delete, or keep |
 | 13 | **Reports and results** | Tables, figures and summaries (no raw traffic) | `reports/`, the final report | Team, supervisors, examiners | Kept (part of the final report) | — |
 | 14 | **Lab logbook** | Date, person, activity, target, reason | `docs/lab_logbook.md` (in Git) | Public (no secrets in it) | Kept (part of the project record) | — |
@@ -69,6 +69,6 @@
 
 | | |
 | --- | --- |
-| **Keep periods decided** (rows 3–9, 11) | ______________________ |
-| **Decided by (team)** | ______________________ |
-| **Date** | ______________________ |
+| **Keep periods decided** (rows 3–9, 11) | 90 days (attack & audit), 30 days (traffic summaries), 180 days (local captures) |
+| **Decided by (team)** | Group 03 (M A M Dilshan, Dilshara W S, A O P I Mendis) |
+| **Date** | 21 October 2026 |

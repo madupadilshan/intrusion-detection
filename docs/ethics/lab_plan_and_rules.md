@@ -39,23 +39,23 @@ Only network **metadata** is recorded (who talks to whom, when, how much). **No 
 
 | Device                                   | Purpose                                         | Example IP     | Owner / provided by | Model / serial |
 | ---------------------------------------- | ----------------------------------------------- | -------------- | ------------------- | -------------- |
-| IP camera **or** camera simulator        | The device we protect                           | 192.168.50.30  | ________            | ________       |
-| NVR or recording software                | Records the camera video (normal use)           | 192.168.50.20  | ________            | ________       |
-| Managed switch with port mirroring       | Connects the lab; copies traffic to the sensor  | —              | ________            | ________       |
-| Lab router (we can log in to it)         | Joins the two lab networks; applies blocks      | 192.168.50.1 / 10.10.10.1 | ________ | ________       |
-| Linux sensor computer (2 network ports)  | Runs Zeek, the model, the backend, the firewall | 192.168.50.5   | ________            | ________       |
-| Admin workstation                        | Opens the dashboard                             | 192.168.50.10  | ________            | ________       |
-| Attack test computer (Linux)             | Makes the controlled test traffic               | 10.10.10.50    | ________            | ________       |
+| IP camera **or** camera simulator        | The device we protect                           | 192.168.50.30  | Lab / Team          | RTSP IP Camera Simulator / Generic ONVIF Camera (Software emulation or Lab loan) |
+| NVR or recording software                | Records the camera video (normal use)           | 192.168.50.20  | Lab / Team          | Software NVR / VLC media stream recorder |
+| Managed switch with port mirroring       | Connects the lab; copies traffic to the sensor  | —              | University Lab / Virtual bridge | Managed switch with SPAN/mirror port (Lab loan / Software bridge) |
+| Lab router (we can log in to it)         | Joins the two lab networks; applies blocks      | 192.168.50.1 / 10.10.10.1 | Lab / Team | Linux router / OpenWrt VM (dual-interface) |
+| Linux sensor computer (2 network ports)  | Runs Zeek, the model, the backend, the firewall | 192.168.50.5   | Team workstation    | Ubuntu Linux 22.04 LTS (Zeek + IDS Engine) |
+| Admin workstation                        | Opens the dashboard                             | 192.168.50.10  | M A M Dilshan       | Windows 11 PC (Dashboard & Admin Client) |
+| Attack test computer (Linux)             | Makes the controlled test traffic               | 10.10.10.50    | Team workstation    | Linux test environment (Kali / Ubuntu testbed) |
 
 ## 4. People and permissions
 
 Only the people ticked below use the attack tools, the lab passwords and the firewall rights (proposal 3.8).
 
 | Team member     | Attack tools (Nmap, hping3, test scripts) | Lab passwords (router, camera, sensor) | Firewall / router rule changes |
-| --------------- | ----------------------------------------- | -------------------------------------- | ------------------------------ |
-| M A M Dilshan   | ☐                                         | ☐                                      | ☐                              |
-| Dilshara W S    | ☐                                         | ☐                                      | ☐                              |
-| A O P I Mendis  | ☐                                         | ☐                                      | ☐                              |
+| --------------- | :---------------------------------------: | :------------------------------------: | :----------------------------: |
+| M A M Dilshan   |                     ☑                     |                   ☑                    |               ☑                |
+| Dilshara W S    |                     ☑                     |                   ☑                    |               ☑                |
+| A O P I Mendis  |                     ☑                     |                   ☑                    |               ☑                |
 
 - Lab passwords are kept in the private `.env` file or a password manager. They are **never** written in Git, in this document or in the logbook.
 - Every use of these permissions is written in the **lab logbook** (`docs/lab_logbook.md`) **before** it starts.

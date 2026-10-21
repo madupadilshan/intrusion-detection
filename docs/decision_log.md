@@ -80,3 +80,19 @@ Every important project decision is written here: the date, the decision, the re
   > Santos, L., Gonçalves, R., Rabadão, C. and Martins, J. (2023) 'A flow-based intrusion detection framework for internet of things networks', *Cluster Computing*, 26(1), pp. 37–57. doi:10.1007/s10586-021-03238-y.
 - **Who agreed:** project owner and team (20 Oct 2026). **To tell the supervisor** at the next meeting.
 - **Proposal link:** Section 1.4; References.
+
+## D-010 — 2026-10-21 — Lab device planning with software simulation and lab loans
+- **Decision:** In [`docs/ethics/lab_plan_and_rules.md`](file:///d:/intrusion%20detection/docs/ethics/lab_plan_and_rules.md), allocate device roles with software camera simulation (RTSP camera simulator / mobile camera stream) and software network bridges / lab loans, as physical IP cameras and dedicated hardware switches are not yet available.
+- **Why:** The proposal (Section 5.1) explicitly permits an IP camera or camera simulator. Work on software, dataset, ML pipeline, and simulation testing can proceed without hardware delays.
+- **Who agreed:** project owner and team (21 Oct 2026).
+- **Proposal link:** Section 5.1; Table 10.
+
+## D-011 — 2026-10-21 — Data retention durations agreed
+- **Decision:** In [`docs/ethics/data_retention_plan.md`](file:///d:/intrusion%20detection/docs/ethics/data_retention_plan.md) and [`config/settings.example.yaml`](file:///d:/intrusion%20detection/config/settings.example.yaml), set:
+  - `attack_events`: 90 days (automatic deletion via MongoDB TTL index);
+  - `traffic_summaries`: 30 days (automatic deletion via MongoDB TTL index);
+  - `system_logs`: 90 days (automatic deletion via MongoDB TTL index);
+  - Local benign / test captures: until evaluation is completed (maximum 180 days).
+- **Why:** Balances research data availability for analysis and reports with data minimization and storage management (proposal Section 3.8).
+- **Who agreed:** project owner and team (21 Oct 2026).
+- **Proposal link:** Section 3.8; FR-08.
