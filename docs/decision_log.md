@@ -96,3 +96,9 @@ Every important project decision is written here: the date, the decision, the re
 - **Why:** Balances research data availability for analysis and reports with data minimization and storage management (proposal Section 3.8).
 - **Who agreed:** project owner and team (21 Oct 2026).
 - **Proposal link:** Section 3.8; FR-08.
+
+## D-012 — 2026-10-22 — Windows laptop setup and package isolation for Step 3a
+- **Decision:** Execute Step 3a on the Windows laptop with a dedicated Python virtual environment (`.venv`) and pinned versions in `requirements.txt`. Note that Npcap is already present (`C:\Program Files\Npcap`), and Nmap installation is deferred to Step 27 (Device Discovery) since Nmap is not required for the Machine Learning pipeline (Steps 7–18).
+- **Why:** Keeps development agile, avoids version pollution across global Python packages, and maintains strict dependency reproducibility without blocking dataset processing and model training on hardware tools.
+- **Who agreed:** project owner and team (22 Oct 2026).
+- **Proposal link:** Table 8; Section 3.3.
