@@ -31,6 +31,7 @@ Use this document to reproduce any step, review past work, prepare for superviso
 | **Step 1** | Ethics, Lab Plan, Retention & Logbook | ✅ Completed | `docs/ethics/lab_plan_and_rules.md`, `docs/ethics/data_retention_plan.md`, `docs/lab_logbook.md` | `9cc193f` |
 | **Step 2** | Clean Folder Layout & Git Setup | ✅ Completed | Clean directory structure, `.gitignore`, `.gitattributes`, initial push | `9f90ce1`, `25c8b6e` |
 | **Step 3a & 3d** | Development PC Environment Setup | ✅ Completed | `.venv` (Python 3.10.0), locked `requirements.txt`, `tools/check_env.py`, `reports/environment_versions.txt` | `29d99ff` |
+| **Step 4** | Settings File and Decision Log | ✅ Completed | `config/settings.yaml`, `.env`, `docs/decision_log.md` (D-001 to D-013) | `9cc193f` & current |
 
 ---
 
@@ -274,6 +275,49 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 4: Settings File and Decision Log Setup
+
+* **Objective:** Establish the centralized project configuration (`config/settings.yaml`), safe management allowlists, cryptographic secrets isolation (`.env`), and maintain the official architectural decision log (`docs/decision_log.md`).
+* **Date:** 23 October 2026
+* **How It Was Done:**
+  1. Created active configuration [`config/settings.yaml`](file:///d:/intrusion%20detection/config/settings.yaml) from [`config/settings.example.yaml`](file:///d:/intrusion%20detection/config/settings.example.yaml):
+     - Configured `approved_scan_subnets` (`["192.168.50.0/24"]`) to restrict scanner scope (Proposal Section 3.7).
+     - Confirmed static management allowlist:
+       - Router / Gateway: `192.168.50.1`
+       - Sensor (management): `192.168.50.5`
+       - Admin workstation: `192.168.50.10`
+       - NVR: `192.168.50.20`
+       *(Guarantees critical control nodes are never blocked by automated responses)*.
+     - Configured response safety parameters:
+       - `deployment_mode: passive` (default per Proposal Table 11).
+       - `adapter: simulation` (for Windows local development) / `router` (for physical lab).
+       - `min_confidence: 0.85`, `min_repeats: 3`, `repeat_window_seconds: 60`, `max_rule_minutes: 30` (rules expire automatically).
+     - Fixed `random_seed: 42` for 100% scientific reproducibility across all machine learning models (Proposal Section 3.4).
+     - Set data retention periods to `attack_events: 90`, `traffic_summaries: 30`, `system_logs: 90` (matching Step 1 agreed retention policy).
+  2. Generated cryptographic secrets and created `.env`:
+     - Executed Python cryptographic token generation to create 32-byte hexadecimal random keys for `JWT_SECRET_KEY` and `FLASK_SECRET_KEY`.
+     - Configured local MongoDB connection: `MONGO_URI=mongodb://localhost:27017/` and `DB_NAME=iot_ids_db`.
+     - Left router SSH fields ready for physical deployment.
+     - Confirmed `.env` and `config/settings.yaml` are strictly ignored by `.gitignore` to prevent any credentials from entering public GitHub repository.
+  3. Recorded Decision `D-013` in [`docs/decision_log.md`](file:///d:/intrusion%20detection/docs/decision_log.md).
+* **Commands Executed:**
+  ```powershell
+  # 1. Generate 32-byte cryptographic random hex secrets
+  .\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32)); print(secrets.token_hex(32))"
+
+  # 2. Verify git status and ensure secrets are ignored
+  git status
+  ```
+* **Files Created / Modified:**
+  - `config/settings.yaml` (Local, Git-ignored)
+  - `.env` (Local, Git-ignored)
+  - `docs/decision_log.md` (Decision `D-013` added)
+  - `STEP_BY_STEP_GUIDE.md` (Step 4 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Entry 3.23 added)
+* **Verification Result:** Both files active locally, no secrets exposed in Git, allowlist confirmed. Step 4 status is ✅ Done.
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:
@@ -298,3 +342,4 @@ mongosh "mongodb://localhost:27017"
 ---
 
 *This execution record will be updated immediately after every subsequent step is executed.*
+

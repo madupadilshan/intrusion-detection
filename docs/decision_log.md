@@ -102,3 +102,13 @@ Every important project decision is written here: the date, the decision, the re
 - **Why:** Keeps development agile, avoids version pollution across global Python packages, and maintains strict dependency reproducibility without blocking dataset processing and model training on hardware tools.
 - **Who agreed:** project owner and team (22 Oct 2026).
 - **Proposal link:** Table 8; Section 3.3.
+
+## D-013 — 2026-10-23 — Finalize local settings, management allowlist, and secure secrets
+- **Decision:** Create local `config/settings.yaml` and `.env` (both Git-ignored):
+  - Management allowlist locked to Router (`192.168.50.1`), Sensor (`192.168.50.5`), Admin PC (`192.168.50.10`), and NVR (`192.168.50.20`) to prevent lockout (Proposal 3.7).
+  - Random seed fixed to `42` across all ML pipelines (Proposal 3.4).
+  - Start response parameters set: `min_confidence: 0.85`, `min_repeats: 3`, `repeat_window_seconds: 60`, `max_rule_minutes: 30`.
+  - Cryptographically secure 32-byte hexadecimal secret keys generated for `JWT_SECRET_KEY` and `FLASK_SECRET_KEY` in `.env` (Proposal 3.6).
+- **Why:** Centralizes configuration, strictly isolates secrets from Git, prevents self-lockout during firewall tests, and guarantees scientific reproducibility.
+- **Who agreed:** project owner and team (23 Oct 2026).
+- **Proposal link:** Sections 3.4, 3.6, 3.7; Table 7 (FR-06).
