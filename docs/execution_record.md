@@ -318,6 +318,49 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 6: Threat Model and Requirements Checklist
+
+* **Objective:** Formalize the system security threat model, attack vectors, flow trajectories, protected assets, and defensive boundaries (Proposal Sections 1.2, 1.5, 3.1, 3.7, 3.8; Tables 10, 11), and establish the definitive traceability checklist for all Functional Requirements (FR-01 to FR-08), Non-Functional Requirements (NFR-01 to NFR-05), Research Objectives (O1 to O6), and Research Questions (RQ1 to RQ5) / Hypothesis H1.
+* **Date:** 23 October 2026
+* **How It Was Done:**
+  1. Authoring System Threat Model ([`docs/threat_model.md`](file:///d:/intrusion%20detection/docs/threat_model.md)):
+     - Defined protected network assets: IP camera (`192.168.50.30`), NVR recorder (`192.168.50.20`), Gateway (`192.168.50.1`), Sensor node (`192.168.50.5`), Admin workstation (`192.168.50.10`), and video stream privacy.
+     - Profiled threat actors: External attacker (`10.10.10.0/24`) attempting scanning and floods; compromised IoT camera attempting outbound C&C beacons and lateral infection.
+     - Documented traffic trajectories: Inbound attacks (probes, SYN floods), Outbound attacks (Mirai heartbeats, file downloads), and Lateral camera streaming (normal RTSP traffic).
+     - Mapped the 6 standardized evaluation scenarios from Proposal Table 10 (Normal streaming, Port scan, DDoS flood, C&C beacon, File download, and Manual block/unblock).
+     - Defined defensive architecture and safety constraints: static management allowlist bypass, confidence ($\ge 0.85$) and repetition ($\ge 3$ within 60s) multi-checks, 30-minute rule auto-expiry, and strict metadata-only inspection policy.
+  2. Authoring Requirements Checklist ([`docs/requirements_checklist.md`](file:///d:/intrusion%20detection/docs/requirements_checklist.md)):
+     - Mapped all 8 Functional Requirements (FR-01 to FR-08) from Proposal Table 7 with priority (6 MUST, 2 SHOULD), verification method, and associated guide steps.
+     - Defined 5 Non-Functional Requirements: detection latency $< 2.0$s (NFR-01), sensor memory $< 1.0$ GB RAM (NFR-02), zero scenario leakage via group splits (NFR-03), Macro-F1 $> 0.90$ with FPR $< 1.0\%$ (NFR-04), and strict scientific reproducibility (NFR-05).
+     - Cross-referenced 6 Research Objectives (O1 to O6) from Proposal Table 3 with target deliverables and milestones.
+     - Documented alignment with Hypothesis H1 and Research Questions RQ1 through RQ5.
+  3. Verified consistency across all project documentation:
+     - Checked alignment with `config/settings.yaml` (allowlist, thresholds, retention).
+     - Updated Step 6 in `STEP_BY_STEP_GUIDE.md` and `PROJECT_PROGRESS_AND_CHALLENGES.md`.
+* **Commands Executed:**
+  ```powershell
+  # 1. Verify tracked and untracked files
+  git status
+
+  # 2. Stage new documentation files and updated records
+  git add docs/threat_model.md docs/requirements_checklist.md docs/execution_record.md
+
+  # 3. Commit changes to Git
+  git commit -m "Step 6: add threat model and requirements checklist"
+
+  # 4. Push commit to GitHub
+  git push origin main
+  ```
+* **Files Created / Modified:**
+  - `docs/threat_model.md` (Created, in Git)
+  - `docs/requirements_checklist.md` (Created, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 6 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.25 added)
+* **Verification Result:** Full traceability established. Zero hardware dependencies needed for ML track. Step 6 status is ✅ Done.
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:
