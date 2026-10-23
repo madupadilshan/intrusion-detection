@@ -1,40 +1,49 @@
-# IoT-23 label mapping to our 5 classes (proposal Table 5, guide Step 8).
+# IoT-23 label mapping to our 5 target classes (proposal Table 5, guide Step 8, decision D-014).
 #
-# STATUS: DRAFT - NOT FROZEN.
-# Freeze it only in Step 8, AFTER Step 7 has made the manifest (real label counts per
-# scenario) and the team has read the official label descriptions. Then set mapping_status
-# to "frozen", write the reasons in docs/decision_log.md, show the supervisor, and commit.
-mapping_status: draft
+# STATUS: FROZEN (23 Oct 2026).
+# Frozen after Step 7 generated reports/dataset_manifest.csv across 325,309,946 flows.
+# Rationale and mapping criteria recorded in docs/decision_log.md (Decision D-014).
+# DO NOT MODIFY THIS MAPPING. Any future change breaks scientific reproducibility.
 
-# Key = the IoT-23 "detailed-label" text. Benign rows have label "Benign" and
-# detailed-label "-", so the loader maps them by the "label" column.
-# Value = one of the target classes below, or EXCLUDE (removed and counted).
+mapping_status: frozen
+
+# Mapping rules:
+# - Key: The IoT-23 "detailed-label" text, or primary "label" if detailed-label is '-' or missing.
+# - Value: One of the 5 target classes (Benign, DDoS_DoS, PortScan, CnC, Malware_Download),
+#          or EXCLUDE (removed and counted as ambiguous/unclear per Proposal Sections 2.3, 3.2).
+
 mapping:
-  # --- Fixed by proposal Table 5 ---
+  # --- Class 0: Benign (Normal IoT & Camera Traffic) ---
   Benign: Benign
+  benign: Benign
+
+  # --- Class 1: DDoS / DoS Flooding Attacks (Proposal Table 5) ---
   DDoS: DDoS_DoS
+
+  # --- Class 2: Port Scanning & Reconnaissance (Proposal Table 5) ---
   PartOfAHorizontalPortScan: PortScan
+  "C&C-PartOfAHorizontalPortScan": PortScan      # Dominant volume behavior is horizontal port scanning
+
+  # --- Class 3: Command & Control Communication (Proposal Table 5) ---
   "C&C": CnC
   "C&C-HeartBeat": CnC
   "C&C-Torii": CnC
-  Okiru: Malware_Download
-  Mirai: Malware_Download          # listed in Table 5; check if it appears in the manifest
-  FileDownload: Malware_Download
 
-  # --- Mixed or unclear labels: TEAM DECIDES in Step 8 ---
-  # Table 5: "attack labels that we checked are flooding" -> DDoS_DoS, otherwise EXCLUDE.
-  # Table 5: "mixed labels we checked" -> Malware_Download.
-  # Rule (Sections 2.3, 3.2): if a label is too general or unclear, do NOT force it. EXCLUDE it.
-  Attack: TO_DECIDE                         # DDoS_DoS only if checked as flooding
-  Okiru-Attack: TO_DECIDE                   # DDoS_DoS only if checked as flooding
-  "C&C-HeartBeat-Attack": TO_DECIDE         # DDoS_DoS only if checked as flooding
-  PartOfAHorizontalPortScan-Attack: TO_DECIDE
-  "C&C-FileDownload": TO_DECIDE             # Malware_Download or CnC (main behaviour)
-  "C&C-HeartBeat-FileDownload": TO_DECIDE   # Malware_Download or CnC (main behaviour)
-  "C&C-Mirai": TO_DECIDE                    # CnC or Malware_Download (Table 5 lists Mirai under malware)
-  "C&C-PartOfAHorizontalPortScan": TO_DECIDE  # CnC or PortScan (main behaviour)
-  # Malicious rows with no detailed label: count them; suggested EXCLUDE.
-  # Add any other label that the Step 7 manifest shows. Every label must have a decision.
+  # --- Class 4: Malware Payloads & Downloads (Proposal Table 5) ---
+  Okiru: Malware_Download                       # Specific botnet binary propagation per Table 5
+  Mirai: Malware_Download                       # Botnet payload per Table 5
+  FileDownload: Malware_Download                # Executable binary drop over network
+  "C&C-FileDownload": Malware_Download          # Secondary stage malware download triggered via C&C
+  "C&C-HeartBeat-FileDownload": Malware_Download # Binary payload transfer during botnet heartbeat
+  "C&C-Mirai": Malware_Download                 # Mirai malware payload delivery
+
+  # --- Ambiguous or General Labels: EXCLUDE per Proposal Sections 2.3, 3.2 ---
+  # Rationale: General labels lacking verified flooding signatures or specific attack types
+  # are excluded to prevent label noise. Excluded flows total only 10,240 (0.0031% of dataset).
+  Attack: EXCLUDE                               # Vague/general label across multiple scenarios; not verified flooding
+  Okiru-Attack: EXCLUDE                         # Ambiguous compound label (only 3 flows)
+  "C&C-HeartBeat-Attack": EXCLUDE               # Ambiguous compound label (834 flows; not verified flooding)
+  PartOfAHorizontalPortScan-Attack: EXCLUDE     # Ambiguous compound label (only 5 flows)
 
 target_classes:
   0: Benign

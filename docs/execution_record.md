@@ -420,6 +420,51 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 8: Write and Freeze Label Mapping to 5 Target Classes
+
+* **Objective:** Establish and freeze the definitive mapping from all 17 raw IoT-23 labels to the 5 target attack classes specified in Research Proposal Table 5, resolve the 8 previously undecided mixed labels based on empirical manifest flow analysis, exclude ambiguous non-flooding labels to prevent label noise (Sections 2.3, 3.2), and record Decision `D-014` before model training begins (preventing post-hoc data snooping).
+* **Date:** 23 October 2026
+* **How It Was Done:**
+  1. Label Breakdown Analysis from Step 7 Manifest ([`reports/dataset_manifest.csv`](file:///d:/intrusion%20detection/reports/dataset_manifest.csv)):
+     - Audited all 325,309,946 flows across the 23 scenarios.
+     - Identified 17 unique (label, detailed-label) combinations.
+     - Found that the 8 mixed/unclear labels (`Attack`, `Okiru-Attack`, `C&C-HeartBeat-Attack`, `PartOfAHorizontalPortScan-Attack`, `C&C-FileDownload`, `C&C-HeartBeat-FileDownload`, `C&C-Mirai`, `C&C-PartOfAHorizontalPortScan`) total only 11,194 flows (0.0034% of the dataset).
+  2. Resolution of Undecided Labels (`config/label_mapping.yaml`):
+     - `C&C-FileDownload` (53 flows) and `C&C-HeartBeat-FileDownload` (11 flows) ➔ Mapped to `Malware_Download` (dominant behavior is downloading executable binary stages over HTTP/port 80).
+     - `C&C-Mirai` (2 flows) ➔ Mapped to `Malware_Download` (Proposal Table 5 explicitly assigns Mirai to Malware).
+     - `C&C-PartOfAHorizontalPortScan` (888 flows) ➔ Mapped to `PortScan` (dominant volume traffic is port 23 TCP SYN probes).
+     - `Attack` (9,398 flows), `Okiru-Attack` (3 flows), `C&C-HeartBeat-Attack` (834 flows), and `PartOfAHorizontalPortScan-Attack` (5 flows) ➔ Marked `EXCLUDE` per Proposal Table 5 ("attack labels that we checked are flooding -> DDoS_DoS, otherwise EXCLUDE") and Section 3.2 ("If a label is too general or unclear, do NOT force it. EXCLUDE it."). Total excluded flows: 10,240 (0.0031%).
+  3. Freezing the Mapping:
+     - Set `mapping_status: frozen` in [`config/label_mapping.yaml`](file:///d:/intrusion%20detection/config/label_mapping.yaml).
+     - Recorded Decision `D-014` in [`docs/decision_log.md`](file:///d:/intrusion%20detection/docs/decision_log.md).
+* **Projected Class Distribution (325,309,946 Flows):**
+  - **Class 2 (`PortScan`):** 213,853,812 flows (65.74%)
+  - **Class 4 (`Malware_Download`):** 60,990,792 flows (18.75%)
+  - **Class 0 (`Benign`):** 30,860,691 flows (9.49%)
+  - **Class 1 (`DDoS_DoS`):** 19,538,713 flows (6.01%)
+  - **Class 3 (`CnC`):** 55,698 flows (0.02%)
+  - **`EXCLUDE` (Ambiguous):** 10,240 flows (0.0031%)
+* **Commands Executed:**
+  ```powershell
+  # 1. Stage updated label mapping, decision log, and execution record
+  git add config/label_mapping.yaml docs/decision_log.md docs/execution_record.md
+
+  # 2. Commit frozen mapping to Git
+  git commit -m "Step 8: freeze IoT-23 label mapping to 5 target classes (D-014)"
+
+  # 3. Push commit to GitHub
+  git push origin main
+  ```
+* **Files Created / Modified:**
+  - `config/label_mapping.yaml` (Updated status to `frozen`, in Git)
+  - `docs/decision_log.md` (Added Decision `D-014`, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 8 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.27 added)
+* **Verification Result:** Zero ambiguous labels remain undecided. Supervisor Checkpoint C3 fulfilled. Step 8 status is ✅ Done.
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:

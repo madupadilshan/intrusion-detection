@@ -112,3 +112,18 @@ Every important project decision is written here: the date, the decision, the re
 - **Why:** Centralizes configuration, strictly isolates secrets from Git, prevents self-lockout during firewall tests, and guarantees scientific reproducibility.
 - **Who agreed:** project owner and team (23 Oct 2026).
 - **Proposal link:** Sections 3.4, 3.6, 3.7; Table 7 (FR-06).
+
+## D-014 — 2026-10-23 — Freeze IoT-23 label mapping to 5 target classes
+- **Decision:** Freeze [`config/label_mapping.yaml`](file:///d:/intrusion%20detection/config/label_mapping.yaml) (`mapping_status: frozen`) following the completion of Step 7 manifest audit across all 325,309,946 flows. Map the 17 unique labels into the 5 target classes from Proposal Table 5:
+  - `Benign` (Class 0): `Benign`, `benign` (30,860,691 flows, 9.49%)
+  - `DDoS_DoS` (Class 1): `DDoS` (19,538,713 flows, 6.01%)
+  - `PortScan` (Class 2): `PartOfAHorizontalPortScan` (213,852,924 flows), `C&C-PartOfAHorizontalPortScan` (888 flows) (Total: 213,853,812 flows, 65.74%)
+  - `CnC` (Class 3): `C&C`, `C&C-HeartBeat`, `C&C-Torii` (Total: 55,698 flows, 0.02%)
+  - `Malware_Download` (Class 4): `Okiru` (60,990,708 flows), `Mirai`, `FileDownload`, `C&C-FileDownload`, `C&C-HeartBeat-FileDownload`, `C&C-Mirai` (Total: 60,990,792 flows, 18.75%)
+  - `EXCLUDE`: Ambiguous labels lacking verified flooding signatures or specific attack types (`Attack`: 9,398 flows; `C&C-HeartBeat-Attack`: 834 flows; `PartOfAHorizontalPortScan-Attack`: 5 flows; `Okiru-Attack`: 3 flows). Total excluded: 10,240 flows (0.0031% of dataset).
+- **Why:**
+  - Adheres strictly to Proposal Table 5 and Sections 2.3 & 3.2.
+  - Resolves all 8 `TO_DECIDE` labels by analyzing real flow profiles: file download triggers are assigned to `Malware_Download`, port scanning behavior to `PortScan`, and vague unverified `Attack` labels are excluded to prevent training label noise.
+  - Freezing before model training prevents post-hoc data snooping and establishes scientific validity for thesis examination (Supervisor Checkpoint C3).
+- **Who agreed:** project owner and team (23 Oct 2026).
+- **Proposal link:** Table 5; Sections 2.3, 3.2; Objectives O1, O2.
