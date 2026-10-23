@@ -361,6 +361,65 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 7: Official IoT-23 Dataset Placement and Manifest Generation
+
+* **Objective:** Ingest the complete official IoT-23 dataset (v1.0.0) into `data/raw/iot23/`, replace flawed unverified legacy data, compute cryptographic SHA-256 hashes across all 23 scenario files, count total connection flows and label breakdowns, and generate the definitive audit manifest (`reports/dataset_manifest.csv`) for scientific reproducibility (Proposal Section 3.2, Objective O1).
+* **Date:** 23 October 2026
+* **How It Was Done:**
+  1. Dataset Placement:
+     - Verified official IoT-23 files located in `D:\Download\archive` containing 23 scenario CSVs (`dataset1.csv` through `dataset23.csv`).
+     - Moved all 23 scenario files (44.13 GB total) into the designated local folder `data/raw/iot23/`.
+     - Confirmed `data/raw/` is strictly ignored by `.gitignore` so no multi-gigabyte data files enter Git version control.
+  2. Manifest Script Implementation ([`ml_engine/manifest.py`](file:///d:/intrusion%20detection/ml_engine/manifest.py)):
+     - Designed single-pass streaming architecture to read files line-by-line in binary mode (`hasher.update()`).
+     - Mapped each file to its corresponding official CTU scenario ID (`CTU-IoT-Malware-Capture-*` and `CTU-Honeypot-Capture-*`).
+     - Kept peak memory footprint under 100 MB RAM to safely execute on host PC (11.7 GB RAM).
+     - Calculated total rows, benign vs malicious counts, and detailed label distributions for each scenario.
+  3. Execution & Verification:
+     - Executed `ml_engine/manifest.py` inside `.venv` on development PC.
+     - Processed all 23 files in 572.9 seconds (~9.5 minutes) at an average rate of ~568,000 flows/second.
+     - Generated official audit manifest: [`reports/dataset_manifest.csv`](file:///d:/intrusion%20detection/reports/dataset_manifest.csv).
+* **Commands Executed:**
+  ```powershell
+  # 1. Move scenario files from download location to raw data folder
+  Move-Item -Path "D:\Download\archive\*.csv" -Destination "D:\intrusion detection\data\raw\iot23\" -Force
+
+  # 2. Run the manifest generator inside .venv
+  .\.venv\Scripts\python.exe ml_engine/manifest.py
+
+  # 3. Check Git status and track manifest deliverables
+  git add ml_engine/manifest.py reports/dataset_manifest.csv docs/execution_record.md
+  git commit -m "Step 7: generate official IoT-23 dataset manifest with SHA-256 hashes"
+  git push origin main
+  ```
+* **Audit Summary from `reports/dataset_manifest.csv`:**
+  - Total Scenarios Processed: 23 (20 Malware, 3 Benign)
+  - Total Disk Footprint: 44.13 GB
+  - Total Processed Connection Flows: **325,309,946**
+  - Processing Runtime: 572.9 seconds (9.55 minutes)
+  - Scenario Breakdown Highlights:
+    - `dataset1.csv` (`CTU-Honeypot-Capture-4-1`, Philips Hue): 452 rows (452 Benign) | SHA256: `b06bdc4d7de8...`
+    - `dataset2.csv` (`CTU-Honeypot-Capture-5-1`, Amazon Echo): 1,374 rows (1,374 Benign) | SHA256: `4fc5fec1414f...`
+    - `dataset3.csv` (`CTU-Honeypot-Capture-7-1`, Somfy Doorlock): 130 rows (130 Benign) | SHA256: `a0ada4f95dda...`
+    - `dataset4.csv` (`CTU-IoT-Malware-Capture-8-1`, Hakai): 6,378,293 rows | SHA256: `d442d4fe1806...`
+    - `dataset6.csv` (`CTU-IoT-Malware-Capture-7-1`, Mirai): 11,454,714 rows | SHA256: `b63cc09f5873...`
+    - `dataset7.csv` (`CTU-IoT-Malware-Capture-60-1`, Gagfyt): 3,581,028 rows | SHA256: `2239ed7d1288...`
+    - `dataset12.csv` (`CTU-IoT-Malware-Capture-43-1`, Mirai): 67,321,809 rows | SHA256: `8dac6b3cb9c3...`
+    - `dataset14.csv` (`CTU-IoT-Malware-Capture-39-1`, Muhstik): 73,568,981 rows | SHA256: `b22fcbb94d07...`
+    - `dataset17.csv` (`CTU-IoT-Malware-Capture-34-1`, Mirai): 23,145 rows | SHA256: `2ea17a6fde41...`
+    - `dataset18.csv` (`CTU-IoT-Malware-Capture-33-1`, Kenjiro): 54,454,591 rows | SHA256: `c0d67cebdf09...`
+    - `dataset22.csv` (`CTU-IoT-Malware-Capture-17-1`, Kenjiro): 54,659,855 rows | SHA256: `536bebcca1f9...`
+    - `dataset23.csv` (`CTU-IoT-Malware-Capture-1-1`, Hide and Seek): 1,008,748 rows | SHA256: `8cc68c096c8e...`
+* **Files Created / Modified:**
+  - `ml_engine/manifest.py` (Created, in Git)
+  - `reports/dataset_manifest.csv` (Created, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 7 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.26 added)
+* **Verification Result:** All 23 scenarios verified with SHA-256 integrity proofs. Objective O1 satisfied. Step 7 status is ✅ Done.
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:
