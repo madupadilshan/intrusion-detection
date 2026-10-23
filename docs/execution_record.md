@@ -465,6 +465,49 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 9: Data-Quality Report and Dataset Feature Audit
+
+* **Objective:** Conduct a comprehensive empirical data quality audit across the official IoT-23 dataset (v1.0.0), compute the definitive Class × Scenario distribution matrix across all 325,309,946 flows, analyze missing values (`-`), audit feature distributions and categorical cardinalities, evaluate held-out scenario candidates, and generate visual charts and the official audit report (`reports/data_quality_report.md`) per Proposal Section 3.2 & Objective O1.
+* **Date:** 23 October 2026
+* **How It Was Done:**
+  1. Implemented Data Quality Auditor ([`ml_engine/data_quality.py`](file:///d:/intrusion%20detection/ml_engine/data_quality.py)):
+     - Integrated `reports/dataset_manifest.csv` and frozen `config/label_mapping.yaml` (D-014) to build the 100% exact Class × Scenario distribution matrix covering all 325,309,946 flows.
+     - Implemented stratified streaming sampler to inspect ~620,000 connection flows across all 23 scenarios with memory utilization under 200 MB RAM.
+     - Calculated missing rate percentages for all fields (`duration`: 61.46%, `orig_bytes`: 61.46%, `resp_bytes`: 61.46%, `service`: 98.48%).
+     - Audited numerical statistics (min, max, median, 95th/99th percentiles, zero rates) for `duration`, `orig_bytes`, `resp_bytes`, `orig_pkts`, `resp_pkts`.
+     - Analyzed categorical cardinalities (`proto`: 94.72% TCP, 5.07% UDP; `conn_state`: 86.95% `S0`, 9.04% `OTH`, 2.02% `SF`).
+  2. Generated Visualization Charts:
+     - `reports/data_quality_class_distribution.png`: Log-scale bar chart showing distribution across the 5 target classes.
+     - `reports/data_quality_scenario_matrix.png`: Heatmap matrix showing class representations across the 23 scenarios.
+  3. Formulated Engineering Recommendations:
+     - Imputation strategy for Step 10: `duration` ➔ `0.0`, `orig_bytes`/`resp_bytes` ➔ `0`, `service` ➔ `'unknown'`.
+     - Feature engineering targets for Step 11: `is_incomplete_flow` flag, directional byte/packet ratios, destination port binning.
+     - Sampling plan for Step 12: Preserve all 55,698 `CnC` flows, downsample `PortScan` to 400,000, `Malware_Download` to 350,000, and retain benign baseline flows.
+     - Held-out scenario candidates for Step 13: Identified `CTU-IoT-Malware-Capture-34-1` (Mirai, 4 classes) and `CTU-IoT-Malware-Capture-48-1` (Mirai, 3 classes) as optimal candidates.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run data quality auditor inside .venv
+  .\.venv\Scripts\python.exe ml_engine/data_quality.py
+
+  # 2. Stage new script, report, charts, and execution record
+  git add ml_engine/data_quality.py reports/data_quality_report.md reports/data_quality_class_distribution.png reports/data_quality_scenario_matrix.png docs/execution_record.md
+
+  # 3. Commit and push to GitHub
+  git commit -m "Step 9: generate data quality report and feature distributions audit"
+  git push origin main
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/data_quality.py` (Created, in Git)
+  - `reports/data_quality_report.md` (Created, in Git)
+  - `reports/data_quality_class_distribution.png` (Created, in Git)
+  - `reports/data_quality_scenario_matrix.png` (Created, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 9 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.28 added)
+* **Verification Result:** Full Class × Scenario matrix verified. Missing rates and statistical distributions documented. Objective O1 completed. Step 9 status is ✅ Done.
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:
