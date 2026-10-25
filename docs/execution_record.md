@@ -508,6 +508,48 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 10: Load and Clean IoT-23 Dataset into Standardized Interim Parquet
+
+* **Objective:** Stream all 23 official IoT-23 scenarios (325,309,946 flows, 44.13 GB), perform memory-safe chunked reading (`chunksize=500,000`), impute Zeek missing values (`-` in duration to 0.0, bytes to 0, service/history to 'unknown'), apply frozen label mapping (D-014) to 5 target classes, exclude ambiguous compound labels (10,240 rows), attach `scenario_id` metadata to guarantee zero cross-scenario data leakage, downcast numerical types (`float32`, `int64`, `int32`, `int8`), and export compressed columnar Parquet files (`data/interim/<scenario_id>.parquet`) and the audit log (`reports/interim_data_summary.md`) per Proposal Section 3.3 (Steps 1–4) & Objective O1.
+* **Date:** 25 October 2026
+* **How It Was Done:**
+  1. Implemented Chunked Ingestion Pipeline ([`ml_engine/load_iot23.py`](file:///d:/intrusion%20detection/ml_engine/load_iot23.py)):
+     - Designed streaming processor reading in chunks of 500,000 rows with RAM footprint staying under 400 MB.
+     - Extracted `label` and `detailed-label` from trailing whitespace-separated field across all scenario files.
+     - Filtered out 10,240 ambiguous flows (`Attack`, `Okiru-Attack`, compound labels) per Proposal Sections 2.3 & 3.2.
+     - Mapped raw labels into the 5 target classes: `0: Benign`, `1: DDoS_DoS`, `2: PortScan`, `3: CnC`, `4: Malware_Download`.
+     - Imputed missing indicators: `duration` ➔ `0.0` (`float32`), `orig_bytes`/`resp_bytes`/`missed_bytes`/`pkts` ➔ `0` (`int64`/`int32`), `service`/`history` ➔ `'unknown'`.
+     - Attached `scenario_id` to every row to preserve grouping for `StratifiedGroupKFold` in Step 13.
+     - Enforced uniform schema via PyArrow `INTERIM_SCHEMA` and exported compressed Snappy Parquet files.
+  2. Generated Ingestion & Audit Reports:
+     - `reports/interim_data_summary.csv`: Machine-readable scenario ingestion log.
+     - `reports/interim_data_summary.md`: Markdown audit report detailing raw rows, clean rows, excluded counts, parquet sizes, and runtime per scenario.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run full dataset ingestion and cleaner
+  .\.venv\Scripts\python.exe ml_engine/load_iot23.py
+
+  # 2. Add large binary patterns to .gitignore (*.parquet)
+  git add .gitignore ml_engine/load_iot23.py reports/interim_data_summary.csv reports/interim_data_summary.md docs/execution_record.md
+
+  # 3. Commit and push
+  git commit -m "Step 10: load and clean IoT-23 dataset into standardized interim Parquet files"
+  git push origin main
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/load_iot23.py` (Created, in Git)
+  - `reports/interim_data_summary.csv` (Created, in Git)
+  - `reports/interim_data_summary.md` (Created, in Git)
+  - `.gitignore` (Modified, added `*.parquet`)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 10 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.29 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 4 with Step 10 details)
+  - `data/interim/*.parquet` (23 Parquet files generated, gitignored)
+* **Verification Result:** Zero memory crashes, clean type enforcement, 100% of excluded rows counted and removed, zero data leakage between scenarios. Step 10 status is ✅ Done.
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:

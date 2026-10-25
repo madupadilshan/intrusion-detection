@@ -1,0 +1,2 @@
+scenario_id,raw_file,raw_rows,clean_rows,excluded_rows,parquet_file,parquet_size_mb,elapsed_sec,rows_per_sec,class_counts,status
+CTU-IoT-Malware-Capture-1-1,dataset23.csv,1008748,1008748,0,CTU-IoT-Malware-Capture-1-1.parquet,40.16,13.43,75123.2,"{""Benign"": 469275, ""DDoS_DoS"": 0, ""PortScan"": 539465, ""CnC"": 8, ""Malware_Download"": 0}",processed

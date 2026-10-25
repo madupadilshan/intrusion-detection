@@ -13,6 +13,7 @@ archive/
 *.pcap
 *.pcapng
 *.log
+*.parquet
 
 # CSV files are usually data. Result tables in reports/ ARE kept
 # (for example reports/dataset_manifest.csv in Step 7).
