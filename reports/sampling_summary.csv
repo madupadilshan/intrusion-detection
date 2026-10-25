@@ -1,0 +1,24 @@
+scenario_id,split,raw_total,sampled_total,Benign,DDoS_DoS,PortScan,CnC,Malware_Download
+CTU-IoT-Malware-Capture-34-1,Held-Out (Level 2),23145,23145,1923,14394,122,6706,0
+CTU-Honeypot-Capture-4-1,Train / Level 1 CV,452,452,452,0,0,0,0
+CTU-Honeypot-Capture-5-1,Train / Level 1 CV,1374,1374,1374,0,0,0,0
+CTU-Honeypot-Capture-7-1,Train / Level 1 CV,130,130,130,0,0,0,0
+CTU-IoT-Malware-Capture-1-1,Train / Level 1 CV,1008748,100008,50000,0,50000,8,0
+CTU-IoT-Malware-Capture-17-1,Train / Level 1 CV,54659846,188272,31438,50000,50000,6834,50000
+CTU-IoT-Malware-Capture-20-1,Train / Level 1 CV,3209,3209,3193,0,0,16,0
+CTU-IoT-Malware-Capture-21-1,Train / Level 1 CV,3286,3286,3272,0,0,14,0
+CTU-IoT-Malware-Capture-3-1,Train / Level 1 CV,150141,54544,4536,0,50000,8,0
+CTU-IoT-Malware-Capture-33-1,Train / Level 1 CV,54454591,155278,50000,0,50000,5278,50000
+CTU-IoT-Malware-Capture-35-1,Train / Level 1 CV,13645095,68351,2663,0,0,15688,50000
+CTU-IoT-Malware-Capture-36-1,Train / Level 1 CV,10447784,100093,50000,50000,0,81,12
+CTU-IoT-Malware-Capture-39-1,Train / Level 1 CV,73568304,58867,7337,0,50000,1530,0
+CTU-IoT-Malware-Capture-42-1,Train / Level 1 CV,4426,4426,4420,0,0,0,6
+CTU-IoT-Malware-Capture-43-1,Train / Level 1 CV,67321809,203498,50000,50000,50000,3498,50000
+CTU-IoT-Malware-Capture-44-1,Train / Level 1 CV,237,237,211,1,0,14,11
+CTU-IoT-Malware-Capture-48-1,Train / Level 1 CV,3390752,53745,3734,0,50000,0,11
+CTU-IoT-Malware-Capture-49-1,Train / Level 1 CV,5410561,55602,3665,0,50000,1922,15
+CTU-IoT-Malware-Capture-52-1,Train / Level 1 CV,19781378,51814,1794,0,50000,6,14
+CTU-IoT-Malware-Capture-60-1,Train / Level 1 CV,3581028,52571,2476,50000,0,95,0
+CTU-IoT-Malware-Capture-7-1,Train / Level 1 CV,11454714,145362,50000,39584,0,5778,50000
+CTU-IoT-Malware-Capture-8-1,Train / Level 1 CV,6378293,72548,22548,0,50000,0,0
+CTU-IoT-Malware-Capture-9-1,Train / Level 1 CV,10403,10403,2181,0,0,8222,0

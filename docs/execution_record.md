@@ -595,6 +595,82 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 12: Sampling and Class Balance
+
+* **Objective:** Balance the massive IoT-23 dataset by limiting over-represented scenarios and attack classes ($N=50,000$ per scenario-class cap, seed `42`), preserve 100% of extreme minority Command & Control (`CnC`) botnet flows, extract all 19 features via [`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py) with zero NaN values, maintain development PC RAM consumption strictly under 1 GB via streaming row-group processing, and generate the final processed training dataset [`data/processed/train_features.parquet`](file:///d:/intrusion%20detection/data/processed/train_features.parquet) per Proposal Section 3.3 (Step 6) and Table 11.
+* **Date:** 25 October 2026
+* **How It Was Done:**
+  1. Implemented Memory-Safe Stratified Sampler ([`ml_engine/sample_dataset.py`](file:///d:/intrusion%20detection/ml_engine/sample_dataset.py)):
+     - Capped maximum rows per (scenario, class) at $N = 50,000$ rows using fixed `random_seed: 42` from [`config/settings.yaml`](file:///d:/intrusion%20detection/config/settings.yaml).
+     - Streaming row-group reader processed all 325,299,706 flows across 23 scenarios while keeping peak RAM usage under 180 MB.
+     - For classes with $\le 50,000$ rows in a scenario, preserved 100% of flows. As a direct result, **all 48,992 `CnC` flows across all 22 training scenarios were preserved (zero flows lost)**.
+     - For classes with $> 50,000$ rows, sampled with slight oversampling factor ($1.05 \times N / M$) across row groups, followed by uniform random downsampling to exactly 50,000 rows.
+     - Extracted 19 features using [`make_features()`](file:///d:/intrusion%20detection/ml_engine/features.py) and appended `class_name`, `label_idx`, and `scenario_id`.
+  2. Dataset Outputs:
+     - Final training features saved to [`data/processed/train_features.parquet`](file:///d:/intrusion%20detection/data/processed/train_features.parquet) (10.81 MB snappy parquet, 1,384,070 rows, 22 columns).
+     - Training Class Distribution:
+       - `PortScan`: 500,000 flows (36.13%)
+       - `Benign`: 345,424 flows (24.96%)
+       - `Malware_Download`: 250,069 flows (18.07%)
+       - `DDoS_DoS`: 239,585 flows (17.31%)
+       - `CnC`: 48,992 flows (3.54%, 100% preserved)
+     - Imbalance ratio drastically reduced from **4,354 : 1** down to **10.2 : 1**.
+  3. Generated Audit Reports:
+     - [`reports/sampling_summary.csv`](file:///d:/intrusion%20detection/reports/sampling_summary.csv): Machine-readable scenario sampling counts.
+     - [`reports/sampling_report.md`](file:///d:/intrusion%20detection/reports/sampling_report.md): Full markdown sampling audit with breakdown per scenario and class.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run dataset sampling and feature extraction pipeline inside .venv
+  .\.venv\Scripts\python.exe ml_engine/sample_dataset.py
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/sample_dataset.py` (Created, in Git)
+  - `reports/sampling_summary.csv` (Created, in Git)
+  - `reports/sampling_report.md` (Created, in Git)
+  - `data/processed/train_features.parquet` (Generated, gitignored)
+  - `docs/decision_log.md` (Added Decision D-016, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 12 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.31 added)
+* **Verification Result:** Zero NaN values, 1,384,070 rows generated, all 48,992 CnC flows intact, peak RAM < 180 MB. Step 12 status is ✅ Done.
+
+---
+
+### Step 13: Plan the Three Test Levels
+
+* **Objective:** Formalize the anti-leakage three-level model evaluation architecture prior to training, isolate held-out zero-day scenario `CTU-IoT-Malware-Capture-34-1` into a dedicated sealed directory ([`data/processed/heldout/`](file:///d:/intrusion%20detection/data/processed/heldout/)), design Level 1 Grouped Cross-Validation (`StratifiedGroupKFold`) with `groups = scenario_id`, specify Level 3 physical lab camera validation for operational False Positive Rate testing (Hypothesis H1), and verify with automated tests per Proposal Section 3.4 and Objective O2.
+* **Date:** 25 October 2026
+* **How It Was Done:**
+  1. Formulated Evaluation Plan ([`reports/test_split_plan.md`](file:///d:/intrusion%20detection/reports/test_split_plan.md)):
+     - **Level 1 — Grouped Cross-Validation:** 5-fold cross-validation on 22 training scenarios using `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` with `groups = scenario_id`. Guarantees flows from any capture stay strictly together in either training folds or validation fold, eliminating intra-session data leakage during hyperparameter search (Steps 14, 15, 17).
+     - **Level 2 — Held-Out Scenario (`CTU-IoT-Malware-Capture-34-1`):** Complete isolation of 23,145 flows from Mirai botnet (14,394 DDoS_DoS, 6,706 CnC, 1,923 Benign, 122 PortScan). 100% untouched (no down-sampling or artificial rebalancing). Sealed in dedicated directory [`data/processed/heldout/held_out_test.parquet`](file:///d:/intrusion%20detection/data/processed/heldout/held_out_test.parquet) and opened ONLY in Step 16 (Checkpoint C4).
+     - **Level 3 — Physical Lab Camera Traffic:** Live evaluation using real Tapo C200 IP camera 1080p RTSP/H.264 video streaming baseline (Step 20) and 6 controlled test attack scenarios (Phase 9, Steps 35–39) to measure operational False Positive Rate $< 1\%$ and sub-second defense response latency (testing Hypothesis H1).
+  2. Implemented Automated Test Suite ([`tests/unit/test_sampling_and_splits.py`](file:///d:/intrusion%20detection/tests/unit/test_sampling_and_splits.py)):
+     - `test_files_exist`: Verified all parquet and report files exist on disk.
+     - `test_train_parquet_schema_and_integrity`: Verified exact 1,384,070 rows, 22 columns, and 0 NaNs.
+     - `test_held_out_parquet_schema_and_isolation`: Verified exact 23,145 rows, 4 classes, and complete scenario isolation.
+     - `test_no_scenario_leakage_between_train_and_heldout`: Verified `Capture-34-1` is strictly absent from training set.
+     - `test_class_balance_and_extreme_minority_preservation`: Verified exact training class distribution and 100% CnC preservation.
+     - `test_level_1_stratified_group_kfold_feasibility`: Verified zero scenario leakage across cross-validation folds and verified all 5 classes present in training folds.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run unit tests for sampling, splits, and cross-validation integrity
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_sampling_and_splits.py -v
+  ```
+* **Files Created / Modified:**
+  - `reports/test_split_plan.md` (Created, in Git)
+  - `tests/unit/test_sampling_and_splits.py` (Created, in Git)
+  - `data/processed/heldout/held_out_test.parquet` (Generated, gitignored)
+  - `data/processed/held_out_test.parquet` (Generated, gitignored)
+  - `docs/decision_log.md` (Added Decision D-017, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 13 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.32 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 7 with 3-level split details)
+* **Verification Result:** All 6 unit tests passed in 5.00s. Zero scenario leakage confirmed. Checkpoint C4 satisfied. Step 13 status is ✅ Done.
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:

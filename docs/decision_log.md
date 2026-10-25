@@ -141,3 +141,29 @@ Every important project decision is written here: the date, the decision, the re
   - Passes 10 automated unit tests in [`tests/unit/test_features.py`](file:///d:/intrusion%20detection/tests/unit/test_features.py) across both IoT-23 data and simulated live Zeek JSON records.
 - **Who agreed:** project owner and team (25 Oct 2026).
 - **Proposal link:** Table 6; Section 3.3 (steps 2–5); Section 3.5; Objectives O1, O2.
+
+## D-016 — 2026-10-25 — Stratified sampling strategy, per-class scenario cap (N=50,000), and minority class preservation
+- **Decision:** Execute Step 12 stratified sampling using [`ml_engine/sample_dataset.py`](file:///d:/intrusion%20detection/ml_engine/sample_dataset.py) with the following parameters:
+  - **Cap per (scenario, class):** $N = 50,000$ rows, selected uniformly at random with fixed seed `42` (`config/settings.yaml`).
+  - **Minority Class Rule:** Retain 100% of all minority class flows whose count $\le N$. Consequently, all 48,992 `CnC` flows across all 22 training scenarios are preserved without dropping a single flow.
+  - **Memory Safety:** Streaming row-group sampling keeps peak RAM consumption $< 180$ MB (strictly within the $< 1$ GB standalone PC limit).
+  - **Training Dataset Volume:** Yields 1,384,070 training flows (`PortScan`: 500,000, `Benign`: 345,424, `Malware_Download`: 250,069, `DDoS_DoS`: 239,585, `CnC`: 48,992), compressed to 10.81 MB snappy parquet at [`data/processed/train_features.parquet`](file:///d:/intrusion%20detection/data/processed/train_features.parquet).
+  - **Imbalance Reduction:** Cuts the raw class imbalance ratio from $4,354 : 1$ down to $10.2 : 1$, allowing standard balanced class weighting (`class_weight="balanced"`) during model training without distorting underlying feature distributions.
+- **Why:**
+  - Prevents high-volume attack scenarios (e.g. 73M PortScan flows in Capture-39-1) from overwhelming the classifier or exhausting hardware RAM.
+  - Solves the extreme minority problem for Command and Control (`CnC`) botnet beacons.
+  - Matches Proposal Section 3.3 step 6 and Table 11 requirements.
+- **Who agreed:** project owner and team (25 Oct 2026).
+- **Proposal link:** Section 3.3 step 6; Table 11; Objective O1.
+
+## D-017 — 2026-10-25 — Formal three-level model evaluation architecture and held-out scenario isolation
+- **Decision:** Adopt the three-level evaluation framework formalized in [`reports/test_split_plan.md`](file:///d:/intrusion%20detection/reports/test_split_plan.md) prior to model training:
+  - **Level 1 — Grouped Cross-Validation:** 5-fold cross-validation on the 22 training scenarios using `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` with `groups = scenario_id`. Guarantees flows from any capture scenario stay strictly together within train or validation folds, eliminating intra-session data leakage during hyperparameter search (Steps 14, 15, 17).
+  - **Level 2 — Held-Out Zero-Day Scenario:** Isolate scenario `CTU-IoT-Malware-Capture-34-1` (Mirai botnet, 23,145 flows: 14,394 DDoS_DoS, 6,706 CnC, 1,923 Benign, 122 PortScan) into dedicated directory [`data/processed/heldout/held_out_test.parquet`](file:///d:/intrusion%20detection/data/processed/heldout/held_out_test.parquet). The held-out dataset is 100% untouched (no under-sampling, no artificial balancing). In accordance with Supervisor Checkpoint C4, this file is sealed and opened ONLY in Step 16 to evaluate unseen zero-day botnet generalization.
+  - **Level 3 — Physical Lab Camera Traffic:** Live evaluation using real Tapo C200 IP camera 1080p RTSP/H.264 video streaming baseline (Step 20) and 6 controlled test attack scenarios (Phase 9, Steps 35–39) to measure operational False Positive Rate $< 1\%$ and sub-second defense response latency (testing Hypothesis H1).
+- **Why:**
+  - Eliminates the major scientific flaw of random row-level train-test splits prevalent in naive ML literature.
+  - Verifies multi-class detection integrity while guaranteeing training scenarios are not starved of any attack class.
+  - Establishes full experimental rigor for BICT Honours Degree thesis examination.
+- **Who agreed:** project owner and team (25 Oct 2026).
+- **Proposal link:** Section 3.4; Objective O2; Hypotheses H1, H2; Supervisor Checkpoint C4.

@@ -180,3 +180,4 @@ class TestFeaturePreprocessor:
         X_scaled = preprocessor_scaled.fit_transform(features_df)
         assert X_scaled.shape[0] == 3
         assert not np.isnan(X_scaled).any()
+
