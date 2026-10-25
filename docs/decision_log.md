@@ -127,3 +127,17 @@ Every important project decision is written here: the date, the decision, the re
   - Freezing before model training prevents post-hoc data snooping and establishes scientific validity for thesis examination (Supervisor Checkpoint C3).
 - **Who agreed:** project owner and team (23 Oct 2026).
 - **Proposal link:** Table 5; Sections 2.3, 3.2; Objectives O1, O2.
+
+## D-015 — 2026-10-25 — Shared feature engineering specification and schema
+- **Decision:** Establish [`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py) as the single source of truth for feature engineering, producing exactly 19 locked features across both offline model training and real-time live detection (`make_features(df)`):
+  - **Categoricals (6):** `proto`, `service`, `conn_state`, `history`, `orig_port_cat`, `resp_port_cat`.
+  - **Numericals (13):** `duration`, `orig_bytes`, `resp_bytes`, `missed_bytes`, `orig_pkts`, `orig_ip_bytes`, `resp_pkts`, `resp_ip_bytes`, `orig_bytes_per_pkt`, `resp_bytes_per_pkt`, `byte_ratio`, `pkt_ratio`, `is_incomplete_flow`.
+  - **Port Categorization:** Group network ports into standard IANA bins (`well_known`: 0–1023, `registered`: 1024–49151, `dynamic`: 49152–65535, and `icmp` for ICMP traffic) to prevent memorizing arbitrary port numbers.
+  - **Safe Division:** Directional ratios use `np.divide` with explicit masks to guarantee zero divide-by-zero warnings or NaN outputs.
+  - **Strict Identifier Exclusion (Golden Rule 5):** Connection UIDs, IP addresses (`id.orig_h`, `id.resp_h`), timestamps (`ts`), and `scenario_id` are strictly prohibited from entering the feature matrix $X$.
+- **Why:**
+  - Guarantees zero training-serving skew between offline model evaluation and the live Zeek sensor pipeline (FR-01, FR-02, FR-03).
+  - Satisfies Proposal Table 6 candidate feature specifications.
+  - Passes 10 automated unit tests in [`tests/unit/test_features.py`](file:///d:/intrusion%20detection/tests/unit/test_features.py) across both IoT-23 data and simulated live Zeek JSON records.
+- **Who agreed:** project owner and team (25 Oct 2026).
+- **Proposal link:** Table 6; Section 3.3 (steps 2–5); Section 3.5; Objectives O1, O2.

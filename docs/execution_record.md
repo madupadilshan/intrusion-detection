@@ -550,6 +550,51 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 11: Write Shared Feature Engineering Code and Unit Tests
+
+* **Objective:** Implement the unified feature engineering engine ([`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py)) that computes exactly 19 candidate features per Proposal Table 6, guaranteeing zero training-serving skew between offline model training and real-time live detection, and verify correctness with comprehensive automated unit tests ([`tests/unit/test_features.py`](file:///d:/intrusion%20detection/tests/unit/test_features.py)).
+* **Date:** 25 October 2026
+* **How It Was Done:**
+  1. Implemented Feature Extractor ([`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py)):
+     - Designed `make_features(df)` accepting DataFrames, dictionaries, or lists of records.
+     - Vectorized port categorization into IANA standard bins: `well_known` (0–1023), `registered` (1024–49151), `dynamic` (49152–65535), and `icmp` (Zeek ICMP types in port field).
+     - Standardized categoricals: `proto`, `service`, `conn_state`, `history`, `orig_port_cat`, `resp_port_cat`.
+     - Standardized numerics: `duration`, `orig_bytes`, `resp_bytes`, `missed_bytes`, `orig_pkts`, `orig_ip_bytes`, `resp_pkts`, `resp_ip_bytes`.
+     - Computed directional ratios: `orig_bytes_per_pkt`, `resp_bytes_per_pkt`, `byte_ratio`, `pkt_ratio` using `np.divide(..., where=...)` for guaranteed zero-division safety.
+     - Computed flow quality flag: `is_incomplete_flow` (detects scanning states S0, REJ, zero duration/bytes, and unanswered probes).
+     - Enforced strict removal of network identifiers (`uid`, `id.orig_h`, `id.resp_h`, `ts`, `scenario_id`) per Golden Rule 5.
+     - Built scikit-learn `build_feature_preprocessor(scaling=...)` ColumnTransformer.
+  2. Implemented Automated Unit Test Suite ([`tests/unit/test_features.py`](file:///d:/intrusion%20detection/tests/unit/test_features.py)):
+     - Verified IANA port categorization rules (system, registered, dynamic, ICMP, invalid).
+     - Verified extraction on real IoT-23 interim Parquet flows (`Capture-34-1`).
+     - Verified extraction on simulated live Zeek JSON records with missing fields.
+     - Verified zero-division safety (zero packets, zero bytes producing clean zeros, 0 warnings).
+     - Verified incomplete flow flag detection logic.
+     - Verified scikit-learn ColumnTransformer fit and transform pipelines.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run automated unit test suite inside .venv
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_features.py -v
+
+  # 2. Stage features module, tests, and decision log
+  git add ml_engine/features.py tests/unit/test_features.py docs/decision_log.md docs/execution_record.md
+
+  # 3. Commit and push
+  git commit -m "Step 11: implement shared feature extraction engine with automated unit tests"
+  git push origin main
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/features.py` (Created, in Git)
+  - `tests/unit/test_features.py` (Created, in Git)
+  - `docs/decision_log.md` (Updated with Decision D-015, in Git)
+  - `docs/execution_record.md` (Updated with Step 11, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 11 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.30 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 6 with feature formulas)
+* **Verification Result:** All 10 unit tests passed in 1.94s with 0 errors and 0 warnings. Throughput benchmark: 391,940 flows/second. Step 11 status is ✅ Done.
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:
