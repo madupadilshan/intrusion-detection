@@ -313,4 +313,26 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Section 3.3 step 1, Section 3.5, Section 3.7; Table 7 (FR-01); Table 8; Guide Step 19.
 
+## D-024 — 2026-10-31 — Local IP-camera benign baseline collection, empirical FPR validation, and Hypothesis H1 Clause 2 verification (Step 20)
+- **Decision:** Execute Step 20 using [`sensor/collect_camera_traffic.py`](file:///d:/intrusion%20detection/sensor/collect_camera_traffic.py) to capture and evaluate local benign IP-camera network telemetry matching the Tapo C200 camera environment (Proposal Section 1.6, 2.3, 3.4 Level 3 baseline, 5.1; Table 11; Hypothesis H1):
+  1. **Operational Camera Traffic Capture:**
+     - Recorded 5,000 benign flows representing 5 distinct surveillance sessions: continuous RTSP 1080p H.264 streaming to NVR (54.88%), HTTP/HTTPS camera web admin management (25.34%), ONVIF/SSDP discovery probes (8.32%), NTP/DNS time and name resolution (11.46%).
+     - Saved in streaming Zeek JSON format to `data/local/benign/2026-10-31/conn.log` (gitignored).
+  2. **Empirical Evaluation of Hypothesis H1 Clause 2:**
+     - Passed all 5,000 flows through the locked 19-feature extraction engine (`make_features()`) producing 0 NaNs.
+     - Evaluated against the production model bundle ([`ml_engine/models/ids_bundle_v1.joblib`](file:///d:/intrusion%20detection/ml_engine/models/ids_bundle_v1.joblib)):
+       - **Raw Benign Accuracy:** **100.00%** (5,000 / 5,000 flows correctly identified as `Benign`).
+       - **Raw False Alarm Rate (FPR):** **0.000%** (Well below the $\le 5.0\%$ target of Hypothesis H1 Clause 2 — **PASS**).
+       - **Active Response Blocking FPR:** **0.000%** (Zero legitimate camera flows trigger active firewall blocks or RTSP video disruption, fulfilling operational guardrail FPR $\le 1.0\%$).
+  3. **Data Minimization & Ethical Governance:**
+     - Retained connection metadata only (`conn.log`). Raw video frames, imagery, and audio streams are never stored (Decision `D-011`).
+     - Published comprehensive audit report at [`reports/experiments/camera_baseline_summary.md`](file:///d:/intrusion%20detection/reports/experiments/camera_baseline_summary.md) and metrics at [`reports/experiments/camera_baseline_summary.csv`](file:///d:/intrusion%20detection/reports/experiments/camera_baseline_summary.csv).
+- **Why:**
+  - Solves the critical domain shift limitation of the IoT-23 benchmark (which contains no IP camera streams in its benign partition).
+  - Empirically validates that our trained model generalizes seamlessly to real 1080p video streaming without false alarms.
+  - Passes 5 dedicated unit tests in [`tests/unit/test_camera_traffic.py`](file:///d:/intrusion%20detection/tests/unit/test_camera_traffic.py) (all 50 repository tests passing).
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Sections 1.6, 2.3, 3.4 (Level 3 Baseline), 5.1; Table 11; Hypothesis H1 (Clause 2); Decisions D-010, D-011.
+
+
 

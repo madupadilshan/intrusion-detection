@@ -180,3 +180,4 @@ if [[ -n "$INTERFACE" ]]; then
         exec "$ZEEK_BIN" -C -i "$INTERFACE" "$ZEEK_CONFIG"
     fi
 fi
+

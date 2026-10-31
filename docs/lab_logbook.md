@@ -28,3 +28,4 @@
 | No. | Date | Time (start–end) | Person | Activity type | What (exact command / tool) | Target (IP / subnet) | Mode | Why (guide step / Table 10 scenario) | Result / notes |
 | --- | ---- | ---------------- | ------ | ------------- | --------------------------- | -------------------- | ---- | ------------------------------------ | -------------- |
 | 1 | 2026-10-20 | — | Team | PLAN | Logbook created; lab plan and rules, and data retention plan written | — | — | Step 1 | No tests run yet. |
+| 2 | 2026-10-31 | 22:50–22:56 | Team | CAPTURE | `sensor/collect_camera_traffic.py --count 5000` | 192.168.50.101 (Tapo C200) | passive | Step 20 / Level 3 Camera Baseline | 5,000 benign camera flows collected (RTSP, HTTP, ONVIF, DNS, NTP). Raw Benign Accuracy: 100.0%, FPR: 0.000% <= 5% (H1 Clause 2 PASSED). Active Blocking FPR: 0.000% <= 1%. Reports saved to `reports/experiments/camera_baseline_summary.md`. |

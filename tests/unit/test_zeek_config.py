@@ -109,3 +109,4 @@ def test_live_zeek_records_inference_with_model_bundle(tmp_path):
     probs = calibrated.predict_proba(feat_df)
     assert probs.shape == (len(records), 5)
     assert (probs.sum(axis=1) >= 0.99).all() and (probs.sum(axis=1) <= 1.01).all()
+
