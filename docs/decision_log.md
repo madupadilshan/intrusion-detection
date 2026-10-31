@@ -487,6 +487,40 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Section 3.6 (Figure 2, Figure 4, Consolidated Flask backend); Table 7 (FR-01, FR-03, FR-04, FR-05, FR-06, FR-07, FR-08); Section 3.7 (Lab safety rules); Decisions D-004, D-011, D-027, D-028; Guide Step 25.
 
+## D-030 — 2026-10-31 — Detector and decision engine architecture, calibrated inference, dual thresholds, allowlist safety, burst coalescing, and latency tracking (Step 26)
+- **Decision:** Architect and implement the core real-time intrusion detector ([`core_engine/detector.py`](file:///d:/intrusion%20detection/core_engine/detector.py)) and decision engine ([`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py)) uniting live Zeek network telemetry with the production machine learning bundle and operational thresholds per Proposal Figures 2 and 3, Sections 3.4, 3.6, 3.7, and Requirements FR-01, FR-02, FR-03, FR-04:
+  1. **Detector Engine Architecture ([`core_engine/detector.py`](file:///d:/intrusion%20detection/core_engine/detector.py)):**
+     - Loads production model bundle `ml_engine/models/ids_bundle_v1.joblib` once at startup (caching calibrated pipeline, feature columns, and metadata) with zero repetitive disk I/O.
+     - Enforces zero training-serving skew: transforms streaming Zeek flow dictionaries into standard 19-feature vectors via `ml_engine.features.make_features()`.
+     - Supports both micro-batch (`detect_flows()`) and single-flow (`detect_single()`) vectorized probability inference using `calibrated_model.predict_proba()`.
+     - Formats output as `DetectionResult` containing predicted class, confidence, complete 5-class probability distribution, model version ("v1.0.0"), extracted features, and detection timestamp (`detect_ts`).
+  2. **Decision Engine & Dual Operational Thresholds ([`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py)):**
+     - Sits between the ML detector and the persistence / dashboard / response layers.
+     - Evaluates calibrated confidence scores against class-specific thresholds (`operational_thresholds.json`):
+       - *Benign Traffic Handling (FR-03, Table 5, Deficiency Fix #8):* Rejects benign flows from `attack_events`, incrementing 1-minute aggregation buckets in MongoDB `traffic_summaries` (`record_traffic_summary()`) and emitting Socket.IO `traffic_update`.
+       - *Low Confidence Noise (`confidence < passive_alert_threshold`):* Logged/ignored as low-risk ambient noise (`LOW_CONFIDENCE_IGNORE`).
+       - *Moderate Confidence (`passive_alert_threshold <= confidence < active_response_threshold`):* Generates passive alert (`ALERT_ONLY`) with status `prediction`, writes to MongoDB `attack_events`, and emits Socket.IO `new_event`.
+       - *High Confidence (`confidence >= active_response_threshold`):* Evaluates lab safety guardrails; if eligible, marks flow as `ACTIVE_BLOCK_CANDIDATE` with `response_status: "candidate"` for firewall mitigation (Step 31).
+  3. **Strict Lab Safety Guardrails (Section 3.7 & 3.8):**
+     - *Allowlist Protection:* Critical management IPs (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`) are immune from active response; high-confidence alerts from allowlisted IPs are downgraded to `ALERT_ONLY` with `response_status: "allowlist_protected"`.
+  4. **Incident Coalescing (Section 3.6 Tip 3):**
+     - High-rate burst flows sharing `(src_ip, dst_ip, predicted_class)` within `repeat_window_seconds` (60s) coalesce into a single ongoing incident document in MongoDB, incrementing `flow_count` and updating `last_seen`.
+  5. **Human-Readable Evidence Generation (FR-02):**
+     - Synthesizes technical explanation notes for each alert (e.g. packet counts, byte volumes, port categories, connection states, and durations).
+  6. **End-to-End Latency Tracking (Hypothesis H1 Clause 3):**
+     - Records nanosecond/microsecond timestamps at all 6 pipeline stages: `zeek_ts` -> `adapter_ts` -> `detect_ts` -> `decision_ts` -> `db_ts` -> `emit_ts`.
+     - Measures `pipeline_latency_ms` to scientifically evaluate the sub-second latency requirement ($< 1.0\text{s}$) in Step 37.
+  7. **Comprehensive Unit and Integration Testing:**
+     - Authored 15 unit tests in [`tests/unit/test_detector.py`](file:///d:/intrusion%20detection/tests/unit/test_detector.py) and [`tests/unit/test_decision_engine.py`](file:///d:/intrusion%20detection/tests/unit/test_decision_engine.py).
+     - Authored 4 integration tests in [`tests/integration/test_detection_pipeline.py`](file:///d:/intrusion%20detection/tests/integration/test_detection_pipeline.py) targeting test database `iot_ids_test`.
+     - Full test suite verified: **137 passed unit and integration tests** across the repository in 50.01s with 0 errors.
+- **Why:**
+  - Implements the central intelligence core of the intrusion detection architecture joining the sensor stream to the backend.
+  - Guarantees compliance with academic lab safety rules, data minimization, and real-time operator situational awareness without alert flooding.
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Section 3.4 (Prediction, Thresholds); Section 3.6 (Figures 2 & 3, Pipeline); Section 3.7 (Safety rules); Table 7 (FR-01, FR-02, FR-03, FR-04, FR-06); Decisions D-015, D-018, D-021, D-022, D-025, D-027, D-029; Guide Step 26.
+
+
 
 
 

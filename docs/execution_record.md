@@ -1286,6 +1286,70 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 26: Build the Detector and Decision Engine (`core_engine/detector.py`, `core_engine/decision_engine.py`)
+* **Date:** 31 October 2026
+* **Status:** ✅ Done
+* **Proposal & Requirement Alignment:**
+  - Proposal Figures 2 & 3: End-to-end intrusion detection pipeline connecting Zeek telemetry flows, feature engineering, ML bundle prediction, threshold evaluation, persistence, and live dashboard emission.
+  - Proposal Sections 3.4 & 3.6: Multi-class prediction, dual operational thresholds (`passive_alert_threshold` and `active_response_threshold`), and status tagging (`prediction` until admin triage).
+  - Proposal Section 3.7: Management allowlist protection preventing accidental firewall blocking of critical lab nodes.
+  - Requirements Table 7: FR-01 & FR-02 (Real-time alert with class, timestamp, IPs, severity, and human-readable evidence note), FR-03 (Benign traffic isolated into 1-minute aggregation buckets in `traffic_summaries`), FR-04 (Socket.IO `new_event` and `traffic_update` real-time telemetry).
+  - Hypothesis H1 Clause 3: Sub-second response tracking across 6 stages (`zeek_ts` -> `adapter_ts` -> `detect_ts` -> `decision_ts` -> `db_ts` -> `emit_ts`).
+  - Decision D-030: Detector and decision engine architecture, calibrated inference, dual thresholds, allowlist safety, burst coalescing, and latency tracking.
+* **Key Implementation Details:**
+  1. *Detector Engine ([`core_engine/detector.py`](file:///d:/intrusion%20detection/core_engine/detector.py)):*
+     - Single-pass initialization loading `ml_engine/models/ids_bundle_v1.joblib` into memory once at startup.
+     - Vectorized micro-batch feature transformation using `ml_engine.features.make_features()`, strictly eliminating training-serving skew (19 features, zero NaNs).
+     - Calibrated inference executing `calibrated_model.predict_proba()` returning normalized probability distributions across 5 classes.
+     - Emits standardized `DetectionResult` objects with predicted class, confidence, probability dictionary, model version ("v1.0.0"), and detection timestamp.
+  2. *Decision Engine ([`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py)):*
+     - Evaluates calibrated predictions against operational thresholds loaded from `operational_thresholds.json`.
+     - *Benign Traffic Handling (FR-03):* Completely isolated from `attack_events`; updates 1-minute bucket aggregations in MongoDB `traffic_summaries` via `record_traffic_summary(minute, "Benign", count, orig_bytes, resp_bytes, pkts)` and emits `traffic_update` over Socket.IO.
+     - *Attack Flow Decision Matrix:*
+       - `confidence < alert_threshold`: Regarded as low-confidence noise (`LOW_CONFIDENCE_IGNORE`).
+       - `alert_threshold <= confidence < block_threshold`: Passive alert (`ALERT_ONLY`), status `prediction`, response status `none`, writes to `attack_events`, emits `new_event`.
+       - `confidence >= block_threshold`: Active response candidate (`ACTIVE_BLOCK_CANDIDATE`), response status `candidate`, passed to Step 31 firewall policy.
+  3. *Academic Lab Safety Guardrails (Section 3.7):*
+     - Critical management nodes (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`) are protected against blocking; even high-confidence attacks from allowlisted IPs are downgraded to `ALERT_ONLY` with `response_status: "allowlist_protected"`.
+  4. *Burst Coalescing (Section 3.6 Tip 3):*
+     - Rapid flows sharing `(src_ip, dst_ip, predicted_class)` within `repeat_window_seconds` (60s) coalesce into a single incident document in MongoDB, incrementing `flow_count` and refreshing `last_seen`.
+  5. *Evidence Synthesis (FR-02):*
+     - Automatically generates technical evidence notes detailing packet counts, byte volumes, port categories, connection states, and durations.
+  6. *End-to-End Latency Tracking (Hypothesis H1 Clause 3):*
+     - Captures timestamps at all 6 stages (`zeek_ts`, `adapter_ts`, `detect_ts`, `decision_ts`, `db_ts`, `emit_ts`) and computes `pipeline_latency_ms`.
+  7. *Comprehensive Testing:*
+     - 7 unit tests in [`tests/unit/test_detector.py`](file:///d:/intrusion%20detection/tests/unit/test_detector.py) (default bundle loading, error handling, benign/scan inference, batch processing, mock bundle).
+     - 8 unit tests in [`tests/unit/test_decision_engine.py`](file:///d:/intrusion%20detection/tests/unit/test_decision_engine.py) (benign traffic isolation, noise filtering, alert thresholds, block candidate, allowlist immunity, latency tracking, evidence generation, batch processing).
+     - 4 integration tests in [`tests/integration/test_detection_pipeline.py`](file:///d:/intrusion%20detection/tests/integration/test_detection_pipeline.py) against MongoDB `iot_ids_test` (benign RTSP camera stream, external port scan, burst coalescing, allowlist protection).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run unit tests for detector and decision engine
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/unit/test_detector.py tests/unit/test_decision_engine.py -v
+
+  # 2. Run integration tests for detection pipeline
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/integration/test_detection_pipeline.py -v
+
+  # 3. Run complete repository test suite
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `core_engine/detector.py` (Created, in Git)
+  - `core_engine/decision_engine.py` (Created, in Git)
+  - `core_engine/__init__.py` (Created, in Git)
+  - `core_engine/db_service.py` (Added `doc` metadata fields in `record_attack_event()`, in Git)
+  - `tests/unit/test_detector.py` (Created, in Git)
+  - `tests/unit/test_decision_engine.py` (Created, in Git)
+  - `tests/integration/test_detection_pipeline.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-030, in Git)
+  - `docs/execution_record.md` (Updated Step 26 details, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated Step 26 status to ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work Log 3.45, updated tree and summary)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated detector and decision engine architecture)
+* **Verification Result:** 15 unit tests passed; 4 integration tests passed; all 137 unit and integration tests across 16 test modules passed across the entire repository in 50.01s with 0 errors (100% pass rate). Step 26 status is ✅ Done.
+
+---
+
+
 
 ## Quick Reference: Useful Commands
 

@@ -503,7 +503,7 @@ class DatabaseService:
         doc = {
             "event_id": event_id,
             "timestamp": ts,
-            "direction": event_data.get("direction") or "unknown",
+            "direction": event_data.get("direction") or event_data.get("traffic_direction") or "unknown",
             "src_ip": clean_src,
             "src_port": int(event_data.get("src_port") or 0),
             "dst_ip": clean_dst,
@@ -512,11 +512,16 @@ class DatabaseService:
             "service": str(event_data.get("service") or "-"),
             "predicted_class": clean_class,
             "confidence": confidence_val,
+            "probabilities": event_data.get("probabilities") or {},
             "model_version": str(event_data.get("model_version") or "ids_bundle_v1"),
-            "flow_features": event_data.get("flow_features") or {},
+            "flow_features": event_data.get("flow_features") or event_data.get("features") or {},
             "evidence_note": str(event_data.get("evidence_note") or event_data.get("evidence") or ""),
+            "reason_code": str(event_data.get("reason_code") or "GENERIC_ANOMALY"),
+            "severity": str(event_data.get("severity") or "high"),
             "status": str(event_data.get("status") or "prediction"),  # "prediction" or "confirmed"
-            "response_status": str(event_data.get("response_status") or "pending"),  # "pending", "mitigated", "alert_only", "ignored"
+            "response_status": str(event_data.get("response_status") or "pending"),  # "pending", "mitigated", "alert_only", "ignored", "candidate"
+            "is_allowlisted": bool(event_data.get("is_allowlisted", False)),
+            "timestamps": event_data.get("timestamps") or {},
             "flow_count": 1,
             "first_seen": ts,
             "last_seen": ts,
