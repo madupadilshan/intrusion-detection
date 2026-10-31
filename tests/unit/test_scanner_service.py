@@ -332,3 +332,4 @@ def test_scanner_state_tracking():
 
     service.active_scans["test_scan"] = {"status": "completed"}
     assert service.is_scanning() is False
+

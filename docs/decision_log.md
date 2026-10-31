@@ -552,6 +552,38 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Section 3.6 (Figure 4, Collections `devices`, `scans`); Section 3.7 (Lab Safety, Camera Evidence Heuristics); Table 7 (FR-05); Guide Step 27.
 
+## D-032 — 2026-10-31 — Forensic log export architecture, multi-attribute filtering, RFC 4180 CSV / JSON serialization, and audit trail invariants (Step 28)
+- **Decision:** Architect and implement the forensic log export service ([`core_engine/export_service.py`](file:///d:/intrusion%20detection/core_engine/export_service.py) with backward-compatible alias [`core_engine/log_exporter.py`](file:///d:/intrusion%20detection/core_engine/log_exporter.py)) conforming strictly to Group 03 Proposal Table 7 Requirement FR-08 ("Forensic Log Export"), Table 7 Requirement FR-07 ("Audit Logging and Invariants"), and Section 3.6 (Figure 4):
+  1. **Multi-Attribute Query Filtering (FR-08):**
+     - Supports flexible filtering across:
+       - Date and time ranges: `start_time` and `end_time` (ISO 8601 UTC parsed via `parse_datetime()`);
+       - Attack classification: `class_filter` / `predicted_class` (`Benign`, `DDoS`, `Okiru`, `PortScan`, `CnC`);
+       - IP address: `ip` (matching either source or destination), `src_ip`, and `dst_ip`;
+       - Incident confirmation status: `status` (`prediction`, `confirmed`);
+       - Response mitigation status: `response_status` (`none`, `candidate`, `mitigated`, `allowlist_protected`);
+       - Severity levels: `severity` (`critical`, `high`, `medium`, `low`);
+       - System audit filters: `actor`, `event`, `outcome`.
+  2. **Standard Machine-Readable Formats:**
+     - **RFC 4180 Compliant CSV (`serialize_csv()`):** Emits structured CSV with canonical column headers (`ATTACK_EVENT_FIELDS`, `SYSTEM_LOG_FIELDS`, `RESPONSE_ACTION_FIELDS`), minimal quoting, CRLF line terminators, UTF-8 charset, and JSON-stringified nested dictionary representations (e.g. `details`, `probabilities`) ensuring spreadsheet compatibility.
+     - **Structured JSON (`serialize_json()`):** Emits formatted, indented JSON array representations preserving full document fidelity and ISO 8601 timestamps.
+  3. **Collection Dispatching:**
+     - Supports exporting three distinct forensic telemetry collections:
+       - `attack_events`: Detection predictions, features, confidence scores, latencies, and confirmation statuses (`ids_attack_logs_*.ext`).
+       - `system_logs`: Operational security audit events, scan starts/completions, and authentication attempts (`ids_system_logs_*.ext`).
+       - `response_actions`: Automated and manual firewall mitigation actions, rule definitions, and target IPs (`ids_response_actions_*.ext`).
+  4. **Audit Trail Invariant (Requirement FR-07 & FR-08):**
+     - Every export operation is permanently recorded to MongoDB `system_logs` with `event: "LOGS_EXPORTED"`, capturing the requesting administrator (`actor`), target collection, format, row count, sanitized query filters, and generated filename.
+  5. **REST API & RBAC Integration:**
+     - Fully integrated into unified server ([`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py)) via `GET /api/logs/export`, protected with `@auth.admin_required` (HTTP 403 Forbidden for non-administrators).
+     - Returns standard HTTP attachments (`Content-Disposition: attachment; filename=...`) and proper MIME types (`text/csv; charset=utf-8`, `application/json; charset=utf-8`).
+  6. **Comprehensive Testing:**
+     - Authored 10 unit tests in [`tests/unit/test_export_service.py`](file:///d:/intrusion%20detection/tests/unit/test_export_service.py) covering ISO datetime parsing, CSV/JSON serialization, filter handling, and dispatch audit logging.
+     - Authored 4 integration tests in [`tests/integration/test_export_integration.py`](file:///d:/intrusion%20detection/tests/integration/test_export_integration.py) covering RBAC enforcement, query filtering against real MongoDB collections, and system log audit entry verification.
+- **Why:** Fulfills the final requirement of Phase 6, enabling reproducible research evaluations, thesis documentation, and forensic auditing without compromising system security. Concludes Phase 6 (Backend, Database & APIs, Steps 23–28).
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Section 3.6 (Figure 4, Collections `attack_events`, `system_logs`, `response_actions`); Table 7 (FR-07, FR-08); Guide Step 28.
+
+
 
 
 

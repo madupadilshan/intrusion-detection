@@ -580,6 +580,10 @@ class DatabaseService:
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
         format_dates: bool = True,
+        src_ip: Optional[str] = None,
+        dst_ip: Optional[str] = None,
+        ip: Optional[str] = None,
+        severity: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Retrieve recorded attack events with flexible query filtering."""
         if not self.is_connected():
@@ -591,6 +595,15 @@ class DatabaseService:
             query["status"] = status_filter
         if response_status_filter:
             query["response_status"] = response_status_filter
+        if src_ip:
+            query["src_ip"] = src_ip.strip()
+        if dst_ip:
+            query["dst_ip"] = dst_ip.strip()
+        if ip:
+            clean_ip = ip.strip()
+            query["$or"] = [{"src_ip": clean_ip}, {"dst_ip": clean_ip}]
+        if severity:
+            query["severity"] = severity.strip()
         if start_time or end_time:
             time_query: Dict[str, Any] = {}
             if start_time:
@@ -881,6 +894,10 @@ class DatabaseService:
         target_ip: Optional[str] = None,
         event_id: Optional[str] = None,
         format_dates: bool = True,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+        status: Optional[str] = None,
+        actor: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Retrieve logged mitigation actions."""
         if not self.is_connected():
@@ -890,6 +907,17 @@ class DatabaseService:
             query["target_ip"] = target_ip.strip()
         if event_id:
             query["event_id"] = event_id
+        if status:
+            query["status"] = status.strip()
+        if actor:
+            query["actor"] = actor.strip()
+        if start_time or end_time:
+            time_query: Dict[str, Any] = {}
+            if start_time:
+                time_query["$gte"] = start_time
+            if end_time:
+                time_query["$lte"] = end_time
+            query["executed_at"] = time_query
 
         try:
             cursor = self.response_actions.find(query).sort("executed_at", DESCENDING).limit(limit)
@@ -939,6 +967,9 @@ class DatabaseService:
         actor: Optional[str] = None,
         event: Optional[str] = None,
         format_dates: bool = True,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+        outcome: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Fetch system audit log records."""
         if not self.is_connected():
@@ -948,6 +979,15 @@ class DatabaseService:
             query["actor"] = actor
         if event:
             query["event"] = event
+        if outcome:
+            query["outcome"] = outcome.strip()
+        if start_time or end_time:
+            time_query: Dict[str, Any] = {}
+            if start_time:
+                time_query["$gte"] = start_time
+            if end_time:
+                time_query["$lte"] = end_time
+            query["timestamp"] = time_query
 
         try:
             cursor = self.system_logs.find(query).sort("timestamp", DESCENDING).limit(limit)

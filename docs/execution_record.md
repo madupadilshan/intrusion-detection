@@ -1400,6 +1400,54 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 28: Forensic Log Export Service
+
+* **Objective:** Architect and implement the forensic log export service ([`core_engine/export_service.py`](file:///d:/intrusion%20detection/core_engine/export_service.py) with backward-compatible alias [`core_engine/log_exporter.py`](file:///d:/intrusion%20detection/core_engine/log_exporter.py)) conforming strictly to Group 03 Proposal Table 7 Requirement FR-08 ("Forensic Log Export"), Table 7 Requirement FR-07 ("Audit Logging and Invariants"), and Section 3.6 (Figure 4: `attack_events`, `system_logs`, `response_actions`).
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. *Multi-Attribute Query Filtering Engine:*
+     - Implemented `parse_datetime()` supporting ISO 8601 UTC strings, timestamps with offsets, and date-only representations.
+     - Implemented multi-attribute filtering across date ranges (`start_time`, `end_time`), attack class (`predicted_class`), IP address (`src_ip`, `dst_ip`, `ip`), incident confirmation status (`status`), mitigation status (`response_status`), severity (`critical`, `high`, `medium`, `low`), and audit actor.
+  2. *Standard RFC 4180 CSV & Indented JSON Formats:*
+     - Implemented `serialize_csv()` with canonical column ordering for each collection (`ATTACK_EVENT_FIELDS`, `SYSTEM_LOG_FIELDS`, `RESPONSE_ACTION_FIELDS`), minimal quoting, CRLF terminators, UTF-8 charset, and JSON-stringified nested dictionary representations (`details`, `probabilities`).
+     - Implemented `serialize_json()` outputting formatted, indented JSON arrays with full ISO 8601 string timestamps.
+  3. *Multi-Collection Dispatching:*
+     - Provided export dispatching across `attack_events` (`ids_attack_logs_*.ext`), `system_logs` (`ids_system_logs_*.ext`), and `response_actions` (`ids_response_actions_*.ext`).
+  4. *Audit Trail Invariant (FR-07/FR-08):*
+     - Every export request is permanently recorded to MongoDB `system_logs` with `event: "LOGS_EXPORTED"`, capturing requesting administrator (`actor`), format, row count, sanitized filters, and generated filename.
+  5. *REST API & RBAC Integration:*
+     - Connected `ExportService` into unified Flask server ([`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py)) via `GET /api/logs/export`, protected with `@auth.admin_required` (HTTP 403 Forbidden for non-administrators).
+     - Returns HTTP attachments (`Content-Disposition: attachment; filename=...`) with appropriate MIME types.
+  6. *Comprehensive Unit & Integration Testing:*
+     - Authored 10 unit tests in [`tests/unit/test_export_service.py`](file:///d:/intrusion%20detection/tests/unit/test_export_service.py).
+     - Authored 4 integration tests in [`tests/integration/test_export_integration.py`](file:///d:/intrusion%20detection/tests/integration/test_export_integration.py) targeting MongoDB `iot_ids_test`.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run unit tests for export service
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/unit/test_export_service.py -v
+
+  # 2. Run integration tests for export service
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/integration/test_export_integration.py -v
+
+  # 3. Run complete repository test suite
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `core_engine/export_service.py` (Created, in Git)
+  - `core_engine/log_exporter.py` (Created backward compatibility alias, in Git)
+  - `core_engine/app.py` (Wired `ExportService` into `export_logs` endpoint)
+  - `core_engine/db_service.py` (Enhanced `get_attack_events`, `get_system_logs`, `get_response_actions` with query filters)
+  - `tests/unit/test_export_service.py` (Created, in Git)
+  - `tests/integration/test_export_integration.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-032, in Git)
+  - `docs/execution_record.md` (Updated Step 28 details, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated Step 28 status to ✅ Done, Phase 6 100% complete)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work Log 3.47, updated tree and summary)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated log export section)
+* **Verification Result:** 10 unit tests passed; 4 integration tests passed; all 168 unit and integration tests across 22 test modules passed across the entire repository with 0 errors (100% pass rate). Step 28 status is ✅ Done. Phase 6 (Backend, Database & APIs, Steps 23–28) is 100% COMPLETE.
+
+---
+
 
 
 ## Quick Reference: Useful Commands

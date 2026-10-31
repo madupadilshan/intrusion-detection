@@ -37,6 +37,7 @@ from core_engine.auth import (
     PermissionDeniedError,
 )
 from core_engine.scanner_service import ScannerService, UnauthorizedSubnetError
+from core_engine.export_service import ExportService
 
 load_dotenv()
 logger = logging.getLogger("ids_app")
@@ -53,6 +54,7 @@ def create_app(
     db_service: Optional[DatabaseService] = None,
     auth_manager: Optional[AuthManager] = None,
     scanner_service: Optional[Any] = None,
+    export_service: Optional[Any] = None,
     test_config: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Flask, SocketIO]:
     """
@@ -100,6 +102,9 @@ def create_app(
         approved_subnets=approved_subnets,
     )
     app.config["scanner"] = scanner
+
+    exporter = export_service or ExportService(db_service=db)
+    app.config["exporter"] = exporter
 
     # =========================================================================
     # Error Handlers
@@ -626,37 +631,53 @@ def create_app(
     @auth.admin_required
     def export_logs():
         """
-        Export filtered incident logs for testing and reporting (Proposal FR-08).
-        Query params: format ('json' or 'csv'), class, limit
+        Export filtered incident logs, audit logs, or response actions (Proposal FR-08).
+        Query params:
+            type: 'events' (default), 'system_logs', 'actions'
+            format: 'json' (default) or 'csv'
+            class: class filter
+            status: status filter ('prediction', 'confirmed')
+            response_status: response status filter
+            ip: IP filter (src or dst)
+            src_ip, dst_ip: specific direction IP filters
+            severity: severity filter
+            actor: actor filter
+            event: event filter
+            start_time, end_time: ISO 8601 timestamps
+            limit: record limit (up to 10000)
         """
-        export_fmt = request.args.get("format", "json").lower()
-        class_filter = request.args.get("class")
-        limit = min(int(request.args.get("limit", 1000)), 5000)
+        log_type = request.args.get("type", "events").strip().lower()
+        export_fmt = request.args.get("format", "json").strip().lower()
+        actor = getattr(g, "current_user", {}).get("sub", "admin")
 
-        events = db.get_attack_events(limit=limit, class_filter=class_filter)
-        now_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        filters = {
+            "start_time": request.args.get("start_time"),
+            "end_time": request.args.get("end_time"),
+            "class_filter": request.args.get("class"),
+            "ip": request.args.get("ip"),
+            "src_ip": request.args.get("src_ip"),
+            "dst_ip": request.args.get("dst_ip"),
+            "status": request.args.get("status"),
+            "response_status": request.args.get("response_status"),
+            "severity": request.args.get("severity"),
+            "actor": request.args.get("actor"),
+            "event": request.args.get("event"),
+            "limit": min(int(request.args.get("limit", 1000)), 10000),
+        }
 
-        if export_fmt == "csv":
-            si = io.StringIO()
-            fieldnames = [
-                "event_id", "timestamp", "direction", "src_ip", "src_port",
-                "dst_ip", "dst_port", "proto", "predicted_class", "confidence",
-                "status", "response_status", "flow_count", "evidence_note"
-            ]
-            writer = csv.DictWriter(si, fieldnames=fieldnames, extrasaction="ignore")
-            writer.writeheader()
-            for evt in events:
-                writer.writerow(evt)
+        try:
+            content, mime_type, filename, row_count = exporter.export_logs(
+                log_type=log_type,
+                filters=filters,
+                export_format=export_fmt,
+                actor=actor,
+            )
+        except ValueError as e:
+            return jsonify({"error": "Bad Request", "message": str(e)}), 400
 
-            output = make_response(si.getvalue())
-            output.headers["Content-Disposition"] = f"attachment; filename=ids_attack_logs_{now_str}.csv"
-            output.headers["Content-Type"] = "text/csv; charset=utf-8"
-            return output
-
-        # Default: JSON export
-        output = make_response(json.dumps(events, indent=2))
-        output.headers["Content-Disposition"] = f"attachment; filename=ids_attack_logs_{now_str}.json"
-        output.headers["Content-Type"] = "application/json; charset=utf-8"
+        output = make_response(content)
+        output.headers["Content-Disposition"] = f"attachment; filename={filename}"
+        output.headers["Content-Type"] = mime_type
         return output
 
     # =========================================================================
