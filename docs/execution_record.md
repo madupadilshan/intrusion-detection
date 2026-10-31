@@ -907,6 +907,59 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 18: Save Production Model Bundle & Formal Model Card (Track 1 Completion)
+
+* **Objective:** Assemble and export the final, unified production model bundle (`ids_bundle_v1.joblib`) packaging the base pipeline, calibrated estimator, 19-feature schema, class mappings, operational thresholds, safety guardrails, and decision rules. Run automated bundle self-tests on simulated Zeek telemetry, author and publish the formal Model Card (`reports/experiments/model_card.md`) per Mitchell et al. (2019), and formally conclude Track 1 per Proposal Sections 2.4, 3.4, 3.7; Table 7 (FR-01, FR-02, FR-03, FR-06); Table 9; and Table 11.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Implemented Production Bundle Exporter & Model Card Generator ([`ml_engine/export_bundle.py`](file:///d:/intrusion%20detection/ml_engine/export_bundle.py)):
+     - Loaded base Random Forest pipeline from `ml_engine/models/rf_model.joblib`.
+     - Loaded Sigmoid calibrated classifier from `ml_engine/models/calibrated_rf_model.joblib`.
+     - Loaded operational dual-thresholds and safety guardrails from `reports/experiments/operational_thresholds.json`.
+     - Bound 19-feature extraction contract from `ml_engine/features.py` (`FEATURE_COLUMNS`, `CATEGORICAL_FEATURES`, `NUMERICAL_FEATURES`).
+     - Added 4 transparent decision rules and audit reason codes (`DOS_HIGH_RATE_PACKET_FLOOD`, `SCAN_RAPID_PROBE_SWEEP`, `CNC_PERSISTENT_BEACON`, `MALWARE_STAGING_TRANSFER`).
+     - Stored full provenance metadata (v1.0.0, timestamp, git commit hash, 1,384,070 training samples, 22 captures, Level 1 and Level 2 benchmark metrics, 4.52 µs inference latency).
+     - Serialized unified bundle to `ml_engine/models/ids_bundle_v1.joblib` (30.84 MB, compressed using joblib level 3).
+  2. Implemented Bundle Integrity & End-to-End Verification Test:
+     - Verified existence and structure of all 11 required top-level keys in the bundle.
+     - Simulated synthetic Zeek connection streams (Benign DNS, TCP SYN DDoS flood, C&C beacon).
+     - Processed streams through `make_features()` and verified that `pipeline.predict()` and `calibrated_model.predict_proba()` output valid classes and probability distributions summing to 1.0.
+  3. Formal Model Card Publication ([`reports/experiments/model_card.md`](file:///d:/intrusion%20detection/reports/experiments/model_card.md)):
+     - Structured document according to the Mitchell et al. (2019) framework.
+     - Outlined 8 mandatory sections: Model Details, Intended Use & Scope, Training & Validation Data, Quantitative Performance Metrics, Cost-Sensitive Operational Decision Thresholds, Explainable Decision Rules, Ethical Considerations & Safety Guardrails, and Limitations/Caveats.
+  4. Automated Unit Testing Suite ([`tests/unit/test_model_bundle.py`](file:///d:/intrusion%20detection/tests/unit/test_model_bundle.py)):
+     - Implemented 5 dedicated unit tests validating bundle structure, metadata integrity, operational rules & guardrails, inference execution, and markdown model card contents.
+     - All 5 tests passed in 3.01s. All 40 unit tests in the repository passed in 10.20s with 0 errors.
+  5. Formal Completion of Track 1:
+     - With Step 18 complete, all offline dataset engineering, model training, benchmarking, calibration, and bundling are 100% complete.
+     - The ML engine is frozen and ready for live Zeek sensor integration in Track 2 (Step 19: Run Zeek on the sensor).
+* **Commands Executed:**
+  ```powershell
+  # 1. Export production model bundle and generate formal model card
+  .\.venv\Scripts\python.exe ml_engine/export_bundle.py
+
+  # 2. Run unit tests for model bundle and model card
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_model_bundle.py -v
+
+  # 3. Run full test suite across entire repository
+  .\.venv\Scripts\python.exe -m pytest tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/export_bundle.py` (Created, in Git)
+  - `reports/experiments/model_card.md` (Created, in Git)
+  - `tests/unit/test_model_bundle.py` (Created, in Git)
+  - `ml_engine/models/ids_bundle_v1.joblib` (Generated, gitignored)
+  - `docs/decision_log.md` (Added Decision D-022, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 18 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.37 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 7 with Step 18 results)
+* **Verification Result:** All 40 unit tests in `tests/` passed in 10.20s with 0 errors. Production bundle serialized (30.84 MB). Formal model card published. Track 1 is 100% complete. Step 18 status is ✅ Done.
+
+---
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:

@@ -273,3 +273,23 @@ Every important project decision is written here: the date, the decision, the re
   - Passes 35 automated unit tests across the repository.
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Sections 2.4, 3.4, 3.7; Table 7 (FR-06); Table 9; Table 11; FR-03, FR-06; Hypothesis H1.
+
+## D-022 — 2026-10-31 — Production model bundle export (`ids_bundle_v1.joblib`) and formal Model Card publication (`model_card.md`) concluding Track 1
+- **Decision:** Execute Step 18 using [`ml_engine/export_bundle.py`](file:///d:/intrusion%20detection/ml_engine/export_bundle.py) to package all offline ML components into a single unified deployment artifact and document model governance:
+  1. **Production Model Bundle Assembly:**
+     - Consolidate the base Random Forest pipeline, Platt/Sigmoid calibrated classifier, 19-feature schema definitions (`FEATURE_COLUMNS`, `CATEGORICAL_FEATURES`, `NUMERICAL_FEATURES`), target class mappings (`TARGET_CLASSES`, `CLASS_NAMES`), operational dual-threshold matrix ([`reports/experiments/operational_thresholds.json`](file:///d:/intrusion%20detection/reports/experiments/operational_thresholds.json)), safety guardrails (`min_repeats: 3`, `repeat_window_seconds: 60`, `max_rule_minutes: 30`, `allowlist_protected: True`), and explainable decision rules into a self-contained binary: `ml_engine/models/ids_bundle_v1.joblib` (30.84 MB, compressed with joblib zlib level 3).
+     - Store full provenance metadata (git commit hash, timestamp, training parameters, cross-validation metrics, held-out metrics, inference latency benchmark).
+  2. **Automated Verification Self-Test:**
+     - Implement end-to-end inference verification on synthetic Zeek connection telemetry (`Benign`, `DDoS_DoS`, `CnC`) validating that `pipeline.predict()` and `calibrated_model.predict_proba()` output valid class labels and strictly normalized probability distributions ($\sum P_i = 1.0$).
+  3. **Formal Model Card Publication:**
+     - Author and publish [`reports/experiments/model_card.md`](file:///d:/intrusion%20detection/reports/experiments/model_card.md) strictly following the Mitchell et al. (2019) framework covering Model Details, Intended Use & Scope, Training & Validation Data, Quantitative Performance Metrics, Cost-Sensitive Decision Thresholds, Explainable Rules & Reason Codes, Ethical Considerations & Guardrails, and Limitations/Caveats.
+  4. **Formal Completion of Track 1:**
+     - Marks 100% completion of Track 1 (Steps 7–18: Ingestion, Chunking, Feature Extraction, Sampling, Cross-Validation Splitting, Model Training, Comparative Benchmarking, Held-Out Zero-Day Testing, Calibration & Explainability, and Bundle Packaging). The pipeline is frozen and ready for live Zeek sensor integration in Track 2 (Step 19).
+- **Why:**
+  - Guarantees zero training-serving skew between offline model development and live streaming detection on the sensor PC (Step 26).
+  - Eliminates fragile multi-file dependencies in edge production by packaging the preprocessing transformer, calibrated classifier, thresholds, and guardrails in a single atomic bundle.
+  - Fulfills academic reporting and auditing rigor for Honours examination via the Mitchell et al. (2019) model card.
+  - Verified by 5 dedicated unit tests in [`tests/unit/test_model_bundle.py`](file:///d:/intrusion%20detection/tests/unit/test_model_bundle.py), with all 40 repository unit tests passing.
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Sections 2.4, 3.4, 3.7; Table 7 (FR-01, FR-02, FR-03, FR-06); Table 9; Table 11; Supervisor Checkpoints C3, C4; Mitchell et al. (2019).
+

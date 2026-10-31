@@ -138,3 +138,4 @@ def test_decision_rules_structure():
         assert "firewall_action" in r
         assert "explanation" in r
         assert len(r["reason_code"]) > 3
+
