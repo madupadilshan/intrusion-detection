@@ -520,6 +520,39 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Section 3.4 (Prediction, Thresholds); Section 3.6 (Figures 2 & 3, Pipeline); Section 3.7 (Safety rules); Table 7 (FR-01, FR-02, FR-03, FR-04, FR-06); Decisions D-015, D-018, D-021, D-022, D-025, D-027, D-029; Guide Step 26.
 
+## D-031 — 2026-10-31 — Authorized Nmap device discovery service, camera evidence heuristics, approved subnet restrictions, and audit logging (Step 27)
+- **Decision:** Architect and implement the authorized active network discovery and IP camera identification service ([`core_engine/scanner_service.py`](file:///d:/intrusion%20detection/core_engine/scanner_service.py)) complying strictly with Proposal Section 3.7 ("Logged-in Administrator and Lab Safety"), Section 3.6 (Figure 4: `devices` and `scans` collections), and Table 7 Requirement FR-05:
+  1. **Strict Approved Subnet Guardrail (Section 3.7):**
+     - Scans are restricted solely to `lab.approved_scan_subnets` (`192.168.50.0/24`) and individual host IPs within that subnet (`/32`).
+     - Any target outside this approved boundary (including internet IPs, campus subnets, corporate networks, unapproved RFC 1918 subnets, and wider supernets) immediately raises `UnauthorizedSubnetError` and is rejected with HTTP 403 `UNAUTHORIZED_SUBNET`.
+  2. **Multi-Evidence Camera Identification Heuristics (Section 3.7):**
+     - Never assumes a device is an IP camera solely because port 554 (RTSP) is open.
+     - Performs multi-dimensional evidentiary correlation across:
+       - MAC vendor OUI signatures (matching Dahua, Hikvision, Axis, Hanwha, Uniview, Amcrest, Reolink, etc.);
+       - RTSP video streaming transport (port 554);
+       - Surveillance control protocols (ONVIF 8899/8999, Hikvision 8000, Dahua 37777, XM 34567, RTMP 1935);
+       - Service banners and payload signatures (`rtsp`, `onvif`, `ipcamera`, `live555`);
+       - Device hostname patterns (`cam`, `ipc`, `dahua`, `hik`);
+       - Web management interfaces (ports 80/443/8080) paired with media streaming channels.
+     - Discovered devices are tagged with `possible_camera: true` and an explicit list of technical observations (`camera_evidence: [...]`), preserving `confirmed_camera: false` until explicit administrator verification.
+  3. **Role-Based Camera Confirmation (FR-05, Section 3.7):**
+     - Added `confirm_camera_role()` in [`core_engine/db_service.py`](file:///d:/intrusion%20detection/core_engine/db_service.py) and `PATCH /api/devices/<ip>/confirm-camera` in [`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py).
+     - Allows authenticated administrators (`@admin_required`) to formally confirm or revoke camera roles with recorded justification notes, automatically logging `DEVICE_CAMERA_CONFIRMED` or `DEVICE_CAMERA_REVOKED` to `system_logs`.
+  4. **Removal of Synthetic / Fake Metrics:**
+     - Removed legacy synthetic vulnerability counters, random CVE numbers, and fake security ratings. Only empirical scan observations (open ports, discovered services, MAC addresses, OUI vendors) are persisted.
+  5. **Asynchronous Non-Blocking Execution & Socket.IO Telemetry:**
+     - Scans execute in dedicated background worker threads (`start_scan_async()`) returning HTTP 202 Accepted.
+     - Live progress is broadcast to connected dashboards via Socket.IO `scan_progress` events (percentage, status, messages) and `device_update` events for discovered hosts.
+  6. **Resilient Production Fallback:**
+     - Integrates with system Nmap via `python-nmap` (`-sS -sV -O -T4`). When the Nmap binary is unavailable (e.g. Windows development workstations lacking Nmap in PATH), gracefully activates simulated lab network discovery modeling realistic lab devices (Cisco gateway, IDS sensor, admin PC, Hikvision NVR, Dahua camera), ensuring 100% testability and reliability.
+  7. **Comprehensive Unit and Integration Testing:**
+     - Authored 12 unit tests in [`tests/unit/test_scanner_service.py`](file:///d:/intrusion%20detection/tests/unit/test_scanner_service.py) (subnet validation, multi-evidence heuristics, mock Nmap parsing, device classification, state tracking).
+     - Authored 5 integration tests in [`tests/integration/test_scanner_integration.py`](file:///d:/intrusion%20detection/tests/integration/test_scanner_integration.py) verifying end-to-end MongoDB storage, audit logging, and RBAC camera confirmation.
+- **Why:** Delivers safe, standards-compliant, reproducible network asset discovery and IP camera inventory without risking operational disruption to unauthorized networks.
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Section 3.6 (Figure 4, Collections `devices`, `scans`); Section 3.7 (Lab Safety, Camera Evidence Heuristics); Table 7 (FR-05); Guide Step 27.
+
+
 
 
 

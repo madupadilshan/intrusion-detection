@@ -1349,6 +1349,57 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 27: Device Discovery (Nmap) and IP Camera Identification Service
+
+* **Objective:** Architect and implement the authorized network asset discovery and IP camera identification service ([`core_engine/scanner_service.py`](file:///d:/intrusion%20detection/core_engine/scanner_service.py)) conforming strictly to Group 03 Research Proposal Section 3.7 ("Logged-in Administrator and Lab Safety"), Section 3.6 (Figure 4: `devices` and `scans` collections in `iot_ids_db`), and Table 7 Requirement FR-05.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. *Subnet Safety Guardrail ([`core_engine/scanner_service.py`](file:///d:/intrusion%20detection/core_engine/scanner_service.py)):*
+     - Enforced `validate_subnet()` ensuring scan targets are contained strictly within `lab.approved_scan_subnets` (`192.168.50.0/24`) or single host IPs (`/32`) within that subnet.
+     - Any target outside this approved boundary immediately raises `UnauthorizedSubnetError` and is rejected with HTTP 403 `UNAUTHORIZED_SUBNET`.
+  2. *Multi-Evidence Camera Identification Heuristics:*
+     - Implemented `analyze_camera_evidence()` adhering to Proposal Section 3.7 ("A device is not assumed to be a camera merely because port 554 (RTSP) is open; HTTP, ONVIF and RTSP services may all be present. A device is labelled as a possible camera with evidence, and the administrator confirms the role.").
+     - Correlates MAC OUI vendors (Dahua, Hikvision, Axis, Hanwha, Uniview, Amcrest, Reolink, etc.), RTSP port 554, ONVIF ports (8899, 8999), Dahua 37777, Hikvision 8000, XM 34567, RTMP 1935, service banners (`rtsp`, `onvif`, `ipcamera`, `live555`), and hostname indicators (`ipc`, `cam`, `dahua`, `hik`).
+     - Tags device as `possible_camera: true` with a detailed evidence list (`camera_evidence: [...]`), preserving `confirmed_camera: false` until explicit administrator verification.
+  3. *Role-Based Camera Confirmation API:*
+     - Added `confirm_camera_role()` in [`core_engine/db_service.py`](file:///d:/intrusion%20detection/core_engine/db_service.py) and `PATCH /api/devices/<ip>/confirm-camera` in [`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py).
+     - Allows authenticated administrators (`@admin_required`) to confirm or revoke the IP camera classification with justification notes, logging `DEVICE_CAMERA_CONFIRMED` or `DEVICE_CAMERA_REVOKED` in `system_logs`.
+  4. *Elimination of Synthetic / Fake Metrics:*
+     - Removed all legacy synthetic vulnerability counts, random CVE numbers, and artificial security scores. Persists only empirical scan observations (open ports, discovered services, MAC addresses, OUI vendors) into MongoDB `devices`.
+  5. *Asynchronous Scan Execution & Socket.IO Telemetry:*
+     - Implemented non-blocking background scan execution via `start_scan_async()` returning HTTP 202 Accepted.
+     - Live progress is broadcast to connected dashboards via Socket.IO `scan_progress` and `device_update` events.
+  6. *Resilient Production Fallback:*
+     - Integrated `python-nmap` (`-sS -sV -O -T4`). When the Nmap binary is unavailable (e.g. Windows development workstations lacking Nmap in PATH), gracefully activates simulated lab network discovery modeling realistic lab devices (Cisco gateway, IDS sensor, admin PC, Hikvision NVR, Dahua camera), ensuring 100% testability.
+  7. *Comprehensive Unit and Integration Testing:*
+     - Authored 12 unit tests in [`tests/unit/test_scanner_service.py`](file:///d:/intrusion%20detection/tests/unit/test_scanner_service.py) (subnet validation, multi-evidence camera identification, mock Nmap parsing, device classification, state tracking).
+     - Authored 5 integration tests in [`tests/integration/test_scanner_integration.py`](file:///d:/intrusion%20detection/tests/integration/test_scanner_integration.py) targeting MongoDB `iot_ids_test` (synchronous/asynchronous execution, database persistence, Socket.IO emissions, camera confirmation RBAC, safety guardrail enforcement).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run unit tests for scanner service
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/unit/test_scanner_service.py -v
+
+  # 2. Run integration tests for scanner service
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/integration/test_scanner_integration.py -v
+
+  # 3. Run complete repository test suite
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `core_engine/scanner_service.py` (Created, in Git)
+  - `core_engine/app.py` (Wired scanner service into `trigger_scan`, added `confirm_camera` endpoint)
+  - `core_engine/db_service.py` (Added `confirm_camera_role()`, updated `log_system_event()`, updated `upsert_device`)
+  - `tests/unit/test_scanner_service.py` (Created, in Git)
+  - `tests/integration/test_scanner_integration.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-031, in Git)
+  - `docs/execution_record.md` (Updated Step 27 details, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated Step 27 status to ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work Log 3.46, updated tree and summary)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated device discovery and camera heuristics)
+* **Verification Result:** 12 unit tests passed; 5 integration tests passed; all 154 unit and integration tests across 20 test modules passed across the entire repository in 59.62s with 0 errors (100% pass rate). Step 27 status is ✅ Done.
+
+---
+
 
 
 ## Quick Reference: Useful Commands

@@ -349,6 +349,7 @@ class DatabaseService:
             },
             "$setOnInsert": {
                 "created_at": now,
+                "confirmed_camera": bool(device_data.get("confirmed_camera", False)),
                 "notes": device_data.get("notes") or "",
             },
         }
@@ -404,6 +405,41 @@ class DatabaseService:
             return res.modified_count > 0
         except PyMongoError as e:
             logger.error(f"Error updating device status for {ip}: {e}")
+            return False
+
+    def confirm_camera_role(self, ip: str, confirmed: bool = True, notes: str = "") -> bool:
+        """
+        Confirm or revoke the IP camera classification for a discovered device (Proposal Section 3.7).
+        Adheres to: 'A device is labelled as a possible camera with evidence, and the administrator confirms the role.'
+
+        Args:
+            ip: Target device IP address.
+            confirmed: True to confirm camera role, False to revoke.
+            notes: Optional administrator justification notes.
+
+        Returns:
+            True if device document was found and updated, False otherwise.
+        """
+        if not self.is_connected() or not ip:
+            return False
+        clean_ip = ip.strip()
+        update_doc: Dict[str, Any] = {
+            "confirmed_camera": bool(confirmed),
+            "updated_at": datetime.now(timezone.utc),
+        }
+        if notes:
+            update_doc["notes"] = notes
+        if confirmed:
+            update_doc["device_type"] = "ip_camera"
+
+        try:
+            res = self.devices.update_one(
+                {"ip": clean_ip},
+                {"$set": update_doc},
+            )
+            return res.matched_count > 0
+        except PyMongoError as e:
+            logger.error(f"Error confirming camera role for {clean_ip}: {e}")
             return False
 
     # =========================================================================
@@ -869,21 +905,23 @@ class DatabaseService:
     def log_system_event(
         self,
         actor: str,
-        event: str,
-        outcome: str,
+        event: Optional[str] = None,
+        outcome: str = "INFO",
         details: Optional[Dict[str, Any]] = None,
+        event_type: Optional[str] = None,
     ) -> Optional[str]:
         """Record general operational and security audit events."""
         if not self.is_connected():
             return None
         log_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc)
+        resolved_event = event or event_type or "GENERAL_EVENT"
 
         doc = {
             "log_id": log_id,
             "timestamp": now,
             "actor": actor or "system",
-            "event": event or "GENERAL_EVENT",
+            "event": resolved_event,
             "outcome": outcome or "INFO",
             "details": details or {},
         }

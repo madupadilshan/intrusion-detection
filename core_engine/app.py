@@ -36,6 +36,7 @@ from core_engine.auth import (
     InvalidTokenError,
     PermissionDeniedError,
 )
+from core_engine.scanner_service import ScannerService, UnauthorizedSubnetError
 
 load_dotenv()
 logger = logging.getLogger("ids_app")
@@ -51,6 +52,7 @@ DEFAULT_CORS_ORIGINS = [
 def create_app(
     db_service: Optional[DatabaseService] = None,
     auth_manager: Optional[AuthManager] = None,
+    scanner_service: Optional[Any] = None,
     test_config: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Flask, SocketIO]:
     """
@@ -91,6 +93,13 @@ def create_app(
     management_allowlist = set(settings_cfg.get("allowlist", [
         "192.168.50.1", "192.168.50.5", "192.168.50.10", "192.168.50.20"
     ]))
+
+    scanner = scanner_service or ScannerService(
+        db_service=db,
+        socketio=socketio,
+        approved_subnets=approved_subnets,
+    )
+    app.config["scanner"] = scanner
 
     # =========================================================================
     # Error Handlers
@@ -301,6 +310,43 @@ def create_app(
         devs = db.get_devices(camera_only=camera_only, limit=limit)
         return jsonify({"status": "success", "count": len(devs), "devices": devs}), 200
 
+    @app.route("/api/devices/<ip>/confirm-camera", methods=["PATCH", "POST"])
+    @auth.admin_required
+    def confirm_camera(ip):
+        """
+        Confirm or revoke the IP camera classification for a discovered device (Proposal Section 3.7).
+        Request body: {"confirmed": true, "notes": "Confirmed Dahua IP camera in lab"}
+        """
+        data = request.get_json(silent=True) or {}
+        confirmed = data.get("confirmed", True)
+        notes = data.get("notes", "")
+
+        existing = db.get_device_by_ip(ip)
+        if not existing:
+            return jsonify({"error": "Not Found", "message": f"Device '{ip}' not found in registered devices."}), 404
+
+        success = db.confirm_camera_role(ip=ip, confirmed=confirmed, notes=notes)
+        if not success:
+            return jsonify({"error": "Database error", "message": f"Failed to update camera status for {ip}."}), 500
+
+        admin_user = getattr(g, "current_user", {}).get("sub", "admin")
+        db.log_system_event(
+            actor=admin_user,
+            event="DEVICE_CAMERA_CONFIRMED" if confirmed else "DEVICE_CAMERA_REVOKED",
+            outcome="success",
+            details={"ip": ip, "confirmed": confirmed, "notes": notes},
+        )
+
+        updated_device = db.get_device_by_ip(ip)
+        socketio.emit("device_update", updated_device)
+
+        action_word = "confirmed" if confirmed else "revoked"
+        return jsonify({
+            "status": "success",
+            "message": f"Device {ip} camera role {action_word} successfully.",
+            "device": updated_device,
+        }), 200
+
     # =========================================================================
     # 5. Device Discovery Scans (FR-05, Section 3.7)
     # =========================================================================
@@ -324,7 +370,9 @@ def create_app(
         subnet = (data.get("subnet") or "192.168.50.0/24").strip()
 
         # Enforce lab safety guardrail: Only approved subnets can be scanned
-        if subnet not in approved_subnets:
+        try:
+            scanner.validate_subnet(subnet)
+        except UnauthorizedSubnetError as e:
             return jsonify({
                 "error": "Forbidden",
                 "message": f"Subnet '{subnet}' is not in approved scan subnets {approved_subnets} (Proposal Section 3.7).",
@@ -332,7 +380,7 @@ def create_app(
             }), 403
 
         started_by = getattr(g, "current_user", {}).get("sub", "admin")
-        scan_id = db.record_scan_start(subnet=subnet, started_by=started_by)
+        scan_id = scanner.start_scan_async(subnet=subnet, started_by=started_by)
         if not scan_id:
             return jsonify({"error": "Failed to initiate scan record"}), 500
 
@@ -344,7 +392,6 @@ def create_app(
             "status": "running",
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
-        socketio.emit("scan_progress", scan_payload)
 
         return jsonify({
             "status": "success",
