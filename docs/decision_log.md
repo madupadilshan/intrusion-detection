@@ -420,6 +420,39 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Section 3.6 (Figure 4); Table 7 (FR-01, FR-03, FR-04, FR-05, FR-06, FR-07, FR-08); Table 11; Decisions D-011, D-027; Guide Step 23.
 
+## D-028 — 2026-10-31 — Authentication, bcrypt password security, 8-hour JWT access tokens, CLI admin provisioning, and system_logs audit integration (Step 24)
+- **Decision:** Implement the dedicated Authentication and Secrets Management Engine ([`core_engine/auth.py`](file:///d:/intrusion%20detection/core_engine/auth.py)) and administrator provisioning utility ([`tools/create_admin.py`](file:///d:/intrusion%20detection/tools/create_admin.py)) meeting Proposal Sections 3.6, 3.7, and Requirement FR-04:
+  1. **Cryptographic Password Hashing (bcrypt):**
+     - Enforce `bcrypt` password hashing with cryptographic per-user salt (work factor $\ge 12$ rounds).
+     - Plaintext passwords are never stored, logged, or exposed in API responses.
+     - Enforce strict complexity guardrail (minimum 8 characters).
+  2. **JSON Web Token (JWT) Access Control:**
+     - Issue cryptographically signed access tokens using HMAC-SHA256 (`HS256`) powered by `JWT_SECRET_KEY` sourced securely from local [`.env`](file:///d:/intrusion%20detection/.env) (never committed to Git).
+     - Standardized token claims payload: `sub` (username), `role` (access tier: `admin`, `operator`, `analyst`), `iat` (issued-at UTC epoch), `exp` (expiration UTC epoch), and `jti` (unique UUID v4 identifier).
+     - Token lifetime bounded to 8 hours (28,800 seconds) per Proposal Section 3.6 recommendation, preventing indefinite session replay while sustaining uninterrupted operational monitoring.
+     - Robust verification layer raising explicit domain exceptions: `TokenExpiredError`, `InvalidTokenError`, `TokenMissingError`.
+  3. **Elimination of Open Registration (CLI Admin Provisioning):**
+     - Completely eliminated open sign-up/registration routes to prevent unauthorized account creation.
+     - Authored [`tools/create_admin.py`](file:///d:/intrusion%20detection/tools/create_admin.py) enabling server administrators to provision accounts or safely reset credentials (`--force`) with hidden password entry via `getpass`.
+  4. **Immutable Audit Trail Integration (FR-07, FR-08):**
+     - Every authentication event is recorded to MongoDB `system_logs` via `db_service.log_system_event()`:
+       - `AUTH_LOGIN_SUCCESS`: Records username, role, client IP address, and authentication method.
+       - `AUTH_LOGIN_FAIL`: Records username, client IP address, and explicit failure cause (`invalid_password`, `user_not_found`, `account_disabled`, `empty_credentials`).
+       - `USER_CREATED` and `USER_PASSWORD_RESET`: Logs administrative account provisioning.
+  5. **Declarative Route Protection Decorators:**
+     - `@token_required`: Validates Bearer tokens from HTTP `Authorization` header or `?token=` query parameter (for WebSocket handshakes), injecting `g.current_user` and rejecting unauthorized requests with 401 Unauthorized.
+     - `@admin_required`: Restricts sensitive operations (Nmap scans, manual unblocks, threshold tuning) strictly to `admin` role, rejecting non-admin tokens with 403 Forbidden (`INSUFFICIENT_PRIVILEGES`).
+  6. **Automated Unit Testing & Full Suite Verification:**
+     - Authored 21 dedicated unit tests in [`tests/unit/test_auth.py`](file:///d:/intrusion%20detection/tests/unit/test_auth.py) covering hashing, timing-safe verification, token issuance, tampering resilience, audit logging, Flask route protection, and CLI provisioning.
+     - Full test suite verified: **105 passed unit and integration tests** across the repository in 28.85s with 0 errors.
+- **Why:**
+  - Guarantees strict confidentiality and role-based access control (RBAC) across backend endpoints and frontend telemetry feeds.
+  - Mitigates credential brute-forcing and session hijacking through bcrypt work factors and bounded JWT lifetimes.
+  - Ensures forensic accountability by logging all authentication outcomes to the immutable system audit trail.
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Section 3.6 (Figure 4, Secrets, Users); Section 3.7 (Logged-in administrator); Table 7 (FR-04, FR-07, FR-08); Decisions D-011, D-027, D-028; Guide Step 24.
+
+
 
 
 

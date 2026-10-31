@@ -1183,6 +1183,49 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 24: Login and Secrets Management (`core_engine/auth.py`, `tools/create_admin.py`)
+* **Date:** 31 October 2026
+* **Status:** ✅ Done
+* **Proposal & Requirement Alignment:**
+  - Proposal Section 3.6 & Figure 4: Secrets handling (`.env`), `users` collection authentication, and `system_logs` audit trail.
+  - Proposal Section 3.7: Logged-in administrator controls for Nmap scans, firewall rules, and thresholds.
+  - Requirements Table 7: FR-04 (Dashboard Login and Protected Telemetry), FR-07 (Auditability), FR-08 (System Logs).
+  - Decision D-028: Authentication, bcrypt password security, 8-hour JWT access tokens, CLI admin provisioning, and system_logs audit integration.
+* **Key Implementation Details:**
+  1. *Cryptographic Password Security:* Implemented `bcrypt` password hashing with cryptographic salt (work factor $\ge 12$ rounds) in [`core_engine/auth.py`](file:///d:/intrusion%20detection/core_engine/auth.py). Enforced minimum 8-character password complexity rule. Plaintext passwords never stored or logged.
+  2. *JWT Access Control:* Implemented `create_token()` and `decode_token()` using HMAC-SHA256 (`HS256`) with `JWT_SECRET_KEY` loaded from [`.env`](file:///d:/intrusion%20detection/.env). Configured bounded 8-hour expiration lifetime (28,800 seconds). Handles standard claims (`sub`, `role`, `iat`, `exp`, `jti`).
+  3. *Elimination of Open Registration:* Removed all public sign-up attack surfaces. Implemented [`tools/create_admin.py`](file:///d:/intrusion%20detection/tools/create_admin.py) CLI utility supporting interactive hidden password entry via `getpass`, role assignment, and `--force` credential resets.
+  4. *Immutable Audit Trail Integration:* Recorded every login attempt and admin action directly to MongoDB `system_logs`:
+     - `AUTH_LOGIN_SUCCESS`: username, role, client IP, auth method.
+     - `AUTH_LOGIN_FAIL`: username, client IP, failure reason (`invalid_password`, `user_not_found`, `account_disabled`, `empty_credentials`).
+     - `USER_CREATED` & `USER_PASSWORD_RESET`: Administrative provisioning audit events.
+  5. *Route Protection Guards:* Implemented `@token_required` (extracts token from `Authorization: Bearer <token>` or `?token=`, injects `g.current_user`, returns 401 Unauthorized on failure) and `@admin_required` (returns 403 Forbidden with `INSUFFICIENT_PRIVILEGES` for non-admin tokens).
+  6. *Database Service Password Reset:* Added `update_user_password()` to [`core_engine/db_service.py`](file:///d:/intrusion%20detection/core_engine/db_service.py).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run unit tests for authentication and secrets module
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/unit/test_auth.py -v
+
+  # 2. Test CLI admin tool against test database
+  .\.venv\Scripts\python.exe tools/create_admin.py --username test_cli_admin --password "AdminSecurePassword123!" --role admin --db-name iot_ids_test --force
+
+  # 3. Run complete repository test suite
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `core_engine/auth.py` (Created, in Git)
+  - `tools/create_admin.py` (Created, in Git)
+  - `tests/unit/test_auth.py` (Created, in Git)
+  - `core_engine/db_service.py` (Added `update_user_password()`, in Git)
+  - `docs/decision_log.md` (Added Decision D-028, in Git)
+  - `docs/execution_record.md` (Updated Step 24 details, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated Step 24 status to ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work Log 3.43, updated tree and summary)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated authentication architecture section)
+* **Verification Result:** 21 dedicated unit tests passed; all 105 unit and integration tests passed across the repository in 28.85s with 0 errors. Step 24 status is ✅ Done.
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:

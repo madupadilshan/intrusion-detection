@@ -508,3 +508,4 @@ def test_scans_tracking(db_service):
     assert scans[0]["status"] == "completed"
     assert scans[0]["devices_found"] == 4
     assert len(scans[0]["discovered_ips"]) == 4
+

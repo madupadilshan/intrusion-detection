@@ -972,6 +972,20 @@ class DatabaseService:
             logger.error(f"Error updating login for {username}: {e}")
             return False
 
+    def update_user_password(self, username: str, password_hash: str) -> bool:
+        """Update password hash for an existing registered user."""
+        if not self.is_connected() or not username or not password_hash:
+            return False
+        try:
+            res = self.users.update_one(
+                {"username": username.strip()},
+                {"$set": {"password_hash": password_hash.strip()}},
+            )
+            return res.modified_count > 0
+        except PyMongoError as e:
+            logger.error(f"Error updating password for {username}: {e}")
+            return False
+
     def list_users(self, format_dates: bool = True) -> List[Dict[str, Any]]:
         """List registered users (excluding password hashes for security)."""
         if not self.is_connected():
