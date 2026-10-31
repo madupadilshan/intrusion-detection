@@ -518,3 +518,4 @@ def test_socketio_event_broadcast_reception(test_setup):
     assert block_evt["args"][0]["ip"] == "192.168.50.88"
 
     client_sio.disconnect()
+

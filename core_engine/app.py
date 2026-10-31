@@ -698,3 +698,4 @@ if __name__ == "__main__":
     host = os.getenv("HOST", "0.0.0.0")
     print(f"Starting IoT IDS Unified Server on http://{host}:{port}...")
     socketio.run(app, host=host, port=port, debug=False)
+
