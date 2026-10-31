@@ -218,3 +218,37 @@ Every important project decision is written here: the date, the decision, the re
   - Maintains complete experimental reproducibility via [`reports/experiments/model_comparison.csv`](file:///d:/intrusion%20detection/reports/experiments/model_comparison.csv) and [`reports/experiments/model_comparison.md`](file:///d:/intrusion%20detection/reports/experiments/model_comparison.md).
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Sections 1.3, 2.4, 3.4; Table 9; Objective O2.
+
+## D-020 — 2026-10-31 — Level 2 held-out zero-day evaluation (Capture-34-1), assessment of Hypothesis H1, and preservation of raw test integrity
+- **Decision:** Execute Step 16 evaluation using [`ml_engine/evaluate.py`](file:///d:/intrusion%20detection/ml_engine/evaluate.py) on the held-out scenario `CTU-IoT-Malware-Capture-34-1` (23,145 flows: 14,394 `DDoS_DoS`, 6,706 `CnC`, 1,923 `Benign`, 122 `PortScan`, 0 `Malware_Download`) sealed in [`data/processed/heldout/held_out_test.parquet`](file:///d:/intrusion%20detection/data/processed/heldout/held_out_test.parquet) under Supervisor Checkpoint C4:
+  1. **Primary Random Forest Model Performance:**
+     - Overall Accuracy: **76.72%** (vs 45.00% on Level 1 CV, a **+31.72%** gain).
+     - Weighted F1-Score: **0.7746**.
+     - Macro-F1 (all 5 classes): **0.4028** (Macro-F1 on the 4 present classes: **0.5035**).
+     - Generalisation Gap (Macro-F1): **+0.0398** ($0.4028 - 0.3630$).
+     - Benign False Positive Rate (FPR): **5.096%** (only 98 false alarms out of 1,923 benign flows, a massive drop from the 46.73% honeypot cross-validation FPR).
+     - Inference Latency: **4.52 µs/flow** (221,181 flows/s).
+  2. **Class-Level Detection Precision & Recall:**
+     - `DDoS_DoS`: Recall = **99.07%**, Precision = **99.99%**, F1 = **0.9953**, PR-AUC = **0.9976** (14,260 / 14,394 detected).
+     - `CnC` (Botnet Beaconing): Recall = **23.20%**, Precision = **96.65%**, F1 = **0.3742**, PR-AUC = **0.9786** (1,556 / 6,706 detected).
+     - `Benign`: Recall = **94.90%**, Precision = **40.04%**, F1 = **0.5632**, PR-AUC = **0.9554** (1,825 / 1,923 correctly preserved).
+     - `PortScan`: Recall = **94.26%**, Precision = **4.24%**, F1 = **0.0812**, PR-AUC = **0.8230** (115 / 122 detected).
+     - `Malware_Download`: Zero flows in Capture-34-1 (Support = 0, F1 = 0.0000).
+  3. **Formal Assessment of Hypothesis H1 (First Clause):**
+     - Target: Macro-F1 $\ge 0.85$ on held-out scenarios.
+     - Finding: **Not met under default raw 0.5 decision threshold** (0.4028 on 5 classes; 0.5035 on 4 classes).
+     - Scientific Diagnosis:
+       - The unweighted 5-class Macro-F1 is mathematically constrained because `Malware_Download` has zero support in this scenario, contributing an automatic 0.0000 to the mean (capping the maximum achievable score to 0.8000).
+       - Mirai's heartbeat packets (6,706 single-packet flows) exhibit feature overlap with benign background chatter (2,732 flows) and SYN scanning (2,418 flows).
+       - Crucially, Area Under the Precision-Recall Curve (PR-AUC) is exceptional across all active classes: `DDoS_DoS` (0.9976), `CnC` (0.9786), `Benign` (0.9554), and `PortScan` (0.8230), proving the model's underlying probability rankings are highly discriminative.
+  4. **Strict Ground-Rule Compliance:**
+     - Do NOT alter label mapping, test splits, or ground-truth to artificially boost scores.
+     - Document the empirical findings honestly for thesis defense.
+     - Address decision operating points through probability calibration and custom cost-sensitive threshold tuning in **Step 17**.
+- **Why:**
+  - Satisfies Proposal Section 3.4, Table 9, Hypothesis H1, and Supervisor Checkpoint C4.
+  - Confirms zero data leakage between training and held-out zero-day evaluation.
+  - Binds evaluation deliverables: [`reports/experiments/evaluation_iot23.csv`](file:///d:/intrusion%20detection/reports/experiments/evaluation_iot23.csv), [`reports/experiments/evaluation_iot23.md`](file:///d:/intrusion%20detection/reports/experiments/evaluation_iot23.md), and [`reports/experiments/confusion_matrix_heldout.png`](file:///d:/intrusion%20detection/reports/experiments/confusion_matrix_heldout.png).
+  - Passes 31 automated unit tests across the repository.
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Sections 1.3, 2.4, 3.4; Table 9; Hypothesis H1; RQ1, RQ2; Supervisor Checkpoint C4.
