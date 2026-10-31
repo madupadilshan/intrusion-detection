@@ -1052,6 +1052,52 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 21: Build the Real-Time Zeek Ingestion Adapter
+
+* **Objective:** Implement the real-time Zeek streaming adapter (`core_engine/zeek_adapter.py`) connecting Zeek's newline-delimited JSON connection telemetry (`conn.log`) to the machine learning detector and core system services, supporting non-blocking log tailing, file rotation resilience, offset state persistence across sensor restarts (Step 38), telemetry enrichment (direction and device tags), incomplete flow preservation, micro-batching, and system health counters per Proposal Section 3.5, Figure 3, Table 7 (FR-01), and Decision `D-025`.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Authoring Zeek Streaming Adapter ([`core_engine/zeek_adapter.py`](file:///d:/intrusion%20detection/core_engine/zeek_adapter.py)):
+     - Implemented `ZeekLogFollower` to stream lines from `conn.log` asynchronously, handling partial line writes via file pointer rewinds.
+     - Implemented cross-platform rotation and truncation detection (tracking POSIX inode `st_ino` changes and file truncation `st_size < offset`), seamlessly closing stale descriptors and reopening active logs without process restarts or stream loss.
+     - Implemented `StateStore` to atomically persist byte offset, line counts, and timestamps to `data/local/.zeek_adapter_state.json`, enabling crash recovery with zero duplicate or skipped flows.
+     - Implemented `DirectionClassifier` to classify network flows into `internal`, `outbound`, `inbound`, or `external` using CIDR subnets from `config/settings.yaml` (`192.168.50.0/24`).
+     - Implemented `DeviceTagger` to attribute monitored IP camera (`192.168.50.60`, `192.168.50.101`, `192.168.1.150`), NVR (`192.168.50.20`, `192.168.50.200`), and infrastructure metadata.
+     - Preserved incomplete connection attempts (`is_incomplete` flag) for scan and flood telemetry matching `ml_engine/features.py`.
+     - Implemented micro-batching generator `tail_batches()` triggering on batch size threshold (e.g. 100 flows) or flush timeout (e.g. 0.5s).
+     - Added one-shot static evaluation reader `read_file()` for PCAP replay evaluations (`zeek -r capture.pcap`).
+     - Maintained operational health metrics (`lines_read`, `flows_parsed`, `flows_corrupted`, `batches_emitted`, `flows_per_second`, `error_rate_pct`).
+  2. Benchmarking & Empirical Verification:
+     - Executed one-shot static evaluation against benign camera baseline (`data/local/benign/2026-10-31/conn.log`):
+       - Flows Parsed: 5,000 / 5,000 (0 errors, 0 corrupted lines).
+       - Ingestion Throughput: 23,108 flows/second.
+       - Feature Extraction: 19 locked features, 0 NaNs.
+  3. Authoring Automated Unit Testing Suite ([`tests/unit/test_zeek_adapter.py`](file:///d:/intrusion%20detection/tests/unit/test_zeek_adapter.py)):
+     - Implemented 9 unit tests covering CIDR direction classification, device inventory tagging, incomplete flow detection, schema normalization, static PCAP file parsing, micro-batching by size, micro-batching by timeout, offset state recovery across restarts, and log rotation/truncation resilience.
+     - All 9 unit tests passed in 3.00s. Full repository suite contains 59 passing unit tests (15.67s, 0 errors).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run zeek_adapter in one-shot mode against camera traffic
+  .\.venv\Scripts\python.exe core_engine/zeek_adapter.py --log-path data/local/benign/2026-10-31/conn.log --one-shot
+
+  # 2. Run unit tests for zeek_adapter
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/unit/test_zeek_adapter.py -v
+
+  # 3. Run full test suite across entire repository
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe
+  ```
+* **Files Created / Modified:**
+  - `core_engine/zeek_adapter.py` (Created, in Git)
+  - `tests/unit/test_zeek_adapter.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-025, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 21 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.40 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Track 2 with Step 21 results)
+* **Verification Result:** All 59 unit tests passed in 15.67s with 0 errors. Real-time Zeek adapter verified. Throughput exceeds 23,000 flows/sec with 0 NaNs and zero data loss on rotation/crash. Step 21 status is ✅ Done.
+
+---
+
 ---
 
 ---

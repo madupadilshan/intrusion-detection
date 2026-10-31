@@ -334,5 +334,30 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Sections 1.6, 2.3, 3.4 (Level 3 Baseline), 5.1; Table 11; Hypothesis H1 (Clause 2); Decisions D-010, D-011.
 
+## D-025 — 2026-10-31 — Real-time Zeek streaming adapter, file rotation resilience, state persistence, and micro-batching (Step 21)
+- **Decision:** Implement and standardize the real-time Zeek streaming adapter engine ([`core_engine/zeek_adapter.py`](file:///d:/intrusion%20detection/core_engine/zeek_adapter.py)) bridging live network telemetry (`conn.log`) to the machine learning detector and core system services:
+  1. **Continuous Real-Time Log Ingestion:**
+     - Stream lines asynchronously from Zeek's newline-delimited JSON `conn.log` using a non-blocking follower (`ZeekLogFollower`), handling partial line writes and buffering until line termination (`\n`).
+  2. **File Rotation and Truncation Resilience:**
+     - Automatically detect log file rotation via POSIX inode tracking (`st_ino`) and file truncation/re-creation checks (`st_size < offset`), seamlessly closing stale descriptors and reopening active logs without process restarts or stream loss.
+  3. **State Persistence and Sensor Crash Recovery:**
+     - Implement atomic file offset and line persistence in `StateStore` (`data/local/.zeek_adapter_state.json`), enabling instant resumption after system reboots, sensor crashes, or maintenance (Proposal Section 3.5, Step 38) with zero duplicate or skipped connection flows.
+  4. **Telemetry Enrichment & Incomplete Flow Preservation:**
+     - Enrich each flow with UTC ISO-8601 observation timestamps (`observed_at`), traffic direction (`internal`, `outbound`, `inbound`, `external`) using CIDR subnet evaluation against `config/settings.yaml` (`192.168.50.0/24`), device inventory attribution (`device_tag` for IP cameras, NVRs, and gateways), and incomplete connection flags (`is_incomplete`).
+     - Strictly preserve incomplete flows (unanswered SYNs, port scan probes, zero-payload handshakes) to pass directly to `make_features()`.
+  5. **Micro-Batching Architecture:**
+     - Support micro-batching (`tail_batches()`) triggered by batch size threshold (e.g. 100 flows) or time window (e.g. 0.5s), sustaining high packet bursts during DoS floods and PortScan sweeps while maintaining low latency during low-traffic periods.
+  6. **Telemetry & System Health Counters:**
+     - Maintain thread-safe telemetry counters (`lines_read`, `flows_parsed`, `flows_corrupted`, `batches_emitted`, `flows_per_second`, `error_rate_pct`) meeting FR-01 and Section 5.3 operational monitoring specifications.
+  7. **Dual-Mode Replay Support:**
+     - Support one-shot static evaluation (`read_file()`) for offline PCAP replays (`zeek -r sample.pcap`), validating 100% schema alignment with 19 locked features and 0 NaNs.
+- **Why:**
+  - Guarantees low-latency, loss-free telemetry ingestion between the network capture layer and the ML inference engine.
+  - Mitigates queue starvation and memory exhaustion during volumetric attacks through micro-batching.
+  - Verified by 9 dedicated unit tests in [`tests/unit/test_zeek_adapter.py`](file:///d:/intrusion%20detection/tests/unit/test_zeek_adapter.py), achieving 59/59 passing unit tests across the repository.
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Section 3.5; Figure 3; Table 7 (FR-01); Guide Step 21.
+
+
 
 

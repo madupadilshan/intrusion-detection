@@ -100,3 +100,4 @@ def test_camera_baseline_artifacts_exist():
     assert "# Benign IP-Camera Baseline Traffic Report (Step 20)" in content
     assert "Hypothesis H1 Clause 2" in content
     assert "RTSP 1080p H.264 Video Streaming" in content
+
