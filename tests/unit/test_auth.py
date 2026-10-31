@@ -415,3 +415,4 @@ def test_cli_create_admin_short_password():
 
     assert success is False
     mock_db.create_user.assert_not_called()
+

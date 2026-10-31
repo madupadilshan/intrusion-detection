@@ -452,6 +452,42 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Section 3.6 (Figure 4, Secrets, Users); Section 3.7 (Logged-in administrator); Table 7 (FR-04, FR-07, FR-08); Decisions D-011, D-027, D-028; Guide Step 24.
 
+## D-029 — 2026-10-31 — Consolidated Flask + Socket.IO server on port 5000 with RBAC, authenticated WebSocket streams, and safety guardrails (Step 25)
+- **Decision:** Consolidate the entire backend service architecture into a single unified Flask + Flask-SocketIO application factory (`create_app()` in [`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py)) on port 5000, completely replacing the five disjoint legacy backend servers (ports 5002, 5005, 5006, 5007, 5012) per Proposal Section 3.6, Figure 2, and Table 7:
+  1. **Consolidated Single-Port Server Architecture (Proposal Figure 2):**
+     - Single Flask HTTP + Socket.IO server running on port 5000 (`http://localhost:5000`).
+     - Replaces obsolete legacy scripts (`archive/legacy_code/my-app_flask_backend/app.py`, `iot23_attacks.py`, `network_scan.py`).
+     - Strict CORS restriction configured to allow only authorized frontend origin (`http://localhost:3000`).
+     - Application factory pattern `create_app(db=None, auth_service=None, test_config=None)` supporting clean dependency injection for unit and integration testing.
+  2. **15 REST Endpoints with Role-Based Access Control (RBAC):**
+     - *Public Health Check:* `GET /api/health` — monitors status of MongoDB connection, ML bundle readiness, Zeek capture stream, and authentication subsystem.
+     - *Authentication & Identity:* `POST /api/auth/login` (rate-limited / audited authentication), `GET /api/auth/me` (identity and role claims).
+     - *Telemetry & Summary Metrics (FR-03, FR-04):* `GET /api/summary` (total events, high-severity counts, active blocks, 24h traffic volume, attack class distribution).
+     - *Attack Event Management (FR-01, FR-02, FR-04):* `GET /api/events` (paginated, filtered by severity, class, time range), `GET /api/events/<event_id>`, `PATCH /api/events/<event_id>` (administrator verification status update).
+     - *Device Inventory & Camera Tagging (FR-05):* `GET /api/devices` (device listing, camera-only filter `?cameras_only=true`).
+     - *Active Nmap Reconnaissance (FR-05, Section 3.7):* `POST /api/scans` (trigger subnet discovery), `GET /api/scans` (list past scan jobs), `GET /api/scans/<scan_id>` (scan details).
+     - *Firewall Rule Management (FR-06, Section 3.7):* `GET /api/blocklist` (active and expired rules), `POST /api/blocklist` (administrator manual IP block), `DELETE /api/blocklist/<ip>` (administrator unblock with reason).
+     - *Dynamic Thresholds & Settings (FR-07):* `GET /api/settings`, `PUT /api/settings` (tune confidence threshold and allowlist), `GET /api/settings/history` (view audit modifications).
+     - *System Audit Trail & Log Export (FR-08):* `GET /api/logs` (query system logs), `GET /api/logs/export?format=csv|json` (filtered download of forensic records).
+  3. **Real-Time Push Telemetry via Socket.IO (FR-04):**
+     - Eliminates client-side polling loops; all dashboard widgets update instantly via WebSocket broadcast.
+     - Connection handshake authentication (`@socketio.on("connect")`) verifying Bearer JWT query parameter `?token=...` or rejecting unauthenticated clients (`False`).
+     - Real-time broadcast channels: `new_event`, `event_update`, `traffic_update`, `summary_update`, `device_update`, `blocklist_update`, `scan_progress`, `settings_update`.
+  4. **Strict Lab Safety Guardrails (Proposal Section 3.7 & 3.8):**
+     - *Scan Subnet Boundary:* Nmap subnet discovery strictly checked against `lab.approved_scan_subnets` (`192.168.50.0/24`). Out-of-bounds targets rejected immediately with HTTP 403 `UNAUTHORIZED_SUBNET`.
+     - *Management Allowlist Immunity:* Critical lab infrastructure (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`) protected against accidental firewall blocking with HTTP 403 `ALLOWLIST_PROTECTED`.
+     - *Role Authorization Guardrail:* Sensitive state-mutating endpoints (`PATCH /api/events`, `POST /api/scans`, `POST /api/blocklist`, `DELETE /api/blocklist/<ip>`, `PUT /api/settings`, `GET /api/logs`) strictly restricted to `admin` role.
+  5. **Automated Integration Testing & Verification:**
+     - 13 comprehensive integration tests authored in [`tests/integration/test_app_api.py`](file:///d:/intrusion%20detection/tests/integration/test_app_api.py) covering all 15 endpoints, unauthorized rejections (401), privilege enforcement (403), CSV/JSON exports, safety bounds, and Socket.IO authenticated broadcasts.
+     - Full repository test suite passed: **118 passed unit and integration tests** across 13 test modules with 0 errors.
+- **Why:**
+  - Satisfies Proposal Figure 2, Figure 4, and Requirements FR-01 through FR-08 with a clean, secure, and production-ready micro-architecture.
+  - Replaces fragile multi-port architecture with a single robust entrypoint for the React dashboard.
+  - Enforces mandatory academic lab safety rules preventing accidental network disruption or unauthorized device scanning.
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Section 3.6 (Figure 2, Figure 4, Consolidated Flask backend); Table 7 (FR-01, FR-03, FR-04, FR-05, FR-06, FR-07, FR-08); Section 3.7 (Lab safety rules); Decisions D-004, D-011, D-027, D-028; Guide Step 25.
+
+
 
 
 

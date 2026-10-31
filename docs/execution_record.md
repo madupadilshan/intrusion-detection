@@ -1226,6 +1226,67 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 25: Build the Flask + Socket.IO Server (`core_engine/app.py`)
+* **Date:** 31 October 2026
+* **Status:** ✅ Done
+* **Proposal & Requirement Alignment:**
+  - Proposal Section 3.6 & Figure 2: Single consolidated backend server running on port 5000 replacing the five disjoint legacy backend servers (ports 5002, 5005, 5006, 5007, 5012).
+  - Proposal Figure 4: Core collections and REST endpoints for events, devices, response actions, blocklist, system logs, users, traffic summaries, and dynamic settings.
+  - Proposal Section 3.7: Logged-in administrator enforcement, approved subnet boundary (`192.168.50.0/24`), and management allowlist immunity.
+  - Requirements Table 7: FR-01 & FR-02 (Attack alerts and detail lookup), FR-03 (Benign traffic metrics), FR-04 (Dashboard login and live Socket.IO push telemetry without browser refresh), FR-05 (Camera inventory and active Nmap scans), FR-06 & FR-07 (Blocklist mutations with audit records), FR-08 (Filtered log exports as JSON and CSV).
+  - Decision D-029: Consolidated Flask + Socket.IO server on port 5000 with RBAC, authenticated WebSocket streams, and safety guardrails.
+* **Key Implementation Details:**
+  1. *Consolidated Server Architecture:* Built application factory `create_app(db=None, auth_service=None, test_config=None)` in [`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py). Runs Flask and Flask-SocketIO on port 5000 with CORS restricted to `http://localhost:3000`.
+  2. *15 REST Endpoints:*
+     - `GET /api/health`: Health status monitoring of MongoDB, ML model bundle, Zeek stream, and Auth subsystems.
+     - `POST /api/auth/login`: Authenticates credentials with bcrypt verification, returns signed 8-hour JWT token and logs audit event.
+     - `GET /api/auth/me`: Authenticated endpoint returning user claims (`username`, `role`).
+     - `GET /api/summary`: System dashboard aggregates (total events, high severity, active blocks, 24h traffic volume, class distribution).
+     - `GET /api/events`: Paginated attack events query with filters (`class`, `severity`, `status`, `start_time`, `end_time`).
+     - `GET /api/events/<event_id>`: Detailed view of a single attack incident including flow features and model explanation.
+     - `PATCH /api/events/<event_id>`: Admin-only triage and incident verification status update (`status`, `notes`).
+     - `GET /api/devices`: Device inventory with camera filter (`cameras_only=true`).
+     - `POST /api/scans`: Admin-only trigger for network discovery scan (enforcing subnet guardrail).
+     - `GET /api/scans`: Scan history listing.
+     - `GET /api/scans/<scan_id>`: Detailed scan result lookup.
+     - `GET /api/blocklist`: Active and historical firewall block records (`status=active|removed|expired`).
+     - `POST /api/blocklist`: Admin-only manual firewall block (enforcing allowlist immunity).
+     - `DELETE /api/blocklist/<target_ip>`: Admin-only manual firewall unblock with mandatory reason.
+     - `GET /api/settings`: Fetch active confidence thresholds, allowlists, and scan subnets.
+     - `PUT /api/settings`: Admin-only dynamic setting updates with audit history preservation.
+     - `GET /api/settings/history`: Modification history for auditing configuration changes.
+     - `GET /api/logs`: Query immutable system audit logs.
+     - `GET /api/logs/export`: Filtered forensic export in JSON or CSV format (FR-08).
+  3. *Socket.IO Real-Time Push Telemetry (FR-04):*
+     - `@socketio.on("connect")` enforces JWT authentication via `?token=` query parameter, returning `False` for missing or invalid tokens.
+     - Broadcast channels: `new_event`, `event_update`, `traffic_update`, `summary_update`, `device_update`, `blocklist_update`, `scan_progress`, `settings_update`.
+  4. *Strict Academic Lab Safety Guardrails (Section 3.7 & 3.8):*
+     - Scan target validation restricts Nmap runs strictly to `lab.approved_scan_subnets` (`192.168.50.0/24`), rejecting external or out-of-bounds targets with 403 `UNAUTHORIZED_SUBNET`.
+     - Allowlist protection shields critical infrastructure (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`) from being blocked, rejecting with 403 `ALLOWLIST_PROTECTED`.
+     - Sensitive routes require `admin` role, returning 403 `INSUFFICIENT_PRIVILEGES` for non-admin tokens.
+  5. *Automated Integration Testing ([`tests/integration/test_app_api.py`](file:///d:/intrusion%20detection/tests/integration/test_app_api.py)):*
+     - 13 comprehensive tests covering all 15 endpoints, 401 unauthenticated rejections, 403 RBAC checks, safety guardrails, CSV/JSON log exports, and Socket.IO client connection & event broadcasts.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run integration tests for consolidated Flask + Socket.IO server
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/integration/test_app_api.py -v
+
+  # 2. Run complete repository test suite
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `core_engine/app.py` (Created, in Git)
+  - `tests/integration/test_app_api.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-029, in Git)
+  - `docs/execution_record.md` (Updated Step 25 details, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated Step 25 status to ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work Log 3.44, updated tree and summary)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated backend architecture section)
+* **Verification Result:** All 13 integration tests in `test_app_api.py` passed in 16.70s. All 118 unit and integration tests across 13 test modules passed across the entire repository in 47.07s with 0 errors. Step 25 status is ✅ Done.
+
+---
+
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:
