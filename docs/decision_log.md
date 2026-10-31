@@ -384,6 +384,43 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Sections 2.5, 3.5; Objective O3; RQ3; Table 11; Supervisor Checkpoint C6; Guide Step 22.
 
+## D-027 — 2026-10-31 — MongoDB 9-collection schema, full block history audit trail, dynamic settings, and TTL data retention (Step 23)
+- **Decision:** Refactor and formalize the MongoDB Database Service ([`core_engine/db_service.py`](file:///d:/intrusion%20detection/core_engine/db_service.py)) supporting the complete 9-collection architecture specified across Proposal Section 3.6, Figure 4, and Requirements FR-01 through FR-08:
+  1. **Core and Supporting Collections Architecture (9 Collections):**
+     - *6 Core Collections (Figure 4):* `devices` (FR-05 inventory and camera tagging), `attack_events` (FR-01/FR-02 detections and features), `response_actions` (FR-06/FR-07 mitigation logs), `blocklist` (FR-06 active/historical blocks), `system_logs` (FR-07/FR-08 audit trail), `users` (FR-04 dashboard auth).
+     - *3 Supporting Collections (Requirements):* `traffic_summaries` (FR-03, Table 5 benign flow volume aggregations), `settings` (FR-07 allowlists/thresholds with change history), `scans` (FR-05, Section 3.7 Nmap discovery run tracking).
+  2. **Preservation of Complete Block History Audit Trail (Deficiency Fix #1 & FR-07):**
+     - Safely dropped the legacy unique index on `blocklist.ip` and instituted a compound non-unique index on `[("ip", ASCENDING), ("status", ASCENDING)]`.
+     - Every mitigation action inserts a distinct document with unique `block_id`. Block records are **never overwritten**.
+     - Unblocking an IP transitions active records to `status="removed"`, recording `unblocked_at`, `unblock_reason`, and `unblock_actor` rather than deleting documents.
+     - Automatic sweep and status transition for expired blocks (`status="expired"`).
+  3. **Automated Data Retention Rules via MongoDB TTL Indexes (Proposal Table 11 & Decision D-011):**
+     - `attack_events`: 90-day TTL on `timestamp` (`expireAfterSeconds = 90 * 86400`).
+     - `traffic_summaries`: 30-day TTL on `minute` (`expireAfterSeconds = 30 * 86400`).
+     - `system_logs`: 90-day TTL on `timestamp` (`expireAfterSeconds = 90 * 86400`).
+     - `response_actions`: 90-day TTL on `executed_at` (`expireAfterSeconds = 90 * 86400`).
+     - `scans`: 30-day TTL on `start_time` (`expireAfterSeconds = 30 * 86400`).
+     - TTL index migration logic safely drops mismatched indexes without data loss.
+  4. **Dynamic Configuration and Rule Expiry Loading:**
+     - Dynamic loading of retention days and response rule duration (`response.max_rule_minutes`, default 30 min) from [`config/settings.yaml`](file:///d:/intrusion%20detection/config/settings.yaml).
+  5. **Strict Schema Validation & Elimination of Fake Default Values (Deficiency Fix #7):**
+     - Eliminated synthetic dummy values (`0.0.0.0`, `TCP`, `Benign`, `0.0`). Rejects malformed records with informative `ValueError`.
+  6. **Benign Flow Telemetry Isolation (Deficiency Fix #8 & Proposal FR-03):**
+     - Benign flows are rejected from `attack_events` and aggregated exclusively into 1-minute buckets in `traffic_summaries` (`record_traffic_summary()`), preventing database bloat.
+  7. **Burst-Event Aggregation (Incident Coalescing, Proposal Section 3.6 Tip 3):**
+     - Repeated flows from the same `(src_ip, dst_ip, predicted_class)` within `repeat_window_seconds` (default 60s) coalesce into a single incident document by incrementing `flow_count` and updating `last_seen`.
+  8. **Comprehensive Testing and Isolated Test Database (Deficiency Fix #10):**
+     - Standalone script removed from `db_service.py`. Real integration tests moved to [`tests/integration/test_db_service.py`](file:///d:/intrusion%20detection/tests/integration/test_db_service.py) targeting isolated `iot_ids_test` database.
+     - Unit tests authored in [`tests/unit/test_db_service_unit.py`](file:///d:/intrusion%20detection/tests/unit/test_db_service_unit.py).
+     - Full test suite verified: 84 passed unit and integration tests across the repository in 25.36s.
+- **Why:**
+  - Establishes a robust, production-grade persistence layer adhering strictly to the Group 03 Proposal specifications and compliance requirements.
+  - Guarantees complete legal and forensic auditability for firewall blocks and administrative actions without data loss or race conditions.
+  - Ensures automated compliance with data minimization and ethics commitments (Decision D-011).
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Section 3.6 (Figure 4); Table 7 (FR-01, FR-03, FR-04, FR-05, FR-06, FR-07, FR-08); Table 11; Decisions D-011, D-027; Guide Step 23.
+
+
 
 
 

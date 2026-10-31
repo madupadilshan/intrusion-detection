@@ -1143,9 +1143,43 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
----
+### Step 23: Set up MongoDB Database Service (`core_engine/db_service.py`)
+* **Date:** 31 October 2026
+* **Status:** ✅ Done
+* **Proposal & Requirement Alignment:**
+  - Proposal Section 3.6 & Figure 4: 6 Core Collections (`devices`, `attack_events`, `response_actions`, `blocklist`, `system_logs`, `users`).
+  - Requirements Table 7: FR-01, FR-03, FR-04, FR-05, FR-06, FR-07, FR-08.
+  - Table 11 & Decision D-011: Data Retention Periods (90 days attacks/logs/actions, 30 days summaries/scans).
+  - Decision D-027: MongoDB 9-collection schema, full block history audit trail, dynamic settings, and TTL data retention.
+* **10 Deficiencies Resolved (from `STEP_BY_STEP_GUIDE.md` Step 23):**
+  1. *Block History Overwrite Eliminated:* Safely dropped legacy unique index on `blocklist.ip` and instituted compound non-unique index `[("ip", ASCENDING), ("status", ASCENDING)]`. Every block creates an independent document preserving full forensic audit history.
+  2. *Blocklist Fields Standardized:* Added `block_id`, `direction` (`source`, `destination`, `both`), `reason`, `linked_event_id`, `predicted_class`, `confidence`, `actor`, `created_at`, `expires_at`, `status` (`active`, `expired`, `removed`), `unblocked_at`, `unblock_reason`, `unblock_actor`.
+  3. *Attack Events Telemetry Standardized:* Added `direction` (`inbound`, `outbound`, `internal`), `model_version`, `status` (`prediction`, `confirmed`), `response_status` (`pending`, `mitigated`, `alert_only`, `ignored`), `flow_features`, and `evidence_note`.
+  4. *Response Actions Extended:* Added `reason_code` (e.g. `CONF_THRESH_MET`, `BURST_LIMIT_EXCEEDED`, `COMPROMISED_CAMERA_MIRAI`), `actor` (`system_auto` or admin username), and supported action type `isolate`.
+  5. *Supporting Collections Implemented:* Added `traffic_summaries` (FR-03, Table 5), `settings` (FR-07 allowlists and thresholds with change history), and `scans` (FR-05, Section 3.7 Nmap discovery records).
+  6. *Automated TTL Retention Indexes:* Instituted background TTL indexes with dynamic migration: `attack_events` (90 days), `traffic_summaries` (30 days), `system_logs` (90 days), `response_actions` (90 days), `scans` (30 days).
+  7. *Eliminated Synthetic Fake Defaults:* Completely removed fake default values (`0.0.0.0`, `TCP`, `Benign`, `0.0`). Rejects malformed records with explicit `ValueError`.
+  8. *Benign Traffic Telemetry Isolation:* Benign flows update 1-minute bucket aggregations in `traffic_summaries` only (`record_traffic_summary()`), preventing database bloat in `attack_events`.
+  9. *Dynamic Rule Expiry Duration:* Read `response.max_rule_minutes` (30 min) and `retention_days` dynamically from `config/settings.yaml`.
+  10. *Test Isolation & Pytest Integration:* Replaced standalone production-polluting script with comprehensive pytest test suite in `tests/integration/test_db_service.py` targeting isolated `iot_ids_test` database and offline unit tests in `tests/unit/test_db_service_unit.py`.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run database service integration and unit tests
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/integration/test_db_service.py tests/unit/test_db_service_unit.py -v
 
----
+  # 2. Run full test suite across entire repository
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `core_engine/db_service.py` (Refactored and finalized, in Git)
+  - `tests/integration/test_db_service.py` (Created, in Git)
+  - `tests/unit/test_db_service_unit.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-027, in Git)
+  - `docs/execution_record.md` (Updated Step 23 details, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated Step 23 status to ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work Log 3.42, updated tree and summary)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated database architecture section)
+* **Verification Result:** 18 dedicated tests passed; all 84 unit and integration tests passed across the repository in 25.36s with 0 errors. Step 23 status is ✅ Done.
 
 ---
 

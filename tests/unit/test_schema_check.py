@@ -187,3 +187,4 @@ def test_schema_check_full_pipeline_execution(tmp_path, mock_feature_dfs):
     assert "Offline vs Live Feature Schema Audit Report (Step 22)" in md_content
     assert "Supervisor Checkpoint C6" in md_content
     assert "Research Question RQ3" in md_content
+
