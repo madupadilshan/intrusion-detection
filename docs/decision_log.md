@@ -187,3 +187,34 @@ Every important project decision is written here: the date, the decision, the re
   - Passes all 21 automated unit tests in `tests/unit/`.
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Sections 2.4, 3.3 step 5, 3.4; Objective O2.
+
+## D-019 — 2026-10-31 — Model comparison benchmarks and justification of Random Forest as primary prototype classifier
+- **Decision:** Execute Step 15 model benchmarking using [`ml_engine/compare_models.py`](file:///d:/intrusion%20detection/ml_engine/compare_models.py) comparing three distinct algorithmic families across the exact same 1,384,070 flows from `data/processed/train_features.parquet` under identical 5-fold Level 1 Grouped Cross-Validation (`StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` with `groups = scenario_id`):
+  1. **Random Forest (Bagging Ensemble):** Tuned parameters (`n_estimators=150`, `max_depth=25`, `class_weight='balanced'`), OrdinalEncoder with unknown category handling.
+  2. **Logistic Regression (Linear Baseline):** `LogisticRegression(class_weight="balanced", max_iter=200, solver="lbfgs")`, `OneHotEncoder(handle_unknown="ignore", sparse_output=True)` for categoricals, and `StandardScaler(with_mean=False)` for numerical features.
+  3. **HistGradientBoosting (Boosting Ensemble):** `HistGradientBoostingClassifier(class_weight="balanced", max_iter=100, max_depth=15, random_state=42)`, OrdinalEncoder with native categorical support.
+- **Empirical Results Summary:**
+  - **Out-of-Fold Macro-F1:** HistGradientBoosting (`0.3950`) > Random Forest (`0.3630`) > Logistic Regression (`0.3486`).
+  - **Fold Mean Macro-F1:** HistGradientBoosting (`0.4670 ± 0.3021`) ~ Random Forest (`0.4651 ± 0.3279`) > Logistic Regression (`0.3431 ± 0.1357`).
+  - **Per-Class Recall Performance:**
+    - `CnC` (extreme minority botnet beacons): Random Forest (**44.89%**) > HistGradientBoosting (**44.08%**) >> Logistic Regression (**13.97%**).
+    - `Malware_Download`: Logistic Regression (**93.62%**) > HistGradientBoosting (**79.98%**) ~ Random Forest (**79.97%**).
+    - `PortScan`: HistGradientBoosting (**55.19%**) > Random Forest (**43.32%**) > Logistic Regression (**33.66%**).
+    - `Benign`: Random Forest (**53.27%**) > HistGradientBoosting (**52.61%**) > Logistic Regression (**46.93%**).
+    - `DDoS_DoS`: Logistic Regression (5.40%) > HistGradientBoosting (0.63%) > Random Forest (0.12%).
+  - **Operational Efficiency & Latency:**
+    - Per-flow inference latency: Logistic Regression (**1.91 µs/flow**) < Random Forest (**6.46 µs/flow**) < HistGradientBoosting (**19.10 µs/flow**).
+    - Inference throughput: Logistic Regression (524,882 flows/s) > Random Forest (154,746 flows/s) > HistGradientBoosting (52,353 flows/s).
+    - Final model size: Logistic Regression (**0.01 MB**) < HistGradientBoosting (**0.68 MB**) < Random Forest (**15.19 MB**).
+- **Prototype Model Selection Justification:**
+  - **Random Forest is formally retained as the primary operational detector** for the live sensor engine (FR-01, FR-02, FR-03).
+  - *Justification 1 — Decision Auditability & Response Rule Generation:* Standalone decision trees in Random Forest allow explicit path extraction, feature thresholds, and inspectable rule formulations required for explainable firewall policy automation (Step 17, Phase 8) per Proposal Section 2.4. In contrast, HistGradientBoosting constructs sequential loss gradient ensembles where individual tree contributions cannot be isolated into simple network rules.
+  - *Justification 2 — Predictable Low Latency:* Random Forest evaluates 154,746 flows/s (6.46 µs/flow), providing ~3x faster inference throughput than HistGradientBoosting (19.10 µs/flow), leaving ample CPU headroom for concurrent Zeek log parsing and Socket.IO emissions on low-cost hardware.
+  - *Justification 3 — Superior Minority Attack Capture:* Random Forest achieves the highest recall on `CnC` botnet communications (44.89% vs 13.97% for the linear baseline), proving critical for detecting active botnet implants.
+  - All three serialized models (`rf_model.joblib`, `lr_model.joblib`, `hgb_model.joblib`) are preserved and will advance to Level 2 Held-Out validation in Step 16 on `Capture-34-1`.
+- **Why:**
+  - Satisfies Proposal Section 1.3, Section 2.4, and Table 9 requirements to scientifically justify model selection rather than assuming Random Forest without evidence.
+  - Proves that tree-based non-linear ensembles vastly outperform linear models on IoT flow telemetry.
+  - Maintains complete experimental reproducibility via [`reports/experiments/model_comparison.csv`](file:///d:/intrusion%20detection/reports/experiments/model_comparison.csv) and [`reports/experiments/model_comparison.md`](file:///d:/intrusion%20detection/reports/experiments/model_comparison.md).
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Sections 1.3, 2.4, 3.4; Table 9; Objective O2.

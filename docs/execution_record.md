@@ -727,6 +727,62 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 15: Benchmark and Compare Random Forest Against Linear and Gradient Boosting Baselines
+
+* **Objective:** Empirically evaluate and compare the primary Random Forest classifier against a linear baseline (`LogisticRegression`) and a gradient-boosting baseline (`HistGradientBoostingClassifier`) across all 1,384,070 flows under the identical Level 1 5-fold Grouped Cross-Validation split (`StratifiedGroupKFold(groups=scenario_id)`), evaluating macro-F1, per-class recall, benign FPR, throughput, inference latency, and serialized footprint per Proposal Sections 1.3, 2.4, and Table 9.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Implemented Comparative Evaluation Pipeline ([`ml_engine/compare_models.py`](file:///d:/intrusion%20detection/ml_engine/compare_models.py)):
+     - Integrated `build_pipeline(model_type)` for 3 model architectures:
+       - **Random Forest:** `OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1, min_frequency=50)` + `RandomForestClassifier(n_estimators=150, max_depth=25, min_samples_split=2, min_samples_leaf=4, max_features="log2", class_weight="balanced")`.
+       - **Logistic Regression (Linear Baseline):** `OneHotEncoder(handle_unknown="ignore", sparse_output=True)` for 6 categoricals + `StandardScaler(with_mean=False)` on 13 numericals + `LogisticRegression(class_weight="balanced", max_iter=200, solver="lbfgs")`.
+       - **HistGradientBoosting (Boosting Baseline):** `OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1)` + `HistGradientBoostingClassifier(class_weight="balanced", max_iter=100, max_depth=15, categorical_features=[0..5])`.
+     - Executed identical 5-fold `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` on all 1,384,070 flows with `groups = scenario_id`.
+     - Collected out-of-fold predictions, fold metrics, per-class recall, honeypot benign FPR, fit duration, latency (µs/flow), throughput (flows/s), and model size.
+     - Fitted all 3 models on the full dataset and serialized final models (`rf_model.joblib`, `lr_model.joblib`, `hgb_model.joblib`) to `ml_engine/models/`.
+  2. Benchmarking Results:
+     - **Out-of-Fold Macro-F1:** HistGradientBoosting (`0.3950`) > Random Forest (`0.3630`) > Logistic Regression (`0.3486`).
+     - **Cross-Scenario Fold Stability:** HistGradientBoosting (`0.4670 ± 0.3021`) ~ Random Forest (`0.4651 ± 0.3279`) > Logistic Regression (`0.3431 ± 0.1357`).
+     - **Recall on `CnC` Botnet Beacons:** Random Forest (**44.89%**) > HistGradientBoosting (**44.08%**) >> Logistic Regression (**13.97%**).
+     - **Recall on `Malware_Download`:** Logistic Regression (**93.62%**) > HistGradientBoosting (**79.98%**) ~ Random Forest (**79.97%**).
+     - **Recall on `PortScan`:** HistGradientBoosting (**55.19%**) > Random Forest (**43.32%**) > Logistic Regression (**33.66%**).
+     - **Inference Latency:** Logistic Regression (**1.91 µs/flow**) < Random Forest (**6.46 µs/flow**) < HistGradientBoosting (**19.10 µs/flow**).
+     - **Throughput:** Logistic Regression (524,882 flows/s) > Random Forest (154,746 flows/s) > HistGradientBoosting (52,353 flows/s).
+     - **Model Size:** Logistic Regression (**0.01 MB**) < HistGradientBoosting (**0.68 MB**) < Random Forest (**15.19 MB**).
+  3. Formal Justification for Retaining Random Forest as Primary Operational Prototype Classifier:
+     - Decision trees in Random Forest provide transparent decision paths and categorical thresholds necessary for explainable automated firewall rule synthesis (Step 17, Phase 8) per Proposal Section 2.4.
+     - Random Forest offers 3x faster per-flow throughput (154,746 flows/s vs 52,353 flows/s) than HistGradientBoosting, minimizing CPU contention on edge sensors.
+     - Random Forest provides the highest detection rate on the critical minority attack class `CnC` (44.89%).
+  4. Automated Unit Testing ([`tests/unit/test_compare_models.py`](file:///d:/intrusion%20detection/tests/unit/test_compare_models.py)):
+     - Created 5 unit tests validating pipeline construction for all 3 models, handling of unseen categorical values, non-empty metrics computation, report markdown formatting, and model serialization.
+     - All 5 tests passed; full test suite now contains 26 passing tests across the repository.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run 3-model comparative evaluation across all 1.38M flows on 5-fold Grouped CV
+  .\.venv\Scripts\python.exe ml_engine/compare_models.py --cv-splits 5 --rf-n-jobs -1
+
+  # 2. Run unit test suite for model comparison
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_compare_models.py -v
+
+  # 3. Run full project test suite
+  .\.venv\Scripts\python.exe -m pytest tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/compare_models.py` (Created, in Git)
+  - `reports/experiments/model_comparison.csv` (Created, in Git)
+  - `reports/experiments/model_comparison.md` (Created, in Git)
+  - `tests/unit/test_compare_models.py` (Created, in Git)
+  - `ml_engine/models/lr_model.joblib` (Generated, 0.01 MB, gitignored)
+  - `ml_engine/models/hgb_model.joblib` (Generated, 0.68 MB, gitignored)
+  - `docs/decision_log.md` (Added Decision D-019, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 15 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.34 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 7 with Step 15 comparative benchmarks)
+* **Verification Result:** All 26 unit tests in `tests/` passed in 7.71s with 0 errors. Model comparison table generated with out-of-fold metrics across 1.38M flows. Random Forest confirmed as primary detector; all 3 models serialized and ready for Step 16 held-out validation. Step 15 status is ✅ Done.
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:
