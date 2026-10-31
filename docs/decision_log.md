@@ -167,3 +167,23 @@ Every important project decision is written here: the date, the decision, the re
   - Establishes full experimental rigor for BICT Honours Degree thesis examination.
 - **Who agreed:** project owner and team (25 Oct 2026).
 - **Proposal link:** Section 3.4; Objective O2; Hypotheses H1, H2; Supervisor Checkpoint C4.
+
+## D-018 — 2026-10-31 — Random Forest hyperparameter selection and Level 1 Grouped Cross-Validation
+- **Decision:** Execute Step 14 Random Forest classifier training using [`ml_engine/train.py`](file:///d:/intrusion%20detection/ml_engine/train.py) with the following specifications:
+  - **Pipeline Architecture:** Scikit-learn Pipeline with `ColumnTransformer` (OrdinalEncoder with `handle_unknown="use_encoded_value"`, `unknown_value=-1`, `min_frequency=50` on 6 categorical features; numerical features passed through without scaling) followed by `RandomForestClassifier`.
+  - **Hyperparameter Search:** Executed `RandomizedSearchCV` (12 candidates, 5 folds = 60 fits) scored on `f1_macro` within `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` using `groups = scenario_id`.
+  - **Optimal Selected Hyperparameters:** `n_estimators = 150`, `max_depth = 25`, `min_samples_split = 2`, `min_samples_leaf = 4`, `max_features = 'log2'`, `class_weight = 'balanced'`.
+  - **Level 1 5-Fold Grouped Cross-Validation (Full 1,384,070 flows):**
+    - Out-of-fold Macro-F1: `0.3630` (fold mean: `0.4651 ± 0.3279`, fold max: `0.9997`).
+    - Overall Out-of-fold Accuracy: `0.4500`.
+    - Per-Class Recalls: `Malware_Download` 79.97%, `Benign` 53.27%, `CnC` 44.89%, `PortScan` 43.32%, `DDoS_DoS` 0.12%.
+  - **Inference Latency & Model Size:**
+    - Per-flow inference latency: `6.46 µs/flow` (throughput: 154,746 flows/second), well within the 1-second operational budget.
+    - Serialized model bundle (`ml_engine/models/rf_model.joblib`): `15.19 MB` (prevented tree explosion by bounding max_depth to 25, completely replacing the unusable 820 MB legacy model).
+- **Why:**
+  - Strictly follows Proposal Section 2.4, Section 3.3 step 5, and Section 3.4.
+  - Exposes the genuine difficulty of cross-scenario botnet generalization without session leakage (contrast with the flawed 1.00 accuracy of legacy row-random splits).
+  - Preserves memory safety (< 400 MB RAM during training) on the development PC.
+  - Passes all 21 automated unit tests in `tests/unit/`.
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Sections 2.4, 3.3 step 5, 3.4; Objective O2.

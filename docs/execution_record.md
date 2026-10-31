@@ -671,6 +671,62 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 14: Train the Random Forest Classifier
+
+* **Objective:** Construct a unified scikit-learn Pipeline with `ColumnTransformer` (OrdinalEncoder with rare category grouping and unknown value handling) and `RandomForestClassifier` per Proposal Section 3.3 (Step 5), tune hyperparameters via `RandomizedSearchCV` scored on `f1_macro` inside Level 1 Grouped Cross-Validation (`StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` with `groups = scenario_id`) across 22 training scenarios, evaluate out-of-fold generalization metrics on the entire 1,384,070 flows without intra-session data leakage, fit the final model, benchmark per-flow inference latency, export the model bundle to [`ml_engine/models/rf_model.joblib`](file:///d:/intrusion%20detection/ml_engine/models/rf_model.joblib), and generate audit reports per Proposal Sections 2.4 and 3.4.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Implemented Training Engine ([`ml_engine/train.py`](file:///d:/intrusion%20detection/ml_engine/train.py)):
+     - Designed integrated `Pipeline`:
+       - `ColumnTransformer` with `OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1, min_frequency=50)` for 6 categorical features (`proto`, `service`, `conn_state`, `history`, `orig_port_cat`, `resp_port_cat`).
+       - Numerical features passed through without alteration (`remainder="passthrough"`).
+       - Estimator: `RandomForestClassifier(random_state=42, n_jobs=-1)`.
+     - Hyperparameter Search: Explored candidate distributions (`n_estimators`: [100, 150, 200], `max_depth`: [12, 18, 25, 30], `min_samples_split`: [2, 5, 10], `min_samples_leaf`: [1, 2, 4], `max_features`: ["sqrt", "log2"], `class_weight`: ["balanced", "balanced_subsample"]) over 12 iterations (60 fits) with 5-fold `StratifiedGroupKFold`.
+     - Optimal Selected Configuration: `n_estimators=150`, `max_depth=25`, `min_samples_split=2`, `min_samples_leaf=4`, `max_features='log2'`, `class_weight='balanced'`.
+     - Exported search log to [`reports/experiments/rf_search.csv`](file:///d:/intrusion%20detection/reports/experiments/rf_search.csv).
+  2. Level 1 5-Fold Grouped Cross-Validation Evaluation:
+     - Evaluated winning hyperparameter set across all 5 folds of the entire 1,384,070 training flows with `groups = scenario_id`.
+     - Recorded per-fold metrics to [`reports/experiments/rf_cv_results.csv`](file:///d:/intrusion%20detection/reports/experiments/rf_cv_results.csv).
+     - Out-of-fold Macro-F1: `0.3630` (fold mean: `0.4651 ± 0.3279`, fold range: `0.1854` to `0.9997`).
+     - Out-of-fold Accuracy: `0.4500` (45.00%).
+     - Per-class Recalls: `Malware_Download` 79.97%, `Benign` 53.27%, `CnC` 44.89%, `PortScan` 43.32%, `DDoS_DoS` 0.12%.
+     - Honeypot Benign False Positive Rate across heterogeneous malware captures: `46.729%` (161,413 false alarms out of 345,424 benign flows; operational IP camera FPR evaluated on Level 3 local camera traffic in Step 20 per Hypothesis H1).
+  3. Final Model Training & Optimization:
+     - Fitted optimal pipeline on all 1,384,070 flows in 115.31 seconds.
+     - Benchmarked inference latency: **6.46 µs/flow** (154,746 flows/second), leaving enormous headroom for the 1.0-second operational response budget.
+     - Model file size: **15.19 MB** compressed (depth bounding completely prevented tree explosion, replacing the unusable 820 MB legacy model).
+     - Saved model bundle to [`ml_engine/models/rf_model.joblib`](file:///d:/intrusion%20detection/ml_engine/models/rf_model.joblib).
+  4. Automated Unit Testing ([`tests/unit/test_train.py`](file:///d:/intrusion%20detection/tests/unit/test_train.py)):
+     - Verified pipeline construction and ColumnTransformer feature assignment.
+     - Verified robust transformation and prediction on novel/unseen categorical values (-1 encoding).
+     - Verified probability distribution summing to 1.0.
+     - Verified serialized bundle metadata integrity.
+     - Verified sub-millisecond inference benchmark.
+     - Verified existence and formatting of all report and CSV artifacts.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run Random Forest training, hyperparameter search, and 5-fold grouped CV
+  .\.venv\Scripts\python.exe ml_engine/train.py --search-sample-size 250000 --n-iter 12 --cv-splits 5 --rf-n-jobs -1
+
+  # 2. Run unit tests for training pipeline and model artifacts
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_train.py -v
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/train.py` (Created, in Git)
+  - `reports/experiments/rf_search.csv` (Created, in Git)
+  - `reports/experiments/rf_cv_results.csv` (Created, in Git)
+  - `reports/experiments/rf_training_report.md` (Created, in Git)
+  - `tests/unit/test_train.py` (Created, in Git)
+  - `ml_engine/models/rf_model.joblib` (Generated, 15.19 MB, gitignored)
+  - `docs/decision_log.md` (Added Decision D-018, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 14 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.33 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 7 with Step 14 results)
+* **Verification Result:** All 5 unit tests in `test_train.py` passed (21 unit tests total across repository). Inference latency 6.46 µs/flow. Model size 15.19 MB. Zero session leakage across scenarios confirmed. Step 14 status is ✅ Done.
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:
