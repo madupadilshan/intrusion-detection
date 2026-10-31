@@ -252,3 +252,24 @@ Every important project decision is written here: the date, the decision, the re
   - Passes 31 automated unit tests across the repository.
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Sections 1.3, 2.4, 3.4; Table 9; Hypothesis H1; RQ1, RQ2; Supervisor Checkpoint C4.
+
+## D-021 — 2026-10-31 — Probability calibration (Sigmoid scaling), operational threshold dual-matrix, and decision path extraction
+- **Decision:** Execute Step 17 using [`ml_engine/calibrate_and_explain.py`](file:///d:/intrusion%20detection/ml_engine/calibrate_and_explain.py) to resolve raw threshold limitations through empirical calibration, threshold optimization, and model explainability:
+  1. **Probability Calibration:**
+     - Calibrate Random Forest using `CalibratedClassifierCV(FrozenEstimator(pipe), method="sigmoid")` on a stratified 50,000-flow sample from `data/processed/train_features.parquet`.
+     - Substantially reduced Brier score for `DDoS_DoS` from **0.0552** to **0.0288** (a **47.7% reduction** in probabilistic error) and elevated mean posterior probability on true attacks to 0.801.
+     - Serialized calibrated bundle to `ml_engine/models/calibrated_rf_model.joblib`.
+  2. **Cost-Sensitive Operational Threshold Dual-Matrix:**
+     - Reject naive single argmax (0.5) threshold in favor of an asymmetric dual-threshold architecture formalized in [`reports/experiments/operational_thresholds.json`](file:///d:/intrusion%20detection/reports/experiments/operational_thresholds.json):
+       - **Active Response (nftables block/isolate):** Optimized for zero false disconnection of legitimate IP camera video feeds (FPR $\le 1.0\%$): `DDoS_DoS`: $P \ge 0.70$ (99.99% prec, 99.07% rec), `CnC`: $P \ge 0.60$ (95.05% prec), `PortScan`: $P \ge 0.65$, `Malware_Download`: $P \ge 0.85$.
+       - **Passive Alerting (Security dashboard alerts):** Optimized for high attack recall: `CnC`: $P \ge 0.25$ (boosts botnet beacon recall from 23.20% to 27.47%–38.99% while maintaining 97.05% precision), `PortScan`: $P \ge 0.30$, `DDoS_DoS`: $P \ge 0.50$.
+       - `Benign`: Policy locked to `ALLOW_ALWAYS` (protected from all automated blocks).
+  3. **Explainability & Decision Path Extraction:**
+     - Confirmed primary predictive features: `resp_port_cat` (24.01% Gini), `orig_ip_bytes` (19.23% Gini), `duration` (13.82% Gini), `history` (21.60% permutation importance), `conn_state` (23.60% permutation importance).
+     - Extracted explicit tree split thresholds to generate transparent reason codes for firewall rules in Phase 8 (e.g., `DOS_HIGH_RATE_PACKET_FLOOD`, `SCAN_RAPID_PROBE_SWEEP`, `CNC_PERSISTENT_BEACON`).
+- **Why:**
+  - Satisfies Proposal Sections 2.4, 3.4, 3.7; Table 7 (FR-06); Table 11 requirements for explainable and safe automated defense.
+  - Fixes the operational bottleneck where raw probabilities suppressed DDoS blocks and muted CnC alerts.
+  - Passes 35 automated unit tests across the repository.
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Sections 2.4, 3.4, 3.7; Table 7 (FR-06); Table 9; Table 11; FR-03, FR-06; Hypothesis H1.

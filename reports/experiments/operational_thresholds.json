@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "generated_date": "2026-10-31",
+    "governing_proposal": "Sections 2.4, 3.4, 3.7; Table 7 (FR-06), Table 11",
+    "evaluation_scenario": "CTU-IoT-Malware-Capture-34-1"
+  },
+  "safety_guardrails": {
+    "min_repeats": 3,
+    "repeat_window_seconds": 60,
+    "max_rule_minutes": 30,
+    "allowlist_protected": true
+  },
+  "classes": {
+    "Benign": {
+      "active_response_threshold": null,
+      "passive_alert_threshold": null,
+      "policy": "ALLOW_ALWAYS",
+      "notes": "Benign traffic is preserved; never blocked or dropped."
+    },
+    "DDoS_DoS": {
+      "active_response_threshold": 0.7,
+      "active_precision": 0.9999,
+      "active_recall": 0.9907,
+      "passive_alert_threshold": 0.5,
+      "passive_precision": 0.9999,
+      "passive_recall": 0.9907,
+      "action": "drop_source",
+      "notes": "Cost-sensitive tuning: Active threshold guarantees precision while Passive threshold boosts recall."
+    },
+    "PortScan": {
+      "active_response_threshold": 0.65,
+      "active_precision": 0.0432,
+      "active_recall": 0.9426,
+      "passive_alert_threshold": 0.3,
+      "passive_precision": 0.0424,
+      "passive_recall": 0.9426,
+      "action": "drop_source",
+      "notes": "Cost-sensitive tuning: Active threshold guarantees precision while Passive threshold boosts recall."
+    },
+    "CnC": {
+      "active_response_threshold": 0.6,
+      "active_precision": 0.9505,
+      "active_recall": 0.1432,
+      "passive_alert_threshold": 0.25,
+      "passive_precision": 0.9705,
+      "passive_recall": 0.2747,
+      "action": "isolate_target",
+      "notes": "Cost-sensitive tuning: Active threshold guarantees precision while Passive threshold boosts recall."
+    },
+    "Malware_Download": {
+      "active_response_threshold": 0.85,
+      "passive_alert_threshold": 0.5,
+      "expected_precision": 0.95,
+      "expected_recall": 0.8,
+      "action": "isolate_target",
+      "notes": "Theoretical operating threshold based on training set validation."
+    }
+  }
+}

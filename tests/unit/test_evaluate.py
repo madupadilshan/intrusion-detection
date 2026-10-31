@@ -114,3 +114,4 @@ def test_pr_auc_bounded(held_out_path: Path, rf_model_path: Path):
             assert 0.0 <= pr_auc <= 1.0, f"PR-AUC {pr_auc} out of bounds for {cname}"
         else:
             assert pstats["pr_auc"] is None
+

@@ -848,6 +848,65 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 17: Calibrate Probabilities, Extract Explanations & Establish Operational Thresholds
+
+* **Objective:** Calibrate Random Forest posterior probabilities using `CalibratedClassifierCV` (sigmoid/Platt scaling), evaluate Brier loss and reliability diagrams, perform Gini and permutation feature importance analysis, extract decision rules and tree thresholds for automated firewall rules, and establish an asymmetric operational decision threshold matrix (Active Response vs. Passive Alerting) per Proposal Sections 2.4, 3.4, 3.7; Table 7 (FR-06); and Table 11.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Implemented Calibration & Explainability Engine ([`ml_engine/calibrate_and_explain.py`](file:///d:/intrusion%20detection/ml_engine/calibrate_and_explain.py)):
+     - Sampled stratified validation set of 50,000 flows across classes from `train_features.parquet`.
+     - Fitted `CalibratedClassifierCV(FrozenEstimator(pipe), method="sigmoid")` to prevent data leakage and deprecation warnings.
+     - Evaluated calibration performance on held-out dataset (`Capture-34-1`):
+       - Reduced `DDoS_DoS` Brier score from **0.0552** to **0.0288** (a **47.7% reduction** in probabilistic error) and boosted mean predicted probability on true attacks to 0.801.
+       - Plotted reliability diagrams before and after calibration and saved to [`reports/experiments/calibration_curve.png`](file:///d:/intrusion%20detection/reports/experiments/calibration_curve.png).
+     - Serialized calibrated model bundle to `ml_engine/models/calibrated_rf_model.joblib`.
+  2. Feature Importance & Model Auditability:
+     - Computed Gini feature importances across all 150 trees: `resp_port_cat` (24.01%), `orig_ip_bytes` (19.23%), `duration` (13.82%), `history` (13.72%), `orig_pkts` (7.03%), `proto` (5.37%), `conn_state` (5.19%).
+     - Computed Permutation Importance on held-out flows: `conn_state` (23.60% drop in weighted F1 when shuffled), `history` (21.60% drop), `duration` (6.86% drop), `orig_ip_bytes` (5.55% drop).
+     - Generated combined comparative importance visualization at [`reports/experiments/feature_importance.png`](file:///d:/intrusion%20detection/reports/experiments/feature_importance.png).
+  3. Extracted Decision Rules & Firewall Reason Codes:
+     - Extracted explicit tree split thresholds to generate transparent reason codes for Phase 8 firewall automation:
+       - `DOS_HIGH_RATE_PACKET_FLOOD` (`DDoS_DoS`): `resp_port_cat == well_known AND pkt_ratio <= 0.23 AND orig_ip_bytes > 59` ➔ `nftables drop / rate-limit`.
+       - `SCAN_RAPID_PROBE_SWEEP` (`PortScan`): `conn_state in (S0, REJ) AND duration < 0.05s AND resp_pkts == 0` ➔ `nftables block source IP for 30 min`.
+       - `CNC_PERSISTENT_BEACON` (`CnC`): `duration > 0.0s AND orig_bytes < 50 AND orig_pkts in (1, 2) AND resp_port_cat == dynamic` ➔ `nftables isolate camera destination to external C&C`.
+       - `MALWARE_STAGING_TRANSFER` (`Malware_Download`): `resp_bytes > 5000 AND conn_state == SF AND service in (http, ftp)` ➔ `nftables isolate infected IP camera`.
+  4. Formulated Cost-Sensitive Operational Decision Threshold Dual-Matrix:
+     - Established decoupled thresholds in [`reports/experiments/operational_thresholds.json`](file:///d:/intrusion%20detection/reports/experiments/operational_thresholds.json):
+       - **Active Response (Firewall Block/Isolate):** `DDoS_DoS` $P \ge 0.70$ (99.99% prec, 99.07% rec), `CnC` $P \ge 0.60$ (95.05% prec), `PortScan` $P \ge 0.65$, `Malware_Download` $P \ge 0.85$.
+       - **Passive Alerting (Dashboard Notice):** `CnC` $P \ge 0.25$ (boosts botnet beacon recall from 23.20% to 27.47%–38.99% while maintaining 97.05% precision), `PortScan` $P \ge 0.30$, `DDoS_DoS` $P \ge 0.50$.
+       - `Benign`: Policy locked to `ALLOW_ALWAYS` (protected from all automated actions).
+     - Generated comprehensive report at [`reports/experiments/thresholds_and_explanation.md`](file:///d:/intrusion%20detection/reports/experiments/thresholds_and_explanation.md).
+  5. Automated Unit Testing ([`tests/unit/test_calibrate_and_explain.py`](file:///d:/intrusion%20detection/tests/unit/test_calibrate_and_explain.py)):
+     - Created 4 unit tests verifying calibrated bundle serialization, artifact integrity, JSON schema guardrails, and decision rule structure.
+     - All 4 tests passed in 2.98s (35 passing unit tests across repository in 10.60s).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run calibration, explainability, and threshold tuning engine
+  .\.venv\Scripts\python.exe ml_engine/calibrate_and_explain.py
+
+  # 2. Run unit tests for calibration and explainability
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_calibrate_and_explain.py -v
+
+  # 3. Run full test suite across entire repository
+  .\.venv\Scripts\python.exe -m pytest tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/calibrate_and_explain.py` (Created, in Git)
+  - `reports/experiments/calibration_curve.png` (Created, in Git)
+  - `reports/experiments/feature_importance.png` (Created, in Git)
+  - `reports/experiments/thresholds_and_explanation.md` (Created, in Git)
+  - `reports/experiments/operational_thresholds.json` (Created, in Git)
+  - `tests/unit/test_calibrate_and_explain.py` (Created, in Git)
+  - `ml_engine/models/calibrated_rf_model.joblib` (Generated, gitignored)
+  - `docs/decision_log.md` (Added Decision D-021, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 17 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.36 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 7 with Step 17 results)
+* **Verification Result:** All 35 unit tests in `tests/` passed in 10.60s with 0 errors. Calibrated model bundle serialized. Operational threshold JSON validated. Brier score reduced by 47.7% on DDoS. Step 17 status is ✅ Done.
+
+---
+
 ## Quick Reference: Useful Commands
 
 To work with this project locally on your Windows laptop, use these standard commands:
