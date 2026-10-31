@@ -358,6 +358,33 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Section 3.5; Figure 3; Table 7 (FR-01); Guide Step 21.
 
+## D-026 — 2026-10-31 — Offline vs live schema verification, zero training-serving skew certification, and resolution of Research Question RQ3 (Step 22)
+- **Decision:** Execute Step 22 schema audit using [`tools/schema_check.py`](file:///d:/intrusion%20detection/tools/schema_check.py) comparing offline training features (`data/processed/train_features.parquet`, 1,384,070 flows) against live Zeek sensor features (`data/local/benign/2026-10-31/conn.log`, 5,000 camera flows) and certify Supervisor Checkpoint C6:
+  1. **Strict Feature Alignment:**
+     - Confirmed 100% exact match across all 19 candidate features in locked order (`proto`, `service`, `conn_state`, `history`, `orig_port_cat`, `resp_port_cat`, `duration`, `orig_bytes`, `resp_bytes`, `missed_bytes`, `orig_pkts`, `orig_ip_bytes`, `resp_pkts`, `resp_ip_bytes`, `orig_bytes_per_pkt`, `resp_bytes_per_pkt`, `byte_ratio`, `pkt_ratio`, `is_incomplete_flow`).
+     - Zero features dropped or modified; no retraining required (Golden Rule 3: Zero Training-Serving Skew preserved).
+  2. **Data Types and Missing Value Invariants:**
+     - All 6 categorical features evaluate strictly as string/object; all 13 numerical features evaluate strictly as `float32`/`int8`.
+     - Zero missing values, NaNs, or infinite floats (0.000% null rate across offline and live feature matrices).
+  3. **Numerical Feasibility and Physical Network Invariants:**
+     - Verified that all byte, packet, and duration counts are non-negative ($\ge 0.0$), and directional ratios (`byte_ratio`, `pkt_ratio`) are strictly bounded in $[0.0, 1.0]$.
+  4. **Categorical Novelty and Robust Preprocessor Handling:**
+     - Identified that IP-camera native application protocols (`service` values `rtsp`, `ssdp`, `onvif`, `ntp`) appearing in live camera traffic but absent from IoT-23 benign subsets are safely absorbed into token index `-1` by the pipeline `OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1)` without throwing exceptions.
+  5. **End-to-End Inference Verification:**
+     - Verified end-to-end inference against [`ml_engine/models/ids_bundle_v1.joblib`](file:///d:/intrusion%20detection/ml_engine/models/ids_bundle_v1.joblib) across all 5,000 live flows: normalized probabilities ($\sum P_i = 1.0$), 36,923 fps throughput (27.08 µs/flow latency), 100% Benign classification, and 0.000% False Positive Rate.
+  6. **Formal Resolution of Research Question RQ3:**
+     - *Question:* "To what extent do offline features match live sensor features without training-serving skew?"
+     - *Resolution:* Offline and live feature extraction pipelines achieve 100% mathematical, structural, and syntactic equivalence via unified [`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py). Supervisor Checkpoint C6 is formally passed.
+  7. **Formal Completion of Track 2:**
+     - Concludes Track 2 (Steps 19–22: Zeek Sensor Policy, Benign Camera Traffic Baseline, Real-Time Zeek Adapter, and Offline vs. Live Schema Audit). Telemetry foundation is 100% complete and certified for Phase 6 backend integration (Step 23).
+- **Why:**
+  - Guarantees that live sensor detection operates under the exact mathematical conditions as offline model validation, eliminating silent prediction degradation.
+  - Generates official audit artifacts: [`reports/schema_check.md`](file:///d:/intrusion%20detection/reports/schema_check.md) and [`reports/schema_check.csv`](file:///d:/intrusion%20detection/reports/schema_check.csv).
+  - Passes 7 dedicated unit tests in [`tests/unit/test_schema_check.py`](file:///d:/intrusion%20detection/tests/unit/test_schema_check.py) (all 66 repository tests passing).
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Sections 2.5, 3.5; Objective O3; RQ3; Table 11; Supervisor Checkpoint C6; Guide Step 22.
+
+
 
 
 

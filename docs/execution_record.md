@@ -1098,6 +1098,51 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 22: Offline vs Live Feature Check (Schema Check) & RQ3 Certification
+
+* **Objective:** Compare the offline IoT-23 training feature matrix (`data/processed/train_features.parquet`, 1,384,070 flows) against live Zeek sensor features (`data/local/benign/2026-10-31/conn.log`, 5,000 flows) across 19 features on column names/order, data types, null rates, numerical feasibility ranges, categorical domains, and model inference to guarantee zero training-serving skew, answer Research Question RQ3, and satisfy Supervisor Checkpoint C6 per Proposal Sections 2.5, 3.5; Table 11; and Decision `D-026`.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Authoring Schema Auditor & Skew Checker ([`tools/schema_check.py`](file:///d:/intrusion%20detection/tools/schema_check.py)):
+     - Checked column presence, count (19), and locked sequence against `FEATURE_COLUMNS`: 100% matched.
+     - Checked data type compatibility: categoricals strictly `object`/`string`, numericals strictly `float32`/`int8`: 100% compatible.
+     - Audited missing values: verified exactly 0.000% null/NaN/inf values across all features in both datasets.
+     - Audited numerical ranges: verified physical network bounds (non-negative packet/byte counts, ratios bounded in $[0.0, 1.0]$) and quantified statistical distribution shift using 2-sample Kolmogorov-Smirnov tests.
+     - Audited categorical domain coverage: identified novel live camera application protocols (`service` values `rtsp`, `ssdp`, `onvif`, `ntp`) and verified safe absorption into index `-1` by `OrdinalEncoder(unknown_value=-1)` without exceptions.
+     - Evaluated end-to-end inference against production model bundle ([`ml_engine/models/ids_bundle_v1.joblib`](file:///d:/intrusion%20detection/ml_engine/models/ids_bundle_v1.joblib)): normalized probabilities ($\sum P_i = 1.0$), 36,923 fps throughput (27.08 µs/flow), 100% Benign classification, and 0.000% False Positive Rate.
+  2. Formal Reporting & Artifact Generation:
+     - Authored official audit report: [`reports/schema_check.md`](file:///d:/intrusion%20detection/reports/schema_check.md).
+     - Exported machine-readable summary: [`reports/schema_check.csv`](file:///d:/intrusion%20detection/reports/schema_check.csv).
+  3. Authoring Automated Unit Testing Suite ([`tests/unit/test_schema_check.py`](file:///d:/intrusion%20detection/tests/unit/test_schema_check.py)):
+     - Implemented 7 unit tests covering column validation, dtype compatibility, null checking, numerical range verification, categorical novelty extraction, model inference, and full pipeline runner execution.
+     - All 7 unit tests passed in 4.67s. Full repository suite contains 66 passing unit tests (20.43s, 0 errors).
+  4. Track 2 Concluded:
+     - Concludes Track 2 (Live Sensor Telemetry, Steps 19–22). The live telemetry ingestion and feature extraction pipeline is 100% certified for Phase 6 backend integration (Step 23 onward).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run schema check against training data and benign camera baseline
+  .\.venv\Scripts\python.exe tools/schema_check.py
+
+  # 2. Run unit tests for schema check tool
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/unit/test_schema_check.py -v
+
+  # 3. Run full test suite across entire repository
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe
+  ```
+* **Files Created / Modified:**
+  - `tools/schema_check.py` (Created, in Git)
+  - `reports/schema_check.md` (Created, in Git)
+  - `reports/schema_check.csv` (Created, in Git)
+  - `tests/unit/test_schema_check.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-026, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 22 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.41 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 6 with Step 22 results)
+* **Verification Result:** All 66 unit tests passed in 20.43s with 0 errors. Zero training-serving skew certified. Research Question RQ3 answered and Supervisor Checkpoint C6 passed. Step 22 status is ✅ Done. Track 2 is 100% COMPLETE.
+
+---
+
 ---
 
 ---
