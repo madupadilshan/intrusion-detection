@@ -958,6 +958,54 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 19: Run Zeek on the Sensor & Sensor Telemetry Test Harness
+
+* **Objective:** Establish the live network traffic monitoring configuration for the IDS sensor, implement Zeek streaming JSON logging policies, author the sensor execution daemon script, build a cross-platform simulation and verification test harness, and validate that live Zeek flow records conform to the 19-feature extraction schema with zero training-serving skew per Proposal Section 3.3 step 1, Section 3.5; Table 7 (FR-01); and Table 8.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Authoring Zeek Production Policy Configuration ([`sensor/local.zeek`](file:///d:/intrusion%20detection/sensor/local.zeek)):
+     - Loaded `@load policy/tuning/json-logs.zeek` to output connection logs in newline-delimited streaming JSON format.
+     - Set `redef Log::default_rotation_interval = 0 sec;` to prevent automated periodic hourly rotations from breaking active log tailing in Step 21.
+     - Set `redef ignore_checksums = T;` and enabled `-C` to prevent hardware switch mirroring checksum anomalies from discarding valid packets.
+     - Loaded core connection protocol analyzers: `@load base/protocols/conn`, `@load base/protocols/dns`, `@load base/protocols/http`, `@load base/protocols/ssl`.
+  2. Authoring Sensor Execution Daemon Script ([`sensor/run_zeek.sh`](file:///d:/intrusion%20detection/sensor/run_zeek.sh)):
+     - Configured POSIX bash script with `set -euo pipefail`.
+     - Supports live interface monitoring (`--interface <iface>`), offline PCAP replay (`--pcap <file.pcap>`), log directory configuration (`--log-dir <dir>`), background daemon execution (`--daemon`), status verification (`--status`), and graceful process termination (`--stop`).
+  3. Authoring Cross-Platform Zeek Controller and Simulation Test Engine ([`sensor/zeek_runner.py`](file:///d:/intrusion%20detection/sensor/zeek_runner.py)):
+     - Implemented automatic Zeek binary detection across system PATH, standard Linux paths (`/opt/zeek/bin/zeek`, `/usr/local/zeek/bin/zeek`), and Windows WSL.
+     - Implemented realistic traffic flow generator matching IP-camera local telemetry (Tapo C200 1080p RTSP/H.264 video streams, camera DNS lookups, TCP SYN floods, PortScan probes, C&C beacon telemetry, and binary downloads) per Proposal Section 5.1.
+     - Built automated schema validator verifying that `conn.log` streams parse cleanly through `ml_engine/features.py` producing all 19 features with 0 NaNs.
+  4. Automated Unit Testing Suite ([`tests/unit/test_zeek_config.py`](file:///d:/intrusion%20detection/tests/unit/test_zeek_config.py)):
+     - Implemented 5 dedicated unit tests verifying Zeek configuration syntax, daemon shell script flags, simulation generation, schema conversion, and end-to-end model inference against `ids_bundle_v1.joblib`.
+     - All 5 tests passed in 3.99s. Full repository suite contains 45 passing unit tests (13.90s, 0 errors).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run Zeek simulation test harness to generate and verify conn.log
+  .\.venv\Scripts\python.exe sensor/zeek_runner.py --simulate --output sensor/logs/conn.log --count 100
+
+  # 2. Run unit tests for Zeek sensor configuration
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_zeek_config.py -v
+
+  # 3. Run full test suite across entire repository
+  .\.venv\Scripts\python.exe -m pytest tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `sensor/local.zeek` (Created, in Git)
+  - `sensor/run_zeek.sh` (Created, in Git)
+  - `sensor/zeek_runner.py` (Created, in Git)
+  - `sensor/logs/conn.log` (Generated, gitignored)
+  - `tests/unit/test_zeek_config.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-023, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 19 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.38 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 6 with Step 19 results)
+* **Verification Result:** All 45 unit tests in `tests/` passed in 13.90s with 0 errors. Zeek configuration and runner verified. Streaming JSON schema matches feature extractor with 0 NaNs. Step 19 status is ✅ Done.
+
+---
+
+---
+
 ---
 
 ## Quick Reference: Useful Commands

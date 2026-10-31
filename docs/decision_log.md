@@ -293,3 +293,24 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Sections 2.4, 3.4, 3.7; Table 7 (FR-01, FR-02, FR-03, FR-06); Table 9; Table 11; Supervisor Checkpoints C3, C4; Mitchell et al. (2019).
 
+## D-023 — 2026-10-31 — Zeek live telemetry configuration, streaming JSON policies, and sensor test harness (Step 19)
+- **Decision:** Formulate and freeze the Zeek live network monitoring configuration ([`sensor/local.zeek`](file:///d:/intrusion%20detection/sensor/local.zeek)), sensor execution daemon ([`sensor/run_zeek.sh`](file:///d:/intrusion%20detection/sensor/run_zeek.sh)), and cross-platform simulation and schema verification harness ([`sensor/zeek_runner.py`](file:///d:/intrusion%20detection/sensor/zeek_runner.py)):
+  1. **Streaming JSON Directives:**
+     - Load `@load policy/tuning/json-logs.zeek` to output connection logs in newline-delimited streaming JSON format rather than legacy tab-separated text.
+     - Set `redef LogAscii::json_timestamps = JSON::TS_EPOCH;` to output floating-point UNIX epoch seconds matching IoT-23 telemetry.
+  2. **Unbroken Continuous Log Streaming:**
+     - Set `redef Log::default_rotation_interval = 0 sec;` to prevent automated hourly file rotations from breaking active file-tailing pointers in the Python detector adapter (Step 21).
+  3. **Checksum Verification Override:**
+     - Set `redef ignore_checksums = T;` and pass `-C` in execution scripts to prevent packets mirrored from hardware switches or NIC offload engines from being dropped due to checksum anomalies.
+  4. **Cross-Platform Sensor Runner & Test Harness:**
+     - Implement [`sensor/zeek_runner.py`](file:///d:/intrusion%20detection/sensor/zeek_runner.py) supporting both native Linux execution and realistic traffic simulation/replay (RTSP video streaming, DNS queries, TCP SYN floods, PortScan probes, C&C beacons, and file downloads) allowing continuous end-to-end testing on development machines without physical hardware blockers (Proposal Section 5.1).
+  5. **Schema and Inference Verification:**
+     - Verified that simulated and captured Zeek connection logs convert through [`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py) with 0 NaNs and all 19 features, and successfully execute inference against [`ml_engine/models/ids_bundle_v1.joblib`](file:///d:/intrusion%20detection/ml_engine/models/ids_bundle_v1.joblib).
+- **Why:**
+  - Satisfies Proposal Section 3.3 step 1, Section 3.5, Table 7 (FR-01), and Table 8.
+  - Ensures strict zero training-serving skew between offline models and real-time streaming sensor detection.
+  - Passes 5 dedicated unit tests in [`tests/unit/test_zeek_config.py`](file:///d:/intrusion%20detection/tests/unit/test_zeek_config.py) (all 45 repository tests passing).
+- **Who agreed:** project owner and team (31 Oct 2026).
+- **Proposal link:** Section 3.3 step 1, Section 3.5, Section 3.7; Table 7 (FR-01); Table 8; Guide Step 19.
+
+
