@@ -1600,6 +1600,51 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 32: Write the nftables Rules and Kernel Adapter
+
+* **Objective:** Implement native Linux `nftables` packet filtering rulesets ([`sensor/ids_inline.nft`](file:///d:/intrusion%20detection/sensor/ids_inline.nft), [`sensor/ids_router.nft`](file:///d:/intrusion%20detection/sensor/ids_router.nft)) with auto-expiring timed sets for both inline bridge and passive router deployments, and build the programmatic firewall adapter ([`core_engine/firewall/nftables_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/nftables_adapter.py)) with allowlist immunity enforcement and dev simulation fallback per Proposal Section 3.7 and Table 7 Requirement FR-06.
+* **Date:** 1 November 2026
+* **How It Was Done:**
+  1. *Inline Bridge Ruleset ([`sensor/ids_inline.nft`](file:///d:/intrusion%20detection/sensor/ids_inline.nft)):*
+     - Defined `table bridge ids` operating on Layer 2 transparent bridge transit flows.
+     - Added static `set allow` populated with lab management assets (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`).
+     - Added dynamic timed sets `block_src`, `block_dst`, and `limit_src` with the `flags timeout` attribute.
+     - Hooked `chain forward` at `priority 0` with `policy accept`.
+     - Placed `ip saddr @allow accept` as the top rule; strictly omitted `ip daddr @allow accept` to prevent malicious external bypass.
+     - Appended transit filtering rules: `ip saddr @block_src drop`, `ip daddr @block_dst drop`, and `ip saddr @limit_src limit rate over 200/second drop`.
+  2. *Passive Router Ruleset ([`sensor/ids_router.nft`](file:///d:/intrusion%20detection/sensor/ids_router.nft)):*
+     - Defined `table inet ids` operating on Layer 3 routed transit flows on OpenWrt / Linux lab router forward hooks with identical timed set definitions and allowlist protections.
+  3. *Programmatic Kernel Adapter ([`core_engine/firewall/nftables_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/nftables_adapter.py)):*
+     - Implemented `NftablesAdapter` supporting parameterized execution via `subprocess.run` (`shell=False`, safe argument lists).
+     - Implemented `block(ip, direction, minutes, reason)` generating `nft add element <family> ids <set> '{ <ip> timeout <duration>m }'`.
+     - Implemented `rate_limit(ip, minutes, reason)` generating `nft add element <family> ids limit_src '{ <ip> timeout <duration>m }'`.
+     - Implemented `unblock(ip, direction)` generating `nft delete element <family> ids <set> '{ <ip> }'`.
+     - Implemented `list_active(set_name)` querying and parsing both structured JSON (`nft -j list set`) and text (`nft list set`) outputs with remaining time calculations.
+     - Implemented `check_ruleset()` and `load_ruleset()` for configuration lifecycle management.
+     - Enforced local allowlist immunity verification raising `AllowlistProtectedError` prior to command execution.
+     - Clamped rule durations to `max_rule_minutes` (default: 60 mins).
+     - Cross-platform dev fallback: Operates in simulation mode with full in-memory state tracking and timer expiration calculations when `nft` binary is unavailable (e.g. on Windows or non-root developer machines).
+  4. *Automated Unit Testing ([`tests/unit/test_nftables_adapter.py`](file:///d:/intrusion%20detection/tests/unit/test_nftables_adapter.py)):*
+     - Authored 12 dedicated unit tests verifying ruleset syntax, set structure, allowlist immunity, duration clamping, source and destination drops, rate-limiting, command line generation, and timeout text parsing.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run nftables adapter unit tests
+  .\.venv\Scripts\python -m pytest tests/unit/test_nftables_adapter.py -v
+
+  # 2. Run all repository unit tests
+  .\.venv\Scripts\python -m pytest tests/unit/
+  ```
+* **Files Created / Modified:**
+  - `sensor/ids_inline.nft` (Created inline bridge ruleset, in Git)
+  - `sensor/ids_router.nft` (Created passive router ruleset, in Git)
+  - `core_engine/firewall/nftables_adapter.py` (Created nftables programmatic adapter, in Git)
+  - `tests/unit/test_nftables_adapter.py` (Created unit test suite, in Git)
+  - `docs/decision_log.md` (Added Decision D-036, in Git)
+  - `docs/execution_record.md` (Updated Step 32 execution details, in Git)
+* **Verification Result:** All 12 dedicated unit tests in `test_nftables_adapter.py` passed; all 153 repository unit tests passed in 19.69s with 0 errors (100% pass rate). Requirement FR-06 fulfilled. Step 32 status is ✅ Done.
+
+---
+
 
 
 ## Quick Reference: Useful Commands

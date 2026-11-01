@@ -658,6 +658,31 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (1 Nov 2026).
 - **Proposal link:** Section 2.5; Section 3.4; Section 3.7; Table 5; Table 7 (FR-06, FR-07); RQ5; Checkpoint C7; Guide Step 31.
 
+## D-036 — 2026-11-01 — nftables ruleset specifications, auto-expiring timed sets, and Linux kernel firewall adapter (Step 32)
+- **Decision:** Architect, specify, and implement the native Linux `nftables` packet filtering ruleset and programmatic adapter ([`sensor/ids_inline.nft`](file:///d:/intrusion%20detection/sensor/ids_inline.nft), [`sensor/ids_router.nft`](file:///d:/intrusion%20detection/sensor/ids_router.nft), and [`core_engine/firewall/nftables_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/nftables_adapter.py)), conforming strictly to Group 03 Proposal Section 3.7 ("nftables and iptables"), Table 8 ("nftables sets with timeouts"), and Table 7 Requirement FR-06 ("Automated Blocking and Rate Limiting"):
+  1. **Dual Topology Architecture (Inline & Passive):**
+     - **Inline Mode ([`sensor/ids_inline.nft`](file:///d:/intrusion%20detection/sensor/ids_inline.nft)):** Evaluates bridged Layer 2 traffic via `table bridge ids` on the `forward` filter hook with `priority 0` and default `policy accept`.
+     - **Passive / Router Mode ([`sensor/ids_router.nft`](file:///d:/intrusion%20detection/sensor/ids_router.nft)):** Evaluates routed Layer 3 traffic via `table inet ids` on the `forward` filter hook with `priority 0` and default `policy accept` for deployment on OpenWrt / Linux edge routers.
+  2. **Zero Permanent Partitioning via Timed Sets:**
+     - Utilizes dynamic nftables kernel sets with the `flags timeout` attribute (`block_src`, `block_dst`, `limit_src`).
+     - Mitigations are added via `nft add element <family> ids <set> '{ <ip> timeout <duration>m }'`, guaranteeing automatic in-kernel eviction without requiring external cron daemons.
+     - Rate-limiting enforces `ip saddr @limit_src limit rate over 200/second drop` on the transit chain.
+  3. **Strict Source-Only Allowlist Rule (Section 3.7):**
+     - Enforces `ip saddr @allow accept` as the very first rule in the forward chain for management assets (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`).
+     - Crucially omits `ip daddr @allow accept` to guarantee that external malicious hosts on `block_src` cannot bypass drops to target the NVR or Admin workstation.
+  4. **Programmatic Kernel Adapter & Simulation Fallback:**
+     - Implemented `NftablesAdapter` supporting programmatic `block()`, `rate_limit()`, `unblock()`, `list_active()`, `check_ruleset()`, and `load_ruleset()`.
+     - Verifies allowlist immunity locally before command generation, raising `AllowlistProtectedError` if an operator or automated policy attempts to drop a protected IP.
+     - Clamps rule durations to `max_rule_minutes` (default: 60 mins).
+     - Cross-platform dev fallback: When executed on Windows or non-root dev environments where `nft` binary is unavailable, operates in simulation mode with full in-memory state tracking and timer expiration calculations, guaranteeing complete testability.
+     - Parses both structured JSON (`nft -j list set`) and human-readable text representations with remaining time calculation.
+  5. **Automated Verification:**
+     - Authored 12 comprehensive unit tests in [`tests/unit/test_nftables_adapter.py`](file:///d:/intrusion%20detection/tests/unit/test_nftables_adapter.py) verifying ruleset syntax, set structure, allowlist immunity, duration clamping, source and destination drops, rate-limiting, command line generation, and timeout text parsing.
+     - All 12 tests passed; unit test suite expands to **153 passed unit tests in 19.69s** (192 total tests across repo) with 0 errors (100% pass rate).
+- **Why:** Delivers robust, kernel-level, low-latency Layer 2 and Layer 3 packet mitigation with automatic rule expiration and absolute protection for critical network infrastructure, satisfying FR-06 and Step 32.
+- **Who agreed:** project owner and team (1 Nov 2026).
+- **Proposal link:** Section 3.7; Table 7 (FR-06); Table 8; Guide Step 32.
+
 
 
 

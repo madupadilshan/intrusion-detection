@@ -1,0 +1,43 @@
+# sensor/ids_router.nft
+# Real-Time Intrusion Detection and Autonomous Response System for IP-Camera IoT Networks
+# Group 03 - University of Sri Jayewardenepura
+#
+# Passive / Router Mode: OpenWrt / Linux lab router routing transit traffic between subnets.
+# Filters Layer 3 routed traffic on the inet forward hook using timeout sets.
+
+table inet ids {
+    # Management allowlist: Permanent immunity for lab gateway, sensor, admin PC, NVR
+    set allow {
+        type ipv4_addr
+        elements = { 192.168.50.1, 192.168.50.5, 192.168.50.10, 192.168.50.20 }
+    }
+
+    # Dynamic timed sets with auto-expiry to prevent permanent partitioning
+    set block_src {
+        type ipv4_addr
+        flags timeout
+    }
+
+    set block_dst {
+        type ipv4_addr
+        flags timeout
+    }
+
+    set limit_src {
+        type ipv4_addr
+        flags timeout
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy accept;
+
+        # Safety Check: Source allowlist immunity is evaluated first
+        # Important: Checks only source (ip saddr @allow) so attacker cannot reach NVR/Admin
+        ip saddr @allow accept
+
+        # Direction-aware mitigation rules
+        ip saddr @block_src drop
+        ip daddr @block_dst drop
+        ip saddr @limit_src limit rate over 200/second drop
+    }
+}
