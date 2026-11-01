@@ -1504,6 +1504,60 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 30: Build the Responsive Dashboard Pages Suite
+
+* **Objective:** Architect and implement the 7 canonical dashboard pages in `my-app/src/pages/` conforming strictly to Group 03 Proposal Section 3.6, Section 7.1, and Table 8 ("a dashboard that fits any screen"), wire real-time Socket.IO and REST API integrations, implement the prominent "Model prediction" vs "Confirmed incident" verification badges, and provide complete operational control over alerts, asset discovery, firewall mitigations, safety thresholds, and forensic export.
+* **Date:** 1 November 2026
+* **How It Was Done:**
+  1. *Universal Responsive Layout ([`my-app/src/components/Layout.js`](file:///d:/intrusion%20detection/my-app/src/components/Layout.js)):*
+     - Designed responsive dark-mode cyber SOC layout using Tailwind CSS.
+     - Sticky top telemetry bar displaying real-time Socket.IO connectivity indicator (`SOCKET.IO LIVE` / `TELEMETRY OFFLINE`) and logged-in operator identity (`user.username`).
+     - Collapsible mobile navigation menu and desktop sidebar navigation covering all 7 operational domains.
+  2. *Canonical 7-Page Implementation Suite:*
+     - **Overview ([`my-app/src/pages/Overview.js`](file:///d:/intrusion%20detection/my-app/src/pages/Overview.js)):** Executive KPI metrics (Total Flows, Attacks Detected, Active Blocks, Discovered Devices), Recharts multiclass inference distribution bar chart, live alert ticker, and lab infrastructure safety summaries (`GET /api/summary`, Socket.IO `summary_update`).
+     - **Live Alerts ([`my-app/src/pages/LiveAlerts.js`](file:///d:/intrusion%20detection/my-app/src/pages/LiveAlerts.js)):** Real-time Socket.IO stream (`new_event`, `event_update`) showing flow direction, calibrated confidence scores, empirical evidence notes, quick triage actions (Confirm Incident, Block IP), and stream pause/resume controls.
+     - **Attack History ([`my-app/src/pages/AttackHistory.js`](file:///d:/intrusion%20detection/my-app/src/pages/AttackHistory.js)):** Searchable, multi-attribute filterable forensic event table (search by IP, filter by class, filter by status: prediction/confirmed), pagination, and an Incident Evidence Dossier modal with admin confirmation action (`PATCH /api/events/<id>`).
+     - **Devices & Scans ([`my-app/src/pages/Devices.js`](file:///d:/intrusion%20detection/my-app/src/pages/Devices.js)):** Subnet inventory table (IP, MAC, vendor, open ports, services, last seen), surveillance camera heuristic badges (`possible_camera`), camera evidence modal, authorized Nmap scan dispatcher (`POST /api/scans`), live progress bar (`scan_progress`), and admin camera confirmation toggle (`PATCH /api/devices/<ip>/confirm-camera`).
+     - **Blocklist & Mitigations ([`my-app/src/pages/Blocklist.js`](file:///d:/intrusion%20detection/my-app/src/pages/Blocklist.js)):** Active firewall rules table (target IP, direction, reason code, created timestamp, auto-expiry timestamp, status), manual mitigation creation form (`POST /api/blocklist`), and one-click unblock action (`DELETE /api/blocklist/<ip>`).
+     - **Settings & Safety Policy ([`my-app/src/pages/Settings.js`](file:///d:/intrusion%20detection/my-app/src/pages/Settings.js)):** Autonomous mitigation master switch toggle, operational threshold sliders/inputs (`min_confidence`, `min_repeats`, `repeat_window_seconds`, `max_rule_minutes`), management allowlist immunity table (gateway, sensor, admin PC, NVR), and settings change audit history (`GET /api/settings/history`).
+     - **Forensic Logs & Export ([`my-app/src/pages/LogExport.js`](file:///d:/intrusion%20detection/my-app/src/pages/LogExport.js)):** Live immutable system audit logs viewer (`system_logs`) and multi-attribute forensic log export dispatcher generating RFC 4180 CSV and structured JSON files (`GET /api/logs/export`) with audit logging invariant verification (`LOGS_EXPORTED`).
+  3. *Operator Verification Badges (Proposal Section 7.1):*
+     - Enforced distinct visual badges across alerts and incident tables:
+       - **"MODEL PREDICTION"** (Blue border, unconfirmed automated classifier prediction);
+       - **"CONFIRMED INCIDENT"** (Red border, administrator-confirmed security incident).
+  4. *Zero Synthetic Data Guarantee:*
+     - Every list, chart, and metric renders exclusively authentic backend telemetry or displays an informative "No data yet" state when the network is benign and quiet.
+  5. *Route Integration & Testing:*
+     - Updated [`my-app/src/App.js`](file:///d:/intrusion%20detection/my-app/src/App.js) with protected routes for all 7 pages.
+     - Authored tests in [`my-app/src/App.test.js`](file:///d:/intrusion%20detection/my-app/src/App.test.js) verifying central config and exports for all 7 pages.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run React Jest test suite
+  cd my-app; npm test -- --watchAll=false
+
+  # 2. Verify React production build
+  npm run build
+
+  # 3. Verify Python test suite
+  cd ..; .\.venv\Scripts\python -m pytest tests/unit/test_auth.py tests/unit/test_detector.py tests/unit/test_decision_engine.py
+  ```
+* **Files Created / Modified:**
+  - `my-app/src/components/Layout.js` (Created universal responsive layout, in Git)
+  - `my-app/src/pages/Overview.js` (Created overview dashboard page, in Git)
+  - `my-app/src/pages/LiveAlerts.js` (Created live alerts streaming page, in Git)
+  - `my-app/src/pages/AttackHistory.js` (Refactored to canonical forensic history page, in Git)
+  - `my-app/src/pages/Devices.js` (Created devices and scan page, in Git)
+  - `my-app/src/pages/Blocklist.js` (Created blocklist and mitigations page, in Git)
+  - `my-app/src/pages/Settings.js` (Created operational settings and allowlist page, in Git)
+  - `my-app/src/pages/LogExport.js` (Created forensic log export page, in Git)
+  - `my-app/src/App.js` (Wired all 7 routes with ProtectedRoute, in Git)
+  - `my-app/src/App.test.js` (Verified configuration and page component exports, in Git)
+  - `docs/decision_log.md` (Added Decision D-034, in Git)
+  - `docs/execution_record.md` (Updated Step 30 execution details, in Git)
+* **Verification Result:** React test suite passed (2 passed tests); React production build succeeded (`main.*.js` 191.75 kB gzip); all 36 Python unit tests in auth, detector, and decision engine passed. Step 30 status is ✅ Done. Phase 7 (React Dashboard and Alerts, Steps 29–30) is 100% COMPLETE.
+
+---
+
 
 
 ## Quick Reference: Useful Commands

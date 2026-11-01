@@ -1,10 +1,13 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login";
-import Dashboard from "./components/Dashboard";
-import IOTDetails from "./pages/IOTDetails";
+import Overview from "./pages/Overview";
+import LiveAlerts from "./pages/LiveAlerts";
 import AttackHistory from "./pages/AttackHistory";
-import IoTDevicesDashboard from "./pages/IoTDevicesDashboard";
+import Devices from "./pages/Devices";
+import Blocklist from "./pages/Blocklist";
+import Settings from "./pages/Settings";
+import LogExport from "./pages/LogExport";
 
 // Protected Route wrapper checking JWT token presence
 const ProtectedRoute = ({ children }) => {
@@ -19,27 +22,15 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
+        {/* Public Login */}
         <Route path="/login" element={<Login />} />
 
-        {/* Protected Core Routes */}
+        {/* 7 Canonical Dashboard Pages (Proposal Table 8 & Section 3.6) */}
         <Route
           path="/overview"
           element={
             <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={<Navigate to="/overview" replace />}
-        />
-        <Route
-          path="/IOTDetails"
-          element={
-            <ProtectedRoute>
-              <IOTDetails />
+              <Overview />
             </ProtectedRoute>
           }
         />
@@ -47,7 +38,7 @@ const App = () => {
           path="/alerts"
           element={
             <ProtectedRoute>
-              <IOTDetails />
+              <LiveAlerts />
             </ProtectedRoute>
           }
         />
@@ -60,26 +51,46 @@ const App = () => {
           }
         />
         <Route
-          path="/attack-history"
-          element={<Navigate to="/history" replace />}
-        />
-        <Route
           path="/devices"
           element={
             <ProtectedRoute>
-              <IoTDevicesDashboard />
+              <Devices />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/iot-dashboard"
-          element={<Navigate to="/devices" replace />}
+          path="/mitigations"
+          element={
+            <ProtectedRoute>
+              <Blocklist />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/export"
+          element={
+            <ProtectedRoute>
+              <LogExport />
+            </ProtectedRoute>
+          }
         />
 
-        {/* Default Route */}
-        <Route path="/" element={<Navigate to="/overview" replace />} />
+        {/* Backward Compatibility Redirects */}
+        <Route path="/dashboard" element={<Navigate to="/overview" replace />} />
+        <Route path="/attack-history" element={<Navigate to="/history" replace />} />
+        <Route path="/iot-dashboard" element={<Navigate to="/devices" replace />} />
+        <Route path="/IOTDetails" element={<Navigate to="/alerts" replace />} />
 
-        {/* Catch-all */}
+        {/* Root & Catch-all */}
+        <Route path="/" element={<Navigate to="/overview" replace />} />
         <Route path="*" element={<Navigate to="/overview" replace />} />
       </Routes>
     </Router>

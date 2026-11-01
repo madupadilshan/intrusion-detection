@@ -609,6 +609,33 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (1 Nov 2026).
 - **Proposal link:** Section 3.6 (Figure 4, Table 8); Section 7.1; FR-04; Guide Step 29.
 
+## D-034 — 2026-11-01 — Responsive React dashboard architecture, canonical 7-page suite, and real-time operator verification badges (Step 30)
+- **Decision:** Architect and build the responsive React dashboard suite (`my-app/src/pages/`) adhering strictly to Group 03 Proposal Section 3.6, Section 7.1, Table 8 ("a dashboard that fits any screen"), Requirement FR-04, and Guide Step 30:
+  1. **Canonical 7-Page Architecture:**
+     - **Overview (`Overview.js`):** Executive KPI cards (total flows, attacks detected, active blocks, discovered devices), 24h traffic volume metrics, Recharts attack class distribution bar chart, recent alerts stream, and lab infrastructure safety summaries.
+     - **Live Alerts (`LiveAlerts.js`):** Real-time Socket.IO streaming alert feed (`new_event`, `event_update`) with flow vector visualization (source:port -> dst:port), calibrated confidence scores, empirical evidence notes, quick triage actions (Confirm Incident, Block IP), and pause/resume stream controls.
+     - **Attack History (`AttackHistory.js`):** Searchable, multi-attribute filterable forensic event table (search by IP, filter by class, filter by status: prediction/confirmed), pagination, and an Incident Evidence Dossier modal with admin confirmation action (`PATCH /api/events/<id>`).
+     - **Devices & Scans (`Devices.js`):** Subnet inventory table (IP, MAC, vendor, open ports, services, last seen), surveillance camera heuristic badges (`possible_camera`), camera evidence modal, authorized Nmap scan dispatcher (`POST /api/scans`), live progress bar (`scan_progress`), and admin camera confirmation toggle (`PATCH /api/devices/<ip>/confirm-camera`).
+     - **Blocklist & Mitigations (`Blocklist.js`):** Active firewall rules table (target IP, direction, reason code, created timestamp, auto-expiry timestamp, status), manual mitigation creation form (`POST /api/blocklist`), and one-click unblock action (`DELETE /api/blocklist/<ip>`).
+     - **Settings & Safety Policy (`Settings.js`):** Autonomous mitigation master switch toggle, operational threshold sliders/inputs (`min_confidence`, `min_repeats`, `repeat_window_seconds`, `max_rule_minutes`), management allowlist immunity table (gateway, sensor, admin PC, NVR), and settings change audit history (`GET /api/settings/history`).
+     - **Forensic Logs & Export (`LogExport.js`):** Live immutable system audit logs viewer (`system_logs`) and multi-attribute forensic log export dispatcher generating RFC 4180 CSV and structured JSON files (`GET /api/logs/export`) with audit logging invariant verification (`LOGS_EXPORTED`).
+  2. **Operator Verification Badging (Proposal Section 7.1):**
+     - Enforced distinct visual badges across all alert and history displays:
+       - **"MODEL PREDICTION"** (Blue border, unverified machine learning inference);
+       - **"CONFIRMED INCIDENT"** (Red border with glowing indicator, verified by authorized security administrator).
+  3. **Universal Responsive Layout (`my-app/src/components/Layout.js`):**
+     - Implemented unified, responsive navigation layout adapting cleanly to desktop, tablet, and mobile screens (Tailwind CSS, sticky top telemetry bar, collapsible mobile menu).
+     - Live Socket.IO connection status indicator ("SOCKET.IO LIVE" / "TELEMETRY OFFLINE") and current operator identity display.
+  4. **Zero Synthetic Data Guarantee:**
+     - Every list, chart, and metric renders exclusively authentic backend telemetry or displays an informative "No data yet" state when the network is benign and quiet.
+  5. **Verification & Build Validation:**
+     - Verified with passing Jest test suite verifying central configuration and all 7 page component exports.
+     - Verified successful production build (`npm run build`, main bundle 191.75 kB gzip).
+- **Why:** Delivers a unified, professional, robust Security Operations Center (SOC) dashboard empowering network administrators to inspect empirical machine learning evidence, verify threats, manage camera assets, and control firewall mitigations safely. Concludes Phase 7 (React Dashboard and Alerts, Steps 29–30).
+- **Who agreed:** project owner and team (1 Nov 2026).
+- **Proposal link:** Section 3.6 (Figure 4, Table 8); Section 7.1; Table 7 (FR-04, FR-06, FR-07, FR-08); Guide Step 30.
+
+
 
 
 

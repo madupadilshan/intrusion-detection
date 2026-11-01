@@ -1,573 +1,320 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  History,
+  Search,
+  Filter,
+  CheckCircle,
+  Eye,
+  X,
+  ShieldAlert,
+} from "lucide-react";
+import Layout from "../components/Layout";
 import apiClient from "../services/api";
-import { Line } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from "chart.js";
-import { Wifi, Shield, Terminal, AlertTriangle, Lock, Activity, Server, Download, ArrowLeft, Filter } from 'lucide-react';
-import MatrixEffect from '../components/MatrixEffect';
-import './Dashboard.css';
-import './AttackHistory.css';
 
-// Register Chart.js components
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+const CLASS_COLORS = {
+  Benign: "#10b981",
+  DDoS: "#ef4444",
+  DDoS_DoS: "#ef4444",
+  PortScan: "#f59e0b",
+  CnC: "#8b5cf6",
+  Malware_Download: "#ec4899",
+  Unknown: "#6b7280",
+};
 
 const AttackHistory = () => {
-  const [attackHistory, setAttackHistory] = useState([]);
-  const [filteredHistory, setFilteredHistory] = useState([]);
-  const [error, setError] = useState(null);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState("all");
-  const [dateRange, setDateRange] = useState({ 
-    startDate: null, 
-    startTime: "00:00", 
-    endDate: null, 
-    endTime: "23:59" 
-  });
-  const [showFilters, setShowFilters] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [attackStats, setAttackStats] = useState({
-    total: 0,
-    critical: 0,
-    high: 0,
-    medium: 0,
-    low: 0
-  });
-  
-  const itemsPerPage = 50;
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [searchIp, setSearchIp] = useState("");
+  const [classFilter, setClassFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [confirmingId, setConfirmingId] = useState(null);
+  const [notification, setNotification] = useState("");
 
-  // Chart.js data for Attack Distribution
-  const [attackDistribution, setAttackDistribution] = useState({
-    labels: [],
-    datasets: [
-      {
-        label: "Attack Count",
-        data: [],
-        backgroundColor: [
-          'rgba(255, 0, 0, 0.7)',
-          'rgba(255, 165, 0, 0.7)',
-          'rgba(255, 255, 0, 0.7)',
-          'rgba(0, 0, 255, 0.7)',
-          'rgba(0, 255, 0, 0.7)',
-        ],
-        borderWidth: 1
-      },
-    ],
-  });
+  const loadEvents = async () => {
+    setLoading(true);
+    try {
+      let query = "/api/events?limit=100";
+      if (classFilter !== "all") query += `&class=${classFilter}`;
+      if (statusFilter !== "all") query += `&status=${statusFilter}`;
+      if (searchIp.trim()) query += `&ip=${encodeURIComponent(searchIp.trim())}`;
 
-  // Chart options
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        ticks: { color: "#0f0" },
-        grid: { color: "rgba(0, 255, 0, 0.1)" }
-      },
-      x: {
-        ticks: { color: "#0f0" },
-        grid: { color: "rgba(0, 255, 0, 0.1)" }
-      }
-    },
-    plugins: {
-      legend: {
-        labels: { color: "#0f0" }
-      }
+      const res = await apiClient.get(query);
+      const list = res.data?.events || [];
+      setEvents(list);
+    } catch (err) {
+      console.error("Failed to load attack history:", err);
+      setEvents([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Determine attack severity based on attack type
-  const getAttackSeverity = (attackType) => {
-    const criticalAttacks = ["Mirai Botnet", "DDoS", "Okiru-Attack", "C&C-Mirai"];
-    const highAttacks = ["Okiru", "C&C-Torii", "C&C-FileDownload", "FileDownload"];
-    const mediumAttacks = ["C&C", "C&C-HeartBeat", "C&C-HeartBeat-FileDownload"];
-    
-    if (criticalAttacks.includes(attackType)) return "critical";
-    if (highAttacks.includes(attackType)) return "high";
-    if (mediumAttacks.includes(attackType)) return "medium";
-    return "low";
-  };
-
-  // Fetch attack history from MongoDB via the backend API
   useEffect(() => {
-    const fetchAttackHistory = async () => {
-      setLoading(true);
-      try {
-        // Create a new endpoint in your Flask app to retrieve MongoDB data
-        const res = await apiClient.get("/api/events?limit=200");
-        const events = res.data?.events || res.data?.logs || (Array.isArray(res.data) ? res.data : []);
-        if (Array.isArray(events)) {
-          setAttackHistory(events);
-          setFilteredHistory(events);
-          setTotalPages(Math.max(1, Math.ceil(events.length / itemsPerPage)));
-          calculateStats(events);
-          updateChartData(events);
-        } else {
-          throw new Error("Invalid data format");
+    loadEvents();
+  }, [classFilter, statusFilter]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    loadEvents();
+  };
+
+  const handleConfirmIncident = async (id) => {
+    setConfirmingId(id);
+    try {
+      const res = await apiClient.patch(`/api/events/${id}`, { status: "confirmed" });
+      if (res.data) {
+        setEvents((prev) =>
+          prev.map((e) => (e.id === id ? { ...e, status: "confirmed" } : e))
+        );
+        if (selectedEvent && selectedEvent.id === id) {
+          setSelectedEvent((prev) => ({ ...prev, status: "confirmed" }));
         }
-      } catch (err) {
-        console.error("Error fetching attack logs from MongoDB:", err);
-        setError("Failed to load attack history. Backend service may be unavailable. Please check server connection and try again.");
-        setAttackHistory([]);
-        setFilteredHistory([]);
-        setTotalPages(0);
-        setAttackStats({
-          total: 0,
-          critical: 0,
-          high: 0,
-          medium: 0,
-          low: 0
-        });
-      } finally {
-        setLoading(false);
+        setNotification(`Event ${id} confirmed as incident.`);
       }
-    };
-
-    fetchAttackHistory();
-  }, []);
-
-  // Calculate statistics from attack data
-  const calculateStats = (data) => {
-    const stats = {
-      total: data.length,
-      critical: 0,
-      high: 0,
-      medium: 0,
-      low: 0
-    };
-    
-    data.forEach(attack => {
-      const severity = getAttackSeverity(attack.attack);
-      stats[severity]++;
-    });
-    
-    setAttackStats(stats);
-  };
-
-  // Update chart data with attack distribution
-  const updateChartData = (data) => {
-    // Count attack types
-    const attackCounts = {};
-    data.forEach(attack => {
-      if (!attackCounts[attack.attack]) {
-        attackCounts[attack.attack] = 0;
-      }
-      attackCounts[attack.attack]++;
-    });
-    
-    // Sort by count (descending)
-    const sortedAttacks = Object.entries(attackCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5); // Top 5 attack types
-    
-    setAttackDistribution({
-      labels: sortedAttacks.map(item => item[0]),
-      datasets: [
-        {
-          label: "Attack Count",
-          data: sortedAttacks.map(item => item[1]),
-          backgroundColor: [
-            'rgba(255, 0, 0, 0.7)',
-            'rgba(255, 165, 0, 0.7)',
-            'rgba(255, 255, 0, 0.7)',
-            'rgba(0, 0, 255, 0.7)',
-            'rgba(0, 255, 0, 0.7)',
-          ],
-          borderWidth: 1
-        },
-      ],
-    });
-  };
-
-  // Filter attacks by type and date/time range
-  const applyFilters = () => {
-    let filtered = [...attackHistory];
-    
-    // Filter by attack type
-    if (filterType !== "all") {
-      filtered = filtered.filter(attack => attack.attack === filterType);
+    } catch (err) {
+      setNotification(err.response?.data?.error || "Failed to confirm incident.");
+    } finally {
+      setConfirmingId(null);
     }
-    
-    // Filter by date and time range
-    if (dateRange.startDate && dateRange.endDate) {
-      const startDateTime = new Date(`${dateRange.startDate}T${dateRange.startTime}:00`).getTime();
-      const endDateTime = new Date(`${dateRange.endDate}T${dateRange.endTime}:00`).getTime();
-      
-      filtered = filtered.filter(attack => {
-        const attackDate = new Date(attack.timestamp).getTime();
-        return attackDate >= startDateTime && attackDate <= endDateTime;
-      });
-    }
-    
-    setFilteredHistory(filtered);
-    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
-    setPage(1); // Reset to first page after filtering
-    calculateStats(filtered);
-    updateChartData(filtered);
-  };
-
-  // Reset filters
-  const resetFilters = () => {
-    setFilterType("all");
-    setDateRange({ 
-      startDate: null, 
-      startTime: "00:00", 
-      endDate: null, 
-      endTime: "23:59" 
-    });
-    setFilteredHistory(attackHistory);
-    setTotalPages(Math.ceil(attackHistory.length / itemsPerPage));
-    setPage(1);
-    calculateStats(attackHistory);
-    updateChartData(attackHistory);
-  };
-
-  // Export data as CSV
-  const exportToCSV = () => {
-    if (filteredHistory.length === 0) {
-      alert("No data to export");
-      return;
-    }
-    
-    // Create CSV content
-    let csvContent = "data:text/csv;charset=utf-8,";
-    
-    // Add headers
-    csvContent += "Timestamp,Attack Type,Severity,Duration,Protocol,Orig Bytes,Resp Bytes,Orig Packets,Resp Packets\n";
-    
-    // Add data rows
-    filteredHistory.forEach(attack => {
-      const protocol = attack.features?.proto === 6 ? "TCP" : 
-                      attack.features?.proto === 17 ? "UDP" : 
-                      attack.features?.proto === 1 ? "ICMP" : 
-                      attack.features?.proto || "Unknown";
-                      
-      const row = [
-        attack.timestamp,
-        attack.attack,
-        getAttackSeverity(attack.attack).toUpperCase(),
-        attack.features?.duration || "N/A",
-        protocol,
-        attack.features?.orig_bytes || "N/A",
-        attack.features?.resp_bytes || "N/A",
-        attack.features?.orig_pkts || "N/A",
-        attack.features?.resp_pkts || "N/A"
-      ].join(",");
-      
-      csvContent += row + "\n";
-    });
-    
-    // Create download link and trigger download
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `iot_attack_history_${new Date().toISOString().slice(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Get unique attack types for filter dropdown
-  const getAttackTypes = () => {
-    const types = new Set();
-    attackHistory.forEach(attack => {
-      types.add(attack.attack);
-    });
-    return ["all", ...Array.from(types)];
-  };
-
-  // Get current page items
-  const getCurrentPageItems = () => {
-    const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredHistory.slice(startIndex, endIndex);
-  };
-
-  // Format time for UI
-  const formatTime = (timeStr) => {
-    return timeStr || "";
   };
 
   return (
-    <div className="dashboard-container">
-      <MatrixEffect />
-      
-      <div className="dashboard-content">
-        <div className="dashboard-header">
-          <a href="/" className="back-link">
-            <ArrowLeft className="terminal-icon" />
-          </a>
-          <Wifi className="terminal-icon" />
-          <h1 className="dashboard-title">ATTACK HISTORY DATABASE</h1>
-          <Terminal className="terminal-icon" />
-          <div className="alert-counter">
-            <AlertTriangle className="alert-icon" />
-            <span className="alert-badge">{attackStats.total}</span>
-          </div>
+    <Layout>
+      <div className="space-y-5 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="pb-4 border-b border-gray-800">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-gray-100 flex items-center gap-2">
+            <History className="text-cyan-400" size={24} />
+            ATTACK HISTORY & FORENSIC DATABASE
+          </h1>
+          <p className="text-xs text-gray-400">
+            Searchable MongoDB Incident Records • Evidence Inspection & Administrative Confirmation
+          </p>
         </div>
 
-        {/* Security Status Banner */}
-        <div className="security-status">
-          <div className="status-indicator"></div>
-          <span>MONGODB INTRUSION DATABASE</span>
-          <div className="status-indicator"></div>
-        </div>
-        
-        {/* Statistics Cards */}
-        <div className="stats-container">
-          <div className="stat-card total">
-            <div className="stat-icon">
-              <Shield size={24} />
-            </div>
-            <div className="stat-info">
-              <h3>{attackStats.total}</h3>
-              <span>Total Attacks</span>
-            </div>
+        {notification && (
+          <div className="p-3 bg-gray-900 border border-emerald-800 text-emerald-300 text-xs rounded flex items-center justify-between">
+            <span>{notification}</span>
+            <button onClick={() => setNotification("")}>✕</button>
           </div>
-          <div className="stat-card critical">
-            <div className="stat-icon">
-              <AlertTriangle size={24} />
-            </div>
-            <div className="stat-info">
-              <h3>{attackStats.critical}</h3>
-              <span>Critical</span>
-            </div>
-          </div>
-          <div className="stat-card high">
-            <div className="stat-icon">
-              <Activity size={24} />
-            </div>
-            <div className="stat-info">
-              <h3>{attackStats.high}</h3>
-              <span>High</span>
-            </div>
-          </div>
-          <div className="stat-card medium">
-            <div className="stat-icon">
-              <Lock size={24} />
-            </div>
-            <div className="stat-info">
-              <h3>{attackStats.medium}</h3>
-              <span>Medium</span>
-            </div>
-          </div>
-          <div className="stat-card low">
-            <div className="stat-icon">
-              <Server size={24} />
-            </div>
-            <div className="stat-info">
-              <h3>{attackStats.low}</h3>
-              <span>Low</span>
-            </div>
-          </div>
-        </div>
+        )}
 
-        
+        {/* Search & Filter Bar */}
+        <div className="p-4 bg-gray-900/40 border border-gray-800 rounded-lg flex flex-col md:flex-row gap-3 items-center justify-between">
+          <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full md:w-auto flex-1">
+            <div className="relative flex-1 max-w-md">
+              <Search size={14} className="absolute left-3 top-3 text-gray-500" />
+              <input
+                type="text"
+                value={searchIp}
+                onChange={(e) => setSearchIp(e.target.value)}
+                placeholder="Search by IP address (source or destination)..."
+                className="w-full pl-9 pr-3 py-2 bg-gray-950 border border-gray-800 rounded text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-cyan-500"
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded text-xs border border-gray-700"
+            >
+              SEARCH
+            </button>
+          </form>
 
-        {/* Charts and Filters Row */}
-        <div className="data-row">
-          <div className="chart-panel">
-            <div className="panel-header">
-              <Activity className="panel-icon" />
-              <h3>ATTACK DISTRIBUTION</h3>
-            </div>
-            <div className="panel-body">
-              <div className="chart-container">
-                {attackHistory.length > 0 ? (
-                  <Line data={attackDistribution} options={chartOptions} height={200} />
-                ) : (
-                  <div className="no-data-chart">NO DATA AVAILABLE</div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <div className="filters-panel">
-            <div className="panel-header">
-              <Filter className="panel-icon" />
-              <h3>FILTER ATTACKS</h3>
-              <button className="toggle-filters-btn" onClick={() => setShowFilters(!showFilters)}>
-                {showFilters ? "HIDE" : "SHOW"}
-              </button>
-            </div>
-            {showFilters && (
-              <div className="panel-body filters-body">
-                <div className="filter-group">
-                  <label>Attack Type:</label>
-                  <select 
-                    value={filterType} 
-                    onChange={(e) => setFilterType(e.target.value)}
-                    className="filter-select"
-                    disabled={attackHistory.length === 0}
-                  >
-                    {getAttackTypes().map((type, index) => (
-                      <option key={index} value={type}>
-                        {type === "all" ? "All Types" : type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="filter-group">
-                  <label>Date & Time Range:</label>
-                  <div className="datetime-inputs">
-                    <div className="datetime-row">
-                      <input 
-                        type="date" 
-                        value={dateRange.startDate || ''} 
-                        onChange={(e) => setDateRange({...dateRange, startDate: e.target.value})}
-                        className="date-input"
-                        disabled={attackHistory.length === 0}
-                      />
-                      <input 
-                        type="time" 
-                        value={formatTime(dateRange.startTime)} 
-                        onChange={(e) => setDateRange({...dateRange, startTime: e.target.value})}
-                        className="time-input"
-                        disabled={attackHistory.length === 0}
-                      />
-                    </div>
-                    <span className="to-text">to</span>
-                    <div className="datetime-row">
-                      <input 
-                        type="date" 
-                        value={dateRange.endDate || ''} 
-                        onChange={(e) => setDateRange({...dateRange, endDate: e.target.value})}
-                        className="date-input"
-                        disabled={attackHistory.length === 0}
-                      />
-                      <input 
-                        type="time" 
-                        value={formatTime(dateRange.endTime)} 
-                        onChange={(e) => setDateRange({...dateRange, endTime: e.target.value})}
-                        className="time-input"
-                        disabled={attackHistory.length === 0}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="filter-actions">
-                  <button 
-                    className="filter-btn apply" 
-                    onClick={applyFilters}
-                    disabled={attackHistory.length === 0}
-                  >
-                    APPLY FILTERS
-                  </button>
-                  <button 
-                    className="filter-btn reset" 
-                    onClick={resetFilters}
-                    disabled={attackHistory.length === 0}
-                  >
-                    RESET
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-               {/* UPDATED Results Section */}
-        <div className="results-section-container">
-          <div className="results-header">
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-                <Terminal className="content-icon" />
-                <h3>CICIDS2017 ATTACK LOGS</h3>
-            </div>
-            <div className="header-actions">
-              <button 
-                className="action-btn export-btn" 
-                onClick={exportToCSV}
-                disabled={filteredHistory.length === 0}
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto text-xs">
+            <div className="flex items-center gap-1.5">
+              <Filter size={13} className="text-gray-500" />
+              <span className="text-gray-400">Class:</span>
+              <select
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+                className="bg-gray-950 border border-gray-800 rounded px-2 py-1 text-gray-300 text-xs focus:outline-none"
               >
-                <Download size={16} /> EXPORT CSV
-              </button>
+                <option value="all">All Classes</option>
+                <option value="Benign">Benign</option>
+                <option value="DDoS">DDoS</option>
+                <option value="PortScan">PortScan</option>
+                <option value="CnC">CnC</option>
+                <option value="Malware_Download">Malware_Download</option>
+              </select>
             </div>
-          </div>   
-          <div className="content-body">
-            {loading ? (
-              <div className="loading-container">
-                <div className="loading-indicator"></div>
-                <p>ACCESSING MONGODB DATABASE...</p>
-              </div>
-            ) : error ? (
-              <div className="error-container">
-                <AlertTriangle size={24} />
-                <p>{error}</p>
-              </div>
-            ) : (
-              <>
-                <table className="attack-table history-table">
-                  <thead>
-                    <tr>
-                      <th>TIMESTAMP</th>
-                      <th>ATTACK VECTOR</th>
-                      <th>THREAT LEVEL</th>
-                      <th>DURATION</th>
-                      <th>PROTOCOL</th>
-                      <th>ORIG BYTES</th>
-                      <th>RESP BYTES</th>
-                      <th>ORIG PKTS</th>
-                      <th>RESP PKTS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {getCurrentPageItems().map((attack, index) => (
-                      <tr key={index} className={`severity-${getAttackSeverity(attack.attack)}`}>
-                        <td>{attack.timestamp}</td>
-                        <td>{attack.attack}</td>
-                        <td>{getAttackSeverity(attack.attack).toUpperCase()}</td>
-                        <td>{attack.features?.duration || "N/A"}</td>
-                        <td>{
-                          attack.features?.proto === 6 ? "TCP" : 
-                          attack.features?.proto === 17 ? "UDP" : 
-                          attack.features?.proto === 1 ? "ICMP" : 
-                          attack.features?.proto || "N/A"
-                        }</td>
-                        <td>{attack.features?.orig_bytes || "N/A"}</td>
-                        <td>{attack.features?.resp_bytes || "N/A"}</td>
-                        <td>{attack.features?.orig_pkts || "N/A"}</td>
-                        <td>{attack.features?.resp_pkts || "N/A"}</td>
-                      </tr>
-                    ))}
-                    {filteredHistory.length === 0 && (
-                      <tr>
-                        <td colSpan="9" className="no-data">NO MATCHING RECORDS FOUND</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-                
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="pagination-controls">
-                    <button 
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="page-btn"
-                    >
-                      PREVIOUS
-                    </button>
-                    <span className="page-info">PAGE {page} OF {totalPages}</span>
-                    <button 
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="page-btn"
-                    >
-                      NEXT
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
+
+            <div className="flex items-center gap-1.5 ml-2">
+              <span className="text-gray-400">Status:</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-gray-950 border border-gray-800 rounded px-2 py-1 text-gray-300 text-xs focus:outline-none"
+              >
+                <option value="all">All Statuses</option>
+                <option value="prediction">Model Prediction</option>
+                <option value="confirmed">Confirmed Incident</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div className="footer-text">
-          IOT MONITORING TERMINAL v2.8 • MONGODB DATABASE • {new Date().toLocaleDateString()}
+        {/* Events Table */}
+        <div className="border border-gray-800 rounded-lg overflow-hidden bg-gray-950/60">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-gray-900/90 text-gray-400 border-b border-gray-800">
+                <tr>
+                  <th className="py-2.5 px-3">TIMESTAMP</th>
+                  <th className="py-2.5 px-3">PREDICTED CLASS</th>
+                  <th className="py-2.5 px-3">SOURCE</th>
+                  <th className="py-2.5 px-3">DESTINATION</th>
+                  <th className="py-2.5 px-3">CONFIDENCE</th>
+                  <th className="py-2.5 px-3">STATUS</th>
+                  <th className="py-2.5 px-3 text-right">DETAILS</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800/60">
+                {events.length > 0 ? (
+                  events.map((evt, idx) => {
+                    const cls = evt.predicted_class || "Unknown";
+                    const isConfirmed = evt.status === "confirmed";
+                    return (
+                      <tr key={evt.id || idx} className="hover:bg-gray-900/50 transition">
+                        <td className="py-2.5 px-3 text-gray-400">
+                          {evt.timestamp ? new Date(evt.timestamp).toLocaleString() : "N/A"}
+                        </td>
+                        <td className="py-2.5 px-3 font-semibold">
+                          <span style={{ color: CLASS_COLORS[cls] || "#9ca3af" }}>{cls}</span>
+                        </td>
+                        <td className="py-2.5 px-3 text-gray-300 font-mono">{evt.src_ip || "N/A"}</td>
+                        <td className="py-2.5 px-3 text-gray-300 font-mono">{evt.dst_ip || "N/A"}</td>
+                        <td className="py-2.5 px-3 text-gray-300">
+                          {evt.confidence ? `${(evt.confidence * 100).toFixed(1)}%` : "N/A"}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                              isConfirmed
+                                ? "bg-red-950 text-red-300 border-red-700"
+                                : "bg-blue-950 text-blue-300 border-blue-700"
+                            }`}
+                          >
+                            {isConfirmed ? "CONFIRMED" : "PREDICTION"}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
+                          <button
+                            onClick={() => setSelectedEvent(evt)}
+                            className="px-2 py-1 bg-gray-900 hover:bg-gray-800 text-gray-300 border border-gray-700 rounded text-[11px] inline-flex items-center gap-1"
+                          >
+                            <Eye size={12} /> Inspect
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="text-center py-8 text-gray-500">
+                      {loading ? "Searching forensic database..." : "No events found matching query filters."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        {/* Detailed Modal */}
+        {selectedEvent && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-gray-950 border border-gray-800 rounded-lg max-w-2xl w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+                <h3 className="text-base font-bold text-gray-100 flex items-center gap-2">
+                  <ShieldAlert size={18} className="text-red-400" />
+                  INCIDENT FORENSIC RECORD
+                </h3>
+                <button
+                  onClick={() => setSelectedEvent(null)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-2.5 bg-gray-900/60 rounded border border-gray-800">
+                  <div className="text-gray-500">Predicted Class</div>
+                  <div className="font-bold text-sm text-gray-200 mt-0.5">
+                    {selectedEvent.predicted_class}
+                  </div>
+                </div>
+                <div className="p-2.5 bg-gray-900/60 rounded border border-gray-800">
+                  <div className="text-gray-500">Confidence</div>
+                  <div className="font-bold text-sm text-gray-200 mt-0.5">
+                    {selectedEvent.confidence
+                      ? `${(selectedEvent.confidence * 100).toFixed(2)}%`
+                      : "N/A"}
+                  </div>
+                </div>
+                <div className="p-2.5 bg-gray-900/60 rounded border border-gray-800 font-mono">
+                  <div className="text-gray-500">Source IP & Port</div>
+                  <div className="text-gray-200 mt-0.5">
+                    {selectedEvent.src_ip}:{selectedEvent.src_port || "*"}
+                  </div>
+                </div>
+                <div className="p-2.5 bg-gray-900/60 rounded border border-gray-800 font-mono">
+                  <div className="text-gray-500">Destination IP & Port</div>
+                  <div className="text-gray-200 mt-0.5">
+                    {selectedEvent.dst_ip}:{selectedEvent.dst_port || "*"}
+                  </div>
+                </div>
+                <div className="p-2.5 bg-gray-900/60 rounded border border-gray-800">
+                  <div className="text-gray-500">Protocol & State</div>
+                  <div className="text-gray-200 mt-0.5">
+                    {selectedEvent.proto || "TCP"} / {selectedEvent.conn_state || "SF"}
+                  </div>
+                </div>
+                <div className="p-2.5 bg-gray-900/60 rounded border border-gray-800">
+                  <div className="text-gray-500">Model Version</div>
+                  <div className="text-gray-200 mt-0.5">
+                    {selectedEvent.model_version || "ids_bundle_v1.0.0"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Evidence Note */}
+              {selectedEvent.evidence_note && (
+                <div className="p-3 bg-amber-950/20 border border-amber-900/60 rounded text-xs text-amber-200">
+                  <strong className="block text-amber-400 mb-1">Empirical Evidence Note:</strong>
+                  {selectedEvent.evidence_note}
+                </div>
+              )}
+
+              {/* Confirmation Action */}
+              <div className="flex items-center justify-between pt-3 border-t border-gray-800 text-xs">
+                <div>
+                  <span className="text-gray-500">Current Status: </span>
+                  <span className="font-semibold text-gray-200 uppercase">
+                    {selectedEvent.status || "prediction"}
+                  </span>
+                </div>
+                {selectedEvent.status !== "confirmed" ? (
+                  <button
+                    onClick={() => handleConfirmIncident(selectedEvent.id)}
+                    disabled={confirmingId === selectedEvent.id}
+                    className="px-3 py-1.5 bg-purple-950 hover:bg-purple-900 border border-purple-700 text-purple-200 rounded flex items-center gap-1.5 font-semibold"
+                  >
+                    <CheckCircle size={14} />
+                    <span>{confirmingId === selectedEvent.id ? "CONFIRMING..." : "CONFIRM AS INCIDENT"}</span>
+                  </button>
+                ) : (
+                  <span className="text-emerald-400 flex items-center gap-1">
+                    <CheckCircle size={14} /> Confirmed by Administrator
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </Layout>
   );
 };
 
