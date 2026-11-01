@@ -34,6 +34,7 @@ from typing import Any, Dict, List, Optional, Union
 import yaml
 
 from core_engine.detector import DetectionResult, Detector
+from core_engine.response_policy import ResponsePolicy, PolicyDecision
 
 logger = logging.getLogger("core_engine.decision_engine")
 
@@ -152,12 +153,31 @@ class DecisionEngine:
         self.max_rule_minutes: int = int(
             self.settings.get("response", {}).get("max_rule_minutes", 30)
         )
+        self.policy = ResponsePolicy(
+            allowlist=self.allowlist,
+            min_repeats=self.min_repeats,
+            repeat_window_seconds=self.repeat_window_seconds,
+            max_rule_minutes=self.max_rule_minutes,
+            auto_response=bool(self.settings.get("response", {}).get("auto_response", True)),
+        )
 
         logger.info(
             "DecisionEngine initialized. Repeat window: %ds, Allowlist IPs: %d",
             self.repeat_window_seconds,
             len(self.allowlist),
         )
+
+    def evaluate_response(self, outcome_or_event: Any) -> PolicyDecision:
+        """
+        Evaluate candidate outcome or event against response policy safety guardrails (Step 31).
+
+        Args:
+            outcome_or_event: `DecisionOutcome` or event dictionary.
+
+        Returns:
+            `PolicyDecision` with action recommendation and reason code.
+        """
+        return self.policy.evaluate(outcome_or_event)
 
     def _load_thresholds(
         self, custom_thresholds: Optional[Dict[str, Any]] = None

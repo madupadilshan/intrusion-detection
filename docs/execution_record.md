@@ -1558,6 +1558,48 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 31: Response Policy and Safety Guardrail Engine
+
+* **Objective:** Author comprehensive formal specification [`docs/response_policy.md`](file:///d:/intrusion%20detection/docs/response_policy.md) and implement `ResponsePolicy` in [`core_engine/response_policy.py`](file:///d:/intrusion%20detection/core_engine/response_policy.py) with full direction-aware rules (Proposal Table 5), seven non-bypassable safety checkpoints, sliding-window repeat coalescing, permanent allowlist immunity, and bounded rule lifetimes to answer Research Question RQ5 and satisfy Supervisor Checkpoint C7.
+* **Date:** 1 November 2026
+* **How It Was Done:**
+  1. *Formal Policy Documentation ([`docs/response_policy.md`](file:///d:/intrusion%20detection/docs/response_policy.md)):*
+     - Authored complete policy specification articulating mathematical criteria, direction-aware action matrices, flow chart diagrams, safety checkpoints, and reason codes.
+  2. *Direction-Aware Response Engine ([`core_engine/response_policy.py`](file:///d:/intrusion%20detection/core_engine/response_policy.py)):*
+     - Implemented `ResponsePolicy` and `PolicyDecision` dataclass.
+     - Class-specific direction logic: PortScan drops outside scanner source IP; DDoS drops/rate-limits outside source; C&C drops external destination server IP (preserving internal camera-to-NVR reachability); Benign flows are permanently prohibited from being blocked.
+  3. *The 7 Safety Guardrails:*
+     - Check 1: Master switch validation (`auto_response == True`).
+     - Check 2: Minimum calibrated confidence validation ($P \ge \tau_{\text{active}}$).
+     - Check 3: Management allowlist immunity (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20` never dropped under any circumstances).
+     - Check 4: Private target protection (internal camera drops prevented).
+     - Check 5: Sliding-window repeat coalescing using `collections.defaultdict(deque)` requiring $\ge \text{min\_repeats}$ within $\text{repeat\_window\_seconds}$ (default 3 occurrences in 60s).
+     - Check 6: Bounded rule expiry ($\le \text{max\_rule\_minutes}$, default 45–60 mins).
+     - Check 7: Reason codes (`AUTO_*`, `SKIP_*`) and audit dictionary payload generation.
+  4. *Integration with DecisionEngine ([`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py)):*
+     - Initialized `self.policy = ResponsePolicy(...)` inside `DecisionEngine`.
+     - Exposed `evaluate_response(outcome)` hook for firewall candidate evaluation.
+  5. *Automated Unit Testing ([`tests/unit/test_response_policy.py`](file:///d:/intrusion%20detection/tests/unit/test_response_policy.py)):*
+     - Authored 12 comprehensive unit tests verifying RFC 1918 private IP checks, allowlist immunity, single-event repeat gating, repeat window pruning, low-confidence skipping, master switch disabling, C&C destination targeting, bounded rule expirations, and decision engine integration.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run response policy unit test suite
+  .\.venv\Scripts\python -m pytest tests/unit/test_response_policy.py -v
+
+  # 2. Run complete unit test suite across repository
+  .\.venv\Scripts\python -m pytest tests/unit/
+  ```
+* **Files Created / Modified:**
+  - `docs/response_policy.md` (Created formal policy specification, in Git)
+  - `core_engine/response_policy.py` (Created response policy and guardrail engine, in Git)
+  - `core_engine/decision_engine.py` (Integrated ResponsePolicy and evaluate_response hook, in Git)
+  - `tests/unit/test_response_policy.py` (Created unit test suite, in Git)
+  - `docs/decision_log.md` (Added Decision D-035, in Git)
+  - `docs/execution_record.md` (Updated Step 31 execution details, in Git)
+* **Verification Result:** All 12 dedicated unit tests in `test_response_policy.py` passed; all 141 repository unit tests passed in 20.95s with 0 errors (100% pass rate). Research Question RQ5 answered and Supervisor Checkpoint C7 fulfilled. Step 31 status is ✅ Done.
+
+---
+
 
 
 ## Quick Reference: Useful Commands

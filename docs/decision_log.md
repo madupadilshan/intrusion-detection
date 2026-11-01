@@ -635,6 +635,30 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (1 Nov 2026).
 - **Proposal link:** Section 3.6 (Figure 4, Table 8); Section 7.1; Table 7 (FR-04, FR-06, FR-07, FR-08); Guide Step 30.
 
+## D-035 — 2026-11-01 — Direction-aware response policy, 7 safety guardrails, and sliding-window repeat coalescing (Step 31)
+- **Decision:** Architect, specify ([`docs/response_policy.md`](file:///d:/intrusion%20detection/docs/response_policy.md)), and implement the formal autonomous response policy engine ([`core_engine/response_policy.py`](file:///d:/intrusion%20detection/core_engine/response_policy.py)) integrated into [`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py), fulfilling Group 03 Proposal Table 5, Section 2.5, Section 3.7, Research Question RQ5, and Supervisor Checkpoint C7:
+  1. **Direction-Aware Mitigation Logic (Proposal Table 5):**
+     - **Benign:** Log aggregate to summary only; blocking strictly prohibited (`SKIP_BENIGN`).
+     - **PortScan (Outside -> Camera):** Drops external scanner source IP only after confirmed repeat probe sweeps (`AUTO_PORTSCAN_REPEATED`).
+     - **DDoS/DoS (Outside -> Camera):** Drops or rate-limits external flood source IP (`AUTO_DDOS_BLOCK` / `AUTO_DDOS_RATELIMIT`).
+     - **C&C (Camera -> Outside):** Drops outbound communication to external C&C server destination IP, preserving local camera-to-NVR communication (`AUTO_CNC_DEST_BLOCK`).
+     - **Malware Download:** Drops external staging host or isolates compromised device based on direction (`AUTO_MALWARE_BLOCK`).
+  2. **The 7 Safety Guardrails (Checkpoint C7):**
+     - *Check 1 (Master Switch):* Checks `settings.auto_response`. When disabled, engine operates in passive alerting mode only (`SKIP_AUTO_RESPONSE_DISABLED`).
+     - *Check 2 (Calibrated Confidence):* Checks $P(\text{class}) \ge \tau_{\text{active}}$. Inferences below threshold generate alerts but never block (`SKIP_LOW_CONFIDENCE`).
+     - *Check 3 (Management Allowlist Immunity):* Lab management assets (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`) are permanently immune to blocking under any conditions (`SKIP_ALLOWLIST`).
+     - *Check 4 (Private Target Protection):* Prevents inadvertent drops against local camera IPs (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) to avert surveillance stream disruption to NVR (`SKIP_PRIVATE_TARGET`).
+     - *Check 5 (Sliding-Window Repeat Coalescing):* Tracks `(target_ip, class)` occurrences using a memory-efficient `collections.defaultdict(deque)` sliding window. Requires $\ge \text{min\_repeats}$ within $\text{repeat\_window\_seconds}$ (default: 3 occurrences in 60s). Single events alert only (`SKIP_NOT_REPEATED`).
+     - *Check 6 (Bounded Rule Expiry):* Enforces explicit rule timeout sets clamped to `max_rule_minutes` (default: 45–60 mins) to prevent permanent network partitioning.
+     - *Check 7 (Audit Invariants):* Every approved block and skipped guardrail action generates an immutable reason code logged to `system_logs` and `response_actions`.
+  3. **Integration & Automated Verification:**
+     - Integrated `ResponsePolicy` into `DecisionEngine` via `evaluate_response(outcome)`.
+     - Authored 12 dedicated unit tests in [`tests/unit/test_response_policy.py`](file:///d:/intrusion%20detection/tests/unit/test_response_policy.py). Full test suite reaches 141 passed unit tests in 20.95s with 100% pass rate.
+- **Why:** Solves Research Question RQ5 by mathematically and logically preventing false-positive network lockouts, protecting camera surveillance streams, and providing safe, autonomous firewall mitigations. Fulfills Supervisor Checkpoint C7.
+- **Who agreed:** project owner and team (1 Nov 2026).
+- **Proposal link:** Section 2.5; Section 3.4; Section 3.7; Table 5; Table 7 (FR-06, FR-07); RQ5; Checkpoint C7; Guide Step 31.
+
+
 
 
 
