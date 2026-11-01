@@ -1448,6 +1448,62 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 29: React Dashboard Clean-up, Single Backend URL Consolidation, and Socket.IO Integration
+
+* **Objective:** Modernize and clean up the React frontend (`my-app/`), eliminate dead legacy routes and pages (`Register`, `CyberDetails`, `TraditionalDetails`, `AttackHistoryCICIDS`, `KDDAttackHistory`), remove duplicate assets, eliminate public user registration, replace 5 disjoint backend URLs with a single central configuration, standardize on `npm`, wire authenticated `socket.io-client` push telemetry, purge all synthetic/fake attack messages, and integrate secure JWT session management per Proposal Section 3.6, Section 7.1, Table 8, and Guide Step 29.
+* **Date:** 1 November 2026
+* **How It Was Done:**
+  1. *Legacy File and Route Elimination:*
+     - Permanently removed obsolete legacy files: `my-app/src/components/Register.js`, `Register.css`, `my-app/src/pages/CyberDetails.js`, `CyberDetails.css`, `my-app/src/pages/TraditionalDetails.js`, `TraditionalDetailsold.css`, `my-app/src/pages/AttackHistoryCICIDS.js`, `my-app/src/pages/KDDAttackHistory.js`, and duplicate `my-app/src/pages/MatrixEffect.js`.
+     - Completely removed the unauthenticated `/register` web route. User accounts are created exclusively via administrative CLI script ([`tools/create_admin.py`](file:///d:/intrusion%20detection/tools/create_admin.py)) under Decision `D-028`.
+  2. *Single Central Backend Configuration:*
+     - Created [`my-app/src/config.js`](file:///d:/intrusion%20detection/my-app/src/config.js) dynamically reading `REACT_APP_API_URL` (defaulting to `http://localhost:5000`). Replaced all 5 hardcoded ports (`5002`, `5005`, `5006`, `5007`, `5012`).
+  3. *Package Manager & Build Clean-up:*
+     - Removed redundant lock file `my-app/yarn.lock`, standardizing on `npm`.
+     - Cleaned `my-app/package.json` of redundant and conflicting direct dependencies: removed `webpack ^4.47.0`, `html-webpack-plugin ^5.6.3`, `stream-http ^3.2.0`, and browser shim overrides.
+  4. *Authenticated REST Client & Interceptors:*
+     - Created [`my-app/src/services/api.js`](file:///d:/intrusion%20detection/my-app/src/services/api.js) using Axios. Automatically injects `Authorization: Bearer <token>` from `localStorage` on all outgoing API requests.
+     - Installed response interceptor that catches HTTP 401 Unauthorized errors, clears stale session data, and redirects to `/login`.
+  5. *Authenticated Socket.IO Telemetry Manager:*
+     - Created [`my-app/src/services/socket.js`](file:///d:/intrusion%20detection/my-app/src/services/socket.js) with `socket.io-client` 4.8.1.
+     - Passes JWT access token in handshake credentials (`auth: { token }`) to connect to Flask-SocketIO in `core_engine/app.py`.
+  6. *Zero Synthetic Attack Telemetry:*
+     - Completely removed all synthetic attack fallbacks (`fakeAttacks` and hardcoded `sampleData`) in `IOTDetails.js`.
+     - Wired real-time `new_event` and `summary_update` Socket.IO listeners to live feeds.
+  7. *Authentication Workflow & Protected Routing:*
+     - Refactored [`my-app/src/components/Login.js`](file:///d:/intrusion%20detection/my-app/src/components/Login.js) to submit credentials to `POST /api/auth/login`, store 8-hour JWT access token, and route to dashboard.
+     - Updated [`my-app/src/App.js`](file:///d:/intrusion%20detection/my-app/src/App.js) with `ProtectedRoute` guards and consolidated routes.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run React test suite
+  cd my-app; npm test -- --watchAll=false
+
+  # 2. Verify production build
+  npm run build
+
+  # 3. Verify Python test suite remains intact
+  cd ..; .\.venv\Scripts\python -m pytest tests/unit/
+  ```
+* **Files Created / Modified:**
+  - `my-app/package.json` (Cleaned dependencies, in Git)
+  - `my-app/yarn.lock` (Permanently deleted)
+  - `my-app/src/config.js` (Created centralized configuration, in Git)
+  - `my-app/src/services/api.js` (Created authenticated Axios client, in Git)
+  - `my-app/src/services/socket.js` (Created authenticated Socket.IO manager, in Git)
+  - `my-app/src/components/Login.js` (Refactored to JWT endpoint, removed register link, in Git)
+  - `my-app/src/components/Dashboard.js` (Connected to /api/summary and /api/events, in Git)
+  - `my-app/src/pages/IOTDetails.js` (Replaced WebSocket with Socket.IO, removed fake attacks, in Git)
+  - `my-app/src/pages/AttackHistory.js` (Connected to /api/events with Bearer auth, in Git)
+  - `my-app/src/pages/IoTDevicesDashboard.js` (Connected to /api/devices and /api/scans, in Git)
+  - `my-app/src/App.js` (Consolidated routes with ProtectedRoute, in Git)
+  - `my-app/src/App.test.js` (Updated to verify unified backend configuration, in Git)
+  - `my-app/src/setupTests.js` (Cleaned configuration, in Git)
+  - `docs/decision_log.md` (Added Decision D-033, in Git)
+  - `docs/execution_record.md` (Updated Step 29 execution details, in Git)
+* **Verification Result:** React test suite passed; React production build passed (`build/static/js/main.*.js` 147.78 kB gzip); zero references to old ports (5002, 5005, 5006, 5007, 5012) remain in the codebase; all 129 Python unit tests passed. Step 29 status is ✅ Done.
+
+---
+
 
 
 ## Quick Reference: Useful Commands

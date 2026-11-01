@@ -1,473 +1,235 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { Shield, Wifi, Network, Bug, AlertTriangle, Terminal, X } from 'lucide-react';
-import MatrixEffect from './MatrixEffect';
-import './Dashboard.css';
+import { Shield, Terminal, AlertTriangle, Activity, Cpu } from "lucide-react";
+import MatrixEffect from "./MatrixEffect";
+import apiClient from "../services/api";
+import { getSocket } from "../services/socket";
+import "./Dashboard.css";
 
 const Dashboard = () => {
-  const [iotAttack, setIotAttack] = useState("Scanning network...");
-  const [cyberAttack, setCyberAttack] = useState("Analyzing traffic...");
-  const [traditionalAttack, setTraditionalAttack] = useState("Processing data...");
-  const [selectedCategory, setSelectedCategory] = useState("iot");
+  const [summary, setSummary] = useState({
+    total_events: 0,
+    attacks_detected: 0,
+    blocked_ips: 0,
+    active_devices: 0,
+  });
+  const [latestEvents, setLatestEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
-  
-  // States for managing alerts/popups
   const [alertVisible, setAlertVisible] = useState(false);
-  const [alertType, setAlertType] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
   const [alertSeverity, setAlertSeverity] = useState("medium");
-  const [alertTimestamp, setAlertTimestamp] = useState("");
+  const navigate = useNavigate();
 
-  // Define normal traffic patterns to be excluded from alerts
-  const normalTrafficPatterns = [
-    "Scanning network...", 
-    "Analyzing traffic...", 
-    "Processing data...", 
-    "Normal Traffic", 
-    "Benign",
-    "No threats detected",
-    "Normal",
-    "BENIGN"
-  ];
-
-  // List of actual attack patterns that should trigger alerts
-  const attackPatterns = {
-    iot: ["Mirai", "DDoS", "Okiru", "Torii", "HeartBeat", "FileDownload", "Botnet", "Exploit"],
-    cyber: ["DoS", "DDoS", "PortScan", "Brute Force", "Web Attack", "Infiltration", "Botnet", "Heartbleed"],
-    traditional: ["DoS", "DDoS", "R2L", "U2R", "Probe", "Brute Force"]
-  };
-
-  // Calculate attack severity based on content
-  const getAttackSeverity = (attackString, type) => {
-    if (!attackString) return "normal";
-    
-    const attackLower = attackString.toLowerCase();
-    
-    // Check if this is actually normal traffic
-    if (normalTrafficPatterns.some(pattern => 
-      attackLower.includes(pattern.toLowerCase()))) {
-      return "normal";
-    }
-
-    // Critical attacks
-    const criticalKeywords = {
-      iot: ["mirai", "ddos", "okiru-attack"],
-      cyber: ["dos hulk", "ddos", "heartbleed"],
-      traditional: ["dos", "ddos"]
-    };
-    
-    // High severity attacks
-    const highKeywords = {
-      iot: ["torii", "filedownload", "botnet"],
-      cyber: ["goldeneye", "web attack", "infiltration", "botnet"],
-      traditional: ["r2l", "u2r"]
-    };
-    
-    // Medium severity attacks
-    const mediumKeywords = {
-      iot: ["heartbeat", "exploit"],
-      cyber: ["slowloris", "portscan", "brute force"],
-      traditional: ["probe"]
-    };
-
-    if (criticalKeywords[type].some(keyword => attackLower.includes(keyword))) {
-      return "critical";
-    } else if (highKeywords[type].some(keyword => attackLower.includes(keyword))) {
-      return "high";
-    } else if (mediumKeywords[type].some(keyword => attackLower.includes(keyword))) {
-      return "medium";
-    }
-    
-    // If it's not normal traffic but we don't recognize it, treat as low severity
-    return normalTrafficPatterns.some(pattern => 
-      attackLower.includes(pattern.toLowerCase())) ? "normal" : "low";
-  };
-
-  const shouldShowAlert = (attackString, type) => {
-    if (!attackString || normalTrafficPatterns.some(pattern => 
-      attackString.toLowerCase().includes(pattern.toLowerCase()))) {
-      return false;
-    }
-    
-    // Only show alert if it matches known attack patterns for this type
-    return attackPatterns[type].some(pattern => 
-      attackString.toLowerCase().includes(pattern.toLowerCase()));
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
   };
 
   useEffect(() => {
-    const fetchAttackData = async () => {
-      setIsLoading(true);
-      
-      try {
-        // Fetch IoT attacks
-        const iotRes = await axios.get("http://127.0.0.1:5005/latest_iot_attack", { timeout: 5000 });
-        const iotAttackData = iotRes.data.attack;
-        setIotAttack(iotAttackData);
-        
-        if (shouldShowAlert(iotAttackData, "iot")) {
-          const severity = getAttackSeverity(iotAttackData, "iot");
-          setAlertType("iot");
-          setAlertMessage(iotAttackData);
-          setAlertSeverity(severity);
-          setAlertTimestamp(new Date().toLocaleTimeString());
-          setAlertVisible(true);
-        }
-      } catch (error) {
-        const errorMsg = "ALERT: IoT security breach detected. Connection compromised.";
-        setIotAttack(errorMsg);
-        setAlertType("iot");
-        setAlertMessage(errorMsg);
-        setAlertSeverity("critical");
-        setAlertTimestamp(new Date().toLocaleTimeString());
-        setAlertVisible(true);
-      }
+    let isMounted = true;
 
+    const fetchSummary = async () => {
       try {
-        // Fetch Cyber attacks (CICIDS)
-        const cyberRes = await axios.get("http://127.0.0.1:5006/latest_cicids_attack", { timeout: 5000 });
-        const cyberAttackData = cyberRes.data.attack;
-        setCyberAttack(cyberAttackData);
-        
-        if (!alertVisible && shouldShowAlert(cyberAttackData, "cyber")) {
-          const severity = getAttackSeverity(cyberAttackData, "cyber");
-          setAlertType("cyber");
-          setAlertMessage(cyberAttackData);
-          setAlertSeverity(severity);
-          setAlertTimestamp(new Date().toLocaleTimeString());
-          setAlertVisible(true);
+        const [sumRes, evRes] = await Promise.all([
+          apiClient.get("/api/summary").catch(() => ({ data: {} })),
+          apiClient.get("/api/events?limit=5").catch(() => ({ data: { events: [] } })),
+        ]);
+
+        if (isMounted) {
+          if (sumRes.data) {
+            setSummary((prev) => ({ ...prev, ...sumRes.data }));
+          }
+          if (evRes.data && evRes.data.events) {
+            setLatestEvents(evRes.data.events);
+          }
         }
-      } catch (error) {
-        const errorMsg = "WARNING: Cyber attack vectors identified. Implementing countermeasures.";
-        setCyberAttack(errorMsg);
-        
-        if (!alertVisible) {
-          setAlertType("cyber");
-          setAlertMessage(errorMsg);
+      } catch (err) {
+        console.error("Error loading dashboard data:", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    fetchSummary();
+
+    const socket = getSocket();
+    if (socket) {
+      const handleNewEvent = (event) => {
+        if (!isMounted) return;
+        const cls = event.predicted_class || event.attack || "Benign";
+        if (cls.toLowerCase() !== "benign") {
+          setAlertMessage(`Alert: [${cls}] detected from ${event.src_ip || "unknown"}`);
           setAlertSeverity("high");
-          setAlertTimestamp(new Date().toLocaleTimeString());
           setAlertVisible(true);
+          setTimeout(() => setAlertVisible(false), 5000);
         }
-      }
+        setLatestEvents((prev) => [event, ...prev.slice(0, 4)]);
+      };
 
-      try {
-        // Fetch Traditional attacks (NSL-KDD)
-        const traditionalRes = await axios.get("http://127.0.0.1:5007/latest_kdd_attack", { timeout: 5000 });
-        const traditionalAttackData = traditionalRes.data.attack;
-        setTraditionalAttack(traditionalAttackData);
-        
-        if (!alertVisible && shouldShowAlert(traditionalAttackData, "traditional")) {
-          const severity = getAttackSeverity(traditionalAttackData, "traditional");
-          setAlertType("traditional");
-          setAlertMessage(traditionalAttackData);
-          setAlertSeverity(severity);
-          setAlertTimestamp(new Date().toLocaleTimeString());
-          setAlertVisible(true);
-        }
-      } catch (error) {
-        const errorMsg = "CAUTION: Traditional attack signature detected. Firewall engaged.";
-        setTraditionalAttack(errorMsg);
-        
-        if (!alertVisible) {
-          setAlertType("traditional");
-          setAlertMessage(errorMsg);
-          setAlertSeverity("medium");
-          setAlertTimestamp(new Date().toLocaleTimeString());
-          setAlertVisible(true);
-        }
-      }
-      
-      setIsLoading(false);
+      const handleSummaryUpdate = (data) => {
+        if (!isMounted) return;
+        setSummary((prev) => ({ ...prev, ...data }));
+      };
+
+      socket.on("new_event", handleNewEvent);
+      socket.on("summary_update", handleSummaryUpdate);
+
+      return () => {
+        isMounted = false;
+        socket.off("new_event", handleNewEvent);
+        socket.off("summary_update", handleSummaryUpdate);
+      };
+    }
+
+    return () => {
+      isMounted = false;
     };
-
-    fetchAttackData();
-    const interval = setInterval(fetchAttackData, 5000);
-
-    return () => clearInterval(interval);
-  }, [alertVisible]);
-
-  // Close alert popup
-  const closeAlert = () => {
-    setAlertVisible(false);
-  };
-
-  // Handle category click
-  const handleCategoryClick = (category) => {
-    setSelectedCategory(category);
-    if (category === "iot") navigate("/IOTDetails");
-    if (category === "cyber") navigate("/CyberDetails");
-    if (category === "traditional") navigate("/TraditionalDetails");
-  };
-
-  // Get appropriate icon for alert type
-  const getAlertIcon = () => {
-    switch (alertType) {
-      case "iot":
-        return <Wifi className="alert-icon" />;
-      case "cyber":
-        return <Bug className="alert-icon" />;
-      case "traditional":
-        return <Shield className="alert-icon" />;
-      default:
-        return <AlertTriangle className="alert-icon" />;
-    }
-  };
-
-  // Get appropriate title for alert type
-  const getAlertTitle = () => {
-    switch (alertType) {
-      case "iot":
-        return "IOT THREAT DETECTED";
-      case "cyber":
-        return "CYBER THREAT DETECTED";
-      case "traditional":
-        return "NETWORK THREAT DETECTED";
-      default:
-        return "SECURITY ALERT";
-    }
-  };
-
-  // Auto-close alert based on severity
-  useEffect(() => {
-    if (alertVisible) {
-      let timeoutDuration;
-      
-      switch (alertSeverity) {
-        case "critical":
-          timeoutDuration = 10000; // 10 seconds for critical
-          break;
-        case "high":
-          timeoutDuration = 8000; // 8 seconds for high
-          break;
-        case "medium":
-          timeoutDuration = 6000; // 6 seconds for medium
-          break;
-        default:
-          timeoutDuration = 5000; // 5 seconds for low
-      }
-      
-      const timer = setTimeout(() => {
-        closeAlert();
-      }, timeoutDuration);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [alertVisible, alertSeverity]);
+  }, []);
 
   return (
     <div className="dashboard-container">
       <MatrixEffect />
-      
-      {/* Alert Popup - Only shown for actual attacks */}
+
       {alertVisible && (
-        <div className={`alert-popup ${alertType} severity-${alertSeverity}`}>
-          <div className="alert-header">
-            {getAlertIcon()}
-            <div className="alert-title-container">
-              <h3>{getAlertTitle()}</h3>
-              <span className="alert-timestamp">{alertTimestamp}</span>
-            </div>
-            <button className="close-btn" onClick={closeAlert}>
-              <X size={18} />
-            </button>
-          </div>
-          <div className="alert-body">
-            <p>{alertMessage}</p>
-          </div>
-          <div className="alert-footer">
-            <button 
-              className="details-btn" 
-              onClick={() => {
-                handleCategoryClick(alertType);
-                closeAlert();
-              }}
-            >
-              VIEW DETAILS
-            </button>
-            <button className="dismiss-btn" onClick={closeAlert}>
-              DISMISS
-            </button>
-          </div>
+        <div className={`alert-popup attack-${alertSeverity}`}>
+          <AlertTriangle size={24} />
+          <span>{alertMessage}</span>
         </div>
       )}
-      
+
       <div className="dashboard-content">
-        <div className="dashboard-header">
-          <Terminal className="terminal-icon" />
-          <h1 className="dashboard-title">INTRUSION DETECTION SYSTEM</h1>
-          <Terminal className="terminal-icon" />
+        <div className="dashboard-header flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Shield className="terminal-icon" />
+            <h1 className="dashboard-title">SECURITY OPERATIONS CENTER</h1>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="px-3 py-1 text-sm bg-red-900 hover:bg-red-800 text-red-200 border border-red-500 rounded"
+          >
+            LOGOUT
+          </button>
         </div>
 
-        {/* Security Status Banner */}
-        <div className={`security-status ${alertVisible ? `alert-active severity-${alertSeverity}` : ''}`}>
+        <div className="security-status">
           <div className="status-indicator"></div>
-          <span>
-            {alertVisible 
-              ? `⚠️ ALERT: ${alertMessage.substring(0, 50)}${alertMessage.length > 50 ? '...' : ''}`
-              : "SYSTEM OPERATIONAL"}
-          </span>
+          <span>REAL-TIME INTRUSION DETECTION ENGINE ACTIVE</span>
           <div className="status-indicator"></div>
         </div>
 
-        {/* Tabs Section */}
-        <div className="tabs-container">
-          <div 
-            className={`tab ${selectedCategory === "iot" ? "active" : ""}`} 
-            onClick={() => setSelectedCategory("iot")}
-          >
-            <Wifi className="tab-icon" />
-            <span>IOT THREATS</span>
+        {/* KPI Summary Cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", margin: "1.5rem 0" }}>
+          <div className="p-4 bg-gray-900 border border-emerald-500 rounded text-center">
+            <h4 style={{ color: "#9ca3af", fontSize: "0.85rem" }}>TOTAL MONITORED FLOWS</h4>
+            <p style={{ color: "#10b981", fontSize: "1.8rem", fontWeight: "bold" }}>
+              {summary.total_events || 0}
+            </p>
           </div>
-          <div 
-            className={`tab ${selectedCategory === "cyber" ? "active" : ""}`} 
-            onClick={() => setSelectedCategory("cyber")}
-          >
-            <Bug className="tab-icon" />
-            <span>CYBER THREATS</span>
+          <div className="p-4 bg-gray-900 border border-red-500 rounded text-center">
+            <h4 style={{ color: "#9ca3af", fontSize: "0.85rem" }}>ATTACKS DETECTED</h4>
+            <p style={{ color: "#ef4444", fontSize: "1.8rem", fontWeight: "bold" }}>
+              {summary.attacks_detected || 0}
+            </p>
           </div>
-          <div 
-            className={`tab ${selectedCategory === "traditional" ? "active" : ""}`} 
-            onClick={() => setSelectedCategory("traditional")}
-          >
-            <Shield className="tab-icon" />
-            <span>NETWORK THREATS</span>
+          <div className="p-4 bg-gray-900 border border-yellow-500 rounded text-center">
+            <h4 style={{ color: "#9ca3af", fontSize: "0.85rem" }}>ACTIVE MITIGATIONS</h4>
+            <p style={{ color: "#f59e0b", fontSize: "1.8rem", fontWeight: "bold" }}>
+              {summary.blocked_ips || 0}
+            </p>
           </div>
-        </div>
-
-        {/* Content Section */}
-        <div className="content-container">
-          <div className="content-header">
-            {selectedCategory === "iot" && (
-              <>
-                <Wifi className="content-icon" />
-                <h3>IOT THREAT ANALYSIS</h3>
-              </>
-            )}
-            {selectedCategory === "cyber" && (
-              <>
-                <Bug className="content-icon" />
-                <h3>CYBER THREAT ANALYSIS</h3>
-              </>
-            )}
-            {selectedCategory === "traditional" && (
-              <>
-                <Shield className="content-icon" />
-                <h3>NETWORK THREAT ANALYSIS</h3>
-              </>
-            )}
-          </div>
-          
-          <div className="content-body">
-            {selectedCategory === "iot" && (
-              <div className="threat-data">
-                <div className="threat-details">
-                  {isLoading ? (
-                    <div className="loading-container">
-                      <div className="loading-spinner"></div>
-                      <span>ANALYZING IOT NETWORK...</span>
-                    </div>
-                  ) : (
-                    <pre className={!normalTrafficPatterns.includes(iotAttack) ? `severity-${getAttackSeverity(iotAttack, "iot")}` : ''}>
-                      {iotAttack}
-                    </pre>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {selectedCategory === "cyber" && (
-              <div className="threat-data">
-                <div className="threat-details">
-                  {isLoading ? (
-                    <div className="loading-container">
-                      <div className="loading-spinner"></div>
-                      <span>PROCESSING CYBER THREATS...</span>
-                    </div>
-                  ) : (
-                    <pre className={!normalTrafficPatterns.includes(cyberAttack) ? `severity-${getAttackSeverity(cyberAttack, "cyber")}` : ''}>
-                      {cyberAttack}
-                    </pre>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {selectedCategory === "traditional" && (
-              <div className="threat-data">
-                <div className="threat-details">
-                  {isLoading ? (
-                    <div className="loading-container">
-                      <div className="loading-spinner"></div>
-                      <span>SCANNING TRADITIONAL VECTORS...</span>
-                    </div>
-                  ) : (
-                    <pre className={!normalTrafficPatterns.includes(traditionalAttack) ? `severity-${getAttackSeverity(traditionalAttack, "traditional")}` : ''}>
-                      {traditionalAttack}
-                    </pre>
-                  )}
-                </div>
-              </div>
-            )}
+          <div className="p-4 bg-gray-900 border border-cyan-500 rounded text-center">
+            <h4 style={{ color: "#9ca3af", fontSize: "0.85rem" }}>DISCOVERED DEVICES</h4>
+            <p style={{ color: "#06b6d4", fontSize: "1.8rem", fontWeight: "bold" }}>
+              {summary.active_devices || 0}
+            </p>
           </div>
         </div>
 
-        {/* Attack Cards Section */}
-        <div className="attack-cards">
-          {/* IoT-Based Attacks */}
+        {/* Quick Nav Tiles */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem", marginTop: "1rem" }}>
           <div
-            className={`attack-card ${selectedCategory === "iot" ? "active-card" : ""} ${
-              !normalTrafficPatterns.includes(iotAttack) ? `alert-card severity-${getAttackSeverity(iotAttack, "iot")}` : ''
-            }`}
-            onClick={() => handleCategoryClick("iot")}
+            onClick={() => navigate("/overview")}
+            style={{ cursor: "pointer" }}
+            className="p-5 bg-gray-900 border border-gray-700 hover:border-emerald-500 rounded transition"
           >
-            <div className="card-icon-container">
-              <Wifi size={32} className="card-icon" />
-            </div>
-            <h4>IOT INTRUSIONS</h4>
-            <div className="card-status">
-              <div className={`status-bar ${!normalTrafficPatterns.includes(iotAttack) ? 'active' : ''}`}></div>
-            </div>
-            <p className="card-description">{isLoading ? "Analyzing..." : iotAttack}</p>
+            <Activity className="text-emerald-400 mb-2" size={28} />
+            <h3 className="text-lg font-bold text-gray-100">Overview</h3>
+            <p className="text-sm text-gray-400">System health, traffic volume & class distribution.</p>
           </div>
 
-          {/* Cyber Attacks */}
           <div
-            className={`attack-card ${selectedCategory === "cyber" ? "active-card" : ""} ${
-              !normalTrafficPatterns.includes(cyberAttack) ? `alert-card severity-${getAttackSeverity(cyberAttack, "cyber")}` : ''
-            }`}
-            onClick={() => handleCategoryClick("cyber")}
+            onClick={() => navigate("/alerts")}
+            style={{ cursor: "pointer" }}
+            className="p-5 bg-gray-900 border border-gray-700 hover:border-red-500 rounded transition"
           >
-            <div className="card-icon-container">
-              <Bug size={32} className="card-icon" />
-            </div>
-            <h4>CYBER THREATS</h4>
-            <div className="card-status">
-              <div className={`status-bar ${!normalTrafficPatterns.includes(cyberAttack) ? 'active' : ''}`}></div>
-            </div>
-            <p className="card-description">{isLoading ? "Processing..." : cyberAttack}</p>
+            <AlertTriangle className="text-red-400 mb-2" size={28} />
+            <h3 className="text-lg font-bold text-gray-100">Live Alerts</h3>
+            <p className="text-sm text-gray-400">Real-time Socket.IO incident feed & verification.</p>
           </div>
 
-          {/* Traditional Attacks */}
           <div
-            className={`attack-card ${selectedCategory === "traditional" ? "active-card" : ""} ${
-              !normalTrafficPatterns.includes(traditionalAttack) ? `alert-card severity-${getAttackSeverity(traditionalAttack, "traditional")}` : ''
-            }`}
-            onClick={() => handleCategoryClick("traditional")}
+            onClick={() => navigate("/history")}
+            style={{ cursor: "pointer" }}
+            className="p-5 bg-gray-900 border border-gray-700 hover:border-cyan-500 rounded transition"
           >
-            <div className="card-icon-container">
-              <Shield size={32} className="card-icon" />
-            </div>
-            <h4>NETWORK VECTORS</h4>
-            <div className="card-status">
-              <div className={`status-bar ${!normalTrafficPatterns.includes(traditionalAttack) ? 'active' : ''}`}></div>
-            </div>
-            <p className="card-description">{isLoading ? "Scanning..." : traditionalAttack}</p>
+            <Terminal className="text-cyan-400 mb-2" size={28} />
+            <h3 className="text-lg font-bold text-gray-100">Attack History</h3>
+            <p className="text-sm text-gray-400">Searchable log database with forensic evidence.</p>
+          </div>
+
+          <div
+            onClick={() => navigate("/devices")}
+            style={{ cursor: "pointer" }}
+            className="p-5 bg-gray-900 border border-gray-700 hover:border-yellow-500 rounded transition"
+          >
+            <Cpu className="text-yellow-400 mb-2" size={28} />
+            <h3 className="text-lg font-bold text-gray-100">Devices & Scans</h3>
+            <p className="text-sm text-gray-400">Nmap discovery, surveillance camera validation.</p>
           </div>
         </div>
-        
-        <div className="footer-text">
-          INTRUSION DETECTION TERMINAL v3.1 • ACTIVE MONITORING
+
+        {/* Recent Events Table Preview */}
+        <div className="mt-8 bg-gray-900 p-4 border border-gray-800 rounded">
+          <h3 className="text-md font-semibold text-gray-300 mb-3 flex items-center gap-2">
+            <Terminal size={18} /> RECENT LOGGED INCIDENTS
+          </h3>
+          <table className="attack-table w-full">
+            <thead>
+              <tr>
+                <th>TIMESTAMP</th>
+                <th>PREDICTED CLASS</th>
+                <th>SOURCE</th>
+                <th>DESTINATION</th>
+                <th>CONFIDENCE</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {latestEvents.length > 0 ? (
+                latestEvents.map((evt, idx) => (
+                  <tr key={idx}>
+                    <td>{evt.timestamp ? new Date(evt.timestamp).toLocaleTimeString() : "N/A"}</td>
+                    <td>{evt.predicted_class || "N/A"}</td>
+                    <td>{evt.src_ip || "N/A"}</td>
+                    <td>{evt.dst_ip || "N/A"}</td>
+                    <td>{evt.confidence ? `${(evt.confidence * 100).toFixed(1)}%` : "N/A"}</td>
+                    <td>{evt.status || "prediction"}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="text-center text-gray-500 py-3">
+                    {isLoading ? "Loading telemetry..." : "No incidents logged yet."}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="footer-text mt-8">
+          IP CAMERA IOT INTRUSION DETECTION SYSTEM • GROUP 03 SOC v2.5
         </div>
       </div>
     </div>

@@ -1,8 +1,7 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import { API_URL, WS_URL } from "./config";
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+test("central configuration provides valid unified backend endpoints", () => {
+  expect(API_URL).toBeDefined();
+  expect(WS_URL).toBeDefined();
+  expect(API_URL).toBe("http://localhost:5000");
 });

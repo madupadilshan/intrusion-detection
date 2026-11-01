@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import apiClient from "../services/api";
 import { Line } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from "chart.js";
 import { Wifi, Shield, Terminal, AlertTriangle, Lock, Activity, Server, Download, ArrowLeft, Filter } from 'lucide-react';
-import MatrixEffect from './MatrixEffect';
+import MatrixEffect from '../components/MatrixEffect';
 import './Dashboard.css';
 import './AttackHistory.css';
 
@@ -93,14 +93,14 @@ const AttackHistory = () => {
       setLoading(true);
       try {
         // Create a new endpoint in your Flask app to retrieve MongoDB data
-        const res = await axios.get("http://127.0.0.1:5005/iot23_logs2", { timeout: 30000 });
-        
-        if (res.data && Array.isArray(res.data.logs)) {
-          setAttackHistory(res.data.logs);
-          setFilteredHistory(res.data.logs);
-          setTotalPages(Math.ceil(res.data.logs.length / itemsPerPage));
-          calculateStats(res.data.logs);
-          updateChartData(res.data.logs);
+        const res = await apiClient.get("/api/events?limit=200");
+        const events = res.data?.events || res.data?.logs || (Array.isArray(res.data) ? res.data : []);
+        if (Array.isArray(events)) {
+          setAttackHistory(events);
+          setFilteredHistory(events);
+          setTotalPages(Math.max(1, Math.ceil(events.length / itemsPerPage)));
+          calculateStats(events);
+          updateChartData(events);
         } else {
           throw new Error("Invalid data format");
         }

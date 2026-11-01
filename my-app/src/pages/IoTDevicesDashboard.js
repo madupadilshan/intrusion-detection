@@ -6,7 +6,6 @@ import {
   CheckCircle, 
   XCircle, 
   Search, 
-  Eye, 
   Activity,
   Zap,
   Globe,
@@ -27,7 +26,7 @@ import './IoTDevicesDashboard.css';
 
 // Constants
 const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_URL || 'http://localhost:5012/api',
+  BASE_URL: process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/api` : 'http://localhost:5000/api',
   TIMEOUT: 10000,
   RETRY_ATTEMPTS: 3
 };
@@ -52,7 +51,7 @@ const SEVERITY_CONFIG = Object.freeze({
 
 const SCAN_CONFIG = {
   PROGRESS_INTERVAL: 1000,
-  DEFAULT_NETWORK: '192.168.8.0/24', // As seen in your DB screenshot
+  DEFAULT_NETWORK: '192.168.50.0/24',
   TIMEOUT: 300000 // 5 minutes
 };
 
@@ -67,12 +66,16 @@ const useAPI = () => {
 
     abortControllerRef.current = new AbortController();
     
+    const token = localStorage.getItem("token");
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+
     const config = {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers,
       signal: abortControllerRef.current.signal,
       ...options
     };
@@ -113,7 +116,7 @@ const useAPI = () => {
   return { makeRequest };
 };
 
-// MODIFIED HOOK to fetch from /api/scan-results
+// Hook to fetch from unified /api/devices
 const useDeviceManager = () => {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -125,12 +128,11 @@ const useDeviceManager = () => {
     setLoading(true);
     setError(null);
 
-    // Fetch from the new endpoint that returns devices from the latest scan
-    const result = await makeRequest('/scan-results');
+    const result = await makeRequest('/devices');
     
     if (result.success) {
-      // The new endpoint directly returns the array of devices
-      setDevices(result.data || []);
+      const devList = result.data?.devices || (Array.isArray(result.data) ? result.data : []);
+      setDevices(devList);
       setLastUpdate(new Date());
     } else {
       setError(result.error);
@@ -170,7 +172,9 @@ const useNetworkScanner = (onScanComplete) => {
   const { makeRequest } = useAPI();
   const progressIntervalRef = useRef(null);
 
-  const startScan = useCallback(async (networkRange) => {
+    const currentScanIdRef = useRef(null);
+
+    const startScan = useCallback(async (networkRange) => {
     if (!networkRange?.trim()) {
       setScanState(prev => ({ ...prev, error: 'Network range is required' }));
       return;
@@ -183,47 +187,49 @@ const useNetworkScanner = (onScanComplete) => {
       startTime: Date.now()
     });
 
-    const result = await makeRequest('/scan', {
+    const result = await makeRequest('/scans', {
       method: 'POST',
-      body: JSON.stringify({ network_range: networkRange.trim() })
+      body: JSON.stringify({ subnet: networkRange.trim() })
     });
 
-    if (!result.success) {
+    if (result.success && result.data?.scan_id) {
+      currentScanIdRef.current = result.data.scan_id;
+    } else if (!result.success) {
       setScanState(prev => ({
         ...prev,
         isScanning: false,
-        error: result.error
+        error: result.error || 'Failed to start scan'
       }));
     }
   }, [makeRequest]);
 
   const checkProgress = useCallback(async () => {
-    const result = await makeRequest('/scan/progress');
+    const scanId = currentScanIdRef.current;
+    const endpoint = scanId ? `/scans/${scanId}` : '/devices';
+    const result = await makeRequest(endpoint);
     
     if (result.success) {
-      // CORRECTED SYNTAX: Removed the stray dot from the destructuring assignment
-      const { progress = 0, scanning = false } = result.data;
+      const isCompleted = result.data?.status === 'completed';
+      const progress = result.data?.progress !== undefined ? result.data.progress : (isCompleted ? 100 : 50);
+      const isScanning = result.data?.status === 'running' || result.data?.status === 'pending';
       
       setScanState(prev => ({
         ...prev,
         progress,
-        isScanning: scanning,
-        // If scan just finished, call the callback
-        ...(prev.isScanning && !scanning && { progress: 100 })
+        isScanning,
+        ...(isCompleted && { progress: 100, isScanning: false })
       }));
       
-      // When scanning stops, trigger the onScanComplete callback
-      if (!scanning && progressIntervalRef.current) {
+      if (isCompleted && progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
         onScanComplete?.();
       }
-
     } else {
       setScanState(prev => ({
         ...prev,
         isScanning: false,
-        error: 'Failed to check scan progress'
+        error: 'Scan status check failed'
       }));
     }
   }, [makeRequest, onScanComplete]);

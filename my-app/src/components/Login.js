@@ -1,15 +1,14 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Shield, ShieldAlert, Lock, User, Terminal } from 'lucide-react';
-import MatrixEffect from './MatrixEffect';
-import './Login.css';
+import { Shield, ShieldAlert, Lock, User, Terminal } from "lucide-react";
+import MatrixEffect from "./MatrixEffect";
+import apiClient from "../services/api";
+import "./Login.css";
 
 const Login = () => {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [securityScan, setSecurityScan] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -19,32 +18,35 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setSecurityScan(true);
-    
+    setMessage("");
+
     try {
-      // First show the security scan message
-      setMessage("Scanning for security threats...");
-      
-      // Simulate security scan
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Proceed with actual login
-      const res = await axios.post("http://127.0.0.1:5002/login", formData);
-      localStorage.setItem("token", res.data.token); // Store JWT token
-      
-      setMessage("Access granted. Initializing security protocols...");
-      setTimeout(() => navigate("/dashboard"), 1500); // Redirect after showing success message
+      const res = await apiClient.post("/api/auth/login", formData);
+      if (res.data && res.data.token) {
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem(
+          "user",
+          JSON.stringify(res.data.user || { username: formData.username })
+        );
+        setMessage("Authentication successful. Loading security dashboard...");
+        setTimeout(() => navigate("/overview"), 600);
+      } else {
+        setMessage(res.data?.message || "Invalid authentication response.");
+      }
     } catch (error) {
-      setMessage(error.response?.data?.message || "Access denied. Security violation detected.");
+      const errorMsg =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "Access denied. Invalid credentials or backend unavailable.";
+      setMessage(errorMsg);
     } finally {
       setIsLoading(false);
-      setTimeout(() => setSecurityScan(false), 1500);
     }
   };
 
   return (
     <div className="login-container">
-      {/* Matrix-like background */}
+      {/* Matrix background effect */}
       <MatrixEffect />
 
       <div className="login-card-container">
@@ -60,18 +62,19 @@ const Login = () => {
         <div className="login-card">
           <h2 className="login-title">
             <Terminal className="terminal-icon" />
-            IOT INTRUSION DETECTION
+            IP CAMERA IOT IDS
           </h2>
+          <p style={{ color: "#9ca3af", fontSize: "0.85rem", marginBottom: "1rem" }}>
+            Real-Time Network Intrusion Detection & Response Terminal
+          </p>
 
           {message && (
-            <div className={`message ${message.includes('granted') ? 'success' : message.includes('Scanning') ? 'scanning' : 'error'}`}>
+            <div
+              className={`message ${
+                message.includes("successful") ? "success" : "error"
+              }`}
+            >
               {message}
-            </div>
-          )}
-
-          {securityScan && (
-            <div className="security-scan">
-              <div className="scan-line"></div>
             </div>
           )}
 
@@ -83,8 +86,10 @@ const Login = () => {
                 name="username"
                 placeholder="OPERATOR ID"
                 required
+                value={formData.username}
                 onChange={handleChange}
                 disabled={isLoading}
+                autoComplete="username"
               />
             </div>
 
@@ -95,31 +100,35 @@ const Login = () => {
                 name="password"
                 placeholder="ACCESS CODE"
                 required
+                value={formData.password}
                 onChange={handleChange}
                 disabled={isLoading}
+                autoComplete="current-password"
               />
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className={isLoading ? 'loading' : ''}
+              className={isLoading ? "loading" : ""}
             >
               {isLoading ? (
                 <span className="loading-text">
-                  <span>VERIFYING</span>
+                  <span>AUTHENTICATING</span>
                   <span className="loading-dots">...</span>
                 </span>
               ) : (
-                'AUTHENTICATE'
+                "AUTHENTICATE"
               )}
             </button>
           </form>
 
           <div className="footer-text">
-            SECURE ACCESS TERMINAL v2.5
+            UNIVERSITY OF SRI JAYEWARDENEPURA • BICT GROUP 03
           </div>
-          <p className="register-link">Need access? <a href="/register">Request credentials</a></p>
+          <p className="register-link" style={{ fontSize: "0.8rem", color: "#6b7280" }}>
+            Authorized Personnel Only • Contact System Administrator for Access
+          </p>
         </div>
       </div>
     </div>

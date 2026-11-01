@@ -583,6 +583,33 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (31 Oct 2026).
 - **Proposal link:** Section 3.6 (Figure 4, Collections `attack_events`, `system_logs`, `response_actions`); Table 7 (FR-07, FR-08); Guide Step 28.
 
+## D-033 — 2026-11-01 — React dashboard cleanup, single backend URL consolidation, and Socket.IO real-time telemetry wiring (Step 29)
+- **Decision:** Modernize, clean up, and consolidate the React frontend (`my-app/`) to interface exclusively with the unified Flask + Socket.IO backend ([`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py)), fulfilling Group 03 Proposal Section 3.6, Section 7.1, Table 8, and Guide Step 29:
+  1. **Legacy Route & Dead Code Elimination:**
+     - Removed obsolete legacy pages and styles: `Register` (`components/Register.js`, `components/Register.css`), `CyberDetails` (`pages/CyberDetails.js`, `pages/CyberDetails.css`), `TraditionalDetails` (`pages/TraditionalDetails.js`, `pages/TraditionalDetailsold.css`), `AttackHistoryCICIDS` (`pages/AttackHistoryCICIDS.js`), `KDDAttackHistory` (`pages/KDDAttackHistory.js`), and duplicate `pages/MatrixEffect.js`.
+     - Completely removed the public user registration vector (`/register`), enforcing administrator-only CLI provisioning via [`tools/create_admin.py`](file:///d:/intrusion%20detection/tools/create_admin.py) and eliminating registration attack surfaces.
+  2. **Single Unified Backend Configuration:**
+     - Eliminated 5 disjoint legacy backend ports (`127.0.0.1:5002`, `:5005`, `:5006`, `:5007`, `localhost:5012`).
+     - Established centralized configuration in [`my-app/src/config.js`](file:///d:/intrusion%20detection/my-app/src/config.js) dynamically reading `REACT_APP_API_URL` (defaulting to unified endpoint `http://localhost:5000`).
+  3. **Package & Build Tooling Clean-up:**
+     - Standardized on `npm` package manager, permanently removing `yarn.lock`.
+     - Removed conflicting webpack 4 overrides (`webpack ^4.47.0`, `html-webpack-plugin ^5.6.3`, `stream-http ^3.2.0`, `"browser": { "http": false }`), relying natively on `react-scripts 5.0.1` (webpack 5).
+     - Verified clean production build (`npm run build`) and test execution (`npm test -- --watchAll=false`).
+  4. **Authenticated REST Client (`my-app/src/services/api.js`):**
+     - Implemented centralized Axios client with request interceptor automatically injecting `Authorization: Bearer <token>` from `localStorage`.
+     - Configured response interceptor intercepting HTTP 401 Unauthorized errors to purge expired session credentials and redirect automatically to `/login`.
+  5. **Secure Real-Time Socket.IO Client (`my-app/src/services/socket.js`):**
+     - Replaced unauthenticated plain WebSockets (`ws://127.0.0.1:5005`, `ws://127.0.0.1:5006`, `ws://127.0.0.1:5007`) with `socket.io-client` 4.8.1.
+     - Enforced JWT handshake authentication (`auth: { token }`) connected to the unified backend.
+  6. **Zero Synthetic / Fake Telemetry:**
+     - Completely purged all synthetic attack fallback generators (`fakeAttacks` and hardcoded `sampleData`), ensuring the dashboard strictly reports real empirical model inferences and logged events.
+  7. **Authentication & Session Workflow:**
+     - Refactored [`my-app/src/components/Login.js`](file:///d:/intrusion%20detection/my-app/src/components/Login.js) to authenticate against `POST /api/auth/login`, securely storing 8-hour JWT access tokens, and protected dashboard routing with `ProtectedRoute` guards.
+- **Why:** Eliminates fragmented architectural debt, closes security vulnerabilities from open registration and unauthenticated endpoints, and ensures the operator interface strictly visualizes authentic, real-time intrusion events from the IP-camera IoT network.
+- **Who agreed:** project owner and team (1 Nov 2026).
+- **Proposal link:** Section 3.6 (Figure 4, Table 8); Section 7.1; FR-04; Guide Step 29.
+
+
 
 
 
