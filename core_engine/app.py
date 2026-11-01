@@ -38,6 +38,11 @@ from core_engine.auth import (
 )
 from core_engine.scanner_service import ScannerService, UnauthorizedSubnetError
 from core_engine.export_service import ExportService
+from core_engine.firewall import (
+    get_firewall_adapter,
+    BaseFirewallAdapter,
+    AllowlistImmunityError,
+)
 
 load_dotenv()
 logger = logging.getLogger("ids_app")
@@ -55,6 +60,7 @@ def create_app(
     auth_manager: Optional[AuthManager] = None,
     scanner_service: Optional[Any] = None,
     export_service: Optional[Any] = None,
+    firewall_adapter: Optional[BaseFirewallAdapter] = None,
     test_config: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Flask, SocketIO]:
     """
@@ -105,6 +111,14 @@ def create_app(
 
     exporter = export_service or ExportService(db_service=db)
     app.config["exporter"] = exporter
+
+    # Firewall Response Adapter (Step 33)
+    firewall = firewall_adapter or get_firewall_adapter(
+        config=settings_cfg.get("firewall", {}),
+        allowlist=management_allowlist,
+        max_rule_minutes=int(settings_cfg.get("response", {}).get("max_rule_minutes", 60)),
+    )
+    app.config["firewall"] = firewall
 
     # =========================================================================
     # Error Handlers
@@ -437,7 +451,14 @@ def create_app(
             return jsonify({"status": "success", "ip": ip, "count": len(history), "history": history}), 200
 
         blocks = db.get_blocked_ips(active_only=active_only)
-        return jsonify({"status": "success", "count": len(blocks), "active_only": active_only, "blocks": blocks}), 200
+        return jsonify({
+            "status": "success",
+            "count": len(blocks),
+            "active_only": active_only,
+            "adapter_mode": firewall.mode,
+            "is_simulated": firewall.is_simulated,
+            "blocks": blocks,
+        }), 200
 
     @app.route("/api/blocklist", methods=["POST"])
     @auth.admin_required
@@ -465,6 +486,26 @@ def create_app(
             }), 403
 
         actor = getattr(g, "current_user", {}).get("sub", "admin")
+
+        # Enforce on firewall adapter (Step 33)
+        dir_code = "dst" if direction in ("destination", "dst") else "src"
+        dur_mins = int(duration) if duration else 30
+        try:
+            fw_rule = firewall.block(
+                ip=ip,
+                direction=dir_code,
+                minutes=dur_mins,
+                reason=reason,
+            )
+        except AllowlistImmunityError as e:
+            return jsonify({
+                "error": "Forbidden",
+                "message": str(e),
+                "code": "ALLOWLIST_PROTECTED",
+            }), 403
+        except Exception as e:
+            logger.error("Firewall adapter block failed: %s", e)
+
         block_id = db.add_to_blocklist(
             ip=ip,
             direction=direction,
@@ -485,6 +526,7 @@ def create_app(
             "reason_code": "ADMIN_MANUAL_ENFORCEMENT",
             "actor": actor,
             "status": "applied",
+            "simulated": firewall.is_simulated,
         })
 
         # Broadcast blocklist update
@@ -495,6 +537,7 @@ def create_app(
             "status": "active",
             "actor": actor,
             "reason": reason,
+            "simulated": firewall.is_simulated,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         socketio.emit("blocklist_update", block_update)
@@ -517,6 +560,12 @@ def create_app(
         reason = data.get("reason", "Manual administrator unblock")
         actor = getattr(g, "current_user", {}).get("sub", "admin")
 
+        # Enforce unblock on firewall adapter (Step 33)
+        try:
+            firewall.unblock(ip=clean_ip, direction="all")
+        except Exception as e:
+            logger.error("Firewall adapter unblock failed: %s", e)
+
         unblocked_count = db.remove_from_blocklist(ip=clean_ip, reason=reason, actor=actor)
         if unblocked_count == 0:
             return jsonify({"error": "Not Found", "message": f"No active block found for '{clean_ip}'."}), 404
@@ -530,6 +579,7 @@ def create_app(
             "reason_code": "ADMIN_MANUAL_UNBLOCK",
             "actor": actor,
             "status": "applied",
+            "simulated": firewall.is_simulated,
         })
 
         # Broadcast update
@@ -538,6 +588,7 @@ def create_app(
             "status": "removed",
             "unblock_actor": actor,
             "unblock_reason": reason,
+            "simulated": firewall.is_simulated,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         socketio.emit("blocklist_update", unblock_payload)

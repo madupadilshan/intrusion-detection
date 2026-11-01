@@ -27,30 +27,29 @@ import subprocess
 import time
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from core_engine.firewall.base import (
+    BaseFirewallAdapter,
+    FirewallError,
+    AllowlistImmunityError,
+)
+
 logger = logging.getLogger("ids.nftables_adapter")
 
 
-class NftablesError(Exception):
+class NftablesError(FirewallError):
     """Base exception for nftables operations."""
     pass
 
 
-class AllowlistProtectedError(NftablesError):
+class AllowlistProtectedError(AllowlistImmunityError, NftablesError):
     """Raised when an attempt is made to block an allowlisted IP."""
     pass
 
 
-class NftablesAdapter:
+class NftablesAdapter(BaseFirewallAdapter):
     """
     Adapter interfacing with the Linux nftables kernel subsystem using timed sets.
     """
-
-    DEFAULT_ALLOWLIST = {
-        "192.168.50.1",   # Gateway router
-        "192.168.50.5",   # IDS Sensor
-        "192.168.50.10",  # Security Admin PC
-        "192.168.50.20",  # Network Video Recorder (NVR)
-    }
 
     def __init__(
         self,
@@ -73,18 +72,21 @@ class NftablesAdapter:
         :param allowlist: set of IPs permanently immune to blocking
         :param max_rule_minutes: upper bound for rule duration (default 60 mins)
         """
-        self.table_family = table_family.lower()
-        if self.table_family not in ("bridge", "inet"):
+        fam = table_family.lower()
+        if fam not in ("bridge", "inet"):
             raise ValueError(f"table_family must be 'bridge' or 'inet', got '{table_family}'")
 
+        mode = "inline" if fam == "bridge" else "passive_router"
+        super().__init__(
+            name=f"nftables_{fam}",
+            mode=mode,
+            allowlist=allowlist,
+            max_rule_minutes=max_rule_minutes,
+        )
+
+        self.table_family = fam
         self.table_name = table_name
         self.use_sudo = use_sudo and (platform.system().lower() != "windows")
-        self.max_rule_minutes = int(max_rule_minutes)
-
-        if allowlist is None:
-            self.allowlist = set(self.DEFAULT_ALLOWLIST)
-        else:
-            self.allowlist = set(allowlist)
 
         # Detect nft binary
         detected_path = nft_path or shutil.which("nft") or "/usr/sbin/nft"
@@ -92,17 +94,16 @@ class NftablesAdapter:
 
         # Determine if simulation mode is active
         if simulate is not None:
-            self.is_simulated = bool(simulate)
+            self._is_simulated = bool(simulate)
         else:
-            # On Windows or if nft binary does not exist / is not executable, activate simulation
             if platform.system().lower() == "windows":
-                self.is_simulated = True
+                self._is_simulated = True
             elif not os.path.exists(detected_path) or not os.access(detected_path, os.X_OK):
-                self.is_simulated = True
+                self._is_simulated = True
             else:
-                self.is_simulated = False
+                self._is_simulated = False
 
-        if self.is_simulated:
+        if self._is_simulated:
             logger.info(
                 "NftablesAdapter running in SIMULATION mode (family=%s, table=%s, max_minutes=%d)",
                 self.table_family, self.table_name, self.max_rule_minutes
@@ -114,30 +115,30 @@ class NftablesAdapter:
             )
 
         # In-memory storage for simulation mode: { set_name: { ip: rule_dict } }
-        self._simulated_sets: Dict[str, Dict[str, Dict[str, Any]]] = {
+        self._simulated_sets: Dict[str, Dict[str, Any]] = {
             "block_src": {},
             "block_dst": {},
             "limit_src": {},
         }
 
+    @property
+    def is_simulated(self) -> bool:
+        return self._is_simulated
+
+    @is_simulated.setter
+    def is_simulated(self, value: bool) -> None:
+        self._is_simulated = bool(value)
+
     def _verify_allowlist(self, ip: str) -> None:
-        """Verify the IP is not allowlist protected."""
-        clean_ip = ip.strip()
-        if clean_ip in self.allowlist:
-            raise AllowlistProtectedError(
-                f"IP address '{clean_ip}' is on the permanent management allowlist and cannot be blocked"
-            )
+        """Backward-compatible allowlist check."""
+        try:
+            self.verify_allowlist(ip)
+        except AllowlistImmunityError as err:
+            raise AllowlistProtectedError(str(err)) from err
 
     def _clamp_duration(self, minutes: int) -> int:
-        """Clamp rule duration to maximum configured rule minutes."""
-        mins = max(1, int(minutes))
-        if mins > self.max_rule_minutes:
-            logger.warning(
-                "Requested rule duration %d mins exceeds max_rule_minutes %d; clamping to %d mins",
-                mins, self.max_rule_minutes, self.max_rule_minutes
-            )
-            return self.max_rule_minutes
-        return mins
+        """Backward-compatible duration clamping."""
+        return self.clamp_duration(minutes)
 
     def _build_command(self, args: List[str]) -> List[str]:
         """Build command list prepending sudo if required."""

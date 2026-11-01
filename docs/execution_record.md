@@ -1645,6 +1645,58 @@ Use this document to reproduce any step, review past work, prepare for superviso
 
 ---
 
+### Step 33: Build the Firewall Response Adapters Suite and Engine Integration
+
+* **Objective:** Architect and implement the modular firewall response adapter suite ([`core_engine/firewall/base.py`](file:///d:/intrusion%20detection/core_engine/firewall/base.py), [`core_engine/firewall/router_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/router_adapter.py), [`core_engine/firewall/simulation_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/simulation_adapter.py), and [`core_engine/firewall/__init__.py`](file:///d:/intrusion%20detection/core_engine/firewall/__init__.py)) and integrate it with [`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py) and [`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py) per Proposal Sections 1.2, 2.5, 3.7; Figure 5; and Table 7 Requirement FR-06.
+* **Date:** 1 November 2026
+* **How It Was Done:**
+  1. *Unified Base Firewall Adapter ([`core_engine/firewall/base.py`](file:///d:/intrusion%20detection/core_engine/firewall/base.py)):*
+     - Created abstract base class `BaseFirewallAdapter` defining standard signature: `block(ip, direction, minutes, reason)`, `rate_limit(ip, minutes, reason)`, `unblock(ip, direction)`, and `list_active()`.
+     - Standardized allowlist verification `verify_allowlist(ip)` raising `AllowlistImmunityError`.
+     - Standardized duration clamping `clamp_duration(minutes)` bounded to `max_rule_minutes`.
+  2. *Refactored nftables Adapter ([`core_engine/firewall/nftables_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/nftables_adapter.py)):*
+     - Inherited from `BaseFirewallAdapter` while preserving full backward compatibility.
+  3. *Passive SPAN Router Adapter ([`core_engine/firewall/router_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/router_adapter.py)):*
+     - Solves passive monitoring topology constraint (Figure 5): dispatches remote mitigation commands to the upstream lab router via SSH parameterized execution (`ssh <user>@<host> "nft add element inet ids block_src '{ <ip> timeout <duration>m }'"`).
+     - Provides in-memory simulation mode fallback when router host is unreachable or unconfigured.
+  4. *Development Simulation Adapter ([`core_engine/firewall/simulation_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/simulation_adapter.py)):*
+     - Tracks active rules in memory without modifying host networking.
+     - Strictly abides by Golden Rule / Step 33 note: "Never report simulation results as real blocking", by explicitly tagging all generated records with `is_simulated = True` and `simulated: True`.
+  5. *Adapter Factory ([`core_engine/firewall/__init__.py`](file:///d:/intrusion%20detection/core_engine/firewall/__init__.py)):*
+     - Implemented `get_firewall_adapter(config)` instantiating the appropriate adapter based on topology type and platform detection.
+  6. *Engine & API Integration:*
+     - Added `execute_response(decision, event_id, actor)` to `DecisionEngine`, automatically executing mitigations on the firewall adapter, recording documents to `response_actions` and `blocklist` collections in MongoDB, and broadcasting `blocklist_update` via Socket.IO.
+     - Updated Flask endpoints in `core_engine/app.py` (`POST /api/blocklist`, `DELETE /api/blocklist/<target_ip>`, `GET /api/blocklist`) to call the active firewall adapter and return `adapter_mode` and `is_simulated`.
+  7. *Automated Unit and Integration Testing:*
+     - Authored 8 unit tests in [`tests/unit/test_firewall_adapters.py`](file:///d:/intrusion%20detection/tests/unit/test_firewall_adapters.py).
+     - Authored 4 integration tests in [`tests/integration/test_firewall_integration.py`](file:///d:/intrusion%20detection/tests/integration/test_firewall_integration.py).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run firewall adapter unit tests
+  .\.venv\Scripts\python -m pytest tests/unit/test_firewall_adapters.py -v
+
+  # 2. Run firewall API integration tests
+  .\.venv\Scripts\python -m pytest tests/integration/test_firewall_integration.py -v
+
+  # 3. Run entire repository test suite
+  .\.venv\Scripts\python -m pytest tests/
+  ```
+* **Files Created / Modified:**
+  - `core_engine/firewall/base.py` (Created abstract base class, in Git)
+  - `core_engine/firewall/nftables_adapter.py` (Refactored inheritance, in Git)
+  - `core_engine/firewall/router_adapter.py` (Created passive router adapter, in Git)
+  - `core_engine/firewall/simulation_adapter.py` (Created simulation adapter, in Git)
+  - `core_engine/firewall/__init__.py` (Created package init and factory, in Git)
+  - `core_engine/decision_engine.py` (Integrated firewall adapter & execute_response, in Git)
+  - `core_engine/app.py` (Integrated firewall adapter into blocklist REST routes, in Git)
+  - `tests/unit/test_firewall_adapters.py` (Created unit test suite, in Git)
+  - `tests/integration/test_firewall_integration.py` (Created API integration test suite, in Git)
+  - `docs/decision_log.md` (Added Decision D-037, in Git)
+  - `docs/execution_record.md` (Updated Step 33 execution details, in Git)
+* **Verification Result:** All 8 unit tests in `test_firewall_adapters.py` passed; all 4 integration tests in `test_firewall_integration.py` passed; all 204 repository tests passed in 56.28s with 0 errors (100% pass rate). Requirement FR-06 fulfilled. Step 33 status is ✅ Done.
+
+---
+
 
 
 ## Quick Reference: Useful Commands

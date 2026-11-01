@@ -104,6 +104,18 @@ class PolicyDecision:
     evidence_note: str = ""
     details: Dict[str, Any] = field(default_factory=dict)
 
+    @property
+    def action(self) -> str:
+        return self.action_type
+
+    @property
+    def reason(self) -> str:
+        return self.reason_code
+
+    @property
+    def target_direction(self) -> str:
+        return "dst" if self.direction in ("outbound", "dst") else "src"
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert decision to dictionary."""
         return asdict(self)

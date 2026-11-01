@@ -683,6 +683,31 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (1 Nov 2026).
 - **Proposal link:** Section 3.7; Table 7 (FR-06); Table 8; Guide Step 32.
 
+## D-037 — 2026-11-01 — Modular response adapter suite, passive router mitigation, simulation engine, and API integration (Step 33)
+- **Decision:** Architect and implement the unified firewall response adapter suite ([`core_engine/firewall/base.py`](file:///d:/intrusion%20detection/core_engine/firewall/base.py), [`core_engine/firewall/router_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/router_adapter.py), [`core_engine/firewall/simulation_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/simulation_adapter.py), and [`core_engine/firewall/__init__.py`](file:///d:/intrusion%20detection/core_engine/firewall/__init__.py)) integrated into [`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py) and [`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py), conforming strictly to Group 03 Proposal Sections 1.2, 2.5, 3.7; Figure 5; and Table 7 Requirement FR-06:
+  1. **Common Abstract Mitigation Interface ([`core_engine/firewall/base.py`](file:///d:/intrusion%20detection/core_engine/firewall/base.py)):**
+     - Abstract base class `BaseFirewallAdapter` defining unified methods: `block(ip, direction, minutes, reason)`, `rate_limit(ip, minutes, reason)`, `unblock(ip, direction)`, and `list_active()`.
+     - Standardized management allowlist immunity verification (`verify_allowlist()`) raising `AllowlistImmunityError` before dispatching any mitigation.
+     - Enforces duration clamping to `max_rule_minutes`.
+  2. **Passive SPAN / Mirroring Router Adapter ([`core_engine/firewall/router_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/router_adapter.py)):**
+     - Solves passive monitoring topology constraint (Proposal Section 1.2, 3.7, Figure 5): because the sensor's SPAN / mirror port cannot drop packets directly, mitigation commands are securely dispatched to the upstream lab router (OpenWrt or Linux router) via SSH parameterized command execution (`ssh -p <port> -i <key> <user>@<host> "nft add element inet ids block_src '{ <ip> timeout <duration>m }'"`).
+     - Provides graceful simulation fallback when router host is unreachable or unconfigured.
+  3. **Development Simulation Adapter ([`core_engine/firewall/simulation_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/simulation_adapter.py)):**
+     - Provides in-memory state tracking for local development and Windows workstations.
+     - Strictly abides by Golden Rule / Step 33 note: "Never report simulation results as real blocking", by explicitly tagging all generated records with `is_simulated = True` and `simulated: True`.
+  4. **Adapter Factory ([`core_engine/firewall/__init__.py`](file:///d:/intrusion%20detection/core_engine/firewall/__init__.py)):**
+     - `get_firewall_adapter(config)` dynamically instantiates `NftablesAdapter` (kernel mode on Linux), `RouterAdapter` (passive SPAN deployment), or `SimulationAdapter` based on configuration and host environment detection.
+  5. **Core Engine & Flask Server Integration:**
+     - Added `execute_response(decision, event_id, actor)` to `DecisionEngine`, automatically applying firewall rules, recording entries to `response_actions` and `blocklist` collections in MongoDB, and broadcasting `blocklist_update` via Socket.IO.
+     - Updated Flask endpoints in `core_engine/app.py` (`POST /api/blocklist`, `DELETE /api/blocklist/<target_ip>`, `GET /api/blocklist`) to call the active firewall adapter, returning `adapter_mode` and `is_simulated` telemetry.
+  6. **Automated Verification:**
+     - Authored 8 unit tests in [`tests/unit/test_firewall_adapters.py`](file:///d:/intrusion%20detection/tests/unit/test_firewall_adapters.py).
+     - Authored 4 integration tests in [`tests/integration/test_firewall_integration.py`](file:///d:/intrusion%20detection/tests/integration/test_firewall_integration.py).
+     - Full test suite verified: **204 passed unit and integration tests** (161 unit, 43 integration) in 56.28s across 25 test modules with 0 errors (100% pass rate).
+- **Why:** Delivers topology-independent, modular firewall response controls supporting both inline bridge and passive SPAN router deployments while maintaining complete testability and developer reproducibility.
+- **Who agreed:** project owner and team (1 Nov 2026).
+- **Proposal link:** Sections 1.2, 2.5, 3.7; Figure 5; Table 7 (FR-06); Guide Step 33.
+
 
 
 

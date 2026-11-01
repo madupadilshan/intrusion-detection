@@ -35,6 +35,7 @@ import yaml
 
 from core_engine.detector import DetectionResult, Detector
 from core_engine.response_policy import ResponsePolicy, PolicyDecision
+from core_engine.firewall import get_firewall_adapter, BaseFirewallAdapter
 
 logger = logging.getLogger("core_engine.decision_engine")
 
@@ -125,6 +126,7 @@ class DecisionEngine:
         thresholds_config: Optional[Dict[str, Any]] = None,
         settings_path: Optional[Union[str, Path]] = None,
         detector: Optional[Detector] = None,
+        firewall_adapter: Optional[BaseFirewallAdapter] = None,
     ) -> None:
         """
         Initialize the Decision Engine.
@@ -135,6 +137,7 @@ class DecisionEngine:
             thresholds_config: Operational threshold dictionary. If None, loads from JSON.
             settings_path: Path to settings.yaml. If None, loads from default.
             detector: Pre-initialized Detector instance. If None, lazily initializes.
+            firewall_adapter: Firewall response adapter. If None, instantiates via factory.
         """
         self.db = db_service
         self.socketio = socketio
@@ -161,10 +164,19 @@ class DecisionEngine:
             auto_response=bool(self.settings.get("response", {}).get("auto_response", True)),
         )
 
+        # Initialize firewall response adapter (Step 33)
+        self.firewall: BaseFirewallAdapter = firewall_adapter or get_firewall_adapter(
+            config=self.settings.get("firewall", {}),
+            allowlist=set(self.allowlist),
+            max_rule_minutes=self.max_rule_minutes,
+        )
+
         logger.info(
-            "DecisionEngine initialized. Repeat window: %ds, Allowlist IPs: %d",
+            "DecisionEngine initialized. Repeat window: %ds, Allowlist IPs: %d, Firewall: %s (%s)",
             self.repeat_window_seconds,
             len(self.allowlist),
+            self.firewall.name,
+            "simulated" if self.firewall.is_simulated else "live",
         )
 
     def evaluate_response(self, outcome_or_event: Any) -> PolicyDecision:
@@ -178,6 +190,109 @@ class DecisionEngine:
             `PolicyDecision` with action recommendation and reason code.
         """
         return self.policy.evaluate(outcome_or_event)
+
+    def execute_response(
+        self,
+        decision: PolicyDecision,
+        event_id: Optional[str] = None,
+        actor: str = "autonomous_policy",
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Execute an approved policy response decision on the firewall adapter and record audit logs (Step 33).
+
+        Args:
+            decision: Approved `PolicyDecision` from `evaluate_response()`.
+            event_id: Associated attack event ID in MongoDB.
+            actor: Operator identity or 'autonomous_policy'.
+
+        Returns:
+            Firewall rule dictionary if executed, None if skipped.
+        """
+        if not decision.should_act or not decision.target_ip:
+            if self.db is not None and hasattr(self.db, "log_response_action"):
+                try:
+                    self.db.log_response_action({
+                        "event_id": event_id,
+                        "action": decision.action,
+                        "target_ip": decision.target_ip or "",
+                        "direction": decision.target_direction,
+                        "duration_minutes": decision.duration_minutes,
+                        "reason": decision.reason,
+                        "actor": actor,
+                        "status": "skipped",
+                        "created_at": datetime.now(timezone.utc),
+                        "simulated": getattr(self.firewall, "is_simulated", True),
+                    })
+                except Exception as exc:
+                    logger.debug("Failed to log skipped response action: %s", exc)
+            return None
+
+        # Execute mitigation on firewall adapter
+        applied_rule = None
+        if decision.action == "rate_limit":
+            applied_rule = self.firewall.rate_limit(
+                ip=decision.target_ip,
+                minutes=decision.duration_minutes,
+                reason=decision.reason,
+            )
+        else:
+            applied_rule = self.firewall.block(
+                ip=decision.target_ip,
+                direction=decision.target_direction,
+                minutes=decision.duration_minutes,
+                reason=decision.reason,
+            )
+
+        # Record in MongoDB
+        if self.db is not None:
+            try:
+                if hasattr(self.db, "add_to_blocklist"):
+                    self.db.add_to_blocklist(
+                        ip=decision.target_ip,
+                        direction=decision.target_direction,
+                        reason=decision.reason,
+                        duration_minutes=decision.duration_minutes,
+                        actor=actor,
+                        event_id=event_id,
+                    )
+                if hasattr(self.db, "log_response_action"):
+                    self.db.log_response_action({
+                        "event_id": event_id,
+                        "action": decision.action,
+                        "target_ip": decision.target_ip,
+                        "direction": decision.target_direction,
+                        "duration_minutes": decision.duration_minutes,
+                        "reason": decision.reason,
+                        "actor": actor,
+                        "status": "active",
+                        "created_at": datetime.now(timezone.utc),
+                        "simulated": getattr(self.firewall, "is_simulated", True),
+                    })
+            except Exception as exc:
+                logger.error("Failed to persist response action to DB: %s", exc)
+
+        # Broadcast via Socket.IO
+        if self.socketio is not None:
+            try:
+                self.socketio.emit(
+                    "blocklist_update",
+                    {
+                        "ip": decision.target_ip,
+                        "direction": decision.target_direction,
+                        "action": decision.action,
+                        "duration_minutes": decision.duration_minutes,
+                        "reason": decision.reason,
+                        "actor": actor,
+                        "status": "active",
+                        "event_id": event_id,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "simulated": getattr(self.firewall, "is_simulated", True),
+                    },
+                )
+            except Exception as exc:
+                logger.error("Failed to emit blocklist_update: %s", exc)
+
+        return applied_rule
 
     def _load_thresholds(
         self, custom_thresholds: Optional[Dict[str, Any]] = None
