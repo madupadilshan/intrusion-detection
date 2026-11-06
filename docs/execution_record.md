@@ -6,7 +6,7 @@
 **GitHub Repository:** [https://github.com/madupadilshan/intrusion-detection.git](https://github.com/madupadilshan/intrusion-detection.git) (branch `main`)  
 **Main Master Guide:** `STEP_BY_STEP_GUIDE.md`  
 **Progress Tracker:** `PROJECT_PROGRESS_AND_CHALLENGES.md`  
-**Last Updated:** 23 October 2026  
+**Last Updated:** 1 November 2026  
 
 ---
 
@@ -31,7 +31,35 @@ Use this document to reproduce any step, review past work, prepare for superviso
 | **Step 1** | Ethics, Lab Plan, Retention & Logbook | ✅ Completed | `docs/ethics/lab_plan_and_rules.md`, `docs/ethics/data_retention_plan.md`, `docs/lab_logbook.md` | `9cc193f` |
 | **Step 2** | Clean Folder Layout & Git Setup | ✅ Completed | Clean directory structure, `.gitignore`, `.gitattributes`, initial push | `9f90ce1`, `25c8b6e` |
 | **Step 3a & 3d** | Development PC Environment Setup | ✅ Completed | `.venv` (Python 3.10.0), locked `requirements.txt`, `tools/check_env.py`, `reports/environment_versions.txt` | `29d99ff` |
-| **Step 4** | Settings File and Decision Log | ✅ Completed | `config/settings.yaml`, `.env`, `docs/decision_log.md` (D-001 to D-013) | `9cc193f` & current |
+| **Step 4** | Settings File and Decision Log | ✅ Completed | `config/settings.yaml`, `.env`, `docs/decision_log.md` (D-001 to D-013) | `efcfaba` |
+| **Step 6** | Threat Model and Requirements Checklist | ✅ Completed | `docs/threat_model.md`, `docs/requirements_checklist.md` | `e1bafbb` |
+| **Step 7** | Ingest IoT-23 and Manifest Generation | ✅ Completed | `ml_engine/manifest.py`, `reports/dataset_manifest.csv` (325.3M flows) | `c62c5be` |
+| **Step 8** | Write & Freeze Label Mapping | ✅ Completed | `config/label_mapping.yaml` (5 target classes, D-014) | `6e43cd1` |
+| **Step 9** | Data-Quality Report & Class Matrix | ✅ Completed | `ml_engine/data_quality.py`, `reports/data_quality_report.md` | `c3af025` |
+| **Step 10** | Load and Clean Data to Parquet | ✅ Completed | `ml_engine/load_iot23.py`, `data/interim/*.parquet` (23 files, 10.6 GB) | `8dcc856` |
+| **Step 11** | Shared Feature Extraction Engine | ✅ Completed | `ml_engine/features.py` (19 features, Table 6, D-015), unit tests | `73596da` |
+| **Step 12** | Stratified Sampling & Class Balance | ✅ Completed | `ml_engine/sample_dataset.py`, `train_features.parquet` (1.38M flows, D-016) | `1934c98` |
+| **Step 13** | Three-Level Evaluation Plan | ✅ Completed | `reports/test_split_plan.md`, held-out `Capture-34-1` isolation (D-017) | `1934c98` |
+| **Step 14** | Train Random Forest Model | ✅ Completed | `ml_engine/train.py`, `rf_model.joblib` (15.19 MB, 6.46 µs latency, D-018) | `a431e5f` |
+| **Step 15** | Comparative Multi-Model Benchmarks | ✅ Completed | `ml_engine/compare_models.py`, `reports/experiments/model_comparison.md` (D-019) | `7e2961f` |
+| **Step 16** | Level 2 Held-Out Zero-Day Evaluation | ✅ Completed | `ml_engine/evaluate.py`, `reports/experiments/evaluation_iot23.md` (D-020) | `ff121b4` |
+| **Step 17** | Probability Calibration & Thresholds | ✅ Completed | `ml_engine/calibrate_and_explain.py`, `operational_thresholds.json` (D-021) | `1165df5` |
+| **Step 18** | Production Bundle & Model Card | ✅ Completed | `ml_engine/export_bundle.py`, `ids_bundle_v1.joblib` (30.84 MB, D-022) | `e92cdba` |
+| **Step 19** | Zeek Streaming Telemetry & Daemon | ✅ Completed | `sensor/local.zeek`, `sensor/run_zeek.sh`, `sensor/zeek_runner.py` (D-023) | `810b7c0` |
+| **Step 20** | Benign Camera Traffic & H1 FPR Check | ✅ Completed | `sensor/collect_camera_traffic.py`, 0.000% FPR on Tapo C200 (D-024) | `dbe8c7f` |
+| **Step 21** | Real-Time Zeek Streaming Adapter | ✅ Completed | `core_engine/zeek_adapter.py` (23k fps, micro-batching, D-025) | `dd0eb41` |
+| **Step 22** | Offline vs Live Schema Check (RQ3) | ✅ Completed | `tools/schema_check.py`, zero training-serving skew (D-026) | `bdacf47` |
+| **Step 23** | MongoDB Database Setup | ✅ Completed | `core_engine/db_service.py` (9 collections, TTL retention, D-027) | `a19d1c3` |
+| **Step 24** | Authentication & Secrets Management | ✅ Completed | `core_engine/auth.py`, `tools/create_admin.py` (bcrypt, 8h JWT, D-028) | `5110196` |
+| **Step 25** | Flask + Socket.IO Unified Server | ✅ Completed | `core_engine/app.py` (port 5000, 15 REST endpoints, RBAC, D-029) | `2c577b1` |
+| **Step 26** | Detector & Decision Engine | ✅ Completed | `core_engine/detector.py`, `core_engine/decision_engine.py` (D-030) | `2b8f7c6` |
+| **Step 27** | Device Discovery (Nmap) | ✅ Completed | `core_engine/scanner_service.py` (camera heuristics, RBAC API, D-031) | `bd9dae7` |
+| **Step 28** | Forensic Log Export Service | ✅ Completed | `core_engine/export_service.py` (RFC 4180 CSV/JSON, audit trail, D-032) | `15d3f4c` |
+| **Step 29** | React App Clean-Up & Socket.IO Auth | ✅ Completed | `my-app/src/config.js`, Bearer auth, fake attacks purged (D-033) | `50e292d` |
+| **Step 30** | Canonical 7-Page SOC Dashboard | ✅ Completed | `my-app/src/pages/` (7 pages, Layout.js, verification badges, D-034) | `2ce2cfb` |
+| **Step 31** | Autonomous Response Policy & Guardrails | ✅ Completed | `core_engine/response_policy.py` (Table 5 matrix, 7 guardrails, D-035) | `fdd0498` |
+| **Step 32** | Linux nftables Rules & Kernel Adapter | ✅ Completed | `sensor/ids_inline.nft`, `core_engine/firewall/nftables_adapter.py` (D-036) | `e43f4c1` |
+| **Step 33** | Modular Firewall Adapters & Integration | ✅ Completed | `core_engine/firewall/` (base, router, simulation, init, D-037) | `0c2b2e6` |
 
 ---
 
