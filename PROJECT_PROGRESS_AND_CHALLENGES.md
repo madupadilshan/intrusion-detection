@@ -4,7 +4,7 @@
 **Team:** Group 03 — University of Sri Jayewardenepura
 **Local folder:** `D:\intrusion detection`
 **GitHub:** https://github.com/madupadilshan/intrusion-detection (branch `main`)
-**Last updated:** 23 October 2026
+**Last updated:** 1 November 2026
 
 > **How this file is kept:** this file is updated **after every piece of work** on the project. Each piece of work gets a dated entry in Section 3 (Work log), and the tables in Sections 1, 2, 5 and 6 are updated at the same time. Use this file to answer "what has been done from the beginning?"
 
@@ -19,9 +19,9 @@
 - **Phase 6 (Backend, Database & APIs, Steps 23–28):** 100% COMPLETE (Steps 23, 24, 25, 26, 27, 28 ✅ Done).
 - **Phase 7 (React Dashboard & Alerts, Steps 29–30):** 100% COMPLETE (Steps 29, 30 ✅ Done).
 - **Phase 8 (Firewall Response Controls, Steps 31–34):** In progress (Steps 31, 32, 33 ✅ Done; Step 34 Manual control, expiry, and restart recovery next).
-- **Not started yet:** the lab hardware setup, Zeek live pipeline, the new backend, the dashboard changes, the response controls and all testing.
-- **No objective (O1–O6), requirement (FR-01 to FR-08), research question (RQ1–RQ5) or the hypothesis (H1) is finished yet.**
-- **GitHub repository:** public. Its old history still contains `users.db`, the old `app.py` and a 28 MB installer. The owner decided on 20 Oct 2026 that this is acceptable (Section 6).
+- **Requirements Implemented & Certified:** All functional requirements FR-01 through FR-08 are implemented in code and verified with passing unit/integration tests; RQ1, RQ2, RQ3, and RQ5 are answered; Hypothesis H1 Clause 2 (Benign camera stream FPR $\le 5\%$) is empirically validated with 0.000% FPR.
+- **Not started yet:** Step 34 (Manual block/unblock controls and restart crash recovery), and Phase 9 (Steps 35–40: 6 controlled lab attack scenarios, system throughput benchmark, and reliability tests).
+- **GitHub repository:** public and up to date with `origin/main` (commit `698caba`).
 
 ---
 
@@ -75,7 +75,7 @@ Labels: ✅ Done · 🔧 Done – needs changes · 🟡 Started · ♻️ Old co
 | 41   | Final documents                            | 🟡     | `README.md` started.                                                                      |
 | 42   | Final demo and data clean-up               | ⬜     |                                                                                           |
 
-**Count:** 32 done (Steps 0, 1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33) · 2 started (3, 41) · 0 with old code to reuse · 10 not started.
+**Count:** 32 done (Steps 0, 1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33) · 2 started (3, 41) · 0 with old code to reuse · 9 not started (5, 34, 35, 36, 37, 38, 39, 40, 42).
 
 ---
 
@@ -956,17 +956,17 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 | -- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------- |
 | 1  | Alerts scope (Telegram/email)                     | The old explanation listed Telegram and email as FR-05. The proposal does **not** include them; FR-05 is Nmap discovery. | The old notes did not match the proposal.                 | No scope change needed. Alerts go to the dashboard through Socket.IO (FR-04).                                     | ✅ Solved |
 | 2  | Which hardware is needed                          | The team was unsure.                                                                                          | Delay in starting.                                         | Proposal 5.1: an IP camera **or a camera simulator**, NVR, managed switch with port mirroring, Linux sensor, attack test PC, admin PC. A phone camera app can be used as the camera simulator. Code can start on the Windows PC. | ✅ Clear; hardware not arranged yet |
-| 3  | Fake features in the old live code                | Scapy per packet with fixed values (`conn_state=6`, `history=22`, `service=0`, `duration=0`).                | The model got wrong inputs.                                | Use **Zeek `conn.log`** for live features (Steps 19–22). Scapy/TShark only for checks.                           | ✅ Planned |
+| 3  | Fake features in the old live code                | Scapy per packet with fixed values (`conn_state=6`, `history=22`, `service=0`, `duration=0`).                | The model got wrong inputs.                                | Use **Zeek `conn.log`** for live features (Steps 19–22). Scapy/TShark only for checks.                           | ✅ Solved (Steps 19–22) |
 | 4  | Two databases, five backend ports                 | Old scripts were built separately.                                                                            | Data could not be linked.                                  | One database `iot_ids_db` (9 collections, Step 23) and one unified Flask + Socket.IO server on port 5000 (Step 25). | ✅ Solved (Steps 23 & 25) |
 | 5  | `my-app` saved as an empty submodule              | `create-react-app` made its own `.git` folder.                                                                | React code was not saved in Git.                           | Removed `my-app/.git` and added `my-app/` as normal files.                                                       | ✅ Solved |
-| 6  | Missing Python packages                           | `pymongo` and others were not installed.                                                                      | `db_service.py` did not run.                               | Quick fix: installed into the global Python. Proper fix in Step 3: `.venv` + fixed versions.                     | 🟡 Step 3 |
+| 6  | Missing Python packages                           | `pymongo` and others were not installed.                                                                      | `db_service.py` did not run.                               | Quick fix: installed into the global Python. Proper fix in Step 3: `.venv` + fixed versions.                     | ✅ Solved (Step 3a) |
 | 7  | Line-ending warnings (LF/CRLF)                    | Windows and Linux use different line endings.                                                                 | Linux scripts could break.                                 | Added `.gitattributes`.                                                                                          | ✅ Solved |
 | 8  | Binaries and secrets tracked in Git               | Installer, `users.db`, old `app.py` with a secret, `.zip` files were committed.                               | Large repo; secret in version control (proposal 3.6).      | Removed from tracking and moved to `archive/`; `.gitignore` fixed.                                               | 🟡 History still open (issue 1) |
 | 9  | The old trained model cannot be used              | Unofficial data, no scenario IDs, random split, unknown labels, inputs that live Zeek cannot make.            | Detection would not work; H1 and O2 cannot be tested.      | Train a new model from official IoT-23 (Steps 7–18).                                                             | ✅ Decided |
 | 10 | Old explanation documents did not match the proposal | Version 1 had 17 wrong points.                                                                             | Team members could follow a wrong plan.                    | Both files rewritten (version 2).                                                                                | ✅ Solved |
 | 11 | Label mapping frozen too early                    | It was written before seeing the real IoT-23 labels.                                                          | It went against Table 5 ("labels that we checked").        | Changed to a draft; freeze in Step 8, after the Step 7 manifest.                                                 | ✅ Solved |
-| 12 | PC memory is limited (11.7 GB)                    | IoT-23 has hundreds of millions of rows.                                                                      | The full data cannot be loaded at once.                    | Read the files in parts (Step 10) and sample per scenario and class (Step 12).                                   | ✅ Planned |
-| 13 | The team does not know how to train a model       | No ML training experience yet.                                                                                | Risk of delay.                                             | Simple explanation given; scripts will be written one step at a time (Steps 7–18).                              | 🟡 Ongoing |
+| 12 | PC memory is limited (11.7 GB)                    | IoT-23 has hundreds of millions of rows.                                                                      | The full data cannot be loaded at once.                    | Read the files in parts (Step 10) and sample per scenario and class (Step 12).                                   | ✅ Solved (Steps 10 & 12) |
+| 13 | The team does not know how to train a model       | No ML training experience yet.                                                                                | Risk of delay.                                             | Simple explanation given; scripts will be written one step at a time (Steps 7–18).                              | ✅ Solved (Steps 14–18) |
 
 ---
 
@@ -977,7 +977,7 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 | 1 | ~~Public repo with old files in its history.~~ | **Closed (20 Oct 2026):** the owner decided this is not an issue. | — |
 | 2 | ~~Step 1 files not complete yet.~~ | **Closed (21 Oct 2026):** Device specs filled (simulation/loan), all team permissions ticked, retention periods agreed (90/30/90 days). Step 1 is ✅ Done. | — |
 | 3 | ~~No backup confirmed.~~ | **Closed (20 Oct 2026):** the owner made a backup. | — |
-| 4 | The documentation `.md` files are in `.gitignore`.                                                      | Team decision: remove them from `.gitignore`, or share them another way, so everyone uses the same version.                        | Medium   |
+| 4 | ~~The documentation `.md` files are in `.gitignore`.~~ | **Closed (1 Nov 2026):** removed from `.gitignore` and tracked under Git commit `698caba`. | — |
 | 5 | Software setup (Step 3).                                                                                | Step 3a ✅ done on Windows (.venv created, pinned requirements, check_env PASSED). Step 3b/3c pending for lab hardware.            | Low      |
 | 6 | ~~`db_service.py` does not yet meet Step 23.~~ | **Closed (31 Oct 2026):** `core_engine/db_service.py` refactored into production-grade service with 9 collections, full block history audit trail, dynamic TTL retention indexes, dynamic settings, burst-event coalescing, and comprehensive pytest test suite (18 dedicated tests, D-027). | — |
 | 7 | Lab hardware not arranged. | Arrange the managed switch, Linux sensor PC, lab router and camera (ask the department at the next supervisor meeting). | Medium   |
@@ -1040,7 +1040,7 @@ These will move into `docs/decision_log.md` when it is created (Step 4).
 D:\intrusion detection\
 ├── .env.example, .gitignore, .gitattributes, README.md, requirements.txt   (in Git)
 ├── STEP_BY_STEP_GUIDE.md, PROJECT_EXPLANATION.md, PROJECT_EXPLANATION_EN.md,
-│   PROJECT_PROGRESS_AND_CHALLENGES.md                                     (local only, in .gitignore)
+│   PROJECT_PROGRESS_AND_CHALLENGES.md                                     (tracked in Git)
 ├── config/
 │   ├── settings.example.yaml      # Step 4 template layout, start values
 │   ├── settings.yaml              # Step 4 active local settings (in .gitignore)
