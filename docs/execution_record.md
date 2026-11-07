@@ -51,7 +51,7 @@ Use this document to reproduce any step, review past work, prepare for superviso
 | **Step 22** | Offline vs Live Schema Check (RQ3) | ✅ Completed | `tools/schema_check.py`, zero training-serving skew (D-026) | `bdacf47` |
 | **Step 23** | MongoDB Database Setup | ✅ Completed | `core_engine/db_service.py` (9 collections, TTL retention, D-027) | `a19d1c3` |
 | **Step 24** | Authentication & Secrets Management | ✅ Completed | `core_engine/auth.py`, `tools/create_admin.py` (bcrypt, 8h JWT, D-028) | `5110196` |
-| **Step 25** | Flask + Socket.IO Unified Server | ✅ Completed | `core_engine/app.py` (port 5000, 15 REST endpoints, RBAC, D-029) | `2c577b1` |
+| **Step 25** | Flask + Socket.IO Unified Server | ✅ Completed | `core_engine/app.py` (port 5000, 20 REST endpoints across Phases 6–8, RBAC, D-029) | `2c577b1` |
 | **Step 26** | Detector & Decision Engine | ✅ Completed | `core_engine/detector.py`, `core_engine/decision_engine.py` (D-030) | `2b8f7c6` |
 | **Step 27** | Device Discovery (Nmap) | ✅ Completed | `core_engine/scanner_service.py` (camera heuristics, RBAC API, D-031) | `bd9dae7` |
 | **Step 28** | Forensic Log Export Service | ✅ Completed | `core_engine/export_service.py` (RFC 4180 CSV/JSON, audit trail, D-032) | `15d3f4c` |
