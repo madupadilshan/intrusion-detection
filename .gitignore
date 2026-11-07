@@ -58,6 +58,7 @@ htmlcov/
 .idea/
 Thumbs.db
 desktop.ini
+image/
 .DS_Store
 
 

@@ -8,12 +8,13 @@
 **දේශීය බහලුම (Local Directory):** `D:\intrusion detection`  
 **GitHub Repository:** [https://github.com/madupadilshan/intrusion-detection](https://github.com/madupadilshan/intrusion-detection) (branch `main`)  
 **වත්මන් තත්ත්වය:** පියවර 0 සිට 33 දක්වා සම්පූර්ණයි (පරීක්ෂණ 204 ම 100% ක් pass වී ඇත).  
+**අවසන් යාවත්කාලීන දිනය:** 2026 නොවැම්බර් 07  
 
 ---
 
 ## පටුන (Table of Contents)
 
-1. [පරිච්ඡේදය 1: පර්යේෂණයේ අරමුණ, ගැටලුව සහ විද්‍යාත්මක පදනම](#1-පර්යේෂණයේ-අරමුණ-ගැටලුව-සහ-විද්‍යාත්මක-පදනම)
+1. [පරිච්ඡේදය 1: පර්යේෂණයේ අරමුණ, ගැටලුව, කණ්ඩායම් වගකීම් සහ Proposal සැසඳීම](#1-පර්යේෂණයේ-අරමුණ-ගැටලුව-කණ්ඩායම්-වගකීම්-සහ-proposal-සැසඳීම)
 2. [පරිච්ඡේදය 2: සමස්ත පද්ධති ගෘහ නිර්මාණ ශිල්පය සහ දත්ත ගලායාම (End-to-End Architecture)](#2-සමස්ත-පද්ධති-ගෘහ-නිර්මාණ-ශිල්පය-සහ-දත්ත-ගලායාම)
 3. [පරිච්ඡේදය 3: සම්පූර්ණ File-by-File සහ Module-by-Module විග්‍රහය (The Codebase)](#3-සම්පූර්ණ-file-by-file-සහ-module-by-module-විග්‍රහය)
 4. [පරිච්ඡේදය 4: IoT-23 දත්ත කට්ටලය සහ විශේෂාංග 19 (Dataset & 19 Flow Features)](#4-iot-23-දත්ත-කට්ටලය-සහ-විශේෂාංග-19)
@@ -21,12 +22,14 @@
 6. [පරිච්ඡේදය 6: ස්වයංක්‍රීය ප්‍රතිචාර ප්‍රතිපත්තිය සහ ආරක්ෂණ නීති 7 (Response Policy & 7 Safety Guardrails)](#6-ස්වයංක්‍රීය-ප්‍රතිචාර-ප්‍රතිපත්තිය-සහ-ආරක්ෂණ-නීති-7)
 7. [පරිච්ඡේදය 7: Firewall Adapter පද්ධතිය සහ Kernel Auto-Expiry (nftables & Routers)](#7-firewall-adapter-පද්ධතිය-සහ-kernel-auto-expiry)
 8. [පරිච්ඡේදය 8: Backend REST API, Database එක සහ React SOC Dashboard එක](#8-backend-rest-api-database-එක-සහ-react-soc-dashboard-එක)
-9. [පරිච්ඡේදය 9: පද්ධතිය ධාවනය කිරීම සහ සජීවීව පෙන්වීම (Run & Demo Commands)](#9-පද්ධතිය-ධාවනය-කිරීම-සහ-සජීවීව-පෙන්වීම)
-10. [පරිච්ඡේදය 10: Viva / Review විභාග ප්‍රශ්නෝත්තර බැංකුව (Top 25 Viva Defense Questions)](#10-viva--review-විභාග-ප්‍රශ්නෝත්තර-බැංකුව)
+9. [පරිච්ඡේදය 9: Proposal Table 10 හි පාලිත ප්‍රහාර අවස්ථා 6 (Controlled Test Scenarios)](#9-proposal-table-10-හි-පාලිත-ප්‍රහාර-අවස්ථා-6-controlled-test-scenarios)
+10. [පරිච්ඡේදය 10: පද්ධතිය ධාවනය කිරීම සහ සජීවීව පෙන්වීම (Run & Demo Commands)](#10-පද්ධතිය-ධාවනය-කිරීම-සහ-සජීවීව-පෙන්වීම)
+11. [පරිච්ඡේදය 11: Meeting එකට මුහුණ දෙන අයුරු (Survival Guide for Dilshan)](#11-meeting-එකට-මුහුණ-දෙන-අයුරු-survival-guide-for-dilshan)
+12. [පරිච්ඡේදය 12: Viva / Review විභාග ප්‍රශ්නෝත්තර බැංකුව (Top 25 Viva Defense Questions)](#12-viva--review-විභාග-ප්‍රශ්නෝත්තර-බැංකුව)
 
 ---
 
-# 1. පර්යේෂණයේ අරමුණ, ගැටලුව සහ විද්‍යාත්මක පදනම
+# 1. පර්යේෂණයේ අරමුණ, ගැටලුව, කණ්ඩායම් වගකීම් සහ Proposal සැසඳීම
 
 ### 1.1 විසඳන ගැටලුව (Problem Statement)
 - නූතන නිරීක්ෂණ පද්ධතිවල භාවිත වන IP කැමරා (IP Surveillance Cameras) යනු පරිගණක ජාලයකට සම්බන්ධ කර ඇති සැහැල්ලු Linux firmware ධාවනය වන IoT උපාංග වේ.
@@ -45,20 +48,39 @@
 - **Objective O5:** පරිපාලකවරුන් සඳහා නිරීක්ෂණ Dashboard එකක් (React SOC Dashboard) සහ විගණන වාර්තාකරණය (Forensic Export) සැපයීම.
 - **Objective O6:** පාලිත ප්‍රහාර අවස්ථා 6 (Controlled Test Scenarios) යටතේ පද්ධතියේ latency, throughput, සහ reliability සම්පූර්ණයෙන්ම ඇගයීම.
 
-### 1.3 විද්‍යාත්මක උපකල්පනය (Hypothesis H1)
+### 1.3 කණ්ඩායම් සාමාජිකයින්ගේ කාර්යභාරය (Proposal Table 2)
+Supervisor හෝ Reviewers වරුන් කණ්ඩායමේ එක් එක් සාමාජිකයා කළ කාර්යයන් ඇසුවහොත්, Proposal Table 2 අනුව පිළිතුරු මෙසේය:
+
+| සාමාජිකයා | ශිෂ්‍ය අංකය | ප්‍රධාන වගකීම් ක්ෂේත්‍රය (Primary Focused Area) | අදාළ ප්‍රධාන Files & Modules |
+| :--- | :--- | :--- | :--- |
+| **M A M Dilshan** *(ඔබ)* | ICT/22/824 | **Backend services, traffic-processing integration, and database** | `core_engine/app.py`, `core_engine/db_service.py`, `core_engine/zeek_adapter.py`, `sensor/traffic_processor.py`, `core_engine/export_service.py`, `core_engine/auth.py` |
+| **Dilshara W S** | ICT/22/825 | **React dashboard, alerts, network discovery, and response controls** | `my-app/src/` (Canonical පිටු 7: Overview, LiveAlerts, Devices, Blocklist, etc.), `core_engine/scanner_service.py`, UI Socket integration |
+| **A O P I Mendis** | ICT/22/953 | **Machine-learning pipeline, dataset preparation, and evaluation** | `ml_engine/load_iot23.py`, `ml_engine/features.py`, `ml_engine/train.py`, `ml_engine/compare_models.py`, `ml_engine/calibrate_and_explain.py`, `ml_engine/evaluate.py` |
+
+> *සැමට පොදු වගකීම්: Literature review, integration, automated testing, සහ documentation.*
+
+### 1.4 Proposal එක සහ වත්මන් පද්ධතිය අතර සැසඳීම සහ වැඩිදියුණු කිරීම් 5
+අපගේ ක්‍රියාත්මක කිරීම මුළුමනින්ම Proposal එකට අනුකූල වන අතර, පහත සඳහන් වැඩිදියුණු කිරීම් සහ ප්‍රායෝගික ගැලපීම් සිදුකර ඇත:
+
+1. **OS සහ Firewall පරිසරය (Linux vs Windows Dev Environment):**  
+   Proposal Section 1.2 හි Linux Sensor මත `nftables` ධාවනය වන බව දක්වා ඇත. අප දැනට සංවර්ධනය සිදු කරන්නේ Windows 11 මත බැවින්, Windows network stack එකට හානි නොවී පරීක්ෂා කිරීමට **`SimulationAdapter`** එකක් හැදුවෙමු (Decision `D-037`). Linux sensor පරිගණකයකට දැමූ විට **`NftablesAdapter`** මගින් සැබෑ kernel rules සක්‍රීය වේ.
+2. **Passive SPAN Mode එකේදී Block කිරීම (RouterAdapter via SSH):**  
+   Proposal Figure 5 හි SPAN mode හිදී packets copy එකක් පමණක් ලැබෙන නිසා router එකකට command යැවිය යුතු බව පැවසුවද එය කරන ආකාරය නොතිබුණි. අප විසින් **`RouterAdapter`** මොඩියුලය සාදා, OpenWrt / Linux edge router එකකට SSH හරහා packets drop කිරීමට කේතය ලියන ලදී (Step 33).
+3. **Linux Kernel Timed Expiry (`flags timeout`):**  
+   Proposal Section 2.5 හි සඳහන් "rules that expire" යන්න සාමාන්‍ය Python script එකකින් timer තබා මකා දැමීම වෙනුවට, Linux Kernel එකෙහි ඇති **`nftables` dynamic sets `flags timeout`** පහසුකම භාවිත කළෙමු. මෙහිදී IDS daemon එක crash වුවද Linux Kernel එක නියමිත වේලාවට IP එක ස්වයංක්‍රීයව unblock කරයි.
+4. **Safety Guardrails 7 විධිමත් කිරීම:**  
+   Proposal එකේ විවිධ තැන්වල තිබූ allowlists, thresholds, auto-expiry ආදිය `core_engine/response_policy.py` තුළ විධිමත් ආරක්ෂණ නීති 7 ක් (G1–G7) බවට ගොනු කළෙමු (Decision `D-035`).
+5. **Literature Reference නිවැරදි කිරීම:**  
+   Proposal Section 1.4 හි සඳහන් "Almashhadani et al., 2024" නමැති citation එක proposal reference ලැයිස්තුවේ හෝ Crossref දත්ත පද්ධතියේ නොමැති බැවින්, නිල වශයෙන් පිළිගත් **Santos et al. (2023)** පර්යේෂණය පමණක් ඒ සඳහා පාදක කරගත්තෙමු (Decision `D-009`).
+
+### 1.5 විද්‍යාත්මක උපකල්පනය (Hypothesis H1)
 අපගේ පර්යේෂණ යෝජනාවේ (Proposal Section 1.6) අර්ථ දක්වා ඇති මූලික උපකල්පනය:
 $$\mathcal{H}_1: \text{A tree-based ensemble classifier (Random Forest) trained on flow-level statistical features}$$
 $$\text{can detect IP-camera botnet and reconnaissance traffic in sub-second inference latency,}$$
 $$\text{achieving a False Positive Rate (FPR) } \le 5\% \text{ on benign camera surveillance streams.}$$
+
 - **Clause 1 (Sub-second inference):** Random Forest model එකෙහි inference කාලය එක් flow එකකට **6.46 µs** (මයික්‍රෝතත්පර 6.46) කි. (ඉලක්කය සාර්ථකයි).
 - **Clause 2 (Benign camera FPR $\le 5\%$):** සැබෑ TP-Link Tapo C200 කැමරාවක flows 5,000 ක් මත පරීක්ෂා කළ විට Benign False Positive Rate එක **0.000%** කි. (උපකල්පනය සනාථ විය).
-
-### 1.4 පර්යේෂණ ප්‍රශ්න (Research Questions RQ1–RQ5)
-1. **RQ1:** IP කැමරා ජාල වල Benign සහ Malicious traffic වෙන්කර හඳුනාගැනීමට වඩාත්ම ඵලදායී statistical flow features මොනවාද? ➔ **පිළිතුර:** Proposal Table 6 හි features 19 (විශේෂයෙන් `duration`, `orig_bytes`, `conn_state`, `history`, `orig_p_ratio`).
-2. **RQ2:** ප්‍රහාර හඳුනාගැනීමේ නිරවද්‍යතාවය සහ අඩු latency අතර වඩාත්ම සුදුසු ML algorithm එක කුමක්ද? ➔ **පිළිතුර:** Random Forest (6.46 µs latency, Macro-F1 0.85+).
-3. **RQ3:** Training දත්ත (Offline Parquet) සහ Live Sensor එකෙන් එන දත්ත (Zeek JSON) අතර Training-Serving Skew එක බිංදුවක් (0%) බවට පත් කරන්නේ කෙසේද? ➔ **පිළිතුර:** එකම විශේෂාංග නිස්සාරක ශ්‍රිතය ([`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py)) දෙපැත්තටම භාවිත කිරීමෙන්.
-4. **RQ4:** සැබෑ IP කැමරා RTSP video streaming traffic එකක් හමුවේ False Positive Rate එක $5\%$ ට අඩුවෙන් තබා ගන්නේ කෙසේද? ➔ **පිළිතුර:** Sigmoid Probability Calibration සහ Allowlist Immunity guardrail මගින්.
-5. **RQ5:** නීත්‍යානුකූල වීඩියෝ සේවාවන් විසන්ධි නොකර ස්වයංක්‍රීය firewall mitigation සිදු කළ හැක්කේ කෙසේද? ➔ **පිළිතුර:** Direction-Aware Mitigation Matrix (Inbound සඳහා Source IP block කිරීම, Outbound CnC සඳහා Destination IP block කිරීම) මගින්.
 
 ---
 
@@ -117,51 +139,51 @@ flowchart TD
 ### 3.1 `config/` (වින්‍යාසගත කිරීමේ ගොනු)
 - [`config/settings.example.yaml`](file:///d:/intrusion%20detection/config/settings.example.yaml): පද්ධතියේ ප්‍රධාන සැකසුම් අච්චුව (Template). ජාල සීමාවන්, subnets, database URLs, සහ threshold default අගයන් මෙහි අඩංගු වේ.
 - [`config/settings.yaml`](file:///d:/intrusion%20detection/config/settings.yaml): පද්ධතියේ ක්‍රියාකාරී දේශීය සැකසුම් ගොනුව.
-- [`config/label_mapping.yaml`](file:///d:/intrusion%20detection/config/label_mapping.yaml): IoT-23 දත්ත කට්ටලයේ ඇති විවිධ ලේබල් 17 අපගේ ඉලක්කගත පන්ති 5 ට (`Benign`, `DDoS`, `Okiru`, `PortScan`, `CnC`) සිතියම්ගත කර ශීතකළ (Frozen) ගොනුව (Decision `D-014`).
+- [`config/label_mapping.yaml`](file:///d:/intrusion%20detection/config/label_mapping.yaml): IoT-23 දත්ත කට්ටලයේ ඇති විවිධ ලේබල් අපගේ ඉලක්කගත පන්ති 5 ට (`Benign`, `DDoS_DoS`, `PortScan`, `CnC`, `Malware_Download`) සිතියම්ගත කර ශීතකළ (Frozen) ගොනුව (Decision `D-014`).
 
-### 3.2 `ml_engine/` (Machine Learning පයිප්පලය)
-- [`ml_engine/manifest.py`](file:///d:/intrusion%20detection/ml_engine/manifest.py): නිල IoT-23 scenarios 23 හි ඇති raw log ගොනු පරිලෝකනය කර, එක් එක් ගොනුවේ flows ගණන සහ SHA-256 cryptographic hashes ගණනය කර [`reports/dataset_manifest.csv`](file:///d:/intrusion%20detection/reports/dataset_manifest.csv) සකසන ස්ක්‍රිප්ටය (Step 7).
-- [`ml_engine/data_quality.py`](file:///d:/intrusion%20detection/ml_engine/data_quality.py): Flows මිලියන 325.3 ක දත්තවල missing values, null rates, සහ Class $\times$ Scenario matrix එක විගණනය කර [`reports/data_quality_report.md`](file:///d:/intrusion%20detection/reports/data_quality_report.md) සකසන ස්ක්‍රිප්ටය (Step 9).
-- [`ml_engine/load_iot23.py`](file:///d:/intrusion%20detection/ml_engine/load_iot23.py): සීමිත RAM මත (12GB) විශාල දත්ත එකවර load කිරීමට නොහැකි බැවින්, chunked reader එකක් මගින් chunk එකින් chunk කියවා, null values impute කර, සම්පීඩිත interim Parquet ගොනු 23 ක් සාදන පයිප්පලය (Step 10).
+### 3.2 `ml_engine/` (Machine Learning පයිප්පලය - Mendis ගේ කොටස)
+- [`ml_engine/manifest.py`](file:///d:/intrusion%20detection/ml_engine/manifest.py): නිල IoT-23 scenarios 23 හි raw logs පරිලෝකනය කර, flows ගණන සහ SHA-256 hashes ගණනය කර [`reports/dataset_manifest.csv`](file:///d:/intrusion%20detection/reports/dataset_manifest.csv) සකසන ස්ක්‍රිප්ටය (Step 7).
+- [`ml_engine/data_quality.py`](file:///d:/intrusion%20detection/ml_engine/data_quality.py): Flows මිලියන 325.3 ක දත්තවල missing values, null rates, සහ matrix එක විගණනය කර [`reports/data_quality_report.md`](file:///d:/intrusion%20detection/reports/data_quality_report.md) සකසන ස්ක්‍රිප්ටය (Step 9).
+- [`ml_engine/load_iot23.py`](file:///d:/intrusion%20detection/ml_engine/load_iot23.py): සීමිත RAM මත (12GB) විශාල දත්ත එකවර load කළ නොහැකි බැවින්, chunked reader එකක් මගින් කියවා interim Parquet ගොනු 23 ක් සාදන පයිප්පලය (Step 10).
 - [`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py): **ව්‍යාපෘතියේ වැදගත්ම ගොනුවකි.** Proposal Table 6 අනුව විශේෂාංග 19 ම ගණනය කරන මධ්‍යම ශ්‍රිතය (`make_features`). Training දත්ත වලටත් Live Zeek දත්ත වලටත් එකම ගොනුව භාවිත වන බැවින් training-serving skew එක 0% කි (Step 11, Decision `D-015`).
-- [`ml_engine/sample_dataset.py`](file:///d:/intrusion%20detection/ml_engine/sample_dataset.py): පන්ති අසමතුලිතතාවය (Class Imbalance) විසඳීමට Stratified Sampling සිදු කරන ස්ක්‍රිප්ටය. එක් පන්තියකින් උපරිම flows 50,000 ක් සහ දුර්ලභ CnC flows 100% ක්ම ආරක්ෂා කර ගනිමින් flows 1,384,070 ක සමබර training dataset එකක් සාදයි (Step 12, Decision `D-016`).
+- [`ml_engine/sample_dataset.py`](file:///d:/intrusion%20detection/ml_engine/sample_dataset.py): පන්ති අසමතුලිතතාවය විසඳීමට Stratified Sampling සිදු කරන ස්ක්‍රිප්ටය. Flows 1,384,070 ක සමබර training dataset එකක් සාදයි (Step 12, Decision `D-016`).
 - [`ml_engine/train.py`](file:///d:/intrusion%20detection/ml_engine/train.py): Random Forest මොඩලය පුහුණු කිරීම, `RandomizedSearchCV` මගින් hyperparameters tune කිරීම, සහ 5-fold Grouped Cross-Validation මගින් ඇගයීම සිදු කරන ප්‍රධාන පුහුණු ස්ක්‍රිප්ටය (Step 14, Decision `D-018`).
-- [`ml_engine/compare_models.py`](file:///d:/intrusion%20detection/ml_engine/compare_models.py): Random Forest මොඩලය, Logistic Regression (Linear baseline) සහ Histogram Gradient Boosting (Modern boosting baseline) සමග සැසඳීමේ මිණුම් ලකුණු පරීක්ෂාව (Step 15, Decision `D-019`).
-- [`ml_engine/evaluate.py`](file:///d:/intrusion%20detection/ml_engine/evaluate.py): පුහුණු කිරීමට කිසිසේත්ම භාවිත නොකළ, මුද්‍රා තැබූ `Capture-34-1` (Mirai botnet) zero-day scenario එක මත Level 2 ඇගයීම සිදු කර Hypothesis H1 පරීක්ෂා කරන ස්ක්‍රිප්ටය (Step 16, Decision `D-020`).
-- [`ml_engine/calibrate_and_explain.py`](file:///d:/intrusion%20detection/ml_engine/calibrate_and_explain.py): Random Forest හි probabilities විකෘති වීම වැළැක්වීමට Sigmoid CalibratedClassifierCV මගින් calibration සිදු කර Brier score එක 47.7% කින් අඩු කර, dual operational thresholds සකසන ස්ක්‍රිප්ටය (Step 17, Decision `D-021`).
-- [`ml_engine/export_bundle.py`](file:///d:/intrusion%20detection/ml_engine/export_bundle.py): පුහුණු කළ Calibrated Model එක, Feature list එක, Thresholds සහ Version metadata එකතු කර [`ml_engine/models/ids_bundle_v1.joblib`](file:///d:/intrusion%20detection/ml_engine/models/ids_bundle_v1.joblib) (30.84 MB) ලෙස නිෂ්පාදන බණ්ඩලය export කරන සහ Model Card එක ප්‍රකාශයට පත් කරන ස්ක්‍රිප්ටය (Step 18, Decision `D-022`).
+- [`ml_engine/compare_models.py`](file:///d:/intrusion%20detection/ml_engine/compare_models.py): Random Forest මොඩලය, Logistic Regression (Linear) සහ Histogram Gradient Boosting (Boosting) සමග සැසඳීමේ මිණුම් ලකුණු පරීක්ෂාව (Step 15, Decision `D-019`).
+- [`ml_engine/evaluate.py`](file:///d:/intrusion%20detection/ml_engine/evaluate.py): පුහුණු කිරීමට කොහෙත්ම නොගත්, මුද්‍රා තැබූ `Capture-34-1` (Mirai botnet) scenario එක මත Level 2 ඇගයීම සිදු කර Hypothesis H1 පරීක්ෂා කරන ස්ක්‍රිප්ටය (Step 16, Decision `D-020`).
+- [`ml_engine/calibrate_and_explain.py`](file:///d:/intrusion%20detection/ml_engine/calibrate_and_explain.py): Random Forest හි probabilities විකෘති වීම වැළැක්වීමට Sigmoid CalibratedClassifierCV මගින් calibration සිදු කර Brier score එක 47.7% කින් අඩු කරන ස්ක්‍රිප්ටය (Step 17, Decision `D-021`).
+- [`ml_engine/export_bundle.py`](file:///d:/intrusion%20detection/ml_engine/export_bundle.py): පුහුණු කළ Calibrated Model එක, Feature list එක, Thresholds සහ Version metadata එකතු කර [`ml_engine/models/ids_bundle_v1.joblib`](file:///d:/intrusion%20detection/ml_engine/models/ids_bundle_v1.joblib) (30.84 MB) ලෙස නිෂ්පාදන බණ්ඩලය export කරන ස්ක්‍රිප්ටය (Step 18, Decision `D-022`).
 
 ### 3.3 `sensor/` (ජාල සංවේදකය සහ නීති)
 - [`sensor/local.zeek`](file:///d:/intrusion%20detection/sensor/local.zeek): Zeek monitor එක සඳහා ලියන ලද ප්‍රතිපත්තිය. Connection flows තත්‍ය කාලීනව streaming JSON log එකක් ලෙස `conn.log` වෙත ලිවීමට සකසා ඇත (Step 19).
 - [`sensor/run_zeek.sh`](file:///d:/intrusion%20detection/sensor/run_zeek.sh): Linux sensor පරිගණකය මත Zeek daemon එකක් ලෙස පසුබිමේ ධාවනය කරවන Bash ස්ක්‍රිප්ටය.
-- [`sensor/zeek_runner.py`](file:///d:/intrusion%20detection/sensor/zeek_runner.py): Zeek නොමැති පරිසරවල (උදා: Windows සංවර්ධන ලැප්ටොප්) පරීක්ෂණ සඳහා සැබෑ conn.log ආකෘතියෙන්ම JSON flows උත්පාදනය කරන simulation harness එක.
+- [`sensor/zeek_runner.py`](file:///d:/intrusion%20detection/sensor/zeek_runner.py): Windows සංවර්ධන ලැප්ටොප් එකේදී පරීක්ෂණ සඳහා සැබෑ conn.log ආකෘතියෙන්ම JSON flows උත්පාදනය කරන simulation harness එක.
 - [`sensor/collect_camera_traffic.py`](file:///d:/intrusion%20detection/sensor/collect_camera_traffic.py): සැබෑ TP-Link Tapo C200 කැමරාවක RTSP, HTTP, ONVIF flows 5,000 ක් ලබාගෙන Model එකට දී පරීක්ෂා කර FPR = 0.000% බව ඔප්පු කළ ස්ක්‍රිප්ටය (Step 20, Decision `D-024`).
 - [`sensor/ids_inline.nft`](file:///d:/intrusion%20detection/sensor/ids_inline.nft): Layer 2 Inline Bridge mode එක සඳහා ලියන ලද Linux `nftables` නීති මාලාව (`table bridge ids`). Dynamic timed sets සහ source-only allowlist අඩංගු වේ (Step 32).
 - [`sensor/ids_router.nft`](file:///d:/intrusion%20detection/sensor/ids_router.nft): Layer 3 Passive Router mode එක සඳහා ලියන ලද OpenWrt / Linux router නීති මාලාව (`table inet ids`).
 
-### 3.4 `core_engine/` (ප්‍රධාන එන්ජිම, සේවා සහ API)
-- [`core_engine/zeek_adapter.py`](file:///d:/intrusion%20detection/core_engine/zeek_adapter.py): `conn.log` ගොනුවෙන් ලියවෙන පේළි streaming ආකාරයෙන් කියවා, micro-batches (`batch_size=100`, `timeout=0.5s`) සාදා detector එකට ලබා දෙන ඇඩැප්ටරය. Crash recovery සඳහා කියවූ අවසන් byte offset එක මතක තබා ගනී (Step 21, Decision `D-025`).
+### 3.4 `core_engine/` (ප්‍රධාන එන්ජිම, සේවා සහ API - Dilshan ගේ කොටස)
+- [`core_engine/zeek_adapter.py`](file:///d:/intrusion%20detection/core_engine/zeek_adapter.py): `conn.log` ගොනුව streaming ආකාරයෙන් කියවා micro-batches (`batch_size=100`, `timeout=0.5s`) සාදා detector එකට ලබා දෙන ඇඩැප්ටරය. Crash recovery සඳහා කියවූ අවසන් byte offset එක මතක තබා ගනී (Step 21, Decision `D-025`).
 - [`core_engine/detector.py`](file:///d:/intrusion%20detection/core_engine/detector.py): `ids_bundle_v1.joblib` බණ්ඩලය මතකයේ රඳවාගෙන (Memory Caching), එන සෑම flow එකකටම Calibrated Probabilities සහ අනාවැකි ලබා දෙන ML එන්ජිම (Inference latency: 6.46 µs, Step 26, Decision `D-030`).
 - [`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py): Model එකෙන් එන අනාවැකි ලබාගෙන, operational thresholds සසඳා බලා, response policy එක ක්‍රියාත්මක කර, firewall එකට විධාන යවා, MongoDB හි තැන්පත් කර, Socket.IO මගින් dashboard එකට තොරතුරු යවන මධ්‍යම සම්බන්ධීකාරකය (Step 26 & Step 31).
 - [`core_engine/response_policy.py`](file:///d:/intrusion%20detection/core_engine/response_policy.py): Direction-Aware Mitigation Matrix (Proposal Table 5) සහ ආරක්ෂණ නීති 7 (Safety Guardrails) අකුරටම ක්‍රියාත්මක කරන ප්‍රතිපත්ති එන්ජිම (Step 31, Decision `D-035`).
-- [`core_engine/scanner_service.py`](file:///d:/intrusion%20detection/core_engine/scanner_service.py): ජාලයේ උපකරණ සහ කැමරා හඳුනාගන්නා Nmap scanner සේවාව. අනුමත subnet (`192.168.50.0/24`) පමණක් scan කරන අතර, Multi-evidence heuristic මගින් කැමරා ලක්ෂණ හඳුනාගෙන පරිපාලක තහවුරු කිරීමට (`confirm_camera_role`) ඉඩ දෙයි (Step 27, Decision `D-031`).
+- [`core_engine/scanner_service.py`](file:///d:/intrusion%20detection/core_engine/scanner_service.py): ජාලයේ උපකරණ සහ කැමරා හඳුනාගන්නා Nmap scanner සේවාව. Multi-evidence heuristic මගින් කැමරා ලක්ෂණ හඳුනාගෙන පරිපාලක තහවුරු කිරීමට (`confirm_camera_role`) ඉඩ දෙයි (Step 27, Decision `D-031`).
 - [`core_engine/export_service.py`](file:///d:/intrusion%20detection/core_engine/export_service.py): විගණන සහ පර්යේෂණ වාර්තා සඳහා ප්‍රහාර ඉතිහාසය, පද්ධති logs, සහ blocklist දත්ත RFC 4180 සම්මත CSV සහ JSON ආකෘතිවලින් filter කර export කරන සේවාව (Step 28, Decision `D-032`).
 - [`core_engine/auth.py`](file:///d:/intrusion%20detection/core_engine/auth.py): පරිපාලක ආරක්ෂාව සලසන එන්ජිම. Bcrypt (rounds $\ge 12$) මගින් passwords hash කරන අතර, පැය 8 කින් කල් ඉකුත්වන cryptographically signed JWT tokens ලබා දෙයි (Step 24, Decision `D-028`).
-- [`core_engine/db_service.py`](file:///d:/intrusion%20detection/core_engine/db_service.py): MongoDB සමග සම්බන්ධ වන සේවාව (`iot_ids_db`). Collections 9 ක් කළමනාකරණය කරන අතර, ස්වයංක්‍රීයව දත්ත පිරිසිදු කරන TTL Indexes සහ විගණන ලේඛන පවත්වා ගනී (Step 23, Decision `D-027`).
+- [`core_engine/db_service.py`](file:///d:/intrusion%20detection/core_engine/db_service.py): MongoDB සමග සම්බන්ධ වන සේවාව (`iot_ids_db`). Collections 9 ක් කළමනාකරණය කරන අතර, ස්වයංක්‍රීයව දත්ත පිරිසිදු කරන TTL Indexes පවත්වා ගනී (Step 23, Decision `D-027`).
 - [`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py): තනි Port 5000 මත ක්‍රියාත්මක වන ඒකාබද්ධ Flask + Socket.IO සර්වරය. REST Endpoints 15 ක් සහ WebSocket telemetry නාලිකා සපයයි (Step 25, Decision `D-029`).
 
 ### 3.5 `core_engine/firewall/` (Firewall Adapters)
-- [`core_engine/firewall/base.py`](file:///d:/intrusion%20detection/core_engine/firewall/base.py): සියලුම firewall ක්‍රමවේද සඳහා පොදු Abstract Base Class එක (`BaseFirewallAdapter`). `block()`, `rate_limit()`, `unblock()`, `list_active()` අර්ථ දක්වන අතර Allowlist immunity සහ duration clamping නීති ක්‍රියාත්මක කරයි (Step 33, Decision `D-037`).
+- [`core_engine/firewall/base.py`](file:///d:/intrusion%20detection/core_engine/firewall/base.py): සියලුම firewall ක්‍රමවේද සඳහා පොදු Abstract Base Class එක (`BaseFirewallAdapter`). `block()`, `rate_limit()`, `unblock()`, `list_active()` අර්ථ දක්වන අතර Allowlist immunity නීති ක්‍රියාත්මක කරයි (Step 33, Decision `D-037`).
 - [`core_engine/firewall/nftables_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/nftables_adapter.py): Inline mode එකේදී Linux kernel එකෙහි `nft` විධාන කෙලින්ම ධාවනය කර `block_src`, `block_dst`, `limit_src` dynamic sets වෙත IPs එක් කරන සහ ඉවත් කරන ඇඩැප්ටරය (Step 32).
-- [`core_engine/firewall/router_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/router_adapter.py): Passive SPAN mode එකේදී sensor එකට packet drop කළ නොහැකි බැවින්, SSH හරහා upstream OpenWrt / Linux edge router එක වෙත command යවා Layer 3 හිදී block කරන ඇඩැප්ටරය (Step 33).
-- [`core_engine/firewall/simulation_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/simulation_adapter.py): Windows සංවර්ධන පරිගණකයේදී සැබෑ network stack එක වෙනස් නොකර memory තුළ නීති නිරීක්ෂණය කරන simulation ඇඩැප්ටරය (`is_simulated = True`).
-- [`core_engine/firewall/__init__.py`](file:///d:/intrusion%20detection/core_engine/firewall/__init__.py): පද්ධතියේ configuration එක අනුව ඉහත ඇඩැප්ටර අතුරින් සුදුසු එක තෝරා දෙන factory function එක (`get_firewall_adapter`).
+- [`core_engine/firewall/router_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/router_adapter.py): Passive SPAN mode එකේදී SSH හරහා upstream OpenWrt / Linux edge router එක වෙත command යවා Layer 3 හිදී block කරන ඇඩැප්ටරය (Step 33).
+- [`core_engine/firewall/simulation_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/simulation_adapter.py): Windows සංවර්ධන පරිගණකයේදී කිසිදු network adapter එකකට හානි නොකර memory තුළ නීති නිරීක්ෂණය කරන simulation ඇඩැප්ටරය (`is_simulated = True`).
+- [`core_engine/firewall/__init__.py`](file:///d:/intrusion%20detection/core_engine/firewall/__init__.py): Configuration එක අනුව ඉහත ඇඩැප්ටර අතුරින් සුදුසු එක තෝරා දෙන factory function එක (`get_firewall_adapter`).
 
-### 3.6 `my-app/` (React SOC Dashboard එක)
+### 3.6 `my-app/` (React SOC Dashboard එක - Dilshara ගේ කොටස)
 - [`my-app/src/config.js`](file:///d:/intrusion%20detection/my-app/src/config.js): Backend URL එක (`http://localhost:5000`) මධ්‍යගතව පාලනය කරන ගොනුව.
-- [`my-app/src/services/api.js`](file:///d:/intrusion%20detection/my-app/src/services/api.js): Axios HTTP client එක. සෑම request එකකටම JWT Bearer Token එක ස්වයංක්‍රීයව අමුණයි.
+- [`my-app/src/services/api.js`](file:///d:/intrusion%20detection/my-app/src/services/api.js): Axios HTTP client එක (JWT Bearer Token අමුණයි).
 - [`my-app/src/services/socket.js`](file:///d:/intrusion%20detection/my-app/src/services/socket.js): තත්‍ය කාලීන WebSocket සම්බන්ධතාවය සපයන Socket.IO client එක.
-- [`my-app/src/components/Layout.js`](file:///d:/intrusion%20detection/my-app/src/components/Layout.js): Responsive Cyber SOC Sidebar එක, Top Status Bar එක, සහ Mobile Navigation එක අඩංගු ප්‍රධාන සැකිල්ල.
+- [`my-app/src/components/Layout.js`](file:///d:/intrusion%20detection/my-app/src/components/Layout.js): Responsive Cyber SOC Sidebar, Top Status Bar, සහ Navigation.
 - **Canonical පිටු 7 ([`my-app/src/pages/`](file:///d:/intrusion%20detection/my-app/src/pages/)):**
   1. `Overview.js`: සජීවී KPI metrics (Events, Attacks, Blocks, Latency) සහ ප්‍රස්ථාර.
   2. `LiveAlerts.js`: තත්‍ය කාලීනව එන alerts සහ operator manual confirmation බොත්තම.
@@ -171,77 +193,74 @@ flowchart TD
   6. `Settings.js`: Dynamic ML thresholds සහ allowlisted IPs සැකසුම්.
   7. `LogExport.js`: Forensic CSV / JSON වාර්තා බාගත කිරීම.
 
-### 3.7 `tools/` (සහායක උපයෝගිතා)
-- [`tools/check_env.py`](file:///d:/intrusion%20detection/tools/check_env.py): Python පරිසරය, pinned packages, Npcap සහ dependencies පරීක්ෂා කරන ස්ක්‍රිප්ටය (Step 3a).
-- [`tools/schema_check.py`](file:///d:/intrusion%20detection/tools/schema_check.py): Offline parquet features සහ live Zeek features අතර 100% සමානතාව පරීක්ෂා කර RQ3 සහ Checkpoint C6 තහවුරු කළ විගණන මෙවලම (Step 22).
-- [`tools/create_admin.py`](file:///d:/intrusion%20detection/tools/create_admin.py): Terminal එකෙන් ආරක්ෂිතව පරිපාලක ගිණුම් (Admin credentials) සෑදීමේ CLI මෙවලම (Step 24).
-
 ---
 
 # 4. IoT-23 දත්ත කට්ටලය සහ විශේෂාංග 19
 
 ### 4.1 IoT-23 දත්ත කට්ටලය යනු කුමක්ද?
 - චෙක් ජනරජයේ Avast Software සහ CTU විශ්වවිද්‍යාලය විසින් 2018–2019 කාලයේදී සැබෑ IoT උපාංග (Raspberry Pi, IP Cameras, Smart devices) ආසාදනය කර සකස් කළ නිල දත්ත එකතුවකි.
-- මෙහි Scenarios 23 ක් (Benign 3 ක් සහ Botnet captures 20 ක්) අඩංගු වන අතර සමස්ත network flows ගණන **325,307,990** (මිලියන 325.3) කි.
+- Scenarios 23 ක් (Benign 3 ක් සහ Botnet captures 20 ක්) අඩංගු වන අතර සමස්ත network flows ගණන **325,307,990** (මිලියන 325.3) කි.
 
-### 4.2 අප තෝරාගත් ඉලක්කගත පන්ති 5 (Target Classes)
+### 4.2 අප තෝරාගත් ඉලක්කගත පන්ති 5 (Target Classes per Proposal Table 5)
+`config/label_mapping.yaml` (Decision `D-014`) හි නිශ්චිතව දක්වා ඇති පන්ති 5:
 1. **`Benign`:** සාමාන්‍ය නීත්‍යානුකූල ජාල සම්බන්ධතා (RTSP streaming, DNS, HTTP browsing).
-2. **`DDoS`:** සේවාව අක්‍රිය කිරීමට එවන අධික SYN / UDP flood ප්‍රහාර.
-3. **`Okiru`:** IoT උපාංග සහ IP කැමරා ආසාදනය කරන Mirai botnet ප්‍රභේදයකි.
-4. **`PortScan`:** කැමරාවේ විවෘත ports සහ දුර්වලතා සෙවීමේ මූලික reconnaissance ප්‍රහාර.
-5. **`CnC`:** ආසාදිත කැමරාව පිටත ඇති Command & Control සර්වරය සමග සම්බන්ධ වී විධාන ලබා ගැනීම.
+2. **`DDoS_DoS`:** සේවාව අක්‍රිය කිරීමට එවන අධික SYN / UDP flood ප්‍රහාර (DDoS).
+3. **`PortScan`:** කැමරාවේ විවෘත ports සෙවීමේ reconnaissance ප්‍රහාර (`PartOfAHorizontalPortScan`).
+4. **`CnC`:** ආසාදිත කැමරාව පිටත Command & Control සර්වරය සමග සම්බන්ධ වීම (`C&C`, `C&C-HeartBeat`, `C&C-Torii`).
+5. **`Malware_Download`:** කැමරාව තුළට botnet binary බාගත කිරීම (`Okiru`, `Mirai`, `FileDownload`).
 
 ### 4.3 විශේෂාංග 19 හි භෞතික තේරුම (Physical Network Meaning)
 Proposal Table 6 අනුව අප ගණනය කරන විශේෂාංග 19 මෙසේය:
-1. `duration`: TCP/UDP සම්බන්ධතාවය ආරම්භයේ සිට අවසානය දක්වා පැවති කාලය (තත්පර).
-2. `orig_bytes`: සම්බන්ධතාවය පටන් ගත් උපාංගය (Source) යැවූ application payload bytes ප්‍රමාණය.
-3. `resp_bytes`: ප්‍රතිචාර දැක්වූ උපාංගය (Destination) ආපසු එවූ application payload bytes ප්‍රමාණය.
+1. `duration`: සම්බන්ධතාවය පැවති කාලය (තත්පර).
+2. `orig_bytes`: Source උපාංගය යැවූ application payload bytes.
+3. `resp_bytes`: Destination උපාංගය එවූ application payload bytes.
 4. `orig_pkts`: Source එක යැවූ packets ගණන.
-5. `resp_pkts`: Destination එකෙන් ලැබුණු packets ගණන.
-6. `orig_ip_bytes`: IP Header එකද සහිතව Source එක යැවූ මුළු bytes ප්‍රමාණය.
-7. `resp_ip_bytes`: IP Header එකද සහිතව Destination එක එවූ මුළු bytes ප්‍රමාණය.
-8. `missed_bytes`: ජාලයේ තදබදය නිසා packet loss වී අතරමග හැලුණු bytes ප්‍රමාණය.
+5. `resp_pkts`: Destination එක එවූ packets ගණන.
+6. `orig_ip_bytes`: IP Header එකද සහිතව Source එක යැවූ මුළු bytes.
+7. `resp_ip_bytes`: IP Header එකද සහිතව Destination එක එවූ මුළු bytes.
+8. `missed_bytes`: Network congestion නිසා drop වූ bytes.
 9. `proto`: ප්‍රොටෝකෝලය (`tcp`, `udp`, `icmp`).
 10. `service`: ඉහළ මට්ටමේ සේවාව (`http`, `dns`, `ssl`, `dhcp`, හෝ `none`).
-11. `conn_state`: Zeek සම්බන්ධතා තත්ත්වය (`SF` = සාර්ථක, `S0` = SYN යැවුවත් පිළිතුරක් නැත - DoS ලක්ෂණයක්, `REJ` = ප්‍රතික්ෂේප විය).
-12. `history`: TCP flag හුවමාරු අනුපිළිවෙල (උදා: `ShADadFf`).
-13. `orig_b_ratio`: මුළු bytes අතුරින් Source එක යැවූ ප්‍රතිශතය.
-14. `orig_p_ratio`: මුළු packets අතුරින් Source එක යැවූ ප්‍රතිශතය.
-15. `resp_b_ratio`: මුළු bytes අතුරින් Destination එක එවූ ප්‍රතිශතය.
-16. `resp_p_ratio`: මුළු packets අතුරින් Destination එක එවූ ප්‍රතිශතය.
+11. `conn_state`: Zeek connection state (`SF` = සාර්ථක, `S0` = SYN flood ලක්ෂණයක්, `REJ` = ප්‍රතික්ෂේප විය).
+12. `history`: TCP flag අනුපිළිවෙල (උදා: `ShADadFf`).
+13. `orig_b_ratio`: මුළු bytes අතුරින් Source එක යැවූ අනුපාතය.
+14. `orig_p_ratio`: මුළු packets අතුරින් Source එක යැවූ අනුපාතය.
+15. `resp_b_ratio`: මුළු bytes අතුරින් Destination එක එවූ අනුපාතය.
+16. `resp_p_ratio`: මුළු packets අතුරින් Destination එක එවූ අනුපාතය.
 17. `total_bytes`: `orig_bytes` + `resp_bytes` එකතුව.
 18. `total_pkts`: `orig_pkts` + `resp_pkts` එකතුව.
-19. `is_incomplete`: Handshake එක නිසි පරිදි සම්පූර්ණ නොවූ අසම්පූර්ණ සම්බන්ධතාවයක්ද යන්න (0 හෝ 1).
+19. `is_incomplete`: Handshake එක අසම්පූර්ණ සම්බන්ධතාවයක්ද යන්න (0 හෝ 1).
+
+> **Data Leakage වැළැක්වීමේ වැදගත්ම පියවර:**  
+> IP ලිපින (`id.orig_h`, `id.resp_h`) සහ MAC ලිපින Model එකට ලබා නොදෙයි. Ports අගයන් categories බවට bucket කර ඇත. එමගින් Model එක IP ලිපින මතක තබා ගැනීම (Overfitting/Memorization) මුළුමනින්ම වැළකේ.
 
 ---
 
 # 5. Machine Learning මොඩලය, පුහුණු කිරීම සහ Calibration
 
 ### 5.1 ඇයි Random Forest තෝරාගත්තේ? (Model Comparison - Step 15)
-අපි එකම දත්ත මත Models 3 ක් 5-fold Grouped Cross-Validation මගින් සංසන්දනය කළෙමු:
-- **Logistic Regression (Linear):** Macro-F1 = 0.3486 (සරල වැඩියි, සංකීර්ණ ප්‍රහාර අල්ලාගත නොහැක).
-- **Histogram Gradient Boosting (HGB):** Macro-F1 = 0.3950 (නිරවද්‍යතාවය තරමක් වැඩි වුවත්, inference latency එක 14.2 µs දක්වා ඉහළයි, decision rules විනිවිද නොපෙනේ).
-- **Random Forest (තෝරාගත් මොඩලය):** Macro-F1 = 0.3630, inference latency = **6.46 µs** (ඉතා වේගවත්), Feature Importances පැහැදිලිව විගණනය කළ හැක (Auditable & Explainable).
+අපි එකම දත්ත මත Models 3 ක් 5-fold Grouped Cross-Validation මගින් සංසන්දනය කළෙමු (`reports/experiments/model_comparison.csv`):
+- **Logistic Regression (Linear):** Macro-F1 = 0.3486 (සරල වැඩියි, non-linear ප්‍රහාර හඳුනාගත නොහැක).
+- **Histogram Gradient Boosting (Boosting):** Macro-F1 = 0.3950 (Inference latency = 19.10 µs, decision trees විගණනය කළ නොහැක).
+- **Random Forest (තෝරාගත් මොඩලය):** Macro-F1 = 0.3630, inference latency = **6.46 µs** (ඉතා වේගවත්, 154,746 flows/sec), Feature Importances පැහැදිලිව විගණනය කළ හැක (Auditable & Explainable).
 
-### 5.2 Grouped Cross-Validation යනු කුමක්ද? (Data Leakage වැළැක්වීම)
-- සාමාන්‍ය K-Fold CV වලදී එකම pcap capture එකේ flows train සහ test දෙකටම අහඹු ලෙස බෙදී යාම නිසා කෘත්‍රිමව 100% ක accuracy එකක් පෙන්වයි (Data Snooping Leakage).
-- අප විසින් **`StratifiedGroupKFold(n_splits=5)`** භාවිත කළ අතර, එහි Group එක ලෙස `scenario_id` ලබා දුනි. එවිට කිසියම් capture එකක flows train එකට ගිය විට, test එකට යන්නේ සම්පූර්ණයෙන්ම වෙනත් capture එකක flows පමණි. මෙය සැබෑ ලෝකයේ සාර්ථකත්වය මනින නියම විද්‍යාත්මක ක්‍රමයයි.
+### 5.2 Grouped Cross-Validation (Scenario Leakage වැළැක්වීම)
+- සාමාන්‍ය Random K-Fold බෙදීමේදී එකම pcap capture එකේ flows train සහ test දෙකටම යාම නිසා කෘත්‍රිමව 100% ක accuracy එකක් පෙන්වයි.
+- අප **`StratifiedGroupKFold(n_splits=5, groups=scenario_id)`** භාවිත කළෙමු. එවිට කිසියම් capture එකක් train එකට ගිය විට, test එකට යන්නේ සම්පූර්ණයෙන්ම වෙනත් scenario එකක flows පමණි.
 
 ### 5.3 Zero-Day Generalization (Step 16)
-- පුහුණු කිරීමට කොහෙත්ම නොගත්, වෙනම තබා තිබූ **`Capture-34-1`** (Mirai botnet) මත මොඩලය පරීක්ෂා කළ විට:
-  - **Overall Accuracy:** 76.72%
-  - **Benign FPR:** 5.096%
-  - **PR-AUCs:** 0.82 – 0.99
-  - මෙමගින් මොඩලයට මීට පෙර නොදුටු නුහුරු ප්‍රහාරයක් වුවද හඳුනාගැනීමේ හැකියාව ඇති බව තහවුරු විය.
+පුහුණු කිරීමට කිසිසේත්ම භාවිත නොකළ මුද්‍රා තැබූ **`Capture-34-1`** (Mirai botnet) මත පරීක්ෂා කළ විට:
+- **Overall Accuracy:** 76.72%
+- **Benign FPR:** 5.096%
+- **PR-AUCs:** DDoS_DoS = 0.9976, PortScan = 0.8230, CnC = 0.9786.
 
-### 5.4 Probability Calibration (Step 17)
-- සාමාන්‍ය Decision Trees මගින් ලැබෙන probabilities අන්තවාදී අගයන් (0 හෝ 1) ගන්නා බැවින්, ස්වයංක්‍රීය firewall response එකක් සඳහා එය විශ්වාස කළ නොහැක.
-- `CalibratedClassifierCV(method='sigmoid', cv='prefit')` මගින් මොඩලය calibrate කළ පසු, DDoS පන්තියේ Brier score එක **0.0552 සිට 0.0288 දක්වා 47.7% කින් අඩු විය**.
-- **Operational Thresholds:**
-  - `DDoS`: $\ge 0.85$ (Active Block)
-  - `Okiru`: $\ge 0.80$ (Active Block)
-  - `PortScan`: $\ge 0.80$ (Active Block)
-  - `CnC`: $\ge 0.75$ (Destination Drop)
+### 5.4 Probability Calibration සහ Operational Thresholds (Step 17)
+`CalibratedClassifierCV(method='sigmoid')` මගින් probabilities calibrate කිරීමෙන් පසු Brier score එක 47.7% කින් අඩු විය.  
+`reports/experiments/operational_thresholds.json` අනුව නියමිත thresholds:
+- **`DDoS_DoS`:** Active threshold = **0.70** (Passive alert = 0.50)
+- **`PortScan`:** Active threshold = **0.65** (Passive alert = 0.30)
+- **`CnC`:** Active threshold = **0.60** (Passive alert = 0.25)
+- **`Malware_Download`:** Active threshold = **0.85** (Passive alert = 0.50)
 
 ---
 
@@ -251,17 +270,17 @@ Proposal Table 6 අනුව අප ගණනය කරන විශේෂා�
 
 | ප්‍රහාරක පන්තිය | ප්‍රහාරයේ දිශාව | ගන්නා ස්වයංක්‍රීය ක්‍රියාමාර්ගය | සාධාරණීකරණය (Rationale) |
 | :--- | :--- | :--- | :--- |
-| **Benign** | Both | No Action (`none`) | සාමාන්‍ය traffic කිසිවිටෙකත් block නොකළ යුතුය. |
-| **DDoS** | Inbound to Camera | Drop Source IP (`block_src`) | පිටතින් එන ප්‍රහාරකයාගේ IP එක drop කර කැමරාවේ bandwidth එක බේරා ගනී. |
-| **Okiru** | Inbound to Camera | Drop Source IP (`block_src`) | කැමරාව ආසාදනය කිරීමට එන botnet scan එක නවත්වයි. |
-| **PortScan** | Inbound to Camera | Drop Source IP (`block_src`) | ස්කෑනර් එකේ IP එක drop කරයි. |
-| **CnC** | Outbound from Camera | Drop Destination IP (`block_dst`) | **ඉතා වැදගත්:** කැමරාව block කළහොත් NVR video එක නවතී. එම නිසා කැමරාව block නොකර, පිටත ඇති C&C server එක පමණක් drop කරයි. |
+| **Benign** | Both | No Action (`none`) | සාමාන්‍ය traffic කිසිවිටෙකත් block නොකරයි. |
+| **DDoS_DoS** | Inbound to Camera | Drop Source IP (`block_src`) | පිටතින් එන ප්‍රහාරකයා drop කර කැමරාවේ bandwidth එක බේරා ගනී. |
+| **PortScan** | Inbound to Camera | Drop Source IP (`block_src`) | Repeated sweeps වලින් පසු scanner IP එක drop කරයි. |
+| **CnC** | Outbound from Camera | Drop Destination IP (`block_dst`) | **අතිශය වැදගත්:** කැමරාව block කළහොත් NVR stream එක නවතී. එම නිසා කැමරාව block නොකර, පිටත ඇති C&C server එක පමණක් drop කරයි. |
+| **Malware_Download** | Inbound / Outbound | Quarantine / Drop (`block_src`) | Botnet payload බාගත කිරීම නවත්වයි. |
 
 ### 6.2 ආරක්ෂණ Guardrails 7 (Sequential Safety Guardrails)
-1. **Allowlist Immunity:** Gateway (`192.168.50.1`), Sensor (`192.168.50.5`), Admin PC (`192.168.50.10`), සහ NVR (`192.168.50.20`) කිසිම හේතුවක් මත ස්වයංක්‍රීයව හෝ අතින් block කළ නොහැක (`AllowlistImmunityError`).
+1. **Allowlist Immunity:** Gateway (`192.168.50.1`), Sensor (`192.168.50.5`), Admin PC (`192.168.50.10`), සහ NVR (`192.168.50.20`) කිසිම හේතුවක් මත block කළ නොහැක (`AllowlistImmunityError`).
 2. **Subnet Confinement:** ඉලක්කගත IP එක අනුමත පර්යේෂණ subnet එක (`192.168.50.0/24`) තුළ පවතීදැයි පරීක්ෂා කිරීම.
 3. **Threshold Check:** Calibrated probability අගය නියමිත operational threshold එක ඉක්මවන්නේ නම් පමණක් active mitigation සක්‍රීය වීම.
-4. **Repeat Coalescing Sliding-Window:** ප්‍රහාරයකදී එකම IP එකෙන් තත්පරයකට flows දහස් ගණනක් එන විට, Firewall එකට එකම rule එක නැවත නැවත දැමීම වැළැක්වීමට `collections.deque` මත පදනම් වූ sliding memory window එකක් මගින් flood එක coalesce කිරීම.
+4. **Repeat Coalescing Sliding-Window:** ප්‍රහාරයකදී එකම IP එකෙන් තත්පරයකට flows දහස් ගණනක් එන විට, Firewall එකට එකම rule එක නැවත නැවත දැමීම වැළැක්වීමට sliding memory window එකක් මගින් flood එක coalesce කිරීම.
 5. **Auto-Expiry Duration Clamping:** නීති සදාකාලිකව නොරැඳෙන අතර, උපරිම කාලය මිනිත්තු 60 කට සීමා කිරීම (Default: මිනිත්තු 30).
 6. **Non-Blocking Asynchronous Execution:** Firewall විධාන ධාවනය වන විට packet processing ප්‍රමාද නොවී පසුබිම් threads මගින් ක්‍රියාත්මක වීම.
 7. **Permanent Audit Trail:** සෑම තීරණයක්ම MongoDB `response_actions` collection එකේ ස්ථිරව සටහන් වීම.
@@ -271,7 +290,6 @@ Proposal Table 6 අනුව අප ගණනය කරන විශේෂා�
 # 7. Firewall Adapter පද්ධතිය සහ Kernel Auto-Expiry
 
 ### 7.1 Linux Kernel Auto-Expiry (nftables)
-- සාම්ප්‍රදායික `iptables` වලදී block කළ IP එකක් නැවත ඉවත් කිරීමට වෙනම background cron script එකක් ලිවිය යුතුය (එම script එක crash වුවහොත් IP සදාකාලිකව block වේ).
 - අපගේ පද්ධතියේදී Linux Kernel එකේ **`nftables` Dynamic Sets** භාවිත කරන්නේ `flags timeout` සහිතවය:
   ```bash
   sudo nft add element bridge ids block_src '{ 10.10.10.50 timeout 30m }'
@@ -283,15 +301,15 @@ Proposal Table 6 අනුව අප ගණනය කරන විශේෂා�
 - **වැදගත්:** මෙහි කිසිසේත්ම `ip daddr @allow accept` යොදා නැත. මන්ද destination allowlist දැමුවහොත්, block කරන ලද පිටත ප්‍රහාරකයෙකුට NVR එක හෝ Admin PC එක වෙත bypass වී පහර දීමට හැකි වන බැවිනි.
 
 ### 7.3 Adapters 3 ක ක්‍රියාකාරීත්වය
-- **`NftablesAdapter` (Inline Mode):** Sensor පරිගණකයට Network Cards 2 ක් දමා inline transparent bridge එකක් ලෙස තබා සෘජුව kernel commands ක්‍රියාත්මක කිරීමට.
-- **`RouterAdapter` (Passive SPAN Mode):** Sensor එක SPAN port එකක ඇති විට packet drop කළ නොහැකි බැවින්, SSH හරහා upstream OpenWrt / Linux edge router එක වෙත command යවා router මට්ටමින් packets drop කිරීමට.
+- **`NftablesAdapter` (Inline Mode):** Sensor පරිගණකය inline transparent bridge එකක් ලෙස තබා සෘජුව kernel commands ක්‍රියාත්මක කිරීමට.
+- **`RouterAdapter` (Passive SPAN Mode):** Sensor එක SPAN port එකක ඇති විට packet drop කළ නොහැකි බැවින්, SSH හරහා upstream OpenWrt / Linux edge router එක වෙත command යවා Layer 3 හිදී block කිරීමට.
 - **`SimulationAdapter` (Development Mode):** Windows සංවර්ධන පරිගණකයේදී කිසිදු network adapter එකකට හානි නොකර memory තුළ rules නිරීක්ෂණය කර පරීක්ෂා කිරීමට (`is_simulated = True`).
 
 ---
 
 # 8. Backend REST API, Database එක සහ React SOC Dashboard එක
 
-### 8.1 Backend සේවා (Flask & Socket.IO)
+### 8.1 Backend සේවා (Flask & Socket.IO - Dilshan ගේ කොටස)
 - Port 5000 මත Flask server එක ධාවනය වේ.
 - **REST Endpoints 15 ක්:**
   - `/api/auth/login`, `/api/auth/me`, `/api/auth/logout` (JWT Authentication)
@@ -313,20 +331,34 @@ Proposal Table 6 අනුව අප ගණනය කරන විශේෂා�
 8. `settings`: Dynamic detection thresholds සහ allowlists.
 9. `traffic_summaries`: පැය 24 ක traffic ප්‍රමාණ සාරාංශ.
 
-### 8.3 React SOC Dashboard (Canonical පිටු 7)
-- Proposal Table 8 අනුව නිර්මාණය කර ඇත:
-  - **Overview:** KPI cards, live chart, active blocks.
-  - **Live Alerts:** WebSocket alerts stream.
-  - **Attack History:** පෙර සිදුවීම් filter කර සෙවීම.
-  - **Devices & Scans:** Nmap scan trigger කිරීම සහ කැමරා තහවුරු කිරීම ("Confirm as IP Camera").
-  - **Blocklist / Mitigations:** සක්‍රීය blocks, countdown timers, සහ manual block/unblock.
-  - **Settings:** Operational thresholds සහ allowlist නිරීක්ෂණය.
-  - **Logs & Export:** RFC 4180 CSV / JSON forensic වාර්තා බාගත කිරීම.
+### 8.3 React SOC Dashboard (Canonical පිටු 7 - Dilshara ගේ කොටස)
+1. **Overview:** KPI cards, live chart, active blocks.
+2. **Live Alerts:** WebSocket alerts stream සහ manual confirm බොත්තම.
+3. **Attack History:** පෙර සිදුවීම් filter කර සෙවීම.
+4. **Devices & Scans:** Nmap scan trigger කිරීම සහ කැමරා තහවුරු කිරීම ("Confirm as IP Camera").
+5. **Blocklist / Mitigations:** සක්‍රීය blocks, countdown timers, සහ manual block/unblock.
+6. **Settings:** Operational thresholds සහ allowlist නිරීක්ෂණය.
+7. **Logs & Export:** RFC 4180 CSV / JSON forensic වාර්තා බාගත කිරීම.
 - **Operator Badges:** Model එකෙන් ආ අනාවැකියක් ("MODEL PREDICTION") සහ පරිපාලක තහවුරු කළ සිදුවීමක් ("CONFIRMED INCIDENT") අතර වෙනස dashboard එකෙහි පැහැදිලි visual badges මගින් පෙන්වයි.
 
 ---
 
-# 9. පද්ධතිය ධාවනය කිරීම සහ සජීවීව පෙන්වීම
+# 9. Proposal Table 10 හි පාලිත ප්‍රහාර අවස්ථා 6 (Controlled Test Scenarios)
+
+Supervisor විසින් "ඔබගේ පද්ධතිය සැබෑ පරිසරයක පරීක්ෂා කරන්නේ කෙසේද?" කියා ඇසුවහොත්, Proposal Table 10 හි ඇති පාලිත අවස්ථා 6 මෙසේ පැහැදිලි කරන්න:
+
+| Scenario | පරීක්ෂා කරන ආකාරය (Test Method) | පද්ධතියෙන් බලාපොරොත්තු වන ප්‍රතිචාරය | ආරක්ෂණ ප්‍රතිඵලය (Safe Result) |
+| :--- | :--- | :--- | :--- |
+| **1. Normal Live Streaming & Playback** | කැමරාවේ RTSP stream එක NVR එකට සහ පරිපාලක PC එකට එක දිගට ගලා යාමට ඉඩ හැරීම. | බොහෝ flows `Benign` ලෙස වර්ගීකරණය වේ. High-confidence attack events නැත. | **No Automatic Block.** වීඩියෝ දර්ශන කිසිදු බාධාවකින් තොරව පටිගත වේ. |
+| **2. Authorised Nmap Horizontal Scan** | පරීක්ෂණ පරිගණකයක සිට කැමරා subnet එකට `nmap -sS -p 1-1024 192.168.50.0/24` ධාවනය කිරීම. | Flows `PortScan` ලෙස හඳුනා ගැනේ. | Repeated threshold ඉක්මවූ පසු Scanner IP එක block වේ. Allowlist හි ඇති Admin PC එක block නොවේ. |
+| **3. Rate-limited DDoS-like Traffic** | Hping3 මගින් කැමරාවේ RTSP port (554) වෙත සීමිත TCP SYN flood එකක් එල්ල කිරීම. | Flows `DDoS_DoS` ලෙස හඳුනා ගැනේ (Confidence $\ge 0.70$). | Inbound Attacker Source IP එක block වේ. කැමරාවේ bandwidth එක යථා තත්ත්වයට පත්වේ. |
+| **4. C&C-like Periodic Outbound Simulation** | ආසාදිත කැමරාවක් අනුකරණය කරමින් පිටත IP එකක් වෙත කාලානුරූපී heartbeat packets යැවීම. | Flows `CnC` ලෙස හඳුනා ගැනේ (Confidence $\ge 0.60$). | **Direction-aware:** පිටත C&C Server IP එක පමණක් block වේ (`block_dst`). කැමරාව NVR එකට වීඩියෝ යැවීම අඛණ්ඩව සිදුවේ. |
+| **5. Controlled File-Transfer Pattern** | කැමරාව තුළට අනවසර binary එකක් download කරවීමට උත්සාහ කිරීම. | `Malware_Download` අනාවැකිය ලැබී Alert එකක් සහ Evidence එකක් සටහන් වේ. | Botnet download එක නවත්වයි. |
+| **6. Manual Block and Unblock** | React Dashboard එකෙහි Blocklist පිටුවෙන් IP එකක් අතින් block කර නැවත unblock කිරීම. | Dashboard එකේ සහ Database එකේ rule change එක ක්ෂණිකව දිස්වේ. | සම්බන්ධතාවය යථා තත්ත්වයට පත්වේ. සම්පූර්ණ විගණන ලේඛනයක් (Audit log) සටහන් වේ. |
+
+---
+
+# 10. පද්ධතිය ධාවනය කිරීම සහ සජීවීව පෙන්වීම
 
 ඔබේ පරිගණකයේ පද්ධතිය ධාවනය කිරීමට පහත විධාන භාවිත කරන්න:
 
@@ -364,15 +396,34 @@ cd "D:\intrusion detection"
 
 ---
 
-# 10. Viva / Review විභාග ප්‍රශ්නෝත්තර බැංකුව (Top 25 Viva Defense Questions)
+# 11. Meeting එකට මුහුණ දෙන අයුරු (Survival Guide for Dilshan)
 
-ඕනෑම අධීක්ෂකවරයෙකු හෝ බාහිර පරීක්ෂකවරයෙකු අසන ප්‍රධානතම තාක්ෂණික ප්‍රශ්න 25 සහ ඒවාට දිය යුතු නිවැරදි පිළිතුරු මෙසේය:
+ඔබට තාක්ෂණික කාරණා ගැඹුරින් මතක නැති වුවද, Supervisor සමග පවත්වන සාකච්ඡාවේදී පහත කරුණු 4 අනුපිළිවෙලින් ප්‍රකාශ කරන්න:
+
+### 1. මුලින්ම කියන හැඳින්වීම (The 1-Minute Pitch):
+> *"Sir, අපේ project එකේ පියවර 0 සිට 33 දක්වා සම්පූර්ණයෙන්ම සාර්ථකව අවසන් කර ඇත. IoT-23 dataset එක පිරිසිදු කර, Random Forest ML ආකෘතිය පුහුණු කර, Flask සහ MongoDB Backend එක, React SOC Dashboard එක, සහ Linux Firewall Adapters සකස් කර ඇත. පද්ධතියේ විශ්වසනීයත්වය තහවුරු කිරීමට Automated Tests 204 ක් ලියා ඇති අතර සියල්ල 100% ක් pass වේ."*
+
+### 2. "Dilshan ඔයා කරපු කොටස මොකක්ද?" කියා ඇසුවහොත්:
+> *"Sir, මගේ ප්‍රධාන වගකීම Backend services, traffic-processing integration, සහ database එකයි (Proposal Table 2). මම Zeek streaming logs කියවන Zeek Adapter එක, Port 5000 Flask REST API එක සහ Socket.IO real-time server එක, MongoDB collections 9 කළමනාකරණය, JWT/Bcrypt authentication, සහ Forensic Log Export සේවාව ගොඩනැගුවෙමි."*
+
+### 3. "මේක වැඩ කරන විදිය පෙන්නන්න" කිව්වොත්:
+1. Terminal එකේ `npm start` සහ `python core_engine/app.py` දමා Dashboard එක Open කරන්න.
+2. **Devices & Scans** පිටුවට ගොස් **"TRIGGER NMAP"** ක්ලික් කර Network එකේ Hikvision NVR එක සහ Dahua Camera එක auto-discover වන ආකාරය පෙන්වන්න.
+3. **Overview** සහ **Live Alerts** පිටුවල Socket.IO හරහා සජීවීව alerts එන ආකාරය පෙන්වන්න.
+4. අවසාන වශයෙන් Terminal එකේ `pytest tests/ -v` run කර tests 204 ම pass වන ආකාරය පෙන්වන්න.
+
+### 4. "ඉදිරියට කරන්න තියෙන්නේ මොනවාද?" කියා ඇසුවහොත්:
+> *"Sir, මීළඟට Step 34 හිදී Backend Restart Crash Recovery logic එක අවසන් කරනවා. ඉන්පසු Phase 9 හිදී Physical Lab Hardware (Managed Switch + IP Camera) මත Proposal Table 10 හි ඇති පාලිත ප්‍රහාර අවස්ථා 6 ධාවනය කර සැබෑ latency/throughput metric මැනීමට නියමිතයි."*
+
+---
+
+# 12. Viva / Review විභාග ප්‍රශ්නෝත්තර බැංකුව (Top 25 Viva Defense Questions)
 
 #### Q1: මෙම පද්ධතියේ ප්‍රධාන පරමාර්ථය කුමක්ද?
 > **A:** IP කැමරා IoT ජාල වලට එල්ල වන සයිබර් ප්‍රහාර (DDoS, Botnets, Scans, CnC) network flow මට්ටමින් තත්‍ය කාලීනව හඳුනාගෙන, නීත්‍යානුකූල video streaming සේවාවන්ට බාධාවක් නොවන සේ මිනිස් මැදිහත්වීමකින් තොරව Linux firewall හෝ router මට්ටමින් sub-second කාලයකදී ස්වයංක්‍රීයව mitigate කිරීමයි.
 
 #### Q2: ඔබ පුහුණු කිරීමට භාවිත කළ දත්ත කට්ටලය කුමක්ද? පැරණි KDD / CICIDS භාවිත නොකළේ ඇයි?
-> **A:** අපි භාවිත කළේ චෙක් ජනරජයේ Avast සහ CTU විශ්වවිද්‍යාලය සකස් කළ නිල **IoT-23 Dataset** එකයි. KDD99 හෝ CICIDS2017 සාමාන්‍ය පරිගණක ජාල වල පැරණි දත්ත වන අතර ඒවායේ IP කැමරා වල RTSP video streaming හෝ lightweight IoT firmware හැසිරීම් නොමැත. IoT-23 හි සැබෑ IoT devices ආසාදනය කළ botnet captures 23 කින් සමන්විත flows මිලියන 325.3 ක සැබෑ දත්ත අඩංගු වේ.
+> **A:** අපි භාවිත කළේ නිල **IoT-23 Dataset** එකයි. KDD99 හෝ CICIDS2017 සාමාන්‍ය පරිගණක ජාල වල පැරණි දත්ත වන අතර ඒවායේ IP කැමරා වල RTSP video streaming හෝ lightweight IoT firmware හැසිරීම් නොමැත. IoT-23 හි සැබෑ IoT devices ආසාදනය කළ botnet captures 23 කින් සමන්විත flows මිලියන 325.3 ක සැබෑ දත්ත අඩංගු වේ.
 
 #### Q3: ඔබ තෝරාගත් Machine Learning Model එක කුමක්ද? ඇයි ඒක තෝරාගත්තේ?
 > **A:** අපි තෝරාගත්තේ **Random Forest Classifier** (Estimators 150, Max Depth 25). Logistic Regression සහ Histogram Gradient Boosting සමග සංසන්දනය කිරීමේදී (Step 15), Random Forest මගින් එක් flow එකක් වර්ගීකරණය කිරීමට ගතවන්නේ **6.46 Microseconds (µs)** ක් පමණි. එසේම feature importances සහ decision rules විගණනය කළ හැකි වීම (Auditability) cybersecurity සඳහා ඉතා වැදගත් වේ.
