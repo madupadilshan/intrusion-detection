@@ -39,14 +39,22 @@
   2. කැමරාව තුළම Antivirus හෝ Agent මෘදුකාංග ධාවනය කළ නොහැක (Firmware closed-source සහ CPU/RAM සීමිත බැවින්).
   3. සාමාන්‍ය Firewall එකකින් කැමරාවේ IP එක වැරදීමකින් block කළහොත්, ආරක්ෂක වීඩියෝ දර්ශන පටිගත වීම (NVR stream) මුළුමනින්ම ඇණහිටී (False positive disruption).
 
-### 1.2 අපගේ විසඳුම සහ පර්යේෂණ අරමුණු (Aim & Objectives O1–O6)
-අප විසින් IP කැමරා සඳහාම වෙන්වූ **Edge-based Real-Time Intrusion Detection and Autonomous Response System** එකක් නිර්මාණය කර ඇත:
-- **Objective O1:** IP කැමරා පරිසරයන් සඳහා ගැලපෙන, ලේබල් කරන ලද යාවත්කාලීන දත්ත කට්ටලයක් (IoT-23) පිරිසිදු කර සූදානම් කිරීම.
-- **Objective O2:** Network flow-level features 19 ක් මත පදනම්ව, අඩු සම්පත් භාවිතයකින් (Lightweight) ඉහළ නිරවද්‍යතාවයකින් ප්‍රහාර හඳුනාගත හැකි Machine Learning model එකක් පුහුණු කිරීම.
-- **Objective O3:** ප්‍රහාර හඳුනාගැනීම සහ සැබෑ IP කැමරා නිරීක්ෂණ ජාලයක නීත්‍යානුකූල video streaming වලට බාධා නොවන බව (FPR $\le 5\%$) තහවුරු කිරීම.
-- **Objective O4:** ප්‍රහාරයක දිශාව හඳුනාගෙන (Direction-aware) මිනිස් මැදිහත්වීමකින් තොරව Linux Firewall (nftables) හෝ Router මගින් sub-second කාලයකදී ප්‍රහාරකයා ස්වයංක්‍රීයව drop කිරීම.
-- **Objective O5:** පරිපාලකවරුන් සඳහා නිරීක්ෂණ Dashboard එකක් (React SOC Dashboard) සහ විගණන වාර්තාකරණය (Forensic Export) සැපයීම.
-- **Objective O6:** පාලිත ප්‍රහාර අවස්ථා 6 (Controlled Test Scenarios) යටතේ පද්ධතියේ latency, throughput, සහ reliability සම්පූර්ණයෙන්ම ඇගයීම.
+### 1.2 අපගේ විසඳුම, මූලික පරමාර්ථය සහ පර්යේෂණ අරමුණු (Aim & Objectives O1–O6)
+
+**මූලික පරමාර්ථය (Aim per Proposal Section 1.5):**
+> *"To design and test a real-time machine-learning system for intrusion detection and controlled response in small IP-camera IoT networks."*  
+> (කුඩා IP කැමරා IoT ජාල සඳහා තත්‍ය කාලීන මැෂින් ලර්නින් ආක්‍රමණ හඳුනාගැනීමේ සහ පාලිත ප්‍රතිචාර දැක්වීමේ පද්ධතියක් සැලසුම් කිරීම සහ පරීක්ෂා කිරීම.)
+
+**Proposal Table 3 හි දක්වා ඇති නිල පර්යේෂණ අරමුණු 6 (Objectives O1–O6 and Verification Measures):**
+
+| ID | Proposal එකෙහි ඇති මුල් ඉංග්‍රීසි අරමුණ (What we will do) | නිවැරදි සිංහල අර්ථය | එය සනාථ කරන සාක්ෂිය (How we will show it) |
+| :--- | :--- | :--- | :--- |
+| **O1** | **Build an IoT-23 preprocessing and label-mapping pipeline that anyone can repeat.** | ඕනෑම කෙනෙකුට නැවත කළ හැකි පරිදි IoT-23 දත්ත පිරිසිදු කිරීමේ සහ label-mapping පයිප්පලය ගොඩනැගීම. | Dataset check, code with versions, and a data-quality report (`reports/data_quality_report.md`) |
+| **O2** | **Train and test a multi-class Random Forest with no scenario leakage.** | Scenario leakage එකක් නොවන පරිදි (Grouped CV මගින්) multi-class Random Forest මොඩලයක් පුහුණු කිරීම සහ පරීක්ෂා කිරීම. | Grouped cross-validation, and scores from a scenario we left out (`Capture-34-1`) |
+| **O3** | **Make flow features from live IP-camera traffic that match the dataset.** | සජීවී IP කැමරා traffic වලින් IoT-23 dataset එකේ 19 features වලට 100% ක් ගැළපෙන flow features සෑදීම (Zeek streaming pipeline). | Schema check, and offline features compared with live features (`reports/schema_check.md`) |
+| **O4** | **Build the monitoring, dashboard, storage and alerts, and join them together.** | Network monitoring, React SOC dashboard, MongoDB storage, සහ real-time alerts සාදා ඒවා එකිනෙක සම්බන්ධ කිරීම. | Tests of the whole system, and the measured time to update |
+| **O5** | **Build IP blocking that follows the policy, and let the admin undo it by hand.** | Response Policy එකට අනුව firewall IP blocking ක්‍රියාත්මක කිරීම සහ පරිපාලකයාට එය අතින් undo (unblock) කිරීමට ඉඩදීම. | Approved lab tests, audit log, and an unblock check |
+| **O6** | **Test how well it detects, how fast it runs, and how much it uses.** | පද්ධතිය කෙතරම් නිවැරදිව හඳුනාගන්නේද, කෙතරම් වේගයෙන් ධාවනය වන්නේද (Latency), සහ කොපමණ සම්පත් (CPU/RAM) ප්‍රමාණයක් භාවිත කරන්නේදැයි පරීක්ෂා කිරීම. | Macro-F1, recall for each class, FPR, response time and resource use |
 
 ### 1.3 කණ්ඩායම් සාමාජිකයින්ගේ කාර්යභාරය (Proposal Table 2)
 Supervisor හෝ Reviewers වරුන් කණ්ඩායමේ එක් එක් සාමාජිකයා කළ කාර්යයන් ඇසුවහොත්, Proposal Table 2 අනුව පිළිතුරු මෙසේය:
