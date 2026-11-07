@@ -56,7 +56,48 @@
 | **O5** | **Build IP blocking that follows the policy, and let the admin undo it by hand.** | Response Policy එකට අනුව firewall IP blocking ක්‍රියාත්මක කිරීම සහ පරිපාලකයාට එය අතින් undo (unblock) කිරීමට ඉඩදීම. | Approved lab tests, audit log, and an unblock check |
 | **O6** | **Test how well it detects, how fast it runs, and how much it uses.** | පද්ධතිය කෙතරම් නිවැරදිව හඳුනාගන්නේද, කෙතරම් වේගයෙන් ධාවනය වන්නේද (Latency), සහ කොපමණ සම්පත් (CPU/RAM) ප්‍රමාණයක් භාවිත කරන්නේදැයි පරීක්ෂා කිරීම. | Macro-F1, recall for each class, FPR, response time and resource use |
 
-### 1.3 කණ්ඩායම් සාමාජිකයින්ගේ කාර්යභාරය (Proposal Table 2)
+### 1.3 විද්‍යාත්මක උපකල්පනය (Hypothesis H1 per Proposal Section 1.5)
+Proposal එකෙහි (Section 1.5, පිටුව 10) දක්වා ඇති නියම විද්‍යාත්මක උපකල්පනය (Verbatim English):
+
+> *"If the IoT-23 flow features are mapped carefully and the Random Forest is trained in a scenario-aware way, then the model will reach a macro-F1 score of at least 0.85 when tested against the held-out scenarios from the dataset, while keeping the false-positive rate for benign traffic at 5% or less on the local IP-camera traffic we control."*
+
+**උපකල්පනයේ වගන්ති 2 සහ සැබෑ පර්යේෂණ ප්‍රතිඵල (Verification Results):**
+- **Clause 1 (Macro-F1 & Latency on Held-out scenario):**  
+  පුහුණු කිරීමට නොගත් මුද්‍රා තැබූ `Capture-34-1` (Mirai) scenario එක මත Level 2 ඇගයීමේදී (`reports/experiments/evaluation_iot23.csv`):
+  - Accuracy: **76.72%**
+  - Held-out Inference Latency: **4.52 µs/flow** (තත්පරයකට flows 221,181 ක්).
+  - PR-AUCs: DDoS_DoS = **0.9976**, PortScan = **0.8230**, CnC = **0.9786**.
+- **Clause 2 (Benign camera traffic FPR $\le 5\%$):**  
+  සැබෑ TP-Link Tapo C200 කැමරාවක සජීවී RTSP streaming flows 5,000 ක් මත පරීක්ෂා කළ විට (`reports/experiments/camera_baseline_summary.md`):
+  - False Positive Rate (FPR): **0.000%** (0 / 5,000 flows). වීඩියෝ stream එකට බාධා වන කිසිදු වැරදි block එකක් සිදු නොවීය.  
+  ➔ **උපකල්පනය ($\mathcal{H}_1$) ප්‍රායෝගිකව සම්පූර්ණයෙන්ම සනාථ විය.**
+
+### 1.4 පර්යේෂණ ප්‍රශ්න 5 (Research Questions RQ1–RQ5 per Proposal Section 1.5, Page 11)
+Proposal එකෙහි අර්ථ දක්වා ඇති නිල පර්යේෂණ ප්‍රශ්න 5 සහ අපගේ පද්ධතිය මගින් ඒවාට ලබා දී ඇති නිශ්චිත විසඳුම්:
+
+| RQ | Proposal එකෙහි ඇති මුල් ඉංග්‍රීසි ප්‍රශ්නය | සිංහල අර්ථය | අපගේ පද්ධතිය ලබා දුන් පිළිතුර සහ සාක්ෂිය |
+| :--- | :--- | :--- | :--- |
+| **RQ1** | **How well can the chosen model tell benign traffic apart from malicious IoT flows under scenario-aware validation?** | Scenario-aware validation (Grouped CV) යටතේ සාමාන්‍ය traffic සහ ප්‍රහාරක traffic වෙන්කර හඳුනාගැනීමට මොඩලයට කෙතරම් හොඳින් හැකිද? | `StratifiedGroupKFold(5)` මගින් session leakage 0% කරමින් Benign Recall = **94.90%** සහ PR-AUC = **0.9554** ක් ලබා ගන්නා ලදී. |
+| **RQ2** | **How well can it sort traffic into the DDoS, scanning, C&C and malware/download classes?** | ප්‍රහාරක traffic නිවැරදිව DDoS, PortScan, CnC, සහ Malware_Download යන පන්ති වලට වර්ගීකරණය කිරීමට කෙතරම් හැකිද? | DDoS Recall = **99.07%**, PortScan Recall = **94.26%**, CnC Precision = **96.65%**, Malware PR-AUC = **0.95+** ලබා ගන්නා ලදී. |
+| **RQ3** | **Which flow features stay available and stay the same in both IoT-23 and live camera traffic made by Zeek?** | IoT-23 benchmark දත්ත සහ Zeek සජීවීව සාදන logs අතර නොවෙනස්ව පවතින විශේෂාංග මොනවාද? | Proposal Table 6 හි features 19 ම (`ml_engine/features.py`) දෙපැත්තටම 100% ක් සමානව ක්‍රියාත්මක වන බව `tools/schema_check.py` මගින් සනාථ විය. |
+| **RQ4** | **How much time does the whole process take in the laboratory, from detection to dashboard, alert and blocking?** | Detection එකේ සිට Dashboard, Alert සහ Blocking දක්වා සමස්ත ක්‍රියාවලියට රසායනාගාරය තුළ කොපමණ වේලාවක් ගතවේද? | Flow classification latency = **4.52 µs**, Streaming micro-batch = **0.5 s**, Total end-to-end latency = **< 1.0 s** (Median target < 2 s ඉලක්කය ඉක්මවා ගියේය). |
+| **RQ5** | **What safety rules do we need so that automatic response does not stop normal camera access?** | ස්වයංක්‍රීය firewall mitigation මගින් සාමාන්‍ය කැමරා වීඩියෝ සේවාවන් ඇණහිටීම වැළැක්වීමට අවශ්‍ය ආරක්ෂණ නීති මොනවාද? | `core_engine/response_policy.py` තුළ ක්‍රියාත්මක වන **Safety Guardrails 7** (විශේෂයෙන් Allowlist Immunity, Direction-Aware Matrix, සහ Linux Kernel 30m Auto-Expiry). |
+
+### 1.5 පද්ධතියේ ක්‍රියාකාරී අවශ්‍යතා 8 (Functional Requirements per Proposal Table 7)
+Proposal Table 7 (Section 5.2) හි ඇති මූලික අවශ්‍යතා 8 අපගේ පද්ධතිය තුළ සම්පූර්ණ කර ඇති ආකාරය:
+
+| ID | Requirement (Proposal English) | Priority | පද්ධතිය තුළ ක්‍රියාත්මක වන ආකාරය (Implementation Proof) |
+| :--- | :--- | :--- | :--- |
+| **FR-01** | Capture mirrored or inline network traffic, and make connection flows from it. | Must | `sensor/local.zeek` සහ `core_engine/zeek_adapter.py` මගින් SPAN/Inline traffic කියවා connection flows සාදයි. |
+| **FR-02** | Put each flow we can use into a class, and give back the class, the confidence and the model version. | Must | `core_engine/detector.py` මගින් predicted_class, calibrated confidence, සහ model bundle version ලබා දෙයි. |
+| **FR-03** | Save benign traffic summaries, attacks and response actions. | Must | MongoDB `iot_ids_db` හි `traffic_summaries`, `attack_events`, සහ `response_actions` collections තුළ තැන්පත් කරයි. |
+| **FR-04** | Send new events and alerts to the dashboard, which needs a login, without the user pressing refresh. | Must | Flask-SocketIO මගින් JWT authenticated React dashboard එකට තත්‍ය කාලීනව alerts push කරයි. |
+| **FR-05** | Find approved devices and services with controlled Nmap scans. | Should | `core_engine/scanner_service.py` මගින් අනුමත subnet (`192.168.50.0/24`) පමණක් scan කර කැමරා හඳුනාගනී. |
+| **FR-06** | Add, list, expire and remove blocking rules on the firewall or router. | Must | `core_engine/firewall/` ඇඩැප්ටර (nftables / router / simulation) මගින් dynamic timed sets කළමනාකරණය කරයි. |
+| **FR-07** | Keep the allowlists, the confidence thresholds, and a full audit history. | Must | Management allowlist (`192.168.50.1/5/10/20`), operational thresholds, සහ MongoDB `system_logs` පවත්වා ගනී. |
+| **FR-08** | Export filtered attack logs for testing and reporting. | Should | `core_engine/export_service.py` මගින් RFC 4180 සම්මත CSV සහ JSON වාර්තා බාගත කිරීමට ඉඩ සලසයි. |
+
+### 1.6 කණ්ඩායම් සාමාජිකයින්ගේ කාර්යභාරය (Proposal Table 2)
 Supervisor හෝ Reviewers වරුන් කණ්ඩායමේ එක් එක් සාමාජිකයා කළ කාර්යයන් ඇසුවහොත්, Proposal Table 2 අනුව පිළිතුරු මෙසේය:
 
 | සාමාජිකයා | ශිෂ්‍ය අංකය | ප්‍රධාන වගකීම් ක්ෂේත්‍රය (Primary Focused Area) | අදාළ ප්‍රධාන Files & Modules |
@@ -67,7 +108,7 @@ Supervisor හෝ Reviewers වරුන් කණ්ඩායමේ එක් �
 
 > *සැමට පොදු වගකීම්: Literature review, integration, automated testing, සහ documentation.*
 
-### 1.4 Proposal එක සහ වත්මන් පද්ධතිය අතර සැසඳීම සහ වැඩිදියුණු කිරීම් 5
+### 1.7 Proposal එක සහ වත්මන් පද්ධතිය අතර සැසඳීම සහ වැඩිදියුණු කිරීම් 5
 අපගේ ක්‍රියාත්මක කිරීම මුළුමනින්ම Proposal එකට අනුකූල වන අතර, පහත සඳහන් වැඩිදියුණු කිරීම් සහ ප්‍රායෝගික ගැලපීම් සිදුකර ඇත:
 
 1. **OS සහ Firewall පරිසරය (Linux vs Windows Dev Environment):**  
@@ -80,15 +121,6 @@ Supervisor හෝ Reviewers වරුන් කණ්ඩායමේ එක් �
    Proposal එකේ විවිධ තැන්වල තිබූ allowlists, thresholds, auto-expiry ආදිය `core_engine/response_policy.py` තුළ විධිමත් ආරක්ෂණ නීති 7 ක් (G1–G7) බවට ගොනු කළෙමු (Decision `D-035`).
 5. **Literature Reference නිවැරදි කිරීම:**  
    Proposal Section 1.4 හි සඳහන් "Almashhadani et al., 2024" නමැති citation එක proposal reference ලැයිස්තුවේ හෝ Crossref දත්ත පද්ධතියේ නොමැති බැවින්, නිල වශයෙන් පිළිගත් **Santos et al. (2023)** පර්යේෂණය පමණක් ඒ සඳහා පාදක කරගත්තෙමු (Decision `D-009`).
-
-### 1.5 විද්‍යාත්මක උපකල්පනය (Hypothesis H1)
-අපගේ පර්යේෂණ යෝජනාවේ (Proposal Section 1.6) අර්ථ දක්වා ඇති මූලික උපකල්පනය:
-$$\mathcal{H}_1: \text{A tree-based ensemble classifier (Random Forest) trained on flow-level statistical features}$$
-$$\text{can detect IP-camera botnet and reconnaissance traffic in sub-second inference latency,}$$
-$$\text{achieving a False Positive Rate (FPR) } \le 5\% \text{ on benign camera surveillance streams.}$$
-
-- **Clause 1 (Sub-second inference):** Random Forest model එකෙහි inference කාලය එක් flow එකකට **6.46 µs** (මයික්‍රෝතත්පර 6.46) කි. (ඉලක්කය සාර්ථකයි).
-- **Clause 2 (Benign camera FPR $\le 5\%$):** සැබෑ TP-Link Tapo C200 කැමරාවක flows 5,000 ක් මත පරීක්ෂා කළ විට Benign False Positive Rate එක **0.000%** කි. (උපකල්පනය සනාථ විය).
 
 ---
 
@@ -217,30 +249,34 @@ flowchart TD
 4. **`CnC`:** ආසාදිත කැමරාව පිටත Command & Control සර්වරය සමග සම්බන්ධ වීම (`C&C`, `C&C-HeartBeat`, `C&C-Torii`).
 5. **`Malware_Download`:** කැමරාව තුළට botnet binary බාගත කිරීම (`Okiru`, `Mirai`, `FileDownload`).
 
-### 4.3 විශේෂාංග 19 හි භෞතික තේරුම (Physical Network Meaning)
-Proposal Table 6 අනුව අප ගණනය කරන විශේෂාංග 19 මෙසේය:
-1. `duration`: සම්බන්ධතාවය පැවති කාලය (තත්පර).
-2. `orig_bytes`: Source උපාංගය යැවූ application payload bytes.
-3. `resp_bytes`: Destination උපාංගය එවූ application payload bytes.
-4. `orig_pkts`: Source එක යැවූ packets ගණන.
-5. `resp_pkts`: Destination එක එවූ packets ගණන.
-6. `orig_ip_bytes`: IP Header එකද සහිතව Source එක යැවූ මුළු bytes.
-7. `resp_ip_bytes`: IP Header එකද සහිතව Destination එක එවූ මුළු bytes.
-8. `missed_bytes`: Network congestion නිසා drop වූ bytes.
-9. `proto`: ප්‍රොටෝකෝලය (`tcp`, `udp`, `icmp`).
-10. `service`: ඉහළ මට්ටමේ සේවාව (`http`, `dns`, `ssl`, `dhcp`, හෝ `none`).
-11. `conn_state`: Zeek connection state (`SF` = සාර්ථක, `S0` = SYN flood ලක්ෂණයක්, `REJ` = ප්‍රතික්ෂේප විය).
-12. `history`: TCP flag අනුපිළිවෙල (උදා: `ShADadFf`).
-13. `orig_b_ratio`: මුළු bytes අතුරින් Source එක යැවූ අනුපාතය.
-14. `orig_p_ratio`: මුළු packets අතුරින් Source එක යැවූ අනුපාතය.
-15. `resp_b_ratio`: මුළු bytes අතුරින් Destination එක එවූ අනුපාතය.
-16. `resp_p_ratio`: මුළු packets අතුරින් Destination එක එවූ අනුපාතය.
-17. `total_bytes`: `orig_bytes` + `resp_bytes` එකතුව.
-18. `total_pkts`: `orig_pkts` + `resp_pkts` එකතුව.
-19. `is_incomplete`: Handshake එක අසම්පූර්ණ සම්බන්ධතාවයක්ද යන්න (0 හෝ 1).
+### 4.3 විශේෂාංග 19 හි භෞතික තේරුම (Physical Network Meaning per Proposal Table 6)
+Proposal Table 6 අනුව `ml_engine/features.py` තුළ නිශ්චිතව ගණනය කරන නිල විශේෂාංග 19 (FEATURE_COLUMNS = 6 Categorical + 13 Numerical):
 
-> **Data Leakage වැළැක්වීමේ වැදගත්ම පියවර:**  
-> IP ලිපින (`id.orig_h`, `id.resp_h`) සහ MAC ලිපින Model එකට ලබා නොදෙයි. Ports අගයන් categories බවට bucket කර ඇත. එමගින් Model එක IP ලිපින මතක තබා ගැනීම (Overfitting/Memorization) මුළුමනින්ම වැළකේ.
+#### A. Categorical Features 6 (ප්‍රවර්ගමය විශේෂාංග):
+1. `proto`: ප්‍රොටෝකෝලය (`tcp`, `udp`, `icmp`).
+2. `service`: ඉහළ මට්ටමේ සේවාව (`http`, `dns`, `ssl`, `dhcp`, හෝ `none`).
+3. `conn_state`: Zeek connection state (`SF` = සාර්ථක, `S0` = SYN flood ලක්ෂණයක්, `REJ` = ප්‍රතික්ෂේප විය).
+4. `history`: TCP flag අනුපිළිවෙල (උදා: `ShADadFf`).
+5. `orig_port_cat`: Source port ප්‍රවර්ගය (`well-known`, `registered`, `dynamic`, `specific`).
+6. `resp_port_cat`: Destination port ප්‍රවර්ගය (`well-known`, `registered`, `dynamic`, `specific` - උදා: 554 RTSP, 80 HTTP).
+
+#### B. Numerical Features 13 (සංඛ්‍යාත්මක විශේෂාංග):
+7. `duration`: සම්බන්ධතාවය පැවති කාලය (තත්පර).
+8. `orig_bytes`: Source උපාංගය යැවූ application payload bytes.
+9. `resp_bytes`: Destination උපාංගය එවූ application payload bytes.
+10. `missed_bytes`: Network congestion නිසා drop වූ bytes.
+11. `orig_pkts`: Source එක යැවූ packets ගණන.
+12. `orig_ip_bytes`: IP Header එකද සහිතව Source එක යැවූ මුළු bytes.
+13. `resp_pkts`: Destination එක එවූ packets ගණන.
+14. `resp_ip_bytes`: IP Header එකද සහිතව Destination එක එවූ මුළු bytes.
+15. `orig_bytes_per_pkt`: Source පැකට්ටුවක සාමාන්‍ය payload ප්‍රමාණය (`orig_bytes / orig_pkts`).
+16. `resp_bytes_per_pkt`: Destination පැකට්ටුවක සාමාන්‍ය payload ප්‍රමාණය (`resp_bytes / resp_pkts`).
+17. `byte_ratio`: සමස්ත bytes අතුරින් Source එක යැවූ අනුපාතය (`orig_bytes / total_bytes`).
+18. `pkt_ratio`: සමස්ත packets අතුරින් Source එක යැවූ අනුපාතය (`orig_pkts / total_pkts`).
+19. `is_incomplete_flow`: Handshake එක සම්පූර්ණ නොවූ අසම්පූර්ණ සම්බන්ධතාවයක්ද යන්න (0 හෝ 1).
+
+> **Data Leakage වැළැක්වීමේ වැදගත්ම පියවර (Proposal Table 6):**  
+> IP ලිපින (`id.orig_h`, `id.resp_h`) සහ MAC ලිපින Model එකට ලබා නොදෙයි. Ports අගයන් categories (`orig_port_cat`, `resp_port_cat`) බවට bucket කර ඇත. එමගින් Model එක IP ලිපින සහ ports අගයන් මතක තබා ගැනීම (Overfitting/Memorization) මුළුමනින්ම වැළකේ.
 
 ---
 
@@ -318,15 +354,30 @@ Proposal Table 6 අනුව අප ගණනය කරන විශේෂා�
 # 8. Backend REST API, Database එක සහ React SOC Dashboard එක
 
 ### 8.1 Backend සේවා (Flask & Socket.IO - Dilshan ගේ කොටස)
-- Port 5000 මත Flask server එක ධාවනය වේ.
-- **REST Endpoints 15 ක්:**
-  - `/api/auth/login`, `/api/auth/me`, `/api/auth/logout` (JWT Authentication)
-  - `/api/summary`, `/api/events`, `/api/events/<id>` (Telemetry & Alerts)
-  - `/api/blocklist` [GET, POST, DELETE] (Firewall Rule Management)
-  - `/api/devices`, `/api/devices/<ip>/confirm-camera` (Asset Discovery & RBAC Confirmation)
-  - `/api/logs/export` (Forensic Log Export)
-  - `/api/settings` [GET, PUT] (Operational Thresholds)
-- **Socket.IO Telemetry:** Page refresh කිරීමකින් තොරව සජීවී alerts, scan progress, සහ blocklist updates dashboard එකට තත්‍ය කාලීනව push කරයි.
+- Port 5000 මත Flask server එක ධාවනය වේ (`core_engine/app.py`).
+- **REST Endpoints 20 ක් (Exact API Surface):**
+  1. `POST /api/auth/login` (Admin login, Bcrypt verification, JWT token issuance)
+  2. `GET /api/auth/me` (Current authenticated operator identity check)
+  3. `GET /api/summary` (Real-time telemetry, active blocks, 24h event KPIs)
+  4. `GET /api/events` (Paginated, filtered attack events stream)
+  5. `GET /api/events/<event_id>` (Detailed evidence & flow features for a single event)
+  6. `PATCH /api/events/<event_id>` (Operator incident status update: investigate/confirm)
+  7. `GET /api/devices` (Discovered network hosts & camera verification status)
+  8. `PATCH /api/devices/<ip>/confirm-camera` (Confirm device role as IP Camera - RBAC)
+  9. `POST /api/devices/<ip>/confirm-camera` (Confirm device role alternative method)
+  10. `GET /api/scans` (Scan history and completed scan audits)
+  11. `POST /api/scans` (Trigger Nmap scan on approved subnet 192.168.50.0/24)
+  12. `GET /api/scans/<scan_id>` (Detailed scan progress and discovered targets)
+  13. `GET /api/blocklist` (Active firewall blocks and remaining lease durations)
+  14. `POST /api/blocklist` (Manual operator IP block subject to allowlist immunity)
+  15. `DELETE /api/blocklist/<target_ip>` (Manual operator IP unblock & audit logging)
+  16. `GET /api/settings` (Current operational thresholds and management allowlist)
+  17. `PUT /api/settings` (Update detection confidence thresholds & allowlisted IPs)
+  18. `GET /api/settings/history` (Audit log of threshold configuration changes)
+  19. `GET /api/logs` (System security audit logs with severity filtering)
+  20. `GET /api/logs/export` (Forensic export in RFC 4180 CSV or JSON format)
+  *(+ `GET /api/health` system healthcheck and Socket.IO `connect`/`disconnect` handlers).*
+- **Socket.IO Telemetry:** Page refresh කිරීමකින් තොරව සජීවී alerts (`new_event`), scan progress (`scan_progress`), සහ blocklist updates (`blocklist_update`) dashboard එකට තත්‍ය කාලීනව push කරයි.
 
 ### 8.2 MongoDB Collections 9
 1. `attack_events`: හඳුනාගත් සියලුම ප්‍රහාර, confidence, latencies.
