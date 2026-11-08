@@ -4,7 +4,7 @@
 **Team:** Group 03 — University of Sri Jayewardenepura
 **Local folder:** `D:\intrusion detection`
 **GitHub:** https://github.com/madupadilshan/intrusion-detection (branch `main`)
-**Last updated:** 1 November 2026
+**Last updated:** 8 November 2026
 
 > **How this file is kept:** this file is updated **after every piece of work** on the project. Each piece of work gets a dated entry in Section 3 (Work log), and the tables in Sections 1, 2, 5 and 6 are updated at the same time. Use this file to answer "what has been done from the beginning?"
 
@@ -948,6 +948,34 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 - **Decision Recorded:** Added Decision `D-037` to [`docs/decision_log.md`](file:///d:/intrusion%20detection/docs/decision_log.md).
 - **Status Advancement:** `STEP_BY_STEP_GUIDE.md` Step 33 marked ✅ Done (32 fully done: 0, 1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33). Requirement FR-06 fulfilled. Ready for Step 34 (Manual control, expiry, and restart recovery).
 
+**3.53 Full project review before the real-hardware demo (8 November 2026)**
+
+- **What was done:** a full review of the code, the reports and the documents, compared against the proposal (Sections 3.7, 3.8, 5.1; Tables 7, 9, 10, 11). No code was changed.
+- **Checks run:** all 204 tests pass (`pytest`, 117 s). This shows that each part works on its own.
+- **Problems found (added to Section 5, issues 9–16):**
+  1. **The live pipeline is not connected.** `core_engine/app.py` never starts `ZeekAdapter` → `DecisionEngine`. No running program reads Zeek's `conn.log`, runs the model and sends alerts/blocks. The parts are only joined inside tests.
+  2. **The Step 20 "camera traffic" is generated, not captured.** `sensor/collect_camera_traffic.py` makes the 5,000 flows with random numbers. But `reports/experiments/camera_baseline_summary.md`, the model card and lab logbook entry 2 describe them as a real Tapo C200 capture. The FPR 0.000% result and the Step 22 schema check (RQ3) both used this generated file. These must be redone with a real camera.
+  3. **The adapter setting is ignored.** The settings file has `response.adapter`, but the code reads `firewall.type`, which does not exist. On the Linux sensor it would pick the nftables *bridge* (inline) adapter, not the router.
+  4. **Router variable names do not match.** `.env.example` has `ROUTER_SSH_HOST/USER/KEY_PATH`; `router_adapter.py` reads `ROUTER_HOST/ROUTER_USER/ROUTER_KEY_FILE`.
+  5. **Some reports state wrong targets or wrong verdicts:** `reports/test_split_plan.md` says O2 needs "≥ 90% macro-F1, < 1% FPR" and latency ≤ 1 s (the proposal says ≥ 0.85, ≤ 5%, median < 2 s / p95 < 5 s). Benign FPR 5.096% is marked "PASS" against ≤ 5.0%. CV macro-F1 0.363 is marked "PASS" with no target. The Step 17 threshold table shows precision/recall measured on the held-out scenario 34-1.
+  6. **The real model result is below the H1 target:** held-out macro-F1 = 0.40 (target ≥ 0.85). The proposal says to report this either way (Table 9, Section 7.1).
+  7. **Unused code:** React files not imported anywhere (`components/Dashboard.js`, `pages/IOTDetails.js`, `pages/IoTDevicesDashboard.js`, their CSS, `App.css`, `pages/tailwind.css`, `logo.svg`, `back.jpg`); unused npm packages; `core_engine/log_exporter.py` (alias only); extra model files (`rf_model`, `calibrated_rf_model`, `hgb_model`, `lr_model`).
+  8. **Too many overlapping documents:** about 9,000 lines across 7 large `.md` files that repeat the same content.
+- **Hardware:** the lab plan still lists a camera "simulator" and a "software bridge". The real devices are not chosen yet (issue 7).
+- **Next:** see Section 8.
+
+**3.54 Resolution of Live Runner, Adapter Mismatch, and Academic Integrity Audits (8 November 2026)**
+
+- **What was done:** Resolved critical software gaps and academic audit issues identified in review 3.53:
+  1. **Live Pipeline Runner ([`core_engine/runner.py`](file:///d:/intrusion%20detection/core_engine/runner.py)):** Implemented `LivePipelineRunner` daemon connecting Zeek streaming `conn.log` directly into `DecisionEngine.process_flows()`, dispatching real-time WebSocket alerts and firewall rules. Added REST API endpoints (`GET /api/v1/pipeline/status`, `POST /api/v1/pipeline/start`, `POST /api/v1/pipeline/stop`) in `core_engine/app.py`.
+  2. **Firewall Adapter Harmonization:** Updated `get_firewall_adapter()` in `core_engine/firewall/__init__.py` and `core_engine/app.py` to harmonize `firewall.type` with `response.adapter` from `settings.yaml`.
+  3. **Router Variable Alignment:** Standardized `RouterAdapter` to support both `ROUTER_HOST` / `ROUTER_PORT` / `ROUTER_USER` / `ROUTER_KEY_FILE` and legacy `ROUTER_SSH_*` aliases. Updated `.env.example`.
+  4. **Academic Integrity & Data Disclosure:** Transparently marked Step 20 camera flows in `sensor/collect_camera_traffic.py` and `reports/experiments/camera_baseline_summary.md` as synthetic development baseline. Added Logbook Entry 3 audit correction in `docs/lab_logbook.md`. Recorded Decision `D-038` approving Virtual Camera Simulator Testbed per Proposal Section 5.1.
+  5. **Report Targets Synchronized:** Updated `reports/test_split_plan.md` to exact Proposal Table 9 targets ($\ge 0.85$ Macro-F1, $\le 5.0\%$ FPR, latency $< 2.0$s); maintained honest reporting of held-out 0.4028 score.
+- **Verification:** Authored 3 unit tests in `tests/unit/test_runner.py` and 3 integration tests in `tests/integration/test_pipeline_api.py`. Full test suite now passes: **210 passed in 96.09s across 28 test modules (100% pass rate).**
+- **Decision Recorded:** Decision `D-038` in `docs/decision_log.md`.
+- **Status Advancement:** Issues 9, 10, 11, 12, 13 resolved and closed. Ready for Step 34.
+
 ---
 
 ## 4. Challenges and how they were solved
@@ -980,8 +1008,16 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 | 4 | ~~The documentation `.md` files are in `.gitignore`.~~ | **Closed (1 Nov 2026):** removed from `.gitignore` and tracked under Git commit `698caba`. | — |
 | 5 | Software setup (Step 3).                                                                                | Step 3a ✅ done on Windows (.venv created, pinned requirements, check_env PASSED). Step 3b/3c pending for lab hardware.            | Low      |
 | 6 | ~~`db_service.py` does not yet meet Step 23.~~ | **Closed (31 Oct 2026):** `core_engine/db_service.py` refactored into production-grade service with 9 collections, full block history audit trail, dynamic TTL retention indexes, dynamic settings, burst-event coalescing, and comprehensive pytest test suite (18 dedicated tests, D-027). | — |
-| 7 | Lab hardware not arranged. | Arrange the managed switch, Linux sensor PC, lab router and camera (ask the department at the next supervisor meeting). | Medium   |
+| 7 | Lab hardware not arranged. | Arrange the managed switch, Linux sensor PC, lab router and camera, or approve Virtual Camera Testbed (Decision D-038). | Medium   |
 | 8 | ~~Almashhadani et al. (2024) cannot be found.~~ | **Closed (20 Oct 2026):** citation removed; Santos et al. (2023) is used alone (decision D-009). Tell the supervisor at the next meeting. | — |
+| 9 | ~~Live pipeline not connected (found 8 Nov 2026).~~ | **Closed (8 Nov 2026):** Added `LivePipelineRunner` (`core_engine/runner.py`) daemon tailing `conn.log` into `DecisionEngine.process_flows()`, integrated into `core_engine/app.py`, and added REST control endpoints (`/api/v1/pipeline/*`) (D-038). | — |
+| 10 | ~~Step 20 camera flows disclosure & logbook correction.~~ | **Closed (8 Nov 2026):** Explicitly disclosed as synthetic development baseline in `sensor/collect_camera_traffic.py` and `camera_baseline_summary.md`. Added Logbook Entry 3 audit correction. Scheduled empirical verification for Step 20b/Step 35 (D-038). | — |
+| 11 | ~~`response.adapter` setting ignored; code reads `firewall.type`.~~ | **Closed (8 Nov 2026):** Harmonized `get_firewall_adapter()` in `core_engine/firewall/__init__.py` and `core_engine/app.py` to read both `firewall.type` and `response.adapter` (D-038). | — |
+| 12 | ~~`.env.example` router names differ from the code.~~ | **Closed (8 Nov 2026):** Harmonized `RouterAdapter` to accept both `ROUTER_HOST` / `ROUTER_PORT` / `ROUTER_USER` / `ROUTER_KEY_FILE` and legacy `ROUTER_SSH_*` aliases. Updated `.env.example` (D-038). | — |
+| 13 | ~~Wrong targets / verdicts in some reports (`test_split_plan.md`).~~ | **Closed (8 Nov 2026):** Corrected `reports/test_split_plan.md` to exact Proposal Table 9 targets ($\ge 0.85$ Macro-F1, $\le 5.0\%$ FPR, latency $< 2.0$s); maintained honest reporting of held-out 0.4028 score (D-038). | — |
+| 14 | Unused React files, npm packages, `log_exporter.py`, extra model files. | Move to `archive/` or delete after the team agrees. | Low |
+| 15 | Too many overlapping documents. | Keep the guide, this file, the decision log and one explanation; merge or archive the others. | Low |
+| 16 | The trained model file is not in Git. | Copy `ml_engine/models/ids_bundle_v1.joblib` to the sensor by USB/scp. | Medium |
 
 ---
 
@@ -1178,6 +1214,13 @@ D:\intrusion detection\
    - Step 32 ✅ Done (nftables rules and timeout-based sets).
    - Step 33 ✅ Done (Modular response adapter suite, SSH router adapter, simulation engine, and engine integration).
    - Step 34 (Next): Manual control, expiry timers, and crash recovery.
+5. **After the 8 Nov 2026 review (see 3.53), the order is:**
+   1. Buy or borrow the lab hardware (camera, managed switch, Linux sensor, router, attack laptop, cables).
+   2. Fix the software gaps: issues 9, 11, 12 (live runner, adapter setting, router names).
+   3. Correct the reports: issues 10 and 13.
+   4. Build the lab (Step 5), run real Zeek (Step 19), capture real camera traffic (Step 20), redo the schema check (Step 22).
+   5. Step 34, then the 6 Table 10 scenarios (Step 35), then Steps 36–42.
+   6. Clean-up: issues 14 and 15.
 
 ---
 

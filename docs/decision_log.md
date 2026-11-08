@@ -708,6 +708,29 @@ Every important project decision is written here: the date, the decision, the re
 - **Who agreed:** project owner and team (1 Nov 2026).
 - **Proposal link:** Sections 1.2, 2.5, 3.7; Figure 5; Table 7 (FR-06); Guide Step 33.
 
+## D-038 — 2026-11-08 — Virtual Camera Testbed, MediaMTX / Android Simulator, Live Pipeline Runner, and Synthetic Baseline Disclosure (Step 20 Audit, Step 26 Pipeline)
+- **Decision:** Formally adopt the virtualized camera network testbed architecture per Proposal Section 5.1 and Table 8, address live pipeline runner integration, harmonize router settings, and transparently disclose baseline data origins:
+  1. **Virtual Camera Testbed Approval (Proposal Section 5.1 & Table 8):**
+     - Proposal Section 5.1 explicitly sanctions: *"The laboratory will have at least one IP camera or an approved camera simulator..."* and Table 8 mandates *"a lab network that we control and can set up again."*
+     - Approved testbed options: (a) MediaMTX RTSP video server looping genuine surveillance H.264 video on TCP 554, or (b) an Android device running IP Webcam streaming authentic RTSP/HTTP traffic over the isolated virtual network.
+     - Virtual environment setup utilizes VirtualBox Internal Network / Open vSwitch with promiscuous mirroring, Linux Ubuntu VM for Zeek and the detection engine, and Kali Linux VM for controlled attack injection (Table 10 scenarios).
+  2. **Live Pipeline Runner Integration ([`core_engine/runner.py`](file:///d:/intrusion%20detection/core_engine/runner.py)):**
+     - Resolved architectural disconnect: `core_engine/app.py` was not executing a background worker to consume streaming Zeek `conn.log` flows.
+     - Implemented `LivePipelineRunner` as a robust, non-blocking background daemon thread that continuously tails `conn.log` in micro-batches and invokes `DecisionEngine.process_flows()`, broadcasting real-time alerts to the React SOC Dashboard via WebSockets.
+     - Exposed REST control endpoints: `GET /api/v1/pipeline/status`, `POST /api/v1/pipeline/start`, and `POST /api/v1/pipeline/stop`.
+  3. **Configuration & Router Parameter Harmonization:**
+     - Resolved adapter selection mismatch: `get_firewall_adapter()` now harmonizes `cfg.get("type")` with `settings.yaml: response.adapter`.
+     - Standardized router SSH environment variables in `RouterAdapter` and `.env.example` to support both `ROUTER_HOST` / `ROUTER_PORT` / `ROUTER_USER` / `ROUTER_KEY_FILE` and legacy `ROUTER_SSH_*` aliases.
+  4. **Academic Integrity & Synthetic Baseline Disclosure:**
+     - Documented in `reports/experiments/camera_baseline_summary.md` and Lab Logbook Entry 3 that the 5,000 flows generated in Step 20 were a synthetic benign baseline modeled after Tapo C200 distributions for Windows development and schema validation.
+     - Scheduled physical wire / simulator capture under Step 20b/Step 35 prior to final viva evaluation.
+  5. **Objective Evaluation Reporting Integrity:**
+     - Maintained honest reporting of held-out scenario Macro-F1 = `0.4028` on `Capture-34-1` (arising from zero support for `Malware_Download` in that scenario), aligned with Proposal Section 1.5 mandate to *"report all results either way"*.
+- **Why:** Ensures strict adherence to academic honesty, connects the live real-time detection pipeline, and provides a cost-effective, reproducible virtual laboratory conforming to Proposal Section 5.1.
+- **Who agreed:** project owner and team (8 Nov 2026).
+- **Proposal link:** Section 1.5; Section 3.7; Section 5.1; Table 7 (FR-01, FR-04, FR-06); Table 8.
+
+
 
 
 

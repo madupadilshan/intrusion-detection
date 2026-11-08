@@ -29,8 +29,8 @@ class RouterAdapter(BaseFirewallAdapter):
     def __init__(
         self,
         router_host: Optional[str] = None,
-        router_port: int = 22,
-        router_user: str = "root",
+        router_port: Optional[int] = None,
+        router_user: Optional[str] = None,
         router_key_file: Optional[str] = None,
         table_family: str = "inet",
         table_name: str = "ids",
@@ -57,10 +57,10 @@ class RouterAdapter(BaseFirewallAdapter):
             allowlist=allowlist,
             max_rule_minutes=max_rule_minutes,
         )
-        self.router_host = router_host or os.getenv("ROUTER_HOST")
-        self.router_port = int(router_port or os.getenv("ROUTER_PORT", 22))
-        self.router_user = router_user or os.getenv("ROUTER_USER", "root")
-        self.router_key_file = router_key_file or os.getenv("ROUTER_KEY_FILE")
+        self.router_host = router_host or os.getenv("ROUTER_HOST") or os.getenv("ROUTER_SSH_HOST")
+        self.router_port = int(router_port or os.getenv("ROUTER_PORT") or os.getenv("ROUTER_SSH_PORT", 22))
+        self.router_user = router_user or os.getenv("ROUTER_USER") or os.getenv("ROUTER_SSH_USER") or "root"
+        self.router_key_file = router_key_file or os.getenv("ROUTER_KEY_FILE") or os.getenv("ROUTER_SSH_KEY_PATH")
         self.table_family = table_family
         self.table_name = table_name
 

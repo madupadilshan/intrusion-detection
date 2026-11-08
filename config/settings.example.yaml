@@ -23,6 +23,12 @@ response:
   max_rule_minutes: 30          # every rule expires (maximum rule time)
   allow_device_isolation: false # isolate a local device only if the policy allows
 
+firewall:                       # firewall adapter configuration (harmonized with response.adapter)
+  type: router                  # router (passive SSH) | nftables (inline Linux) | simulation
+  table_family: inet            # inet (router) | bridge (inline)
+  table_name: ids               # nftables table name
+  use_sudo: true
+
 zeek:
   conn_log_path: /var/log/ids-zeek/conn.log  # Zeek is started in this folder (Step 19)
 

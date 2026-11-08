@@ -17,7 +17,7 @@ A pervasive flaw in legacy intrusion detection literature is evaluating machine 
 
 Random row splitting scatters flows from the same capture across both training and testing folds, artificially inflating evaluation accuracy to 99.9%–100.0% while causing catastrophic model failure when deployed against novel network environments or zero-day variants.
 
-To satisfy **Objective O2** ("Achieve ≥ 90% macro-F1 on held-out test scenarios with < 1% false positive rate on legitimate camera streaming"), this project establishes a rigorous, leak-free **Three-Level Evaluation Architecture** fixed prior to model training.
+To satisfy **Objective O2 and Hypothesis H1** (Proposal Section 1.5: "Achieve $\ge 0.85$ macro-F1 on held-out test scenarios with $\le 5.0\%$ false positive rate on legitimate camera traffic, with median decision latency $< 2.0$s"), this project establishes a rigorous, leak-free **Three-Level Evaluation Architecture** fixed prior to model training.
 
 ```
 +--------------------------------------------------------------------------------------------------+
@@ -100,10 +100,10 @@ To satisfy **Objective O2** ("Achieve ≥ 90% macro-F1 on held-out test scenario
 ## 4. Level 3: Local Lab Traffic Evaluation (Operational FPR & RTSP Verification)
 
 ### 4.1 Specification
-- **Hardware Target:** Physical Tapo C200 1080p IP Camera streaming continuous RTSP / H.264 video traffic across managed switch port mirroring to the Linux sensor.
-- **Objective:** Directly test **Hypothesis H1** ("ML detection maintains False Positive Rate < 1% under real-time benign IP camera video streaming").
+- **Hardware / Simulation Target:** Physical Tapo C200 1080p IP Camera or approved RTSP Camera Simulator (MediaMTX / Android IP Webcam per Proposal Section 5.1 and Decision D-038).
+- **Objective:** Directly test **Hypothesis H1** ("ML detection maintains False Positive Rate $\le 5.0\%$ under real-time benign IP camera video streaming").
 - **Phase Execution:**
-  - **Step 20 (Phase 5):** Collect 24-hour continuous baseline benign traffic from the physical IP camera. Convert Zeek `conn.log` into feature vectors using `ml_engine.features.make_features()`.
+  - **Step 20 (Phase 5):** Collect baseline benign traffic (synthetic baseline in Step 20; empirical wire/simulator capture in Step 20b/Step 35). Convert Zeek `conn.log` into feature vectors using `ml_engine.features.make_features()`.
   - **Phase 9 (Steps 35–39):** Execute the 6 controlled test attack scenarios (Table 10):
     1. Outside TCP SYN Port Scan (FR-05)
     2. Mirai-style Telnet / SSH brute-force & C&C beaconing
@@ -113,8 +113,8 @@ To satisfy **Objective O2** ("Achieve ≥ 90% macro-F1 on held-out test scenario
     6. Rapid multi-vector composite attack
 
 ### 4.2 Acceptance Criteria
-- **Benign Camera Stream FPR:** $< 1.0\%$ false alarms over continuous 24-hour operation.
-- **Attack Detection Latency:** $\le 1.0$ second from flow termination in Zeek to response rule emission.
+- **Benign Camera Stream FPR:** $\le 5.0\%$ false alarms over continuous operation (Hypothesis H1; operational guardrail $\le 1.0\%$ for active blocking).
+- **Attack Detection & Decision Latency:** Median $< 2.0$ seconds, 95th percentile $< 5.0$ seconds (Proposal Table 9).
 - **Zero Allowlist Collisions:** Management IPs (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`) must never be blocked.
 
 ---
@@ -124,6 +124,6 @@ To satisfy **Objective O2** ("Achieve ≥ 90% macro-F1 on held-out test scenario
 | Evaluation Level | Target Dataset | Primary Metric | Purpose | Execution Step |
 | :--- | :--- | :--- | :--- | :---: |
 | **Level 1** | 22 Scenarios (`StratifiedGroupKFold`) | Macro-F1 Score | Hyperparameter tuning, feature selection, model comparison | Steps 14, 15, 17 |
-| **Level 2** | `Capture-34-1` (`data/processed/heldout/`) | Macro-F1, Precision, Recall | Zero-day & cross-scenario botnet generalization | Step 16 |
-| **Level 3** | Physical Tapo C200 Lab Traffic | False Positive Rate (FPR), Latency | Real-world IP camera video streaming & active defense verification | Steps 20, 35–39 |
+| **Level 2** | `Capture-34-1` (`data/processed/heldout/`) | Macro-F1, Precision, Recall | Zero-day & cross-scenario botnet generalization (Reported Macro-F1: 0.4028) | Step 16 |
+| **Level 3** | Tapo C200 / Simulator Lab Traffic | False Positive Rate (FPR), Latency | Real-world IP camera video streaming & active defense verification | Steps 20, 35–39 |
 

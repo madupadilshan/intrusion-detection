@@ -57,8 +57,8 @@ def get_firewall_adapter(
     :return: Concrete BaseFirewallAdapter instance
     """
     cfg = config or {}
-    adapter_type = cfg.get("type") or os.getenv("FIREWALL_TYPE", "auto")
-    adapter_type = adapter_type.lower()
+    adapter_type = cfg.get("type") or cfg.get("adapter") or os.getenv("FIREWALL_TYPE", "auto")
+    adapter_type = str(adapter_type).lower()
 
     table_family = cfg.get("table_family", "bridge")
     table_name = cfg.get("table_name", "ids")

@@ -1,21 +1,25 @@
-"""sensor/collect_camera_traffic.py - Benign IP-Camera Traffic Collector & Baseline Generator.
+"""sensor/collect_camera_traffic.py - Synthetic Benign IP-Camera Traffic Baseline Generator.
 
-Governing Standards:
+Governing Standards & Disclosure:
 - Group 03 Proposal: Sections 1.6, 2.3, 3.4 (Level 3 Baseline), 5.1; Table 11; Hypothesis H1 (FPR <= 5%)
-- Step-by-Step Guide: Step 20 (Collect our own benign camera traffic)
+- Step-by-Step Guide: Step 20 (Benign camera traffic baseline for development)
 - Ethics & Retention: Decision D-010, D-011 (Metadata only - zero raw video payload stored)
+- Disclosure (Decision D-038): This script generates a SYNTHETIC benign baseline
+  statistically modeled after Tapo C200 activity distributions for software pipeline
+  development and schema verification on Windows. Hardware wire capture and live RTSP
+  verification are scheduled under Step 20b/Step 35 using physical hardware or MediaMTX simulator.
 
 This module:
-1. Implements physical network capture or realistic multi-session benign camera traffic generation
-   for the Tapo C200 1080p RTSP/H.264 camera environment (Proposal 5.1).
-2. Simulates 5 distinct realistic operational camera sessions:
+1. Generates realistic multi-session benign camera traffic test profiles
+   modeled after the Tapo C200 1080p RTSP/H.264 camera environment (Proposal 5.1).
+2. Simulates 5 distinct operational camera sessions:
    - RTSP 1080p H.264 video streaming to NVR (TCP 554 / RTP UDP 30000+)
    - Camera Web/API management & live preview (HTTP 80 / HTTPS 443)
    - Device discovery & announcements (ONVIF WS-Discovery UDP 3702, SSDP UDP 1900, mDNS UDP 5353)
    - Network time synchronization (NTP UDP 123) and DNS resolution (UDP 53)
    - Background TCP keep-alive polling & telemetry
 3. Saves flow logs to `data/local/benign/<date>/conn.log` in streaming Zeek JSON format.
-4. Generates a formal statistical audit report at `reports/experiments/camera_baseline_summary.md`.
+4. Generates a development baseline audit report at `reports/experiments/camera_baseline_summary.md`.
 """
 
 from __future__ import annotations

@@ -43,6 +43,10 @@ from core_engine.firewall import (
     BaseFirewallAdapter,
     AllowlistImmunityError,
 )
+from core_engine.detector import Detector
+from core_engine.decision_engine import DecisionEngine
+from core_engine.zeek_adapter import ZeekAdapter
+from core_engine.runner import LivePipelineRunner
 
 load_dotenv()
 logger = logging.getLogger("ids_app")
@@ -61,6 +65,10 @@ def create_app(
     scanner_service: Optional[Any] = None,
     export_service: Optional[Any] = None,
     firewall_adapter: Optional[BaseFirewallAdapter] = None,
+    detector: Optional[Detector] = None,
+    decision_engine: Optional[DecisionEngine] = None,
+    zeek_adapter: Optional[ZeekAdapter] = None,
+    pipeline_runner: Optional[LivePipelineRunner] = None,
     test_config: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Flask, SocketIO]:
     """
@@ -112,13 +120,43 @@ def create_app(
     exporter = export_service or ExportService(db_service=db)
     app.config["exporter"] = exporter
 
-    # Firewall Response Adapter (Step 33)
+    # Firewall Response Adapter (Step 33, Problem 3 Fix)
+    firewall_cfg = dict(settings_cfg.get("firewall", {}))
+    if not firewall_cfg.get("type") and settings_cfg.get("response", {}).get("adapter"):
+        firewall_cfg["type"] = settings_cfg.get("response", {}).get("adapter")
+
     firewall = firewall_adapter or get_firewall_adapter(
-        config=settings_cfg.get("firewall", {}),
+        config=firewall_cfg,
         allowlist=management_allowlist,
         max_rule_minutes=int(settings_cfg.get("response", {}).get("max_rule_minutes", 60)),
     )
     app.config["firewall"] = firewall
+
+    # Machine Learning Detector & Decision Engine (Step 26)
+    settings_file = PROJECT_ROOT / "config" / "settings.yaml"
+    detector_inst = detector or Detector()
+    app.config["detector"] = detector_inst
+
+    decision_inst = decision_engine or DecisionEngine(
+        db_service=db,
+        socketio=socketio,
+        detector=detector_inst,
+        firewall_adapter=firewall,
+        settings_path=settings_file if settings_file.exists() else None,
+    )
+    app.config["decision_engine"] = decision_inst
+
+    # Live Pipeline Runner (Problem 1 Fix)
+    zeek_inst = zeek_adapter or ZeekAdapter(
+        settings_path=settings_file if settings_file.exists() else None
+    )
+    runner_inst = pipeline_runner or LivePipelineRunner(
+        zeek_adapter=zeek_inst,
+        decision_engine=decision_inst,
+        socketio=socketio,
+    )
+    app.config["zeek_adapter"] = zeek_inst
+    app.config["runner"] = runner_inst
 
     # =========================================================================
     # Error Handlers
@@ -762,6 +800,47 @@ def create_app(
         }), 200 if is_healthy else 503
 
     # =========================================================================
+    # 9B. Live Streaming Pipeline Control Endpoints (Problem 1 Fix)
+    # =========================================================================
+
+    @app.route("/api/v1/pipeline/status", methods=["GET"])
+    @auth.token_required
+    def get_pipeline_status():
+        """Return runtime state and metrics for the streaming Zeek -> Decision pipeline."""
+        runner_obj = app.config.get("runner")
+        if not runner_obj:
+            return jsonify({"status": "unavailable", "message": "Pipeline runner not configured."}), 503
+        return jsonify(runner_obj.get_status()), 200
+
+    @app.route("/api/v1/pipeline/start", methods=["POST"])
+    @auth.admin_required
+    def start_pipeline():
+        """Start the background streaming Zeek pipeline runner."""
+        runner_obj = app.config.get("runner")
+        if not runner_obj:
+            return jsonify({"error": "Runner not configured"}), 503
+        started = runner_obj.start()
+        return jsonify({
+            "success": started,
+            "status": runner_obj.get_status()["status"],
+            "message": "Pipeline started" if started else "Pipeline was already running",
+        }), 200
+
+    @app.route("/api/v1/pipeline/stop", methods=["POST"])
+    @auth.admin_required
+    def stop_pipeline():
+        """Stop the background streaming Zeek pipeline runner."""
+        runner_obj = app.config.get("runner")
+        if not runner_obj:
+            return jsonify({"error": "Runner not configured"}), 503
+        stopped = runner_obj.stop()
+        return jsonify({
+            "success": stopped,
+            "status": runner_obj.get_status()["status"],
+            "message": "Pipeline stopped" if stopped else "Pipeline stop timed out",
+        }), 200
+
+    # =========================================================================
     # 10. Real-Time Socket.IO Handshake & Channels (FR-04)
     # =========================================================================
 
@@ -816,5 +895,12 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     host = os.getenv("HOST", "0.0.0.0")
     print(f"Starting IoT IDS Unified Server on http://{host}:{port}...")
+
+    # Auto-start Live Pipeline Runner (Problem 1 Fix)
+    runner_obj = app.config.get("runner")
+    if runner_obj:
+        print(f"Auto-starting LivePipelineRunner tailing: {runner_obj.zeek_adapter.conn_log_path}")
+        runner_obj.start()
+
     socketio.run(app, host=host, port=port, debug=False)
 

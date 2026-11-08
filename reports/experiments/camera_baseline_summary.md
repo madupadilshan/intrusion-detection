@@ -1,9 +1,14 @@
 # Benign IP-Camera Baseline Traffic Report (Step 20)
 
+> [!NOTE]
+> **Audit & Academic Integrity Disclosure (Decision D-038):**  
+> This baseline evaluation report documents a **synthetic benign test baseline (5,000 flows)** statistically modeled after Tapo C200 operational activity profiles (RTSP, ONVIF, HTTP, DNS, NTP) generated on Windows for pipeline, schema, and threshold verification.  
+> As required by research standards and Proposal Section 5.1, live physical hardware wire capture or approved MediaMTX/Android camera simulator evaluation is scheduled under Step 20b/Step 35.
+
 **Project:** Real-Time Intrusion Detection and Response System for IP-Camera IoT Networks  
 **Governing Standard:** Proposal Section 1.6, 2.3, 3.4 (Level 3 Baseline), 5.1; Table 11; Hypothesis H1  
 **Date Generated:** 2026-10-31 22:56:24  
-**Dataset Source:** Local Tapo C200 IP-Camera Traffic Capture (`data\local\benign\2026-10-31\conn.log`)  
+**Dataset Source:** Synthetic Tapo C200 Baseline Profile (`data\local\benign\2026-10-31\conn.log`)  
 **Model Bundle:** `ml_engine\models\ids_bundle_v1.joblib`  
 
 ---
