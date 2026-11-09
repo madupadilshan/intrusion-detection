@@ -543,3 +543,96 @@ def test_settings_change_is_applied_to_running_policy(test_setup):
 
     hist = client.get("/api/settings/history", headers=headers).get_json()["history"]
     assert any(h["key"] == "min_repeats" and h["new_value"] == 7 for h in hist)
+
+
+def test_step34_manual_block_unblock_audit(test_setup):
+    """
+    Step 34: Manual block and unblock from the dashboard call the adapter,
+    and are written to the audit log (system_logs) with the admin's name.
+    """
+    client = test_setup["client"]
+    db = test_setup["db"]
+    token = test_setup["admin_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Manual block with minutes parameter (frontend format)
+    resp = client.post(
+        "/api/blocklist",
+        headers=headers,
+        json={
+            "ip": "192.168.50.77",
+            "direction": "inbound",
+            "minutes": 45,
+            "reason": "Test manual operator block",
+        },
+    )
+    assert resp.status_code == 201
+    data = resp.get_json()
+    assert data["status"] == "success"
+    assert data["block"]["ip"] == "192.168.50.77"
+    assert data["block"]["actor"] == "admin_user"
+
+    # Verify both 'blocks' and 'rules' in GET /api/blocklist
+    get_resp = client.get("/api/blocklist", headers=headers)
+    assert get_resp.status_code == 200
+    get_data = get_resp.get_json()
+    assert "blocks" in get_data
+    assert "rules" in get_data
+    assert any(b["ip"] == "192.168.50.77" for b in get_data["blocks"])
+
+    # Verify system_logs audit entry
+    logs = list(db.system_logs.find({"event": "MANUAL_BLOCK", "actor": "admin_user"}))
+    assert len(logs) >= 1
+    assert logs[0]["details"]["ip"] == "192.168.50.77"
+    assert logs[0]["details"]["duration_minutes"] == 45
+
+    # 2. Manual unblock
+    unblock_resp = client.delete(
+        "/api/blocklist/192.168.50.77",
+        headers=headers,
+        json={"reason": "Operator cleared false positive"},
+    )
+    assert unblock_resp.status_code == 200
+    unblock_data = unblock_resp.get_json()
+    assert unblock_data["status"] == "success"
+
+    # Verify MANUAL_UNBLOCK system_logs audit entry
+    unblock_logs = list(db.system_logs.find({"event": "MANUAL_UNBLOCK", "actor": "admin_user"}))
+    assert len(unblock_logs) >= 1
+    assert unblock_logs[0]["details"]["ip"] == "192.168.50.77"
+
+
+def test_step34_firewall_sync_and_worker_endpoints(test_setup):
+    """
+    Step 34: Test REST API endpoints for firewall synchronization and rule expiry worker.
+    """
+    client = test_setup["client"]
+    token = test_setup["admin_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. GET /api/v1/firewall/sync
+    sync_resp = client.get("/api/v1/firewall/sync", headers=headers)
+    assert sync_resp.status_code == 200
+    sync_data = sync_resp.get_json()
+    assert sync_data["status"] == "success"
+    assert "in_sync" in sync_data
+    assert "firewall_rules" in sync_data
+    assert "db_active_blocks" in sync_data
+
+    # 2. POST /api/v1/firewall/sync
+    post_sync = client.post("/api/v1/firewall/sync", headers=headers)
+    assert post_sync.status_code == 200
+    assert post_sync.get_json()["reconciliation"]["status"] == "success"
+
+    # 3. Worker status, start, and stop
+    w_status = client.get("/api/v1/firewall/worker/status", headers=headers)
+    assert w_status.status_code == 200
+    assert "running" in w_status.get_json()["worker"]
+
+    w_start = client.post("/api/v1/firewall/worker/start", headers=headers)
+    assert w_start.status_code == 200
+    assert w_start.get_json()["success"] is True
+
+    w_stop = client.post("/api/v1/firewall/worker/stop", headers=headers)
+    assert w_stop.status_code == 200
+    assert w_stop.get_json()["success"] is True

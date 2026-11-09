@@ -70,7 +70,7 @@ Labels: ✅ Done · 🔧 Done – needs changes · 🟡 Started · ♻️ Old co
 | 31   | Response policy (safety rules)             | ✅     | `docs/response_policy.md` formal spec; `core_engine/response_policy.py` direction-aware policy engine (Table 5) & 7 safety guardrails (Checkpoint C7); deque sliding window repeat coalescing; integrated into `decision_engine.py`; 12 unit tests passed (D-035). RQ5 answered. |
 | 32   | nftables rules                             | ✅     | `sensor/ids_inline.nft` (bridge) & `sensor/ids_router.nft` (inet) rulesets; dynamic timeout sets (`block_src`, `block_dst`, `limit_src`); source-only allowlist; `core_engine/firewall/nftables_adapter.py` kernel adapter with dev simulation fallback; 12 unit tests passed (D-036). FR-06 fulfilled. |
 | 33   | Response adapters                          | ✅     | `core_engine/firewall/base.py` ABC, `router_adapter.py` SSH mitigation, `simulation_adapter.py` dev engine, `__init__.py` factory, `decision_engine.py` & `app.py` integration; 12 tests passed (D-037). |
-| 34   | Manual control, expiry, restart recovery   | ⬜     |                                                                                           |
+| 34   | Manual control, expiry, restart recovery   | ✅     | Rule expiry daemon (`RuleExpiryWorker`), crash recovery (`reconcile_on_startup`), dashboard manual unblock & audit logs; 255 tests passed (D-047). Phase 8 100% COMPLETE. |
 | 35   | 6 controlled test scenarios                | ⬜     |                                                                                           |
 | 36   | Functional requirement tests               | ⬜     |                                                                                           |
 | 37   | Speed and resource use                     | ⬜     |                                                                                           |
@@ -80,7 +80,7 @@ Labels: ✅ Done · 🔧 Done – needs changes · 🟡 Started · ♻️ Old co
 | 41   | Final documents                            | 🟡     | `README.md` started.                                                                      |
 | 42   | Final demo and data clean-up               | ⬜     |                                                                                           |
 
-**Count:** 29 done (Steps 0, 1, 2, 4, 6–18, 21, 23–33) · 5 started (3, 19, 20, 22, 41) · 0 with old code to reuse · 9 not started (5, 34–40, 42)
+**Count:** 30 done (Steps 0, 1, 2, 4, 6–18, 21, 23–34) · 5 started (3, 19, 20, 22, 41) · 0 with old code to reuse · 8 not started (5, 35–40, 42)
 
 ---
 
@@ -1049,6 +1049,28 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
   5. Implemented Section 8 in `reports/experiments/thresholds_and_explanation.md` evaluating grouped vs detailed original labels for all labels $\ge 30$ samples.
   6. Expanded `tools/verify_iot23_copy.py` to check both first and last flows (23/23 matched). Investigated 3 label discrepancies against raw CTU server files via HTTP range requests; confirmed raw server files match our local copy exactly. Documented source file `D:\Download\archive.zip` (downloaded 2026-10-19 16:49).
   7. Automated test suite: **246 passed in 60.56s across 29 test modules (100% pass rate).**
+
+**3.59 Manual control, rule expiry daemon, and crash / restart recovery (Step 34, 9 November 2026, D-047)**
+
+- **Why:** Fulfilled Step 34 and Proposal Section 3.7 / Table 9 / Objective O5 requirements: (1) manual block and unblock from the dashboard with complete audit trail in `system_logs` and `response_actions`; (2) automatic background rule expiry worker (`RuleExpiryWorker`); (3) startup crash recovery reconciling MongoDB blocklist with firewall rules (`reconcile_on_startup`).
+- **What was done:**
+  1. Built [`core_engine/rule_worker.py`](file:///d:/intrusion%20detection/core_engine/rule_worker.py):
+     - `sweep_expired_rules()`: Sweeps expired rules in MongoDB (`expires_at <= now()`), unblocks firewall adapter, notifies `DecisionEngine.forget_block()`, emits real-time WebSocket `blocklist_update` (status='expired'), and records audit records in `system_logs` and `response_actions`.
+     - `reconcile_on_startup()`: Sweeps rules expired while offline, restores still-active blocks on firewall with remaining duration (`STARTUP_RULE_RESTORED`), cleans orphaned firewall rules (`STARTUP_ORPHAN_RULE_REMOVED`), enforces allowlist immunity (`STARTUP_ALLOWLIST_PROTECTION`), and records complete audit summary in `system_logs`.
+     - `RuleExpiryWorker`: Background daemon thread (default 10s sweep period) with graceful lifecycle management (`start`, `stop`, `sweep_now`, `get_status`).
+  2. Integrated into [`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py):
+     - Startup reconciliation executes during `create_app()`.
+     - `add_block()` and `remove_block()` now log `MANUAL_BLOCK` and `MANUAL_UNBLOCK` events to `system_logs` with admin username.
+     - `POST /api/blocklist` accepts both `duration_minutes` and `minutes`.
+     - `GET /api/blocklist` provides both `blocks` and `rules`.
+     - Added management endpoints: `GET /api/v1/firewall/sync`, `POST /api/v1/firewall/sync`, `GET /api/v1/firewall/worker/status`, `POST /start`, `POST /stop`.
+  3. Integrated into React Frontend [`my-app/src/pages/Blocklist.js`](file:///d:/intrusion%20detection/my-app/src/pages/Blocklist.js):
+     - Updated rule loading to accept `res.data.blocks || res.data.rules`.
+     - Updated manual block form to send `duration_minutes` alongside `minutes`.
+  4. Tests:
+     - Implemented [`tests/unit/test_rule_worker.py`](file:///d:/intrusion%20detection/tests/unit/test_rule_worker.py) with 7 comprehensive unit tests.
+     - Added 2 integration tests in [`tests/integration/test_app_api.py`](file:///d:/intrusion%20detection/tests/integration/test_app_api.py).
+     - Full test suite: **255 Python tests passed in 74.81s (100% pass rate)**; **2 React tests passed in 47.85s**. Phase 8 is 100% COMPLETE.
 
 ---
 

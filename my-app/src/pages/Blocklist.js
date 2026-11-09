@@ -22,7 +22,7 @@ const Blocklist = () => {
   const loadRules = async () => {
     try {
       const res = await apiClient.get("/api/blocklist");
-      const list = res.data?.rules || (Array.isArray(res.data) ? res.data : []);
+      const list = res.data?.blocks || res.data?.rules || (Array.isArray(res.data) ? res.data : []);
       setRules(list);
     } catch (err) {
       console.error("Failed to load blocklist:", err);
@@ -59,6 +59,7 @@ const Blocklist = () => {
         ip: manualIp.trim(),
         direction,
         minutes: parseInt(durationMinutes, 10) || 60,
+        duration_minutes: parseInt(durationMinutes, 10) || 60,
         reason: reason.trim() || "MANUAL_OPERATOR_BLOCK",
       });
 

@@ -48,6 +48,11 @@ from core_engine.detector import Detector
 from core_engine.decision_engine import DecisionEngine
 from core_engine.zeek_adapter import ZeekAdapter
 from core_engine.runner import LivePipelineRunner
+from core_engine.rule_worker import (
+    RuleExpiryWorker,
+    reconcile_on_startup,
+    sweep_expired_rules,
+)
 
 load_dotenv()
 logger = logging.getLogger("ids_app")
@@ -70,6 +75,7 @@ def create_app(
     decision_engine: Optional[DecisionEngine] = None,
     zeek_adapter: Optional[ZeekAdapter] = None,
     pipeline_runner: Optional[LivePipelineRunner] = None,
+    rule_worker: Optional[RuleExpiryWorker] = None,
     test_config: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Flask, SocketIO]:
     """
@@ -164,6 +170,36 @@ def create_app(
     )
     app.config["zeek_adapter"] = zeek_inst
     app.config["runner"] = runner_inst
+
+    # Step 34: Restart Recovery & Firewall Reconciliation
+    should_reconcile = True
+    if test_config and not test_config.get("reconcile_on_startup", True):
+        should_reconcile = False
+
+    reconcile_summary = None
+    if should_reconcile:
+        try:
+            reconcile_summary = reconcile_on_startup(
+                db=db,
+                firewall=firewall,
+                socketio=socketio,
+                decision_engine=decision_inst,
+            )
+        except Exception as exc:
+            logger.warning("Startup firewall reconciliation encountered error: %s", exc)
+    app.config["startup_reconciliation"] = reconcile_summary
+
+    # Background Rule Expiry Worker (Step 34)
+    worker_inst = rule_worker or RuleExpiryWorker(
+        db=db,
+        firewall=firewall,
+        socketio=socketio,
+        decision_engine=decision_inst,
+        interval_seconds=int(settings_cfg.get("response", {}).get("sweep_interval_seconds", 10)),
+    )
+    app.config["rule_worker"] = worker_inst
+    if test_config and test_config.get("autostart_rule_worker", False):
+        worker_inst.start()
 
     # =========================================================================
     # Error Handlers
@@ -503,6 +539,7 @@ def create_app(
             "adapter_mode": firewall.mode,
             "is_simulated": firewall.is_simulated,
             "blocks": blocks,
+            "rules": blocks,
         }), 200
 
     @app.route("/api/blocklist", methods=["POST"])
@@ -517,7 +554,7 @@ def create_app(
         ip = data.get("ip", "").strip()
         direction = data.get("direction", "source")
         reason = data.get("reason", "Manual administrator block")
-        duration = data.get("duration_minutes")
+        duration = data.get("duration_minutes") or data.get("minutes")
 
         if not ip:
             return jsonify({"error": "Bad Request", "message": "Target 'ip' must be specified."}), 400
@@ -555,7 +592,7 @@ def create_app(
             ip=ip,
             direction=direction,
             reason=reason,
-            duration_minutes=duration,
+            duration_minutes=dur_mins,
             actor=actor,
         )
 
@@ -573,6 +610,21 @@ def create_app(
             "status": "applied",
             "simulated": firewall.is_simulated,
         })
+
+        # Log system audit event (Step 34, FR-07)
+        if hasattr(db, "log_system_event"):
+            db.log_system_event(
+                actor=actor,
+                event="MANUAL_BLOCK",
+                outcome="SUCCESS",
+                details={
+                    "ip": ip,
+                    "direction": direction,
+                    "duration_minutes": dur_mins,
+                    "reason": reason,
+                    "block_id": block_id,
+                },
+            )
 
         # Broadcast blocklist update
         block_update = {
@@ -629,6 +681,19 @@ def create_app(
             "status": "applied",
             "simulated": firewall.is_simulated,
         })
+
+        # Log system audit event (Step 34, FR-07)
+        if hasattr(db, "log_system_event"):
+            db.log_system_event(
+                actor=actor,
+                event="MANUAL_UNBLOCK",
+                outcome="SUCCESS",
+                details={
+                    "ip": clean_ip,
+                    "reason": reason,
+                    "unblocked_count": unblocked_count,
+                },
+            )
 
         # Broadcast update
         unblock_payload = {
@@ -876,6 +941,88 @@ def create_app(
             "success": stopped,
             "status": runner_obj.get_status()["status"],
             "message": "Pipeline stopped" if stopped else "Pipeline stop timed out",
+        }), 200
+
+    # =========================================================================
+    # 9C. Firewall Synchronization & Rule Expiry Worker (Step 34, FR-06, FR-07)
+    # =========================================================================
+
+    @app.route("/api/v1/firewall/sync", methods=["GET"])
+    @auth.token_required
+    def get_firewall_sync():
+        """
+        Inspect synchronization status between firewall adapter and database blocklist.
+        """
+        fw_rules = firewall.list_active() if hasattr(firewall, "list_active") else []
+        db_blocks = db.get_active_blocks() if hasattr(db, "get_active_blocks") else []
+        fw_ips = {r.get("ip") for r in fw_rules if r.get("ip")}
+        db_ips = {b.get("ip") for b in db_blocks if b.get("ip")}
+        worker_obj = app.config.get("rule_worker")
+        worker_status = worker_obj.get_status() if worker_obj else {}
+
+        return jsonify({
+            "status": "success",
+            "in_sync": fw_ips == db_ips,
+            "firewall_rules_count": len(fw_rules),
+            "db_active_blocks_count": len(db_blocks),
+            "firewall_rules": fw_rules,
+            "db_active_blocks": db_blocks,
+            "worker": worker_status,
+        }), 200
+
+    @app.route("/api/v1/firewall/sync", methods=["POST"])
+    @auth.admin_required
+    def trigger_firewall_sync():
+        """
+        Manually trigger reconciliation between firewall adapter and database blocklist.
+        """
+        summary = reconcile_on_startup(
+            db=db,
+            firewall=firewall,
+            socketio=socketio,
+            decision_engine=decision_inst,
+        )
+        return jsonify({
+            "status": "success",
+            "message": "Firewall reconciliation completed.",
+            "reconciliation": summary,
+        }), 200
+
+    @app.route("/api/v1/firewall/worker/status", methods=["GET"])
+    @auth.token_required
+    def get_worker_status():
+        """Get status of the background rule expiry worker."""
+        worker_obj = app.config.get("rule_worker")
+        if not worker_obj:
+            return jsonify({"status": "unavailable", "running": False}), 200
+        return jsonify({"status": "success", "worker": worker_obj.get_status()}), 200
+
+    @app.route("/api/v1/firewall/worker/start", methods=["POST"])
+    @auth.admin_required
+    def start_worker():
+        """Start the background rule expiry worker."""
+        worker_obj = app.config.get("rule_worker")
+        if not worker_obj:
+            return jsonify({"error": "Worker not configured"}), 503
+        started = worker_obj.start()
+        return jsonify({
+            "success": started,
+            "worker": worker_obj.get_status(),
+            "message": "Worker started" if started else "Worker already running",
+        }), 200
+
+    @app.route("/api/v1/firewall/worker/stop", methods=["POST"])
+    @auth.admin_required
+    def stop_worker():
+        """Stop the background rule expiry worker."""
+        worker_obj = app.config.get("rule_worker")
+        if not worker_obj:
+            return jsonify({"error": "Worker not configured"}), 503
+        stopped = worker_obj.stop()
+        return jsonify({
+            "success": stopped,
+            "worker": worker_obj.get_status(),
+            "message": "Worker stopped" if stopped else "Worker stop timed out",
         }), 200
 
     # =========================================================================

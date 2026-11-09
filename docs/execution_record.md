@@ -69,6 +69,7 @@ Use this document to reproduce any step, review past work, prepare for superviso
 | **Step 31** | Autonomous Response Policy & Guardrails | ✅ Completed | `core_engine/response_policy.py` (Table 5 matrix, 7 guardrails, D-035) | `fdd0498` |
 | **Step 32** | Linux nftables Rules & Kernel Adapter | ✅ Completed | `sensor/ids_inline.nft`, `core_engine/firewall/nftables_adapter.py` (D-036) | `e43f4c1` |
 | **Step 33** | Modular Firewall Adapters & Integration | ✅ Completed | `core_engine/firewall/` (base, router, simulation, init, D-037) | `0c2b2e6` |
+| **Step 34** | Manual Control, Expiry & Crash Recovery | ✅ Completed | `core_engine/rule_worker.py` (RuleExpiryWorker, startup reconciliation, D-047) | `0c62399` |
 
 ---
 
@@ -1732,6 +1733,56 @@ Use this document to reproduce any step, review past work, prepare for superviso
   - `docs/decision_log.md` (Added Decision D-037, in Git)
   - `docs/execution_record.md` (Updated Step 33 execution details, in Git)
 * **Verification Result:** All 8 unit tests in `test_firewall_adapters.py` passed; all 4 integration tests in `test_firewall_integration.py` passed; all 204 repository tests passed in 56.28s with 0 errors (100% pass rate). Requirement FR-06 fulfilled. Step 33 status is ✅ Done.
+
+---
+
+### Step 34: Manual Control, Rule Expiry Daemon, and Crash / Restart Recovery
+
+* **Objective:** Implement full administrative manual override (FR-07), automated background rule expiration daemon (`RuleExpiryWorker`), and startup crash recovery reconciliation (`reconcile_on_startup`) to ensure firewall state and MongoDB database blocklist match reliably after ungraceful restarts or daemon termination per Proposal Section 3.7; Table 9 (reliability: old rules cleaned up); Objective O5; and Decision `D-047`.
+* **Date:** 9 November 2026
+* **How It Was Done:**
+  1. *Rule Worker and Recovery Implementation ([`core_engine/rule_worker.py`](file:///d:/intrusion%20detection/core_engine/rule_worker.py)):*
+     - `sweep_expired_rules()`: Identifies all active MongoDB blocks passing `expires_at`, marks them `'expired'`, unblocks the firewall adapter, notifies `DecisionEngine.forget_block()`, broadcasts real-time `blocklist_update` WebSocket notifications, and writes audit entries to `response_actions` and `system_logs`.
+     - `reconcile_on_startup()`: Sweeps rules expired during offline downtime, compares remaining active blocks against `firewall.list_active()`, re-enacts missing rules with clamped remaining minutes (`STARTUP_RULE_RESTORED`), cleans orphaned firewall rules (`STARTUP_ORPHAN_RULE_REMOVED`), enforces allowlist immunity (`STARTUP_ALLOWLIST_PROTECTION`), and records complete audit summary in `system_logs` (`STARTUP_RECOVERY_COMPLETE`).
+     - `RuleExpiryWorker`: Background daemon thread (default 10s sweep period) with graceful lifecycle management (`start`, `stop`, `sweep_now`, `get_status`).
+  2. *Server Integration ([`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py)):*
+     - Automatic startup reconciliation executed inside `create_app()`.
+     - `add_block()` and `remove_block()` now write `MANUAL_BLOCK` and `MANUAL_UNBLOCK` audit events to `system_logs` with admin username and parameters.
+     - `POST /api/blocklist` accepts both `duration_minutes` and `minutes`.
+     - `GET /api/blocklist` supplies both `blocks` and `rules` collections.
+     - Added REST control endpoints: `GET /api/v1/firewall/sync`, `POST /api/v1/firewall/sync`, `GET /api/v1/firewall/worker/status`, `POST /start`, `POST /stop`.
+  3. *Frontend Integration ([`my-app/src/pages/Blocklist.js`](file:///d:/intrusion%20detection/my-app/src/pages/Blocklist.js)):*
+     - Harmonized rule loading to accept `res.data.blocks || res.data.rules`.
+     - Harmonized manual block form to submit `duration_minutes` alongside `minutes`.
+  4. *Automated Testing:*
+     - Created [`tests/unit/test_rule_worker.py`](file:///d:/intrusion%20detection/tests/unit/test_rule_worker.py) (7 unit tests).
+     - Expanded [`tests/integration/test_app_api.py`](file:///d:/intrusion%20detection/tests/integration/test_app_api.py) (2 integration tests).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run rule worker unit tests
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_rule_worker.py
+
+  # 2. Run app API integration tests
+  .\.venv\Scripts\python.exe -m pytest tests/integration/test_app_api.py
+
+  # 3. Run full automated test suite
+  .\.venv\Scripts\python.exe -m pytest
+
+  # 4. Run React frontend test suite
+  npm test --prefix my-app -- --watchAll=false
+  ```
+* **Files Created / Modified:**
+  - `core_engine/rule_worker.py` (Created rule worker and startup reconciliation service, in Git)
+  - `core_engine/app.py` (Integrated reconciliation, audit logging, and REST endpoints, in Git)
+  - `core_engine/db_service.py` (Added `sweep_expired_blocks()` and `get_active_blocks()`, in Git)
+  - `my-app/src/pages/Blocklist.js` (Harmonized property names and duration inputs, in Git)
+  - `tests/unit/test_rule_worker.py` (Created unit test suite, in Git)
+  - `tests/integration/test_app_api.py` (Added Step 34 integration tests, in Git)
+  - `docs/decision_log.md` (Added Decision D-047, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Marked Step 34 ✅ Done, in Git)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work log 3.59, in Git)
+  - `docs/execution_record.md` (Updated Step 34 execution details, in Git)
+* **Verification Result:** All 7 unit tests in `test_rule_worker.py` passed; all 16 integration tests in `test_app_api.py` passed; all 255 repository tests passed in 74.81s with 0 errors (100% pass rate); all React frontend tests passed. Requirement FR-06, FR-07, and Objective O5 fulfilled. Step 34 status is ✅ Done. Phase 8 (Automated Intrusion Response, Steps 31–34) is 100% COMPLETE.
 
 ---
 

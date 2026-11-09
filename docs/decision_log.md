@@ -879,3 +879,33 @@ Every important project decision is written here: the date, the decision, the re
   - Replay on 34-1 with these thresholds (reported only): PortScan 27 blocks, 1 fired by a benign flow (1 of the 2 benign hosts in 34-1 was blocked once); most PortScan blocks there were fired by CnC flows of the infected device, which the live policy would not block because that device is local (local-network protection, proposal 3.7). CnC: 1 block, correct.
   - Original-label results are in `reports/experiments/thresholds_and_explanation.md`, Section 8. The weakest labels on out-of-fold data are `DDoS` (0.16% put in the right group) and `C&C` (6.3%); on 34-1, `C&C` 36.7%.
   - Dataset copy: first and last flows match the official files for 23/23 files; label totals match the official website for 17 scenarios. Three differ: 33-1 (`Okiru` in our copy vs `Okiru-Attack` on the website, same count; the official file says `Okiru`, D-039), 49-1 (14 `FileDownload` flows not on the website) and 52-1 (2 `C&C-Mirai` flows not on the website). The 3 honeypot captures are not listed on the website.
+
+## D-047 — 2026-11-09 — Step 34: Manual Control, Rule Expiry Worker, and Crash / Restart Recovery (Phase 8 Completion)
+- **Why:** Proposal Section 3.7 and Table 9 require that security administrators retain complete manual control (FR-07), expired firewall rules are reliably pruned without lingering indefinitely, and the system recovers consistently after unexpected restarts or daemon crashes without losing active security mitigations or retaining orphan blocks.
+- **What was built:**
+  1. **Manual Block & Unblock Dashboard Integration:**
+     - Enforces management allowlist protection prior to blocking.
+     - Logs every manual operator block and unblock to both MongoDB `response_actions` and `system_logs` with the actor's username and reason code.
+     - Supports both `duration_minutes` and `minutes` parameters for frontend flexibility.
+     - Emits real-time `blocklist_update` WebSocket event so all connected dashboard clients synchronize immediately without page refresh.
+  2. **Rule Expiry Background Worker (`core_engine/rule_worker.py`):**
+     - Runs a periodic sweep daemon (`RuleExpiryWorker`, default 10s cycle).
+     - Transitions expired active documents (`expires_at <= now()`) to status `'expired'` in MongoDB with `unblocked_at`, `unblock_reason="RULE_TIMEOUT_EXPIRED"`, and `unblock_actor="system_auto"`.
+     - Calls `firewall.unblock(ip, direction="all")` on the active firewall adapter.
+     - Informs `DecisionEngine.forget_block(ip)` so repeat tracking resets.
+     - Emits `blocklist_update` WebSocket notification and writes audit entries to `response_actions` and `system_logs`.
+  3. **Crash & Startup Reconciliation (`reconcile_on_startup`):**
+     - Runs during application startup (`create_app`):
+       - Sweeps rules that expired while the system was down.
+       - Compares remaining active rules in MongoDB against `firewall.list_active()`.
+       - Re-enacts any missing active rules on the firewall with clamped remaining minutes (`STARTUP_RULE_RESTORED`).
+       - Enforces allowlist immunity: immediately drops accidental blocks on allowlisted hosts (`STARTUP_ALLOWLIST_PROTECTION`).
+       - Drops orphaned rules in firewall that are absent in MongoDB (`STARTUP_ORPHAN_RULE_REMOVED`).
+       - Logs complete audit reconciliation summary in `system_logs` (`STARTUP_RECOVERY_COMPLETE`).
+  4. **REST APIs & Monitoring:**
+     - `GET /api/v1/firewall/sync` (Admin/Token: inspect synchronization state).
+     - `POST /api/v1/firewall/sync` (Admin: trigger manual reconciliation).
+     - `GET /api/v1/firewall/worker/status`, `POST /start`, `POST /stop` (Admin: daemon controls).
+- **Verification:** 7 unit tests in `tests/unit/test_rule_worker.py` and 2 integration tests in `tests/integration/test_app_api.py`. Entire test suite: 255 Python tests passed (100%), 2 Jest frontend tests passed. Phase 8 (Steps 31–34) is 100% COMPLETE.
+- **Who agreed:** project owner (9 Nov 2026).
+- **Proposal link:** Sections 3.6, 3.7; Table 7 (FR-06, FR-07); Table 9 (reliability: old rules cleaned up); Objective O5.

@@ -842,6 +842,48 @@ class DatabaseService:
             logger.error(f"Error querying block history for {ip}: {e}")
             return []
 
+    def sweep_expired_blocks(self) -> List[Dict[str, Any]]:
+        """
+        Transition all active blocklist entries that have expired (now >= expires_at)
+        to status 'expired'. Preserves full audit trail with unblocked_at,
+        unblock_reason, and unblock_actor fields.
+        Returns the list of transitioned block documents.
+        """
+        if not self.is_connected():
+            return []
+        now = datetime.now(timezone.utc)
+        expired_docs = []
+        try:
+            cursor = self.blocklist.find({"status": "active", "expires_at": {"$lte": now}})
+            expired_docs = list(cursor)
+            if expired_docs:
+                ids = [d["_id"] for d in expired_docs]
+                self.blocklist.update_many(
+                    {"_id": {"$in": ids}},
+                    {
+                        "$set": {
+                            "status": "expired",
+                            "unblocked_at": now,
+                            "unblock_reason": "RULE_TIMEOUT_EXPIRED",
+                            "unblock_actor": "system_auto",
+                        }
+                    },
+                )
+        except PyMongoError as e:
+            logger.error(f"Error sweeping expired blocks: {e}")
+        return expired_docs
+
+    def get_active_blocks(self, format_dates: bool = True) -> List[Dict[str, Any]]:
+        """Retrieve all currently active block documents without mutating them."""
+        if not self.is_connected():
+            return []
+        try:
+            cursor = self.blocklist.find({"status": "active"}).sort("created_at", DESCENDING)
+            return [self._format_doc(b, format_dates=format_dates) for b in cursor]
+        except PyMongoError as e:
+            logger.error(f"Error fetching active blocks: {e}")
+            return []
+
     # =========================================================================
     # 4. Response Actions (Figure 4, FR-06, FR-07)
     # =========================================================================

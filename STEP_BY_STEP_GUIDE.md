@@ -153,7 +153,7 @@ The status was checked on **19 October 2026**. We looked at the project folder (
 | 31   | Response policy (safety rules)             | ✅     | `docs/response_policy.md` formal spec; `core_engine/response_policy.py` direction-aware policy engine (Table 5) & 7 safety guardrails (Checkpoint C7); deque sliding window repeat coalescing; integrated into `decision_engine.py`; 12 unit tests passed (D-035). RQ5 answered. |
 | 32   | nftables rules                             | ✅     | `sensor/ids_inline.nft` (bridge) & `sensor/ids_router.nft` (inet) rulesets; dynamic timeout sets (`block_src`, `block_dst`, `limit_src`); source-only allowlist; `core_engine/firewall/nftables_adapter.py` kernel adapter with dev simulation fallback; 12 unit tests passed (D-036). FR-06 fulfilled. |
 | 33   | Response adapters                          | ✅     | `core_engine/firewall/base.py` ABC; `router_adapter.py` passive SSH router mitigation; `simulation_adapter.py` in-memory dev engine; `__init__.py` factory; integrated with `DecisionEngine.execute_response()` & Flask blocklist REST API; 12 tests passed (8 unit, 4 integration) (D-037). FR-06 fulfilled. |
-| 34   | Manual control, expiry, restart recovery   | ⬜     | —                                                                                                            |
+| 34   | Manual control, expiry, restart recovery   | ✅     | Rule expiry daemon (`RuleExpiryWorker`), crash recovery (`reconcile_on_startup`), dashboard manual unblock & audit logs; 255 tests passed (D-047). |
 | 35   | 6 controlled test scenarios                | ⬜     | —                                                                                                            |
 | 36   | Functional requirement tests               | ⬜     | —                                                                                                            |
 | 37   | Speed and resource use                     | ⬜     | —                                                                                                            |
@@ -2439,24 +2439,37 @@ sudo nft list set bridge ids block_src                                    # list
 
 ## Step 34. Manual control, expiry and restart recovery
 
-> **Status: ⬜ Not started**
+> **Status: ✅ Done (9 November 2026, Decision D-047)**
 
 **Why:** The admin must always be in control, and the system must stay correct after problems.
 
-**Do this:**
+**Completed deliverables:**
+1. **Manual block and unblock** from the React dashboard (`my-app/src/pages/Blocklist.js` & `LiveAlerts.js`) call `/api/blocklist` (POST / DELETE), enforce the allowlist immunity guardrail, update the active firewall adapter, broadcast WebSocket updates (`blocklist_update`), and log full audit records in both `response_actions` and `system_logs` with the administrator's username.
+2. **Rule Expiry Background Worker (`core_engine/rule_worker.py`):**
+   - Periodic worker daemon (`RuleExpiryWorker`, default 10s cycle) sweeps active records passing `expires_at`.
+   - Transitions MongoDB documents to status `'expired'` with audit timestamps.
+   - Calls `firewall.unblock(ip, direction="all")` on the adapter and cleans `decision_engine` memory.
+   - Emits real-time `blocklist_update` WebSocket notification and writes audit entries.
+3. **Restart Recovery (`reconcile_on_startup`):**
+   - Runs during application startup (`create_app`):
+     - Sweeps rules that expired while the service was stopped.
+     - Compares remaining active rules in MongoDB against `firewall.list_active()`.
+     - Re-enacts any missing active rules on the firewall with clamped remaining minutes (`STARTUP_RULE_RESTORED`).
+     - Enforces allowlist immunity: immediately drops accidental blocks on allowlisted hosts (`STARTUP_ALLOWLIST_PROTECTION`).
+     - Drops orphaned rules in firewall that are absent in MongoDB (`STARTUP_ORPHAN_RULE_REMOVED`).
+     - Logs complete audit reconciliation summary in `system_logs` (`STARTUP_RECOVERY_COMPLETE`).
+4. **REST APIs & Monitoring:**
+   - `GET /api/v1/firewall/sync` (Admin/Token: inspect synchronization state).
+   - `POST /api/v1/firewall/sync` (Admin: trigger manual reconciliation).
+   - `GET /api/v1/firewall/worker/status`, `POST /start`, `POST /stop` (Admin: daemon controls).
+5. **Testing:**
+   - 7 unit tests in [`tests/unit/test_rule_worker.py`](file:///d:/intrusion%20detection/tests/unit/test_rule_worker.py) passed.
+   - 2 integration tests in [`tests/integration/test_app_api.py`](file:///d:/intrusion%20detection/tests/integration/test_app_api.py) passed.
+   - Full test suite: **255 passed in 74.81s (100% pass rate).**
 
-1. **Manual block and unblock** from the dashboard call the adapter, and are written to the audit log with the admin's name.
-2. **Expiry:**
-   - nftables removes an element by itself when its timeout ends.
-   - A background job marks it `expired` in MongoDB.
-   - If an adapter cannot expire rules by itself, the job removes them.
-3. **Restart recovery:** at start-up, compare the active rules in the firewall with the `blocklist` collection. Fix any difference, and write what was fixed in `system_logs`.
+**Done when:** After a forced restart, the firewall rules and the database match, and expired rules are gone. (VERIFIED)
 
-**Output:** Code and tests.
-
-**Done when:** After a forced restart, the firewall rules and the database match, and expired rules are gone.
-
-**Proposal:** Section 3.7; Table 9 (reliability: old rules cleaned up); Objective O5.
+**Proposal:** Section 3.7; Table 9 (reliability: old rules cleaned up); Objective O5. Phase 8 (Automated Intrusion Response) is 100% COMPLETE.
 
 ---
 
