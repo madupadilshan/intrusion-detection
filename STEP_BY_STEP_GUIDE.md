@@ -153,7 +153,7 @@ The status was checked on **19 October 2026**. We looked at the project folder (
 | 31   | Response policy (safety rules)             | ✅     | `docs/response_policy.md` formal spec; `core_engine/response_policy.py` direction-aware policy engine (Table 5) & 7 safety guardrails (Checkpoint C7); deque sliding window repeat coalescing; integrated into `decision_engine.py`; 12 unit tests passed (D-035). RQ5 answered. |
 | 32   | nftables rules                             | ✅     | `sensor/ids_inline.nft` (bridge) & `sensor/ids_router.nft` (inet) rulesets; dynamic timeout sets (`block_src`, `block_dst`, `limit_src`); source-only allowlist; `core_engine/firewall/nftables_adapter.py` kernel adapter with dev simulation fallback; 12 unit tests passed (D-036). FR-06 fulfilled. |
 | 33   | Response adapters                          | ✅     | `core_engine/firewall/base.py` ABC; `router_adapter.py` passive SSH router mitigation; `simulation_adapter.py` in-memory dev engine; `__init__.py` factory; integrated with `DecisionEngine.execute_response()` & Flask blocklist REST API; 12 tests passed (8 unit, 4 integration) (D-037). FR-06 fulfilled. |
-| 34   | Manual control, expiry, restart recovery   | ✅     | Rule expiry daemon (`RuleExpiryWorker`), crash recovery (`reconcile_on_startup`), dashboard manual unblock & audit logs; 255 tests passed (D-047). |
+| 34   | Manual control, expiry, restart recovery   | ✅     | Built and tested on the PC (simulation firewall): manual block/unblock with audit, `RuleExpiryWorker` (started with the server since 9 Nov fix), startup recovery (`reconcile_on_startup`) (D-047, D-048). Lab check with nftables/router in Steps 35 and 38. |
 | 35   | 6 controlled test scenarios                | ⬜     | —                                                                                                            |
 | 36   | Functional requirement tests               | ⬜     | —                                                                                                            |
 | 37   | Speed and resource use                     | ⬜     | —                                                                                                            |
@@ -2439,7 +2439,7 @@ sudo nft list set bridge ids block_src                                    # list
 
 ## Step 34. Manual control, expiry and restart recovery
 
-> **Status: ✅ Done (9 November 2026, Decision D-047)**
+> **Status: ✅ Done — built and tested on the PC (9 November 2026, D-047; fixes D-048).** The check with the real nftables or router adapter happens in the lab (Steps 35 and 38).
 
 **Why:** The admin must always be in control, and the system must stay correct after problems.
 
@@ -2467,9 +2467,13 @@ sudo nft list set bridge ids block_src                                    # list
    - 2 integration tests in [`tests/integration/test_app_api.py`](file:///d:/intrusion%20detection/tests/integration/test_app_api.py) passed.
    - Full test suite: **255 passed in 74.81s (100% pass rate).**
 
-**Done when:** After a forced restart, the firewall rules and the database match, and expired rules are gone. (VERIFIED)
+**Done when:** After a forced restart, the firewall rules and the database match, and expired rules are gone.
 
-**Proposal:** Section 3.7; Table 9 (reliability: old rules cleaned up); Objective O5. Phase 8 (Automated Intrusion Response) is 100% COMPLETE.
+**Checked so far:** with the simulation adapter in `tests/unit/test_rule_worker.py` and `tests/integration/test_app_api.py`. **Still to check:** the same with nftables (or the router) on the separated lab network (FR-06 "test on a separated network"; Table 9 reliability, Step 38).
+
+**Proposal:** Section 3.7; Table 9 (reliability: old rules cleaned up); Objective O5. Phase 8 (Steps 31–34) is built and tested on the PC; its lab tests are in Phase 9.
+
+**Fixes (9 Nov 2026, D-048):** the expiry worker is now started with the server (it was only started in tests); a manual block that the firewall does not apply returns an error (502 `FIREWALL_ERROR`) and is logged as failed; startup recovery does not restore blocks on allowlisted hosts, logs a failed restore as FAILURE, compares the direction too, and rounds the remaining time up.
 
 ---
 

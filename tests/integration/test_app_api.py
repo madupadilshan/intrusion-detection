@@ -636,3 +636,25 @@ def test_step34_firewall_sync_and_worker_endpoints(test_setup):
     w_stop = client.post("/api/v1/firewall/worker/stop", headers=headers)
     assert w_stop.status_code == 200
     assert w_stop.get_json()["success"] is True
+
+
+def test_manual_block_firewall_failure_is_not_recorded_as_applied(test_setup):
+    """Issue 28: if the firewall does not apply a manual block, the API says so and the audit says 'failed'."""
+    client = test_setup["client"]
+    db = test_setup["db"]
+    headers = {"Authorization": f"Bearer {test_setup['admin_token']}"}
+    fw = test_setup["app"].config["firewall"]
+
+    def broken_block(*args, **kwargs):
+        raise RuntimeError("nft: Could not process rule")
+
+    fw.block = broken_block
+    resp = client.post("/api/blocklist", headers=headers,
+                       json={"ip": "192.168.50.88", "minutes": 10, "reason": "test"})
+    assert resp.status_code == 502
+    assert resp.get_json()["code"] == "FIREWALL_ERROR"
+    # nothing is recorded as an active block
+    assert db.blocklist.count_documents({"ip": "192.168.50.88", "status": "active"}) == 0
+    # the audit records the failure
+    assert db.response_actions.count_documents({"target_ip": "192.168.50.88", "status": "failed"}) == 1
+    assert db.system_logs.count_documents({"event": "MANUAL_BLOCK", "outcome": "FAILURE"}) == 1

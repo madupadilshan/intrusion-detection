@@ -70,7 +70,7 @@ Labels: ✅ Done · 🔧 Done – needs changes · 🟡 Started · ♻️ Old co
 | 31   | Response policy (safety rules)             | ✅     | `docs/response_policy.md` formal spec; `core_engine/response_policy.py` direction-aware policy engine (Table 5) & 7 safety guardrails (Checkpoint C7); deque sliding window repeat coalescing; integrated into `decision_engine.py`; 12 unit tests passed (D-035). RQ5 answered. |
 | 32   | nftables rules                             | ✅     | `sensor/ids_inline.nft` (bridge) & `sensor/ids_router.nft` (inet) rulesets; dynamic timeout sets (`block_src`, `block_dst`, `limit_src`); source-only allowlist; `core_engine/firewall/nftables_adapter.py` kernel adapter with dev simulation fallback; 12 unit tests passed (D-036). FR-06 fulfilled. |
 | 33   | Response adapters                          | ✅     | `core_engine/firewall/base.py` ABC, `router_adapter.py` SSH mitigation, `simulation_adapter.py` dev engine, `__init__.py` factory, `decision_engine.py` & `app.py` integration; 12 tests passed (D-037). |
-| 34   | Manual control, expiry, restart recovery   | ✅     | Rule expiry daemon (`RuleExpiryWorker`), crash recovery (`reconcile_on_startup`), dashboard manual unblock & audit logs; 255 tests passed (D-047). Phase 8 100% COMPLETE. |
+| 34   | Manual control, expiry, restart recovery   | ✅     | Built and tested on the PC (simulation firewall): manual block/unblock with audit, `RuleExpiryWorker` (started with the server since 9 Nov fix), startup recovery (`reconcile_on_startup`) (D-047, D-048). Lab check with nftables/router in Steps 35 and 38. |
 | 35   | 6 controlled test scenarios                | ⬜     |                                                                                           |
 | 36   | Functional requirement tests               | ⬜     |                                                                                           |
 | 37   | Speed and resource use                     | ⬜     |                                                                                           |
@@ -1070,7 +1070,44 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
   4. Tests:
      - Implemented [`tests/unit/test_rule_worker.py`](file:///d:/intrusion%20detection/tests/unit/test_rule_worker.py) with 7 comprehensive unit tests.
      - Added 2 integration tests in [`tests/integration/test_app_api.py`](file:///d:/intrusion%20detection/tests/integration/test_app_api.py).
-     - Full test suite: **255 Python tests passed in 74.81s (100% pass rate)**; **2 React tests passed in 47.85s**. Phase 8 is 100% COMPLETE.
+     - Full test suite: **255 Python tests passed in 74.81s (100% pass rate)**; **2 React tests passed in 47.85s**. Phase 8 is built and tested on the PC (wording corrected in 3.61; lab tests in Phase 9).
+
+**3.60 Check of the Step 34 work (commit `66a7ead`, 9 November 2026)**
+
+- **What was done:** checked the Step 34 code, tests and documents against the guide and the proposal. No code was changed.
+- **Tests:** 255 Python tests passed (155.9 s), as reported.
+- **Correct:** manual block refuses allowlisted IPs (403 `ALLOWLIST_PROTECTED`); manual block and unblock write `response_actions` and `system_logs` with the admin's name; `blocklist_update` is sent by Socket.IO; the expiry sweep marks rules `expired`, removes them from the firewall and calls `forget_block`; startup recovery restores missing rules, removes orphan rules and allowlisted rules, and writes `STARTUP_RECOVERY_COMPLETE`. No data, model or secret files were committed.
+- **Still wrong (added to Section 5, issues 27–31):**
+  1. The expiry worker is **never started** when the server runs normally (`python core_engine/app.py`). It starts only in tests (`autostart_rule_worker`) or by `POST /api/v1/firewall/worker/start`. So expired rules stay `active` in the database and on the dashboard.
+  2. Manual block: if the firewall call fails (any error except the allowlist), the database still records the block, `response_actions` says `applied`, and the API answers 201 "enacted successfully". The audit record is then wrong (FR-07). This code is from Step 33.
+  3. Startup recovery writes `STARTUP_RULE_RESTORED` with outcome `SUCCESS` even when the firewall call failed. It also does not check the allowlist before restoring.
+  4. Small: remaining minutes are rounded down (a rule can end up to 59 s early); restore compares IPs only, not the direction.
+  5. Documents say "(VERIFIED)" and "Phase 8 100% COMPLETE". The tests use the simulation adapter on the PC. The proposal checks FR-06 "on a separated network", and Table 9 reliability in the lab (Steps 35, 38). The correct wording is "built and tested on the PC; lab check pending".
+  6. Issue 22 was closed, but only the local zip path and date are written. The **web page** the copy came from is still not recorded (proposal 3.2: "where it came from").
+- **Dataset evidence added to D-046:** the 49-1 and 52-1 label differences were checked inside the official files; both match our copy.
+
+**3.61 Fixes after the Step 34 check (9 November 2026, D-048)**
+
+- **Why:** entry 3.60 found 5 problems (issues 27–31).
+- **Step by step:**
+  1. **Expiry worker now starts with the server:** `core_engine/app.py` starts `RuleExpiryWorker` in `__main__`, next to the live pipeline runner (issue 27).
+  2. **Manual block with a firewall error:** the API returns 502 `FIREWALL_ERROR`; nothing is saved as an active block; `response_actions` says `failed` and `system_logs` says `MANUAL_BLOCK` / `FAILURE`. Manual unblock and rule expiry record `firewall_error` (outcome `PARTIAL`) when the firewall call fails (issue 28).
+  3. **Startup recovery (`core_engine/rule_worker.py`):** allowlisted hosts are never restored (their database record is closed); a failed restore is logged as `FAILURE` and the summary becomes `partial`; rules are compared by IP and direction; remaining minutes are rounded up (issue 29).
+  4. **Dashboard Blocklist page** shows the server's full message (the firewall error, or the unblock warning).
+  5. **Wording** in the guide (Step 34 and its table row), this file (row 34, entry 3.59), D-047 (note) and `execution_record.md`: "built and tested on the PC (simulation adapter); lab check in Steps 35 and 38" (issue 30).
+  6. **Dataset source found and checked (issue 31):** Kaggle "IOT-23 Full Dataset" by surajsooraj26 (https://www.kaggle.com/datasets/surajsooraj26/iot-23, version 1, CC0). The size of all 23 local files equals Kaggle's public file list, byte for byte. Written in D-039 and in `reports/iot23_copy_verification.md`, which now also explains the 3 label-total differences.
+- **Tests:** 4 new unit tests and 1 new integration test. Full suite: **260 Python tests passed** (116.8 s); 2 dashboard tests passed.
+- **Not committed yet.**
+
+**3.62 Full review against the proposal, and search for unused parts (9 November 2026)**
+
+- **What was done:** checked every part against the proposal, and searched the code, dashboard, packages and documents for parts that are not used. No code was changed.
+- **New problems (Section 5, issues 32–35):**
+  1. The dashboard loads Tailwind CSS from the internet (`cdn.tailwindcss.com` in `my-app/public/index.html`). The lab is a separated network (proposal 3.8, 5.1), so the dashboard may show with no styling there.
+  2. `requirements.txt` lists `flask-jwt-extended`, but the code never imports it; the code imports `jwt` (PyJWT), which is not listed. It works only because `flask-jwt-extended` installs PyJWT.
+  3. Unused parts: 3 React pages that nothing imports (`components/Dashboard.js`, `pages/IOTDetails.js`, `pages/IoTDevicesDashboard.js`) with their CSS and 2 images (`back.jpg`, `logo.svg`); 8 npm packages (`@headlessui/react`, `framer-motion`, `lottie-react`, `react-hook-form`, `react-icons`, `styled-components`, `chart.js`, `react-chartjs-2`); `core_engine/log_exporter.py` (only an alias of `export_service.py`).
+  4. Four long documents still contain old numbers under correction banners: `PROJECT_EXPLANATION_EN.md` (7 lines), `PROJECT_EXPLANATION.md` (6), `COMPLETE_PROJECT_GUIDE_A_TO_Z.md` (6), `docs/execution_record.md` (19). They could confuse readers at the viva.
+- **Checked and correct:** grouped validation and held-out scenario; Random Forest as main model with the 2 comparison models; class weights and unknown-category encoder; IPs and UID never model inputs; pipeline saved with the model; calibration with reliability curve and Brier score; permutation importance on held-out data; label mapping fixed before training; dataset copy traced to its source and checked against the official files; Zeek / Flask / Socket.IO / MongoDB / React / Nmap / nftables stack; allowlist, local-network check, confidence + repeat rule, rule expiry, reason codes, audit log, manual unblock; alert fields (time, direction, source/destination, class, confidence, evidence note, response status); retention (TTL) rules; secrets in `.env` (not in Git).
 
 ---
 
@@ -1124,6 +1161,15 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 | 24 | ~~Results for original detailed IoT-23 labels not reported.~~ | **Closed (9 Nov 2026, D-046):** Step 12 preserved `detailed_label` audit column in Parquet; Step 17 evaluated recall for all 17 original labels $\ge 30$ samples in `reports/experiments/thresholds_and_explanation.md` Section 8. | — |
 | 25 | ~~Dataset copy check only compares the first flow.~~ | **Closed (9 Nov 2026, D-046):** `tools/verify_iot23_copy.py` verified first row (23/23) and last row (23/23). Direct HTTP range requests against official CTU archives confirmed local CSVs match raw data byte-for-byte. | — |
 | 26 | ~~Safety floor `response.min_confidence: 0.85` too restrictive.~~ | **Closed (9 Nov 2026, D-046):** Lowered floor to `0.30` in `config/settings.yaml`, `config/settings.example.yaml`, and React frontend `Settings.js` to match calibrated model threshold range. | — |
+| 27 | ~~The rule expiry worker is not started in normal running.~~ | **Closed (9 Nov 2026, D-048):** started in `core_engine/app.py` `__main__` next to the runner; test added. | — |
+| 28 | ~~Manual block recorded as `applied` when the firewall call failed.~~ | **Closed (9 Nov 2026, D-048):** returns 502 `FIREWALL_ERROR`, nothing saved as active, audit says `failed`; unblock and expiry record `firewall_error`; integration test added. | — |
+| 29 | ~~Startup recovery logs SUCCESS on failure; no allowlist check.~~ | **Closed (9 Nov 2026, D-048):** allowlist checked first, failures logged as FAILURE, direction compared, minutes rounded up; 3 unit tests added. | — |
+| 30 | ~~Step 34 / D-047 say "VERIFIED" and "Phase 8 100% COMPLETE".~~ | **Closed (9 Nov 2026, D-048):** wording is now "built and tested on the PC; lab check in Steps 35 and 38" in the guide, progress file, D-047 note and execution record. | — |
+| 31 | ~~The web page of the dataset copy is not recorded.~~ | **Closed (9 Nov 2026):** Kaggle "IOT-23 Full Dataset" by surajsooraj26 (https://www.kaggle.com/datasets/surajsooraj26/iot-23, v1, CC0); all 23 file sizes equal the Kaggle file list (D-039). | — |
+| 32 | Dashboard loads Tailwind CSS from the internet (`cdn.tailwindcss.com`); the separated lab may have no internet (entry 3.62). | Build Tailwind locally with the `tailwindcss` package (or save the script in `my-app/public/`) and remove the CDN line. Test the dashboard with the network cable out. | **High** |
+| 33 | `requirements.txt`: `flask-jwt-extended` is listed but not used; `PyJWT` is used but not listed (entry 3.62). | Replace `flask-jwt-extended` with a pinned `PyJWT`. | Low |
+| 34 | Unused React pages, CSS, images and 8 npm packages; `core_engine/log_exporter.py` alias (entry 3.62; replaces issue 14). | Move to `archive/` or delete; remove the packages from `package.json`; re-run tests and `npm run build`. | Low |
+| 35 | Four long documents keep old numbers under correction banners (entry 3.62; replaces issue 15). | Before the viva: rewrite them from the current results, or move them to `archive/` and keep the guide, this file, the decision log, the checklist and README. | Medium |
 
 ---
 

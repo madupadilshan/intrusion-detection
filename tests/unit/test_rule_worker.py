@@ -299,3 +299,69 @@ def test_rule_expiry_worker_sweep_now():
     assert status["total_sweeps"] == 1
     assert status["last_expired_count"] == 1
     assert status["last_sweep_time"] is not None
+
+
+class FakeDbWithRemove(FakeDbService):
+    def remove_from_blocklist(self, ip, reason="", actor="admin"):
+        n = 0
+        for b in self.blocks:
+            if b["ip"] == ip and b["status"] == "active":
+                b["status"] = "removed"
+                b["unblock_reason"] = reason
+                n += 1
+        return n
+
+
+def test_startup_never_restores_an_allowlisted_db_block():
+    """Issue 29: an allowlisted IP saved as blocked in the database is not blocked again at start-up."""
+    db = FakeDbWithRemove()
+    now = datetime.now(timezone.utc)
+    db.add_block(ip="192.168.50.10", direction="source", reason="wrong", expires_at=now + timedelta(minutes=20))
+    fw = FakeFirewallAdapter()
+    summary = reconcile_on_startup(db=db, firewall=fw)
+    assert "192.168.50.10" not in fw.active_rules
+    assert summary["restored"] == 0 and summary["allowlist_cleanups"] == 1
+    assert db.blocks[0]["status"] == "removed"
+    assert any(log["event"] == "STARTUP_ALLOWLIST_PROTECTION" for log in db.system_logs)
+
+
+def test_startup_restore_failure_is_logged_as_failure():
+    """Issue 29: a restore that the firewall refuses is not logged as SUCCESS."""
+    db = FakeDbService()
+    now = datetime.now(timezone.utc)
+    db.add_block(ip="192.168.50.171", direction="source", reason="x", expires_at=now + timedelta(minutes=5))
+    fw = FakeFirewallAdapter()
+
+    def broken_block(*args, **kwargs):
+        raise RuntimeError("firewall down")
+
+    fw.block = broken_block
+    summary = reconcile_on_startup(db=db, firewall=fw)
+    assert summary["restored"] == 0 and summary["restore_failed"] == 1
+    assert summary["status"] == "partial"
+    restored_logs = [log for log in db.system_logs if log["event"] == "STARTUP_RULE_RESTORED"]
+    assert restored_logs and restored_logs[0]["outcome"] == "FAILURE"
+
+
+def test_startup_restore_rounds_remaining_minutes_up_and_checks_direction():
+    """Issue 29: 90 s left -> 2 minutes (never shorter); a dst block is restored even if a src rule exists."""
+    db = FakeDbService()
+    now = datetime.now(timezone.utc)
+    db.add_block(ip="192.168.50.172", direction="destination", reason="cnc",
+                 expires_at=now + timedelta(seconds=90))
+    fw = FakeFirewallAdapter()
+    fw.active_rules["192.168.50.172"] = {"ip": "192.168.50.172", "direction": "src", "set": "block_src"}
+    summary = reconcile_on_startup(db=db, firewall=fw)
+    assert summary["restored"] == 1
+    assert fw.block_calls[-1]["direction"] == "dst"
+    assert fw.block_calls[-1]["minutes"] == 2
+
+
+def test_app_main_starts_the_rule_worker():
+    """Issue 27: the server entry point starts the expiry worker, not only the tests."""
+    from pathlib import Path
+
+    src = Path("core_engine/app.py").read_text(encoding="utf-8")
+    main_part = src[src.index('if __name__ == "__main__":'):]
+    assert 'app.config.get("rule_worker")' in main_part
+    assert "worker_obj.start()" in main_part

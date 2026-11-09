@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* SOC Cyber Dark Baseline Styling */
 * {
   box-sizing: border-box;

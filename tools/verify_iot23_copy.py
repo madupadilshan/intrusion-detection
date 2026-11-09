@@ -221,6 +221,8 @@ def main() -> int:
         f"**Date:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}  ",
         f"**Official files:** `{OFFICIAL_BASE}/<scenario>/bro/conn.log.labeled` (IoT-23 v1.0.0)  ",
         f"**Official label totals:** {OFFICIAL_LABEL_SOURCE}",
+        "  \n**Local copy source:** Kaggle \"IOT-23 Full Dataset\" by surajsooraj26, "
+        "https://www.kaggle.com/datasets/surajsooraj26/iot-23 (version 1, CC0; all 23 file sizes equal the Kaggle file list; D-039).",
         "",
         "Proposal 3.2: *\"We will not train the model from an unofficial copy that somebody has already processed, unless "
         "we can check where it came from and what was changed in it.\"* Three checks are made for every local file:",
@@ -243,6 +245,14 @@ def main() -> int:
             f"| `{r['file_name']}` | `{r['scenario_in_manifest_map']}` | {r['first_row']} | {r['last_row']} | "
             f"{r['label_totals']} | {r['label_differences'] or '—'} |"
         )
+    lines += [
+        "",
+        "**The 3 label-total differences were checked inside the official files (D-046):** 33-1 — the official file "
+        "says `Okiru` (the website says `Okiru-Attack`; same count); 49-1 — the official file has the same 14 "
+        "`FileDownload` flows; 52-1 — both `C&C-Mirai` flows are in the official file (one of them, a connection that "
+        "never closed, is written at the end of the file). So the differences come from the website's summary tables, "
+        "not from our copy.",
+    ]
     lines += [
         "",
         "**What was changed in the copy:** the format only. The official files are tab-separated Zeek logs with `#` header "

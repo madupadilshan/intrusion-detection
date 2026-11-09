@@ -587,6 +587,30 @@ def create_app(
             }), 403
         except Exception as e:
             logger.error("Firewall adapter block failed: %s", e)
+            db.log_response_action({
+                "action": "block",
+                "target_ip": ip,
+                "direction": direction,
+                "rule": f"block ip {ip} direction {direction}",
+                "reason_code": "ADMIN_MANUAL_ENFORCEMENT",
+                "actor": actor,
+                "status": "failed",
+                "error": str(e),
+                "simulated": firewall.is_simulated,
+            })
+            if hasattr(db, "log_system_event"):
+                db.log_system_event(
+                    actor=actor,
+                    event="MANUAL_BLOCK",
+                    outcome="FAILURE",
+                    details={"ip": ip, "direction": direction, "duration_minutes": dur_mins,
+                             "reason": reason, "error": str(e)},
+                )
+            return jsonify({
+                "error": "Firewall Error",
+                "message": f"The firewall did not apply the block for '{ip}': {e}. Nothing was recorded as blocked.",
+                "code": "FIREWALL_ERROR",
+            }), 502
 
         block_id = db.add_to_blocklist(
             ip=ip,
@@ -658,9 +682,11 @@ def create_app(
         actor = getattr(g, "current_user", {}).get("sub", "admin")
 
         # Enforce unblock on firewall adapter (Step 33)
+        fw_error = None
         try:
             firewall.unblock(ip=clean_ip, direction="all")
         except Exception as e:
+            fw_error = str(e)
             logger.error("Firewall adapter unblock failed: %s", e)
         engine_obj = app.config.get("decision_engine")
         if engine_obj is not None and hasattr(engine_obj, "forget_block"):
@@ -678,7 +704,8 @@ def create_app(
             "rule": f"unblock ip {clean_ip}",
             "reason_code": "ADMIN_MANUAL_UNBLOCK",
             "actor": actor,
-            "status": "applied",
+            "status": "applied" if fw_error is None else "firewall_error",
+            "error": fw_error,
             "simulated": firewall.is_simulated,
         })
 
@@ -687,11 +714,12 @@ def create_app(
             db.log_system_event(
                 actor=actor,
                 event="MANUAL_UNBLOCK",
-                outcome="SUCCESS",
+                outcome="SUCCESS" if fw_error is None else "PARTIAL",
                 details={
                     "ip": clean_ip,
                     "reason": reason,
                     "unblocked_count": unblocked_count,
+                    "firewall_error": fw_error,
                 },
             )
 
@@ -706,10 +734,14 @@ def create_app(
         }
         socketio.emit("blocklist_update", unblock_payload)
 
+        message = f"Unblocked '{clean_ip}'. {unblocked_count} rule(s) transitioned to 'removed'."
+        if fw_error is not None:
+            message += f" Warning: the firewall reported an error ({fw_error}); check the firewall rules."
         return jsonify({
-            "status": "success",
-            "message": f"Unblocked '{clean_ip}'. {unblocked_count} rule(s) transitioned to 'removed'.",
+            "status": "success" if fw_error is None else "partial",
+            "message": message,
             "unblocked": unblock_payload,
+            "firewall_error": fw_error,
         }), 200
 
     # =========================================================================
@@ -1086,6 +1118,12 @@ if __name__ == "__main__":
     if runner_obj:
         print(f"Auto-starting LivePipelineRunner tailing: {runner_obj.zeek_adapter.conn_log_path}")
         runner_obj.start()
+
+    # Start the rule expiry worker (Step 34): expired rules are marked 'expired' and removed.
+    worker_obj = app.config.get("rule_worker")
+    if worker_obj:
+        print(f"Auto-starting RuleExpiryWorker (every {worker_obj.interval_seconds} s)")
+        worker_obj.start()
 
     socketio.run(app, host=host, port=port, debug=False)
 

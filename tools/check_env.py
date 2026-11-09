@@ -26,7 +26,7 @@ REQUIRED_PACKAGES = [
     ("flask", "flask"),
     ("flask-socketio", "flask_socketio"),
     ("flask-cors", "flask_cors"),
-    ("flask-jwt-extended", "flask_jwt_extended"),
+    ("PyJWT", "jwt"),
     ("bcrypt", "bcrypt"),
     ("pymongo", "pymongo"),
     ("python-nmap", "nmap"),

@@ -26,11 +26,28 @@ Responsibilities:
 
 from datetime import datetime, timezone
 import logging
+import math
 import threading
 import time
 from typing import Any, Dict, List, Optional, Set
 
 logger = logging.getLogger("ids.rule_worker")
+
+
+def _dir_code(direction: Any) -> str:
+    """Blocklist direction ('source', 'destination', 'src', 'dst', 'inbound', 'outbound') -> 'src' / 'dst'."""
+    return "dst" if str(direction).lower() in ("destination", "dst", "outbound") else "src"
+
+
+def _rule_dir(rule: Dict[str, Any]) -> str:
+    """Direction of an active firewall rule: 'src', 'dst' or 'limit' (from its direction or set name)."""
+    d = str(rule.get("direction", "")).lower()
+    if d in ("src", "dst"):
+        return d
+    set_name = str(rule.get("set", "")).lower()
+    if "limit" in set_name:
+        return "limit"
+    return "dst" if "dst" in set_name else "src"
 
 
 def sweep_expired_rules(
@@ -93,11 +110,14 @@ def sweep_expired_rules(
 
         direction = doc.get("direction", "source")
 
-        # 1. Unblock on firewall adapter
+        # 1. Unblock on firewall adapter. nftables may already have removed the element by its own
+        #    timeout; that is fine. A real error is recorded in the audit entries below.
+        fw_error: Optional[str] = None
         if firewall is not None:
             try:
                 firewall.unblock(ip=ip, direction="all")
             except Exception as exc:
+                fw_error = str(exc)
                 logger.warning("Firewall unblock during expiry failed for %s: %s", ip, exc)
 
         # 2. Inform decision engine so repeats can be tracked afresh
@@ -117,7 +137,8 @@ def sweep_expired_rules(
                     "rule": f"expire ip {ip}",
                     "reason_code": "RULE_TIMEOUT_EXPIRED",
                     "actor": "system_auto",
-                    "status": "applied",
+                    "status": "applied" if fw_error is None else "firewall_error",
+                    "error": fw_error,
                     "simulated": is_sim,
                 })
             except Exception as exc:
@@ -129,9 +150,10 @@ def sweep_expired_rules(
                 db.log_system_event(
                     actor="system_auto",
                     event="RULE_EXPIRED",
-                    outcome="SUCCESS",
+                    outcome="SUCCESS" if fw_error is None else "PARTIAL",
                     details={
                         "ip": ip,
+                        "firewall_error": fw_error,
                         "block_id": doc.get("block_id"),
                         "direction": direction,
                         "duration_minutes": doc.get("duration_minutes"),
@@ -185,6 +207,7 @@ def reconcile_on_startup(
         "expired_while_down": 0,
         "orphans_removed": 0,
         "allowlist_cleanups": 0,
+        "restore_failed": 0,
     }
 
     if db is None:
@@ -220,59 +243,88 @@ def reconcile_on_startup(
         except Exception as exc:
             logger.error("Failed to list active firewall rules at startup: %s", exc)
 
-    fw_ips: Set[str] = {r.get("ip") for r in active_fw_rules if r.get("ip")}
+    fw_keys: Set[Any] = {(r.get("ip"), _rule_dir(r)) for r in active_fw_rules if r.get("ip")}
     db_ips: Set[str] = set()
     now = datetime.now(timezone.utc)
+    allowlist: Set[str] = set(getattr(firewall, "allowlist", None) or set())
 
     # Step 4: Re-enact active DB rules missing on firewall
     for block in active_db_blocks:
         ip = block.get("ip")
         if not ip:
             continue
-        db_ips.add(ip)
+        direction = block.get("direction", "source")
+        dir_code = _dir_code(direction)
 
-        if ip not in fw_ips:
-            exp = block.get("expires_at")
-            remaining_mins = 30
-            if exp:
-                if getattr(exp, "tzinfo", None) is None:
-                    exp = exp.replace(tzinfo=timezone.utc)
-                remaining_secs = (exp - now).total_seconds()
-                remaining_mins = max(1, int(remaining_secs / 60))
-
-            direction = block.get("direction", "source")
-            dir_code = "src" if direction in ("source", "inbound", "src") else "dst"
-
-            if firewall is not None:
+        # Never restore a block on an allowlisted host (proposal 3.7); close the database record instead.
+        if ip in allowlist:
+            if hasattr(db, "remove_from_blocklist"):
                 try:
-                    firewall.block(
-                        ip=ip,
-                        direction=dir_code,
-                        minutes=remaining_mins,
-                        reason=block.get("reason", "Startup recovery restoration"),
-                    )
-                    summary["restored"] += 1
+                    db.remove_from_blocklist(ip=ip, reason="STARTUP_ALLOWLIST_PROTECTION", actor="system_recovery")
                 except Exception as exc:
-                    logger.error("Failed to re-enact rule on firewall for %s: %s", ip, exc)
-
+                    logger.warning("Could not close allowlisted DB block for %s: %s", ip, exc)
+            summary["allowlist_cleanups"] += 1
             if hasattr(db, "log_system_event"):
                 try:
                     db.log_system_event(
                         actor="system_recovery",
-                        event="STARTUP_RULE_RESTORED",
-                        outcome="SUCCESS",
-                        details={
-                            "ip": ip,
-                            "direction": direction,
-                            "remaining_minutes": remaining_mins,
-                            "block_id": block.get("block_id"),
-                        },
+                        event="STARTUP_ALLOWLIST_PROTECTION",
+                        outcome="WARNING",
+                        details={"ip": ip, "source": "database", "block_id": block.get("block_id")},
                     )
                 except Exception as exc:
-                    logger.warning("Failed to log STARTUP_RULE_RESTORED for %s: %s", ip, exc)
+                    logger.warning("Failed to log STARTUP_ALLOWLIST_PROTECTION: %s", exc)
+            continue
+
+        db_ips.add(ip)
+        if (ip, dir_code) in fw_keys:
+            continue
+
+        exp = block.get("expires_at")
+        remaining_mins = 30
+        if exp:
+            if getattr(exp, "tzinfo", None) is None:
+                exp = exp.replace(tzinfo=timezone.utc)
+            remaining_secs = (exp - now).total_seconds()
+            # Round up, so a restored rule never ends before the time in the database.
+            remaining_mins = max(1, int(math.ceil(remaining_secs / 60.0)))
+
+        restore_error: Optional[str] = None
+        if firewall is None:
+            restore_error = "no firewall adapter"
+        else:
+            try:
+                firewall.block(
+                    ip=ip,
+                    direction=dir_code,
+                    minutes=remaining_mins,
+                    reason=block.get("reason", "Startup recovery restoration"),
+                )
+                summary["restored"] += 1
+            except Exception as exc:
+                restore_error = str(exc)
+                logger.error("Failed to re-enact rule on firewall for %s: %s", ip, exc)
+        if restore_error is not None:
+            summary["restore_failed"] += 1
+
+        if hasattr(db, "log_system_event"):
+            try:
+                db.log_system_event(
+                    actor="system_recovery",
+                    event="STARTUP_RULE_RESTORED",
+                    outcome="SUCCESS" if restore_error is None else "FAILURE",
+                    details={
+                        "ip": ip,
+                        "direction": direction,
+                        "remaining_minutes": remaining_mins,
+                        "block_id": block.get("block_id"),
+                        "error": restore_error,
+                    },
+                )
+            except Exception as exc:
+                logger.warning("Failed to log STARTUP_RULE_RESTORED for %s: %s", ip, exc)
 
     # Step 5: Check firewall active rules for orphaned or allowlisted rules
-    allowlist: Set[str] = getattr(firewall, "allowlist", set())
     for r in active_fw_rules:
         r_ip = r.get("ip")
         if not r_ip:
@@ -319,12 +371,14 @@ def reconcile_on_startup(
                     logger.warning("Failed to log STARTUP_ORPHAN_RULE_REMOVED: %s", exc)
 
     # Step 6: Log overall reconciliation completion
+    if summary["restore_failed"]:
+        summary["status"] = "partial"
     if hasattr(db, "log_system_event"):
         try:
             db.log_system_event(
                 actor="system_recovery",
                 event="STARTUP_RECOVERY_COMPLETE",
-                outcome="SUCCESS",
+                outcome="SUCCESS" if summary["status"] == "success" else "PARTIAL",
                 details=summary,
             )
         except Exception as exc:

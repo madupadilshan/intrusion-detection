@@ -770,7 +770,7 @@ Every important project decision is written here: the date, the decision, the re
   - The label totals of all 20 malicious scenarios match the official website, with one exception: for 33-1 the website lists "Okiru-Attack 13,609,467" but our copy says "Okiru". Small pieces of the official 33-1 file were downloaded (byte ranges at 10 positions). The official file also says **`Okiru`**, so our copy is correct and the website summary is not.
   - The held-out scenario 34-1 was always mapped correctly.
 - **Effect:** the training data is the same rows as before; only 4 scenario names changed. All reports were made again from the corrected data.
-- **Still to record:** where the CSV copy was downloaded from (folder `D:\Download\archive`; probably a Kaggle upload). Write the page link in this decision when known.
+- **Source of the CSV copy (recorded 9 Nov 2026, issue 31):** Kaggle dataset **"IOT-23 Full Dataset"** by `surajsooraj26`, https://www.kaggle.com/datasets/surajsooraj26/iot-23 (version 1, files uploaded 2025-04-26, licence CC0: Public Domain, 23 files, 47,386,086,562 bytes). Downloaded as `archive.zip` (9.16 GB) on 2026-10-19. Checked: the size of all 23 local files equals the size listed by Kaggle's public file list, byte for byte. The content was checked against the official IoT-23 files (first and last flow, label totals; D-046).
 - **Who agreed:** project owner (8 Nov 2026).
 - **Proposal link:** Section 3.2; O1.
 
@@ -879,8 +879,10 @@ Every important project decision is written here: the date, the decision, the re
   - Replay on 34-1 with these thresholds (reported only): PortScan 27 blocks, 1 fired by a benign flow (1 of the 2 benign hosts in 34-1 was blocked once); most PortScan blocks there were fired by CnC flows of the infected device, which the live policy would not block because that device is local (local-network protection, proposal 3.7). CnC: 1 block, correct.
   - Original-label results are in `reports/experiments/thresholds_and_explanation.md`, Section 8. The weakest labels on out-of-fold data are `DDoS` (0.16% put in the right group) and `C&C` (6.3%); on 34-1, `C&C` 36.7%.
   - Dataset copy: first and last flows match the official files for 23/23 files; label totals match the official website for 17 scenarios. Three differ: 33-1 (`Okiru` in our copy vs `Okiru-Attack` on the website, same count; the official file says `Okiru`, D-039), 49-1 (14 `FileDownload` flows not on the website) and 52-1 (2 `C&C-Mirai` flows not on the website). The 3 honeypot captures are not listed on the website.
+  - **Checked in the official files themselves (9 Nov 2026):** 49-1 — the official `conn.log.labeled` contains the same 14 `FileDownload` flows (counted while streaming the file); 52-1 — both `C&C-Mirai` flows are in the official file (one near its start time; the other, a 14.7-hour connection in state `S1` that never closed, is written by Zeek at the end of the file). So the 3 differences come from the website's summary tables, not from our copy.
 
 ## D-047 — 2026-11-09 — Step 34: Manual Control, Rule Expiry Worker, and Crash / Restart Recovery (Phase 8 Completion)
+> **Corrected by D-048 (9 Nov 2026):** "Phase 8 100% COMPLETE" means built and tested on the PC with the simulation adapter; the lab tests are in Phase 9. Four problems found in the check (entry 3.60) were fixed in D-048.
 - **Why:** Proposal Section 3.7 and Table 9 require that security administrators retain complete manual control (FR-07), expired firewall rules are reliably pruned without lingering indefinitely, and the system recovers consistently after unexpected restarts or daemon crashes without losing active security mitigations or retaining orphan blocks.
 - **What was built:**
   1. **Manual Block & Unblock Dashboard Integration:**
@@ -909,3 +911,16 @@ Every important project decision is written here: the date, the decision, the re
 - **Verification:** 7 unit tests in `tests/unit/test_rule_worker.py` and 2 integration tests in `tests/integration/test_app_api.py`. Entire test suite: 255 Python tests passed (100%), 2 Jest frontend tests passed. Phase 8 (Steps 31–34) is 100% COMPLETE.
 - **Who agreed:** project owner (9 Nov 2026).
 - **Proposal link:** Sections 3.6, 3.7; Table 7 (FR-06, FR-07); Table 9 (reliability: old rules cleaned up); Objective O5.
+
+## D-048 — 2026-11-09 — Step 34 fixes after the check (issues 27–31)
+- **Why:** the check of commit `66a7ead` (progress entry 3.60) found problems in the Step 34 code and wording.
+- **What was changed:**
+  1. **Expiry worker started with the server** (`core_engine/app.py`, `__main__`, next to the live pipeline runner). Before, it only started in tests or by `POST /api/v1/firewall/worker/start`, so expired rules stayed `active` (issue 27).
+  2. **Manual block with a firewall error:** the API now returns 502 `FIREWALL_ERROR`, nothing is saved as an active block, `response_actions` gets `status: failed` with the error, and `system_logs` gets `MANUAL_BLOCK` with outcome `FAILURE`. Manual unblock and rule expiry now record `firewall_error` / outcome `PARTIAL` when the firewall call fails. FR-07 asks for a true audit history (issue 28).
+  3. **Startup recovery:** an allowlisted host saved as blocked in the database is not blocked again; its record is closed with reason `STARTUP_ALLOWLIST_PROTECTION`. A restore that the firewall refuses is logged as `FAILURE` and counted in `restore_failed` (the summary becomes `partial`). Rules are compared by IP **and** direction. The remaining time is rounded **up**, so a restored rule never ends early (issue 29).
+  4. **Wording:** Step 34 and Phase 8 are "built and tested on the PC (simulation adapter)"; the check on the separated lab network is in Steps 35 and 38 (issue 30).
+  5. **Dashboard:** the Blocklist page shows the server's full message (for example the firewall error or the unblock warning).
+- **Tests:** 4 new unit tests (`test_rule_worker.py`) and 1 new integration test (`test_app_api.py`). Full suite: 260 Python tests and 2 dashboard tests passed.
+- **Also recorded:** the source of the IoT-23 CSV copy (issue 31) is now in D-039.
+- **Who agreed:** project owner (9 Nov 2026).
+- **Proposal link:** Section 3.7; Table 7 (FR-06, FR-07); Table 9 (reliability).

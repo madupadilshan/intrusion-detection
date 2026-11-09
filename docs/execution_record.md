@@ -1782,7 +1782,7 @@ Use this document to reproduce any step, review past work, prepare for superviso
   - `STEP_BY_STEP_GUIDE.md` (Marked Step 34 ✅ Done, in Git)
   - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work log 3.59, in Git)
   - `docs/execution_record.md` (Updated Step 34 execution details, in Git)
-* **Verification Result:** All 7 unit tests in `test_rule_worker.py` passed; all 16 integration tests in `test_app_api.py` passed; all 255 repository tests passed in 74.81s with 0 errors (100% pass rate); all React frontend tests passed. Requirement FR-06, FR-07, and Objective O5 fulfilled. Step 34 status is ✅ Done. Phase 8 (Automated Intrusion Response, Steps 31–34) is 100% COMPLETE.
+* **Verification Result:** All 7 unit tests in `test_rule_worker.py` passed; all 16 integration tests in `test_app_api.py` passed; all 255 repository tests passed in 74.81s with 0 errors (100% pass rate); all React frontend tests passed. Requirement FR-06, FR-07, and Objective O5 fulfilled. Step 34 status is ✅ Done (built and tested on the PC with the simulation adapter). Phase 8 (Steps 31–34) is built and tested on the PC; the lab tests are in Phase 9. **Correction (9 Nov 2026, D-048):** the expiry worker was only started in tests; this and three smaller problems were fixed (see D-048).
 
 ---
 

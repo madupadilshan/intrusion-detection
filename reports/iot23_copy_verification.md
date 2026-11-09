@@ -1,8 +1,10 @@
 # IoT-23 Copy Verification (proposal Section 3.2)
 
-**Date:** 2026-11-09 10:46  
+**Date:** 2026-11-09 13:49  
 **Official files:** `https://mcfp.felk.cvut.cz/publicDatasets/IoT-23-Dataset/IndividualScenarios/<scenario>/bro/conn.log.labeled` (IoT-23 v1.0.0)  
 **Official label totals:** https://www.stratosphereips.org/datasets-iot23 (per-scenario label tables, read 2026-11-09)
+  
+**Local copy source:** Kaggle "IOT-23 Full Dataset" by surajsooraj26, https://www.kaggle.com/datasets/surajsooraj26/iot-23 (version 1, CC0; all 23 file sizes equal the Kaggle file list; D-039).
 
 Proposal 3.2: *"We will not train the model from an unofficial copy that somebody has already processed, unless we can check where it came from and what was changed in it."* Three checks are made for every local file:
 
@@ -38,11 +40,6 @@ Proposal 3.2: *"We will not train the model from an unofficial copy that somebod
 | `dataset22.csv` | `CTU-IoT-Malware-Capture-17-1` | MATCH | MATCH | MATCH | — |
 | `dataset23.csv` | `CTU-IoT-Malware-Capture-1-1` | MATCH | MATCH | MATCH | — |
 
-**What was changed in the copy:** the format only. The official files are tab-separated Zeek logs with `#` header lines; the local copy is comma-separated with one header row. The last three columns stay joined by spaces (`tunnel_parents   label   detailed-label`), as in the official file. The values are the same.
+**The 3 label-total differences were checked inside the official files (D-046):** 33-1 — the official file says `Okiru` (the website says `Okiru-Attack`; same count); 49-1 — the official file has the same 14 `FileDownload` flows; 52-1 — both `C&C-Mirai` flows are in the official file (one of them, a connection that never closed, is written at the end of the file). So the differences come from the website's summary tables, not from our copy.
 
-## Resolution of Discrepancies
-Direct HTTP byte-range inspection of the official CTU server raw `conn.log.labeled` files confirmed:
-1. **Scenario 52-1:** The 2 `C&C-Mirai` flows (e.g., flow UID `C4JV9m3t6XfvQV0T2c`) exist verbatim in the official CTU archive. The website HTML summary table simply omitted this minor category.
-2. **Scenario 49-1:** The 14 `FileDownload` flows (e.g., flow UID `Cnkx4U1xJgOIPooe2`) exist verbatim in the official CTU archive, also omitted from the website's summary table.
-3. **Scenario 33-1:** The label string in the official raw log is `Okiru` (matching our local dataset), whereas the website HTML summary table listed it as `Okiru-Attack`.
-Therefore, our local CSV copy is 100% genuine and verified byte-for-byte against the authoritative CTU university server archives without unauthorized modifications.
+**What was changed in the copy:** the format only. The official files are tab-separated Zeek logs with `#` header lines; the local copy is comma-separated with one header row. The last three columns stay joined by spaces (`tunnel_parents   label   detailed-label`), as in the official file. The values are the same.

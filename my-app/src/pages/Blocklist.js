@@ -70,7 +70,7 @@ const Blocklist = () => {
       }
     } catch (err) {
       setNotification(
-        err.response?.data?.error || "Failed to block IP. Address may be allowlisted."
+        err.response?.data?.message || err.response?.data?.error || "Failed to block IP. Address may be allowlisted."
       );
     } finally {
       setSubmitting(false);
@@ -84,12 +84,12 @@ const Blocklist = () => {
     try {
       const res = await apiClient.delete(`/api/blocklist/${ruleIdOrIp}`);
       if (res.data) {
-        setNotification(`Successfully unblocked ${ruleIdOrIp}. Firewall updated.`);
+        setNotification(res.data.message || `Unblocked ${ruleIdOrIp}.`);
         loadRules();
       }
     } catch (err) {
       setNotification(
-        err.response?.data?.error || `Failed to unblock ${ruleIdOrIp}. Admin required.`
+        err.response?.data?.message || err.response?.data?.error || `Failed to unblock ${ruleIdOrIp}. Admin required.`
       );
     } finally {
       setUnblockingIp(null);
