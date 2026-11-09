@@ -1,141 +1,210 @@
-"""tests/unit/test_calibrate_and_explain.py - Unit test suite for Step 17.
+"""tests/unit/test_calibrate_and_explain.py - Tests for Step 17 (calibration and thresholds).
 
-Validates:
-1. Calibrated model bundle serialization and predict_proba execution.
-2. Deliverable artifacts (reports, json, png) existence and completeness.
-3. Operational thresholds JSON schema and safety guardrail values.
-4. Gini and Permutation feature importance structure and validity.
-5. Decision rules and firewall reason code structures.
+Checks:
+1. The sigmoid calibration gives valid probabilities and keeps the ranking.
+2. Thresholds come from out-of-fold data with the written rules:
+   - a clean, well-separated class gets alert AND block thresholds;
+   - a class the model cannot separate gets NO block threshold (alert only).
+3. The held-out check returns the expected structure.
+4. Saved artefacts (when present) say the thresholds came from OOF data, not from 34-1.
 """
 
 import json
 from pathlib import Path
+
 import joblib
 import numpy as np
-import pandas as pd
 import pytest
 
 from ml_engine.calibrate_and_explain import (
-    TARGET_CLASSES,
+    BLOCK_MIN_PRECISION,
     CLASS_NAMES,
-    extract_decision_rules_summary,
+    choose_thresholds,
+    heldout_check,
 )
-from ml_engine.features import FEATURE_COLUMNS
+from ml_engine.calibration import OOFSigmoidCalibratedClassifier, apply_sigmoid, fit_sigmoid_parameters
 
 
-@pytest.fixture
-def reports_dir() -> Path:
-    return Path("reports/experiments")
+def _make_probs(n_per_class: int = 400, seed: int = 0):
+    """Class 1 (DDoS) is easy to separate; class 3 (CnC) is pure noise."""
+    rng = np.random.RandomState(seed)
+    y = np.repeat(np.arange(5), n_per_class)
+    probs = rng.dirichlet(np.ones(5), size=len(y))
+    easy = y == 1
+    probs[easy] = 0.02
+    probs[easy, 1] = 0.92
+    return probs / probs.sum(axis=1, keepdims=True), y
 
 
-@pytest.fixture
-def calibrated_model_path() -> Path:
-    return Path("ml_engine/models/calibrated_rf_model.joblib")
+def test_sigmoid_calibration_is_valid_and_keeps_ranking():
+    probs, y = _make_probs()
+    params = fit_sigmoid_parameters(probs, y, 5)
+    cal = apply_sigmoid(probs, params)
+    assert cal.shape == probs.shape
+    assert np.allclose(cal.sum(axis=1), 1.0)
+    assert np.all((cal >= 0) & (cal <= 1))
+    # Sigmoid with a positive slope keeps the order of the class-1 scores
+    order_raw = np.argsort(probs[:, 1])
+    assert np.all(np.diff(cal[order_raw, 1]) >= -1e-9) or params[1][0] > 0
 
 
-def test_calibrated_model_bundle_integrity(calibrated_model_path: Path):
-    """Verify calibrated model bundle exists, loads, and can predict probabilities."""
-    assert calibrated_model_path.exists(), f"Calibrated model bundle missing at {calibrated_model_path}"
-    bundle = joblib.load(calibrated_model_path)
+def test_calibrated_classifier_wraps_pipeline():
+    class Fake:
+        def predict_proba(self, X):
+            return np.tile([0.1, 0.6, 0.1, 0.1, 0.1], (len(X), 1))
 
-    assert isinstance(bundle, dict)
-    assert "calibrated_pipeline" in bundle
-    assert "base_bundle" in bundle
-    assert bundle["calibration_method"] == "sigmoid"
+    model = OOFSigmoidCalibratedClassifier(Fake(), [[1.0, 0.0]] * 5, [0, 1, 2, 3, 4])
+    out = model.predict_proba([0, 1, 2])
+    assert out.shape == (3, 5)
+    assert np.allclose(out.sum(axis=1), 1.0)
+    assert list(model.predict([0])) == [1]
 
-    cal_pipe = bundle["calibrated_pipeline"]
-    assert hasattr(cal_pipe, "predict_proba")
 
-    # Predict on dummy sample DataFrame
-    dummy_data = {
-        "proto": ["tcp"],
-        "service": ["http"],
-        "conn_state": ["SF"],
-        "history": ["ShADadFf"],
-        "orig_port_cat": ["registered"],
-        "resp_port_cat": ["well_known"],
-        "duration": [1.5],
-        "orig_bytes": [100],
-        "resp_bytes": [500],
-        "missed_bytes": [0],
-        "orig_pkts": [5],
-        "orig_ip_bytes": [300],
-        "resp_pkts": [6],
-        "resp_ip_bytes": [700],
-        "orig_bytes_per_pkt": [20.0],
-        "resp_bytes_per_pkt": [83.3],
-        "byte_ratio": [0.2],
-        "pkt_ratio": [0.83],
-        "is_incomplete_flow": [0],
+def test_thresholds_follow_the_rules():
+    probs, y = _make_probs()
+    th = choose_thresholds(probs, y)
+    assert th["Benign"]["active_response_threshold"] is None
+    # Easy class: a safe block threshold exists and meets the precision rule on OOF data
+    ddos = th["DDoS_DoS"]
+    assert ddos["active_response_threshold"] is not None
+    assert ddos["oof_block_precision"] >= BLOCK_MIN_PRECISION
+    assert ddos["active_response_threshold"] >= ddos["passive_alert_threshold"]
+    # Noise class: never blocked automatically
+    assert th["CnC"]["active_response_threshold"] is None
+    assert "NEVER blocked" in th["CnC"]["block_rule"]
+
+
+def test_heldout_check_structure():
+    probs, y = _make_probs(50)
+    th = choose_thresholds(probs, y)
+    res = heldout_check(probs, y, th)
+    for key in ("macro_f1_5class", "macro_f1_present_classes", "benign_fpr_argmax", "per_class", "confusion_matrix"):
+        assert key in res
+    assert set(res["per_class"]) == set(CLASS_NAMES)
+    assert len(res["confusion_matrix"]) == 5
+
+
+THRESHOLDS_JSON = Path("reports/experiments/operational_thresholds.json")
+CALIBRATED = Path("ml_engine/models/calibrated_rf_model.joblib")
+
+
+@pytest.mark.skipif(not THRESHOLDS_JSON.exists(), reason="Step 17 not run on this machine")
+def test_saved_thresholds_come_from_oof_data():
+    cfg = json.loads(THRESHOLDS_JSON.read_text(encoding="utf-8"))
+    assert "out-of-fold" in cfg["metadata"]["chosen_from"]
+    assert "held-out scenario not used" in cfg["metadata"]["chosen_from"]
+    for name in CLASS_NAMES:
+        assert name in cfg["classes"]
+
+
+@pytest.mark.skipif(not CALIBRATED.exists(), reason="Step 17 not run on this machine")
+def test_saved_calibrated_model_loads():
+    bundle = joblib.load(CALIBRATED)
+    assert "out-of-fold" in bundle["calibration_method"]
+    assert hasattr(bundle["calibrated_pipeline"], "predict_proba")
+
+
+# ---------------------------------------------------------------------------
+# Calibration methods and the D-044 selection rule (Step 17a)
+# ---------------------------------------------------------------------------
+
+from ml_engine.calibration import (  # noqa: E402
+    CALIBRATION_METHODS,
+    OOFCalibratedClassifier,
+    apply_calibrator,
+    fit_calibrator,
+)
+from ml_engine.select_calibration import (  # noqa: E402
+    MIN_CLASS_RECALL,
+    TOP_CLASS_KEEPING,
+    cross_fitted_probs,
+    final_choice,
+    select,
+)
+
+
+@pytest.mark.parametrize("method", CALIBRATION_METHODS)
+def test_every_method_gives_valid_probabilities(method):
+    probs, y = _make_probs(200)
+    params = fit_calibrator(method, probs, y, 5)
+    cal = apply_calibrator(method, probs, params)
+    assert cal.shape == probs.shape
+    assert np.allclose(cal.sum(axis=1), 1.0)
+    assert np.all((cal >= 0) & (cal <= 1))
+
+
+def test_temperature_keeps_the_top_class():
+    probs, y = _make_probs(200)
+    cal = apply_calibrator("temperature", probs, fit_calibrator("temperature", probs, y, 5))
+    assert np.array_equal(cal.argmax(axis=1), probs.argmax(axis=1))
+
+
+def test_general_calibrated_classifier_wraps_pipeline():
+    class Fake:
+        def predict_proba(self, X):
+            return np.tile([0.1, 0.6, 0.1, 0.1, 0.1], (len(X), 1))
+
+    model = OOFCalibratedClassifier(Fake(), "none", {}, [0, 1, 2, 3, 4])
+    assert list(model.predict([0, 1])) == [1, 1]
+    with pytest.raises(ValueError):
+        OOFCalibratedClassifier(Fake(), "unknown", {}, [0, 1, 2, 3, 4])
+
+
+def test_cross_fitted_probs_cover_every_row():
+    probs, y = _make_probs(100)
+    folds = np.tile(np.arange(1, 6), len(y) // 5)
+    cal = cross_fitted_probs("multinomial", probs, y, folds)
+    assert cal.shape == probs.shape
+    assert np.allclose(cal.sum(axis=1), 1.0)
+
+
+def test_selection_rule_needs_every_class_found_then_best_macro_f1():
+    results = {
+        "a": {"macro_f1": 0.60, "min_class_recall": 0.00},  # best F1 but silences a class
+        "b": {"macro_f1": 0.45, "min_class_recall": 0.20},
+        "c": {"macro_f1": 0.50, "min_class_recall": MIN_CLASS_RECALL},
     }
-    df_sample = pd.DataFrame(dummy_data)
-    probs = cal_pipe.predict_proba(df_sample[FEATURE_COLUMNS])
-
-    assert probs.shape == (1, 5)
-    assert pytest.approx(probs.sum(), abs=1e-3) == 1.0
+    assert select(results)["chosen_method"] == "c"
 
 
-def test_calibration_artifacts_exist_and_valid(reports_dir: Path):
-    """Verify all Step 17 deliverable files exist and have non-zero size."""
-    json_path = reports_dir / "operational_thresholds.json"
-    md_path = reports_dir / "thresholds_and_explanation.md"
-    cal_png = reports_dir / "calibration_curve.png"
-    feat_png = reports_dir / "feature_importance.png"
-
-    for p in [json_path, md_path, cal_png, feat_png]:
-        assert p.exists(), f"Expected artifact missing: {p}"
-        assert p.stat().st_size > 0, f"Artifact empty: {p}"
-
-    md_text = md_path.read_text(encoding="utf-8")
-    assert "Probability Calibration" in md_text
-    assert "Brier Score" in md_text
-    assert "Operational Decision Thresholds Matrix" in md_text
-    assert "Firewall Reason Codes" in md_text
+def test_selection_rule_fallback_uses_lowest_class_recall():
+    results = {
+        "a": {"macro_f1": 0.60, "min_class_recall": 0.00},
+        "b": {"macro_f1": 0.40, "min_class_recall": 0.03},
+    }
+    assert select(results)["chosen_method"] == "b"
 
 
-def test_operational_thresholds_schema(reports_dir: Path):
-    """Verify operational_thresholds.json adheres to schema and safe boundary values."""
-    json_path = reports_dir / "operational_thresholds.json"
-    with open(json_path, "r", encoding="utf-8") as f:
-        config = json.load(f)
-
-    assert "metadata" in config
-    assert "safety_guardrails" in config
-    assert "classes" in config
-
-    # Check guardrails
-    rails = config["safety_guardrails"]
-    assert rails["min_repeats"] >= 3
-    assert rails["repeat_window_seconds"] >= 60
-    assert rails["max_rule_minutes"] <= 60
-    assert rails["allowlist_protected"] is True
-
-    # Check classes
-    classes = config["classes"]
-    for cname in CLASS_NAMES:
-        assert cname in classes
-
-    # Benign must never be blocked
-    assert classes["Benign"]["policy"] == "ALLOW_ALWAYS"
-    assert classes["Benign"]["active_response_threshold"] is None
-
-    # Attack classes must specify thresholds
-    assert 0.50 <= classes["DDoS_DoS"]["active_response_threshold"] <= 1.0
-    assert 0.20 <= classes["CnC"]["passive_alert_threshold"] <= 0.50
+SELECTION_JSON = Path("reports/experiments/calibration_selection.json")
 
 
-def test_decision_rules_structure():
-    """Verify decision rule extraction returns properly formatted reason codes and triggers."""
-    rf_bundle = joblib.load("ml_engine/models/rf_model.joblib")
-    pipe = rf_bundle["pipeline"]
-    rules = extract_decision_rules_summary(pipe)
+@pytest.mark.skipif(not SELECTION_JSON.exists(), reason="Step 17a not run on this machine")
+def test_saved_selection_uses_oof_data_only():
+    sel = json.loads(SELECTION_JSON.read_text(encoding="utf-8"))
+    assert sel["chosen_method"] in CALIBRATION_METHODS
+    assert "held-out scenario not used" in sel["meta"]["data"]
+    assert sel["meta"]["decision"].startswith("D-044")
+    assert sel["chosen_method"] in TOP_CLASS_KEEPING  # D-045
 
-    assert len(rules) >= 4
-    for r in rules:
-        assert "class_name" in r
-        assert "reason_code" in r
-        assert "trigger_condition" in r
-        assert "firewall_action" in r
-        assert "explanation" in r
-        assert len(r["reason_code"]) > 3
 
+@pytest.mark.skipif(not (CALIBRATED.exists() and SELECTION_JSON.exists()), reason="Step 17 not run on this machine")
+def test_saved_calibrated_model_uses_the_chosen_method():
+    sel = json.loads(SELECTION_JSON.read_text(encoding="utf-8"))
+    bundle = joblib.load(CALIBRATED)
+    assert bundle.get("calibration_method_id") == sel["chosen_method"]
+
+
+def test_final_choice_only_allows_methods_that_keep_the_top_class():
+    results = {
+        "none": {"mean_brier": 0.18},
+        "temperature": {"mean_brier": 0.15},
+        "multinomial": {"mean_brier": 0.10},  # lower Brier, but it can change the top class
+    }
+    assert final_choice(results)["chosen_method"] == "temperature"
+
+
+@pytest.mark.parametrize("method", TOP_CLASS_KEEPING)
+def test_top_class_keeping_methods_really_keep_the_top_class(method):
+    probs, y = _make_probs(200)
+    cal = apply_calibrator(method, probs, fit_calibrator(method, probs, y, 5))
+    assert np.array_equal(cal.argmax(axis=1), probs.argmax(axis=1))

@@ -78,7 +78,17 @@ REQUIRED_INTERIM_COLS = [
     "class_name",
     "label_idx",
     "scenario_id",
+    # Kept for checking only (never model inputs; proposal Table 6: "Used only for grouping and audit"):
+    "ts",
+    "id.orig_h",
+    "id.resp_h",
+    "detailed_label",
 ]
+
+# Extra columns written next to the 19 features. They are NOT model inputs: every model step
+# selects FEATURE_COLUMNS by name. They are used to (1) replay the response policy's repeat rule
+# on training data (proposal 3.4, D-046) and (2) report results per original IoT-23 label (proposal 3.2).
+AUDIT_COLUMNS = ["ts", "id.orig_h", "id.resp_h", "id.resp_p", "detailed_label"]
 
 
 def load_settings() -> Dict[str, Any]:
@@ -168,6 +178,10 @@ def process_and_extract_features(raw_df: pd.DataFrame) -> pd.DataFrame:
     features_df["class_name"] = raw_df["class_name"].values
     features_df["label_idx"] = raw_df["label_idx"].values.astype(np.int8)
     features_df["scenario_id"] = raw_df["scenario_id"].values.astype(str)
+    for col in AUDIT_COLUMNS:
+        if col in raw_df.columns:
+            values = raw_df[col].values
+            features_df[col] = values.astype(str) if col in ("id.orig_h", "id.resp_h", "detailed_label") else values
     return features_df
 
 
@@ -211,11 +225,9 @@ def main():
         f"{len(held_out_features):,} flows, {held_out_features.shape[1]} columns."
     )
 
-    # Save held-out parquet to both locations
+    # Save the held-out parquet in ONE place only (data/processed/heldout/), so it stays sealed
     held_out_file_primary = HELDOUT_DIR / "held_out_test.parquet"
-    held_out_file_secondary = PROCESSED_DIR / "held_out_test.parquet"
     held_out_features.to_parquet(held_out_file_primary, index=False, compression="snappy")
-    held_out_features.to_parquet(held_out_file_secondary, index=False, compression="snappy")
     logger.info(f"Saved held-out test dataset to {held_out_file_primary}")
 
     # 2. Process Training Scenarios (22 scenarios)

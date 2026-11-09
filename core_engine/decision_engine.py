@@ -6,7 +6,7 @@ core_engine/decision_engine.py - Intrusion Decision and Response Engine (Step 26
 Governing Standards & Requirements:
 - Group 03 Research Proposal: Figures 2 & 3 ("Intrusion Detection Pipeline");
   Sections 3.4, 3.6, 3.7; Requirements Table 7: FR-01, FR-02, FR-03, FR-04, FR-06;
-  Hypothesis H1 Clause 3 (Sub-Second Latency Tracking).
+  Table 9 latency target (median decision < 2 s, 95th percentile < 5 s; measured in Step 37).
 - Step-by-Step Guide: Step 26 ("Build the detector and decision engine").
 - Key Principles:
   1. Benign flows: Aggregate exclusively to `traffic_summaries` (FR-03, Table 5).
@@ -18,7 +18,7 @@ Governing Standards & Requirements:
   5. Allowlist immunity: Critical management IPs (router, sensor, admin, NVR) are NEVER block candidates.
   6. Burst coalescing (Tip 3): Coalesces repeated flows within `repeat_window_seconds` (60s).
   7. End-to-end latency tracking: Records `zeek_ts`, `adapter_ts`, `detect_ts`, `decision_ts`,
-     `db_ts`, and `emit_ts` to verify sub-second response times.
+     `db_ts`, and `emit_ts` so the end-to-end time can be measured (Table 9, Step 37).
 """
 
 from __future__ import annotations
@@ -35,7 +35,12 @@ import yaml
 
 from core_engine.detector import DetectionResult, Detector
 from core_engine.response_policy import ResponsePolicy, PolicyDecision
-from core_engine.firewall import get_firewall_adapter, BaseFirewallAdapter
+from core_engine.firewall import (
+    get_firewall_adapter,
+    firewall_config_from_settings,
+    BaseFirewallAdapter,
+    FirewallError,
+)
 
 logger = logging.getLogger("core_engine.decision_engine")
 
@@ -101,7 +106,9 @@ class DecisionOutcome:
     is_allowlisted: bool = False
     evidence_note: str = ""
     reason_code: str = "NONE"
-    response_status: str = "none"  # none | allowlist_protected | candidate | pending
+    # none | allowlist_protected | candidate | blocked | rate_limited | already_blocked | failed
+    response_status: str = "none"
+    response_reason: str = ""  # policy reason code (AUTO_* when acted, SKIP_* when not)
     status: str = "prediction"
     timestamps: Dict[str, float] = field(default_factory=dict)
     pipeline_latency_ms: float = 0.0
@@ -143,7 +150,10 @@ class DecisionEngine:
         self.socketio = socketio
         self.detector = detector
 
-        # Load operational thresholds
+        # Load operational thresholds. The model bundle is the main source, so the
+        # model and its thresholds always travel together (proposal 3.3, step 7).
+        if thresholds_config is None and detector is not None and getattr(detector, "operational_thresholds", None):
+            thresholds_config = detector.operational_thresholds
         self.thresholds: Dict[str, Any] = self._load_thresholds(thresholds_config)
 
         # Load local settings (allowlist, safety guardrails)
@@ -156,17 +166,41 @@ class DecisionEngine:
         self.max_rule_minutes: int = int(
             self.settings.get("response", {}).get("max_rule_minutes", 30)
         )
+        response_cfg = self.settings.get("response", {}) or {}
+        # Active (blocking) thresholds per class come from the model bundle /
+        # operational_thresholds.json (Step 17). A class with no active threshold
+        # is never blocked automatically; it can only raise alerts.
+        min_conf_map: Dict[str, float] = {}
+        for cls_name, cls_cfg in self.thresholds.items():
+            if isinstance(cls_cfg, dict) and cls_cfg.get("active_response_threshold") is not None:
+                min_conf_map[cls_name] = float(cls_cfg["active_response_threshold"])
+            elif cls_name != "Benign":
+                min_conf_map[cls_name] = 1.01  # unreachable: alert only
         self.policy = ResponsePolicy(
             allowlist=self.allowlist,
+            min_confidence_map=min_conf_map or None,
             min_repeats=self.min_repeats,
             repeat_window_seconds=self.repeat_window_seconds,
             max_rule_minutes=self.max_rule_minutes,
-            auto_response=bool(self.settings.get("response", {}).get("auto_response", True)),
+            # Off unless settings.yaml turns it on (safe default, proposal Table 11).
+            auto_response=bool(response_cfg.get("auto_response", False)),
+            allow_device_isolation=bool(response_cfg.get("allow_device_isolation", False)),
+            local_networks=(self.settings.get("lab", {}) or {}).get("local_networks"),
         )
+        # IPs blocked by this engine and when the rule ends, so one attack does not
+        # create a new firewall rule for every single flow.
+        self._active_blocks: Dict[str, float] = {}
+        self._min_confidence_floor: Optional[float] = None
+        # settings.yaml response.min_confidence = lowest confidence for any automatic block.
+        if response_cfg.get("min_confidence") is not None:
+            try:
+                self.apply_runtime_settings({"min_confidence": response_cfg["min_confidence"]})
+            except ValueError as exc:
+                logger.warning("Ignoring invalid response.min_confidence: %s", exc)
 
         # Initialize firewall response adapter (Step 33)
         self.firewall: BaseFirewallAdapter = firewall_adapter or get_firewall_adapter(
-            config=self.settings.get("firewall", {}),
+            config=firewall_config_from_settings(self.settings),
             allowlist=set(self.allowlist),
             max_rule_minutes=self.max_rule_minutes,
         )
@@ -432,7 +466,7 @@ class DecisionEngine:
         conn_state = str(raw.get("conn_state", "-"))
         direction = str(raw.get("traffic_direction", "inbound"))
 
-        # Timestamps for sub-second latency verification (Hypothesis H1 Clause 3)
+        # Timestamps for end-to-end latency measurement (Table 9: median < 2 s, p95 < 5 s)
         zeek_ts = float(raw.get("ts", raw.get("observed_epoch", decision_ts)))
         adapter_ts = float(raw.get("observed_epoch", decision_ts))
         detect_ts = detection.detect_ts
@@ -520,8 +554,11 @@ class DecisionEngine:
 
         # Case 2: Attack Flow Handling (FR-01, FR-02, FR-06)
         class_thresh = self.thresholds.get(p_class, FALLBACK_THRESHOLDS.get(p_class, {}))
-        alert_threshold = float(class_thresh.get("passive_alert_threshold", 0.50))
-        block_threshold = float(class_thresh.get("active_response_threshold", 0.70))
+        alert_raw = class_thresh.get("passive_alert_threshold", 0.50)
+        block_raw = class_thresh.get("active_response_threshold", 0.70)
+        alert_threshold = float(alert_raw) if alert_raw is not None else 0.50
+        # None = Step 17 found no safe block threshold: this class only raises alerts.
+        block_threshold = float(block_raw) if block_raw is not None else float("inf")
         reason_code = self._get_reason_code(p_class)
         severity = self._classify_severity(p_class, confidence)
         evidence_note = self.generate_evidence_note(detection)
@@ -655,10 +692,170 @@ class DecisionEngine:
         # 1. Machine Learning Inference
         detections = self.detector.detect_flows(flows)
 
-        # 2. Decision evaluation
+        # 2. Decision evaluation, then 3. controlled response (proposal 3.4, 3.7)
         outcomes: List[DecisionOutcome] = []
         for det in detections:
             outcome = self.evaluate_detection(det)
+            self.respond_to_outcome(outcome)
             outcomes.append(outcome)
 
         return outcomes
+
+    # Settings the administrator may change from the dashboard (FR-07). Each change is
+    # stored with its history by db_service.set_setting() and applied here at once.
+    RUNTIME_SETTING_KEYS = ("allowlist", "min_confidence", "min_repeats", "repeat_window_seconds", "max_rule_minutes")
+
+    @staticmethod
+    def validate_runtime_setting(key: str, value: Any) -> Any:
+        """Check one dashboard setting and return the clean value (ValueError if wrong)."""
+        import ipaddress as _ip
+
+        if key == "allowlist":
+            if not isinstance(value, (list, tuple)) or not value:
+                raise ValueError("allowlist must be a non-empty list of IP addresses")
+            clean = []
+            for item in value:
+                clean.append(str(_ip.ip_address(str(item).strip())))
+            return clean
+        if key == "min_confidence":
+            v = float(value)
+            if not 0.0 < v <= 1.0:
+                raise ValueError("min_confidence must be between 0 and 1")
+            return v
+        if key == "min_repeats":
+            v = int(value)
+            if v < 1:
+                raise ValueError("min_repeats must be at least 1")
+            return v
+        if key == "repeat_window_seconds":
+            v = int(value)
+            if v < 5:
+                raise ValueError("repeat_window_seconds must be at least 5")
+            return v
+        if key == "max_rule_minutes":
+            v = int(value)
+            if not 1 <= v <= 1440:
+                raise ValueError("max_rule_minutes must be between 1 and 1440")
+            return v
+        raise ValueError(f"'{key}' is not a runtime setting")
+
+    def apply_runtime_settings(self, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply checked dashboard settings to the running policy. Returns what was applied."""
+        applied: Dict[str, Any] = {}
+        for key, raw in (values or {}).items():
+            if key not in self.RUNTIME_SETTING_KEYS or raw is None:
+                continue
+            value = self.validate_runtime_setting(key, raw)
+            if key == "allowlist":
+                self.allowlist = list(value)
+                self.policy.allowlist = set(value)
+                if hasattr(self.firewall, "allowlist"):
+                    self.firewall.allowlist = set(value)
+            elif key == "min_confidence":
+                self._min_confidence_floor = value
+                # Lowest confidence for ANY automatic block. A per-class threshold
+                # from Step 17 that is higher than this still applies.
+                for cls_name in list(self.policy.min_confidence_map):
+                    base = self._class_active_threshold(cls_name)
+                    self.policy.min_confidence_map[cls_name] = max(base, value)
+            elif key == "min_repeats":
+                self.min_repeats = value
+                self.policy.min_repeats = value
+            elif key == "repeat_window_seconds":
+                self.repeat_window_seconds = value
+                self.policy.repeat_window_seconds = value
+            elif key == "max_rule_minutes":
+                self.max_rule_minutes = value
+                self.policy.max_rule_minutes = value
+                if hasattr(self.firewall, "max_rule_minutes"):
+                    self.firewall.max_rule_minutes = value
+            applied[key] = value
+        if applied:
+            logger.info("Runtime settings applied: %s", applied)
+        return applied
+
+    def get_runtime_settings(self) -> Dict[str, Any]:
+        """Values the running policy uses now (shown on the dashboard Settings page)."""
+        return {
+            "allowlist": sorted(self.policy.allowlist),
+            "min_confidence": self._min_confidence_floor,
+            "min_repeats": self.policy.min_repeats,
+            "repeat_window_seconds": self.policy.repeat_window_seconds,
+            "max_rule_minutes": self.policy.max_rule_minutes,
+            "auto_response": self.policy.auto_response,
+            "block_thresholds": {k: (None if v > 1.0 else v) for k, v in self.policy.min_confidence_map.items()},
+        }
+
+    def _class_active_threshold(self, cls_name: str) -> float:
+        cfg = self.thresholds.get(cls_name, {})
+        if isinstance(cfg, dict) and cfg.get("active_response_threshold") is not None:
+            return float(cfg["active_response_threshold"])
+        return 1.01
+
+    def forget_block(self, ip: str) -> None:
+        """Forget an engine block after a manual unblock, so a new attack can be blocked again."""
+        self._active_blocks.pop(str(ip).strip(), None)
+
+    def respond_to_outcome(self, outcome: DecisionOutcome) -> Optional[PolicyDecision]:
+        """Run the response policy for a block candidate and act if every check passes.
+
+        Only `ACTIVE_BLOCK_CANDIDATE` outcomes go to the policy. The policy applies the
+        safety checks (master switch, confidence, allowlist, local-network protection,
+        repeats in the time window, maximum rule time). When it approves, the firewall
+        adapter applies the rule, the block is saved and the dashboard is told.
+        """
+        if outcome.action != "ACTIVE_BLOCK_CANDIDATE":
+            return None
+
+        decision = self.evaluate_response(outcome)
+        outcome.response_reason = decision.reason_code
+        if not decision.should_act:
+            # Audit: keep the reason why no block was made on the attack event (proposal 3.7)
+            if outcome.event_id and self.db is not None and hasattr(self.db, "update_attack_event_status"):
+                try:
+                    self.db.update_attack_event_status(outcome.event_id, response_reason=decision.reason_code)
+                except Exception as exc:
+                    logger.debug("Could not store skip reason: %s", exc)
+            return decision
+
+        now = time.time()
+        expires = self._active_blocks.get(decision.target_ip)
+        if expires is not None and expires > now:
+            outcome.response_status = "already_blocked"
+            return decision
+
+        try:
+            rule = self.execute_response(decision, event_id=outcome.event_id)
+        except FirewallError as exc:
+            logger.error("Firewall refused the block for %s: %s", decision.target_ip, exc)
+            outcome.response_status = "failed"
+            rule = None
+        except Exception as exc:  # never let a firewall problem stop detection
+            logger.error("Unexpected error while blocking %s: %s", decision.target_ip, exc)
+            outcome.response_status = "failed"
+            rule = None
+
+        if outcome.response_status != "failed":
+            outcome.response_status = "rate_limited" if decision.action_type == "rate_limit" else "blocked"
+            self._active_blocks[decision.target_ip] = now + 60.0 * max(1, decision.duration_minutes)
+
+        if outcome.event_id and self.db is not None and hasattr(self.db, "update_attack_event_status"):
+            try:
+                self.db.update_attack_event_status(
+                    outcome.event_id,
+                    response_status=outcome.response_status,
+                    response_reason=outcome.response_reason,
+                )
+            except Exception as exc:
+                logger.error("Failed to update event response status: %s", exc)
+        if self.socketio is not None and outcome.event_id:
+            try:
+                self.socketio.emit("event_update", {
+                    "event_id": outcome.event_id,
+                    "response_status": outcome.response_status,
+                    "response_reason": outcome.response_reason,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+            except Exception as exc:
+                logger.error("Failed to emit event_update: %s", exc)
+        return decision

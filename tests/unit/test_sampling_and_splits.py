@@ -17,14 +17,15 @@ from ml_engine.features import FEATURE_COLUMNS, CATEGORICAL_FEATURES, NUMERICAL_
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 TRAIN_PARQUET = PROJECT_ROOT / "data" / "processed" / "train_features.parquet"
 HELDOUT_PARQUET = PROJECT_ROOT / "data" / "processed" / "heldout" / "held_out_test.parquet"
-HELDOUT_SECONDARY = PROJECT_ROOT / "data" / "processed" / "held_out_test.parquet"
+HELDOUT_OLD_COPY = PROJECT_ROOT / "data" / "processed" / "held_out_test.parquet"  # removed 8 Nov 2026: one held-out file only
 REPORTS_DIR = PROJECT_ROOT / "reports"
 TEST_SPLIT_PLAN = REPORTS_DIR / "test_split_plan.md"
 SAMPLING_REPORT = REPORTS_DIR / "sampling_report.md"
 SAMPLING_CSV = REPORTS_DIR / "sampling_summary.csv"
 
 EXPECTED_METADATA_COLS = ["class_name", "label_idx", "scenario_id"]
-ALL_EXPECTED_COLS = FEATURE_COLUMNS + EXPECTED_METADATA_COLS
+AUDIT_COLS = ["ts", "id.orig_h", "id.resp_h", "id.resp_p", "detailed_label"]  # checking only, never model inputs (D-046)
+ALL_EXPECTED_COLS = FEATURE_COLUMNS + EXPECTED_METADATA_COLS + AUDIT_COLS
 HELD_OUT_SCENARIO_ID = "CTU-IoT-Malware-Capture-34-1"
 
 
@@ -32,7 +33,7 @@ def test_files_exist():
     """Verify all expected parquets and reports exist on disk."""
     assert TRAIN_PARQUET.exists(), f"Missing {TRAIN_PARQUET}"
     assert HELDOUT_PARQUET.exists(), f"Missing {HELDOUT_PARQUET}"
-    assert HELDOUT_SECONDARY.exists(), f"Missing {HELDOUT_SECONDARY}"
+    assert not HELDOUT_OLD_COPY.exists(), "The held-out scenario must be kept in one place only (data/processed/heldout/)"
     assert TEST_SPLIT_PLAN.exists(), f"Missing {TEST_SPLIT_PLAN}"
     assert SAMPLING_REPORT.exists(), f"Missing {SAMPLING_REPORT}"
     assert SAMPLING_CSV.exists(), f"Missing {SAMPLING_CSV}"
@@ -42,7 +43,7 @@ def test_train_parquet_schema_and_integrity():
     """Verify train_features.parquet has exact row count, schema, zero NaNs, and correct types."""
     pf = pq.ParquetFile(TRAIN_PARQUET)
     assert pf.metadata.num_rows == 1384070, f"Expected 1,384,070 rows, got {pf.metadata.num_rows}"
-    assert pf.metadata.num_columns == 22, f"Expected 22 columns, got {pf.metadata.num_columns}"
+    assert pf.metadata.num_columns == len(ALL_EXPECTED_COLS), f"Expected {len(ALL_EXPECTED_COLS)} columns, got {pf.metadata.num_columns}"
 
     # Check columns
     col_names = pf.schema.names
@@ -58,7 +59,7 @@ def test_held_out_parquet_schema_and_isolation():
     """Verify held_out_test.parquet has exact 23,145 rows, zero NaNs, and complete scenario isolation."""
     table = pq.read_table(HELDOUT_PARQUET)
     assert table.num_rows == 23145, f"Expected 23,145 rows, got {table.num_rows}"
-    assert table.num_columns == 22, f"Expected 22 columns, got {table.num_columns}"
+    assert table.num_columns == len(ALL_EXPECTED_COLS), f"Expected {len(ALL_EXPECTED_COLS)} columns, got {table.num_columns}"
 
     df_held = table.to_pandas()
     assert df_held.isna().sum().sum() == 0, "Found NaN values in held_out_test.parquet"

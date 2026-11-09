@@ -8,7 +8,7 @@ import {
   Play,
 } from "lucide-react";
 import Layout from "../components/Layout";
-import apiClient from "../services/api";
+import apiClient, { withEventId } from "../services/api";
 import { getSocket } from "../services/socket";
 
 const CLASS_COLORS = {
@@ -36,7 +36,7 @@ const LiveAlerts = () => {
     const loadAlerts = async () => {
       try {
         const res = await apiClient.get("/api/events?limit=40");
-        const list = res.data?.events || [];
+        const list = (res.data?.events || []).map(withEventId);
         if (isMounted) {
           setAlerts(list);
         }
@@ -51,13 +51,15 @@ const LiveAlerts = () => {
     if (socket) {
       const handleNewEvent = (event) => {
         if (!isMounted || isPaused) return;
-        setAlerts((prev) => [event, ...prev.slice(0, 99)]);
+        setAlerts((prev) => [withEventId(event), ...prev.slice(0, 99)]);
       };
 
       const handleEventUpdate = (updatedEvent) => {
         if (!isMounted) return;
         setAlerts((prev) =>
-          prev.map((e) => (e.id === updatedEvent.id ? { ...e, ...updatedEvent } : e))
+          prev.map((e) =>
+            e.id === (updatedEvent.event_id || updatedEvent.id) ? { ...e, ...updatedEvent, id: e.id } : e
+          )
         );
       };
 
@@ -253,6 +255,21 @@ const LiveAlerts = () => {
 
                       <span className="text-[11px] text-gray-500">
                         {evt.timestamp ? new Date(evt.timestamp).toLocaleString() : "N/A"}
+                      </span>
+
+                      {/* Response status (proposal 3.6): what the response policy did */}
+                      <span
+                        title={evt.response_reason || ""}
+                        className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border ${
+                          evt.response_status === "blocked" || evt.response_status === "rate_limited"
+                            ? "bg-red-950 text-red-300 border-red-700"
+                            : evt.response_status === "already_blocked"
+                            ? "bg-orange-950 text-orange-300 border-orange-700"
+                            : "bg-gray-900 text-gray-300 border-gray-700"
+                        }`}
+                      >
+                        RESPONSE: {(evt.response_status || "none").toUpperCase()}
+                        {evt.response_reason ? ` (${evt.response_reason})` : ""}
                       </span>
                     </div>
 

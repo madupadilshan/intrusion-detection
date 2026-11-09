@@ -1,60 +1,76 @@
 {
   "metadata": {
-    "version": "1.0",
-    "generated_date": "2026-10-31",
-    "governing_proposal": "Sections 2.4, 3.4, 3.7; Table 7 (FR-06), Table 11",
-    "evaluation_scenario": "CTU-IoT-Malware-Capture-34-1"
-  },
-  "safety_guardrails": {
-    "min_repeats": 3,
-    "repeat_window_seconds": 60,
-    "max_rule_minutes": 30,
-    "allowlist_protected": true
+    "version": "3.0",
+    "generated_date": "2026-11-09",
+    "chosen_from": "calibrated grouped out-of-fold training data (Step 14 OOF); held-out scenario not used",
+    "rules": {
+      "alert_min_precision": 0.5,
+      "min_recall_for_threshold": 0.01,
+      "block_rule": "D-046: confidence threshold + repeats in a time window (proposal 3.4), replayed on OOF data",
+      "block_min_events": 10,
+      "block_min_safe_share": 0.95,
+      "block_max_benign_target_rate": 0.01,
+      "replay_min_repeats": 3,
+      "replay_window_seconds": 60.0,
+      "replay_max_rule_minutes": 30.0
+    }
   },
   "classes": {
     "Benign": {
       "active_response_threshold": null,
       "passive_alert_threshold": null,
       "policy": "ALLOW_ALWAYS",
-      "notes": "Benign traffic is preserved; never blocked or dropped."
+      "notes": "Benign traffic is logged in the traffic summary and never blocked (Table 5)."
     },
     "DDoS_DoS": {
-      "active_response_threshold": 0.7,
-      "active_precision": 0.9999,
-      "active_recall": 0.9907,
-      "passive_alert_threshold": 0.5,
-      "passive_precision": 0.9999,
-      "passive_recall": 0.9907,
+      "passive_alert_threshold": 0.33,
+      "oof_alert_precision": 0.3356,
+      "oof_alert_recall": 0.0016,
+      "oof_alert_benign_trigger_rate": 0.00222,
+      "alert_rule": "OOF precision never reached 0.50; threshold with the best precision was used. Alerts for this class are weak.",
       "action": "drop_source",
-      "notes": "Cost-sensitive tuning: Active threshold guarantees precision while Passive threshold boosts recall."
+      "reason_code": "DOS_HIGH_RATE_PACKET_FLOOD",
+      "active_response_threshold": null,
+      "block_rule": "Replay of the repeat rule (3 block candidates for the same target in 60 s) on OOF data: no threshold gave >= 10 blocks with >= 95% fired by malicious flows and <= 1% of benign targets blocked. This class only raises alerts (D-046)."
     },
     "PortScan": {
-      "active_response_threshold": 0.65,
-      "active_precision": 0.0432,
-      "active_recall": 0.9426,
       "passive_alert_threshold": 0.3,
-      "passive_precision": 0.0424,
-      "passive_recall": 0.9426,
+      "oof_alert_precision": 0.5799,
+      "oof_alert_recall": 0.3069,
+      "oof_alert_benign_trigger_rate": 0.15349,
+      "alert_rule": "lowest threshold with OOF precision >= 0.50",
       "action": "drop_source",
-      "notes": "Cost-sensitive tuning: Active threshold guarantees precision while Passive threshold boosts recall."
+      "reason_code": "SCAN_RAPID_PROBE_SWEEP",
+      "active_response_threshold": 0.3,
+      "block_rule": "lowest threshold where the replayed repeat rule (3 in 60 s) gave >= 10 blocks, >= 95% fired by malicious flows and <= 1% of benign targets blocked (D-046)",
+      "oof_replay_blocks": 413,
+      "oof_replay_safe_share": 0.9661,
+      "oof_replay_benign_target_rate": 0.0001
     },
     "CnC": {
-      "active_response_threshold": 0.6,
-      "active_precision": 0.9505,
-      "active_recall": 0.1432,
-      "passive_alert_threshold": 0.25,
-      "passive_precision": 0.9705,
-      "passive_recall": 0.2747,
-      "action": "isolate_target",
-      "notes": "Cost-sensitive tuning: Active threshold guarantees precision while Passive threshold boosts recall."
+      "passive_alert_threshold": 0.39,
+      "oof_alert_precision": 0.2428,
+      "oof_alert_recall": 0.1885,
+      "oof_alert_benign_trigger_rate": 0.07163,
+      "alert_rule": "OOF precision never reached 0.50; threshold with the best precision was used. Alerts for this class are weak.",
+      "action": "block_destination_or_isolate",
+      "reason_code": "CNC_PERSISTENT_BEACON",
+      "active_response_threshold": 0.39,
+      "block_rule": "lowest threshold where the replayed repeat rule (3 in 60 s) gave >= 10 blocks, >= 95% fired by malicious flows and <= 1% of benign targets blocked (D-046)",
+      "oof_replay_blocks": 142,
+      "oof_replay_safe_share": 1.0,
+      "oof_replay_benign_target_rate": 0.0
     },
     "Malware_Download": {
-      "active_response_threshold": 0.85,
-      "passive_alert_threshold": 0.5,
-      "expected_precision": 0.95,
-      "expected_recall": 0.8,
-      "action": "isolate_target",
-      "notes": "Theoretical operating threshold based on training set validation."
+      "passive_alert_threshold": 0.3,
+      "oof_alert_precision": 0.6483,
+      "oof_alert_recall": 0.7365,
+      "oof_alert_benign_trigger_rate": 0.14283,
+      "alert_rule": "lowest threshold with OOF precision >= 0.50",
+      "action": "block_by_direction",
+      "reason_code": "MALWARE_STAGING_TRANSFER",
+      "active_response_threshold": null,
+      "block_rule": "Replay of the repeat rule (3 block candidates for the same target in 60 s) on OOF data: no threshold gave >= 10 blocks with >= 95% fired by malicious flows and <= 1% of benign targets blocked. This class only raises alerts (D-046)."
     }
   }
 }

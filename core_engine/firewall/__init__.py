@@ -40,7 +40,35 @@ __all__ = [
     "RouterAdapter",
     "SimulationAdapter",
     "get_firewall_adapter",
+    "firewall_config_from_settings",
 ]
+
+
+def firewall_config_from_settings(settings: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Build the adapter configuration from settings.yaml in ONE place.
+
+    - The adapter type comes from `response.adapter` (router | nftables | simulation).
+      `firewall.type` is only a fallback; if both are set and differ, a warning is
+      logged and `response.adapter` is used.
+    - The nftables table family defaults to `inet` for the router (passive mode) and
+      `bridge` for the sensor itself (inline mode), unless `firewall.table_family` is set.
+    - Router host, port, user and key may be in the `firewall` section; otherwise the
+      RouterAdapter reads them from the environment (.env).
+    """
+    settings = settings or {}
+    fw = dict(settings.get("firewall") or {})
+    response_adapter = (settings.get("response") or {}).get("adapter")
+    fw_type = fw.get("type")
+    if response_adapter and fw_type and str(response_adapter).lower() != str(fw_type).lower():
+        logger.warning(
+            "settings.yaml: response.adapter=%s and firewall.type=%s differ; using response.adapter.",
+            response_adapter, fw_type,
+        )
+    chosen = str(response_adapter or fw_type or "auto").lower()
+    fw["type"] = chosen
+    if "table_family" not in fw:
+        fw["table_family"] = "inet" if chosen == "router" else "bridge"
+    return fw
 
 
 def get_firewall_adapter(
@@ -76,10 +104,12 @@ def get_firewall_adapter(
         )
 
     if adapter_type == "router":
+        # None lets RouterAdapter read ROUTER_HOST / ROUTER_PORT / ROUTER_USER /
+        # ROUTER_KEY_FILE (or the ROUTER_SSH_* names) from the environment.
         return RouterAdapter(
             router_host=cfg.get("router_host") or cfg.get("host"),
-            router_port=int(cfg.get("router_port", 22)),
-            router_user=cfg.get("router_user", "root"),
+            router_port=int(cfg["router_port"]) if cfg.get("router_port") else None,
+            router_user=cfg.get("router_user"),
             router_key_file=cfg.get("router_key_file"),
             table_family=cfg.get("table_family", "inet"),
             table_name=table_name,

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import Layout from "../components/Layout";
-import apiClient from "../services/api";
+import apiClient, { withEventId } from "../services/api";
 import { getSocket } from "../services/socket";
 
 const CLASS_COLORS = {
@@ -48,7 +48,7 @@ const Overview = () => {
 
         if (isMounted) {
           if (sumRes.data) setSummary((prev) => ({ ...prev, ...sumRes.data }));
-          if (evRes.data?.events) setRecentAlerts(evRes.data.events);
+          if (evRes.data?.events) setRecentAlerts(evRes.data.events.map(withEventId));
         }
       } catch (err) {
         console.error("Failed to load overview data:", err);
@@ -68,7 +68,7 @@ const Overview = () => {
 
       const handleNewEvent = (event) => {
         if (!isMounted) return;
-        setRecentAlerts((prev) => [event, ...prev.slice(0, 5)]);
+        setRecentAlerts((prev) => [withEventId(event), ...prev.slice(0, 5)]);
       };
 
       socket.on("summary_update", handleSummaryUpdate);

@@ -1,5 +1,14 @@
 # Project Explanation: Real-Time Intrusion Detection and Response System for IP-Camera IoT Networks
 
+> **Correction notice (8 November 2026) — read this first.** A full check against the proposal found errors in earlier text. Where this file disagrees with the points below, the points below are correct (decisions D-039 to D-042 in `docs/decision_log.md`):
+> 1. The 5,000 "camera" flows of 31 Oct 2026 were **made by a script**, not captured from a Tapo C200 or any camera. The result "FPR 0.000%, H1 clause 2 PASS" is **withdrawn**. The FPR part of H1 is **not tested yet** (Step 20 in the lab).
+> 2. The Step 22 schema check used the same synthetic file, so **RQ3 is not answered yet**.
+> 3. Hypothesis H1 has two parts only: macro-F1 ≥ 0.85 on the held-out scenarios, and benign FPR ≤ 5% on our local camera traffic. Latency is a separate Table 9 target: median decision < 2 s and 95th percentile < 5 s, end to end. It is **not** "sub-second", and the model inference time (microseconds) is not the end-to-end time.
+> 4. The held-out macro-F1 is **below** the 0.85 target (see `reports/experiments/model_card.md` for the current numbers). This is reported as it is (proposal Table 9).
+> 5. Step 17 was redone: calibration and thresholds now come from grouped out-of-fold training data only (D-040).
+> 6. Four scenario names in the dataset map were swapped (8-1/9-1 and 35-1/36-1) and were corrected (D-039).
+> 7. The automatic response was not connected before 8 Nov 2026; it is now connected, off by default, and still has to be tested in the lab (D-041).
+
 **Based on:** Group 03 Research Proposal (July 2026)
 **Version:** 2 (19 October 2026). Rewritten to follow the proposal. The first version had several mistakes; Section 13 lists what changed.
 **Sinhala version:** `PROJECT_EXPLANATION.md` (same content).
@@ -183,9 +192,9 @@ There is **no fixed list of 10 features**. Table 6 gives **candidate** features.
 1. **100% Feature Schema Alignment:** [`tools/schema_check.py`](file:///d:/intrusion%20detection/tools/schema_check.py) audited all 19 candidate features between offline training data (`train_features.parquet`, 1,384,070 flows) and live Zeek camera telemetry (`conn.log`, 5,000 flows), confirming identical column presence and locked sequence.
 2. **Data Types and Missing Value Invariants:** Categoricals strictly evaluate to `object`/`string`; numericals strictly evaluate to `float32`/`int8`. Missing value rate is 0.000% across all features with zero NaNs or infinite floats.
 3. **Physical Feasibility Bounds:** All byte, packet, and duration counts are strictly non-negative, and directional ratios are bounded in $[0.0, 1.0]$.
-4. **Novel Category Absorption:** Application protocols native to IP surveillance (`service` values `rtsp`, `ssdp`, `onvif`, `ntp`) absent from IoT-23 are safely encoded to index `-1` by the `OrdinalEncoder` preprocessor without throwing exceptions.
-5. **Resolution of Research Question RQ3:** Zero training-serving skew is empirically proven, satisfying Supervisor Checkpoint C6. Production bundle inference executes at 36,923 flows/sec (27.08 µs/flow) with 0.000% FPR ([`reports/schema_check.md`](file:///d:/intrusion%20detection/reports/schema_check.md)).
-6. **Track 2 Milestone Concluded:** Track 2 (Live Sensor Telemetry, Steps 19–22) is 100% COMPLETE, certifying telemetry and feature layers for Phase 6 backend integration (Step 23 onward).
+4. **New categories:** a category never seen in training is encoded as unknown (`-1`), so the model still runs. The model has not learned what such values mean, so these flows are less reliable. (The synthetic file used service names `rtsp`, `ssdp`, `onvif`; Zeek's standard analyzers may not produce these, so real output must be checked.)
+5. **RQ3 is not answered yet:** the 31 Oct check used synthetic data (D-042). It must be run again on real Zeek output from the lab (`tools/schema_check.py --source real`).
+6. **Track 2 status:** Steps 19, 20 and 22 were re-opened on 8 Nov 2026: the software is ready, the lab run is not done.
 
 ---
 
@@ -207,7 +216,7 @@ There is **no fixed list of 10 features**. Table 6 gives **candidate** features.
 
 1. **Level 1 — Grouped cross-validation:** flows from the same scenario always stay together (`StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` with `groups = scenario_id` on the 22 training scenarios). Completely prevents intra-session leakage.
 2. **Level 2 — Held-out scenario:** scenario `CTU-IoT-Malware-Capture-34-1` (Mirai botnet, 23,145 flows: 14,394 DDoS_DoS, 6,706 CnC, 1,923 Benign, 122 PortScan) is kept 100% untouched without balancing. Sealed in [`data/processed/heldout/held_out_test.parquet`](file:///d:/intrusion%20detection/data/processed/heldout/held_out_test.parquet) (Supervisor Checkpoint C4) and opened ONLY in Step 16 to evaluate real-world zero-day generalization.
-3. **Level 3 — Local lab traffic:** physical Tapo C200 IP camera 1080p RTSP/H.264 continuous benign traffic (Step 20) and 6 controlled test attack scenarios (Phase 9, Steps 35–39) testing operational False Positive Rate $< 1\%$ and sub-second defense response latency (testing Hypothesis H1).
+3. **Level 3 — Local lab traffic:** benign traffic from the lab IP camera or an approved camera simulator, captured by Zeek (Step 20) and 6 controlled test attack scenarios (Phase 9, Steps 35–39) testing operational False Positive Rate $< 1\%$ and sub-second defense response latency (testing Hypothesis H1).
 
 **Rules:** never split by random rows; never touch the test data while choosing preprocessing or settings; accuracy is reported but is **not** the main result.
 
@@ -247,12 +256,9 @@ The sealed scenario `CTU-IoT-Malware-Capture-34-1` (Mirai botnet, 23,145 flows: 
 
 **Hypothesis H1:** macro-F1 **≥ 0.85** on the held-out scenarios, **and** benign false-positive rate **≤ 5%** on our local camera traffic. These are targets, not promises. If they are not met, we report the result and explain the likely reason (domain shift, feature mismatch, too few examples).
 
-**Local IP-Camera Benign Baseline & Hypothesis H1 Clause 2 Verification (Step 20, Decision D-024, `reports/experiments/camera_baseline_summary.md`):**
-- **Camera Baseline Capture:** To resolve the domain shift limitation of IoT-23 (which lacked IP camera streams in its benign subset), 5,000 benign flows representing 5 distinct operational camera activities (RTSP 1080p H.264 streaming 54.88%, Web/API management 18.86%, ONVIF/SSDP discovery 8.32%, and NTP/DNS support 11.46%) were captured via [`sensor/collect_camera_traffic.py`](file:///d:/intrusion%20detection/sensor/collect_camera_traffic.py) into `data/local/benign/2026-10-31/conn.log` (Metadata only — zero video payload stored).
-- **Hypothesis H1 Clause 2 Empirical Evaluation:** All 5,000 flows were evaluated against `ids_bundle_v1.joblib`:
-  - **Raw Benign Accuracy:** **100.00%** (5,000 / 5,000 flows).
-  - **Raw False Alarm Rate (FPR):** **0.000%** (Substantially outperforms the $\le 5.0\%$ target of Hypothesis H1 Clause 2 — **PASS**).
-  - **Active Blocking False Positive Rate:** **0.000%** (Zero false firewall triggers, ensuring uninterrupted camera surveillance feeds).
+**Local camera traffic (Step 20) — not measured yet:**
+- The 5,000 flows made on 31 Oct 2026 by `sensor/collect_camera_traffic.py` were **synthetic** (made by a script). They are kept in `data/local/synthetic/` only to test the software. Their result is not a measurement and is not reported (D-042).
+- The real measurement needs Zeek on the sensor and the lab camera, or a camera simulator confirmed with the supervisor (D-038). Then run `python sensor/collect_camera_traffic.py --conn-log data/local/benign/<date>/conn.log --source real`.
 
 ---
 
@@ -319,7 +325,7 @@ The starting values (`min_confidence: 0.85`, `min_repeats: 3`, `repeat_window_se
     - *Active Response Candidates:* High-confidence flows exceeding the active response threshold become `ACTIVE_BLOCK_CANDIDATE` (response_status: "candidate") and are queued for firewall response.
   - *Allowlist Immunity (Section 3.7):* Management IPs (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`) are protected against blocking; attacks from allowlisted nodes are downgraded to `ALERT_ONLY` with `response_status: "allowlist_protected"`.
   - *Burst Coalescing (Section 3.6 Tip 3):* Repeated flows within `repeat_window_seconds` (60s) coalesce into a single incident document in MongoDB, incrementing `flow_count` and refreshing `last_seen`.
-  - *Sub-Second Latency Tracking (Hypothesis H1 Clause 3):* Captures timestamps across all 6 stages (`zeek_ts` -> `adapter_ts` -> `detect_ts` -> `decision_ts` -> `db_ts` -> `emit_ts`) to measure and verify end-to-end `pipeline_latency_ms`.
+  - *Latency tracking (Table 9 target: median < 2 s, p95 < 5 s; not part of H1):* Captures timestamps across all 6 stages (`zeek_ts` -> `adapter_ts` -> `detect_ts` -> `decision_ts` -> `db_ts` -> `emit_ts`) to measure and verify end-to-end `pipeline_latency_ms`.
 
 **Authorized Device Discovery & Camera Identification Service (Step 27, Decision D-031):**
 - **Authorized Scanner Service ([`core_engine/scanner_service.py`](file:///d:/intrusion%20detection/core_engine/scanner_service.py)):**

@@ -1,5 +1,14 @@
 # ව්‍යාපෘති පැහැදිලි කිරීම: Real-Time Intrusion Detection and Response System for IP-Camera IoT Networks
 
+> **නිවැරදි කිරීමේ දැන්වීම (2026 නොවැම්බර් 8) — මුලින්ම මෙය කියවන්න.** පහත ලැයිස්තුව ඉංග්‍රීසියෙන් ඇත; මෙම ගොනුවේ පෙළ පහත කරුණු සමඟ නොගැලපේ නම්, පහත කරුණු නිවැරදියි. / **Correction notice (8 November 2026) — read this first.** A full check against the proposal found errors in earlier text. Where this file disagrees with the points below, the points below are correct (decisions D-039 to D-042 in `docs/decision_log.md`):
+> 1. The 5,000 "camera" flows of 31 Oct 2026 were **made by a script**, not captured from a Tapo C200 or any camera. The result "FPR 0.000%, H1 clause 2 PASS" is **withdrawn**. The FPR part of H1 is **not tested yet** (Step 20 in the lab).
+> 2. The Step 22 schema check used the same synthetic file, so **RQ3 is not answered yet**.
+> 3. Hypothesis H1 has two parts only: macro-F1 ≥ 0.85 on the held-out scenarios, and benign FPR ≤ 5% on our local camera traffic. Latency is a separate Table 9 target: median decision < 2 s and 95th percentile < 5 s, end to end. It is **not** "sub-second", and the model inference time (microseconds) is not the end-to-end time.
+> 4. The held-out macro-F1 is **below** the 0.85 target (see `reports/experiments/model_card.md` for the current numbers). This is reported as it is (proposal Table 9).
+> 5. Step 17 was redone: calibration and thresholds now come from grouped out-of-fold training data only (D-040).
+> 6. Four scenario names in the dataset map were swapped (8-1/9-1 and 35-1/36-1) and were corrected (D-039).
+> 7. The automatic response was not connected before 8 Nov 2026; it is now connected, off by default, and still has to be tested in the lab (D-041).
+
 **පදනම:** Group 03 Research Proposal (July 2026)
 **සංස්කරණය:** 2 (2026 ඔක්තෝබර් 19). Proposal එකට අනුව නැවත ලියන ලදී. පළමු සංස්කරණයේ වැරදි කිහිපයක් තිබුණි. ඒවා 14 වන කොටසේ දක්වා ඇත.
 **English version:** `PROJECT_EXPLANATION_EN.md` (එකම අන්තර්ගතය).
@@ -184,7 +193,7 @@ flowchart TD
 2. **Data Types සහ Missing Values (Nulls):** කාණ්ඩමය ලක්ෂණ strictly `object` ලෙසද, සංඛ්‍යාත්මක ලක්ෂණ `float32`/`int8` ලෙසද පවතී. Missing rate එක 0.000% ක් වන අතර කිසිදු NaN හෝ Inf අගයක් නොමැත.
 3. **භෞතික නීති සහ Range Feasibility:** සියලුම byte, packet, සහ duration අගයන් ඍණ නොවන (non-negative) අතර, ratios 0.0 සහ 1.0 අතර පමණක් පවතී.
 4. **Novel Categories සහ Preprocessor ආරක්ෂණය:** කැමරා වීඩියෝ වලට ආවේණික `service = 'rtsp'`, `'ssdp'`, `'onvif'` වැනි නව අගයන් model preprocessor එක මඟින් `-1` index එකට ආරක්ෂිතව map කරනු ලබන අතර කිසිදු exception එකක් ඇති නොවේ.
-5. **Research Question RQ3 විසඳීම සහ Checkpoint C6:** Offline සහ Live pipelines අතර zero training-serving skew තහවුරු වූ අතර, inference එක තත්පරයකට flows 36,923 ක වේගයෙන් 0.000% False Positive Rate සහිතව ක්‍රියාත්මක විය ([`reports/schema_check.md`](file:///d:/intrusion%20detection/reports/schema_check.md)).
+5. **RQ3 තවම පිළිතුරු දී නැත:** 31 Oct check එක synthetic දත්ත භාවිතා කළ නිසා එය RQ3 ට පිළිතුරක් නොවේ (D-042). Lab එකේ සැබෑ Zeek output මත `tools/schema_check.py --source real` නැවත ධාවනය කළ යුතුයි.
 6. **Track 2 සම්පූර්ණ වීම:** Track 2 (Steps 19–22) 100% සාර්ථකව අවසන් වූ අතර පද්ධතිය Phase 6 (Step 23 onward) සඳහා සූදානම් කර ඇත.
 
 ---
@@ -207,7 +216,7 @@ flowchart TD
 
 1. **Level 1 — Grouped cross-validation:** එකම scenario එකේ flows සෑම විටම එකට තබයි (`StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` සමඟ `groups = scenario_id` පුහුණු scenarios 22 මත). එමගින් fold අතර දත්ත කාන්දුව (data leakage) 100% වළකයි.
 2. **Level 2 — Held-out scenario:** `CTU-IoT-Malware-Capture-34-1` (Mirai botnet, flows 23,145: DDoS_DoS 14,394, CnC 6,706, Benign 1,923, PortScan 122) කිසිදු sampling හෝ කෘතිම වෙනසකින් තොරව (100% untouched) [`data/processed/heldout/held_out_test.parquet`](file:///d:/intrusion%20detection/data/processed/heldout/held_out_test.parquet) හි මුද්‍රා තබා (Checkpoint C4), zero-day සාමාන්‍යකරණය පරීක්ෂා කිරීමට Step 16 හිදී පමණක් විවෘත කෙරේ.
-3. **Level 3 — Local lab traffic:** සැබෑ Tapo C200 IP කැමරාවේ අඛණ්ඩ 1080p RTSP/H.264 වීඩියෝ දත්ත (Step 20) සහ පාලිත ප්‍රහාර අවස්ථා 6 ක් (Phase 9, Steps 35–39) මගින් සැබෑ ජාලය තුළ False Positive Rate $< 1\%$ සහ තත්පරයකට අඩු response කාලය (Hypothesis H1) තහවුරු කරයි.
+3. **Level 3 — Local lab traffic:** lab IP කැමරාවෙන් හෝ supervisor අනුමත camera simulator එකකින් Zeek මගින් ලබාගත් benign traffic (Step 20) සහ proposal Table 10 හි පාලිත ප්‍රහාර අවස්ථා 6 (Step 35). මෙය තවම සිදු කර නැත.
 
 **නීති:** කිසිවිටෙකත් rows අහඹු ලෙස බෙදන්න එපා; preprocessing හෝ settings තෝරන අතරතුර test data ස්පර්ශ කරන්න එපා; accuracy වාර්තා කළත් එය ප්‍රධාන ප්‍රතිඵලය **නොවේ**.
 
@@ -247,12 +256,9 @@ Supervisor Checkpoint C4 යටතේ මෙතෙක් මුද්‍රා �
 
 **Hypothesis H1:** held-out scenarios මත macro-F1 **≥ 0.85**, **සහ** අපේ local කැමරා traffic මත benign false-positive rate **≤ 5%**. මේවා ඉලක්ක මිස පොරොන්දු නොවේ. ඒවා නොලැබුණොත්, ප්‍රතිඵලය වාර්තා කර බොහෝ විට ඇති හේතුව පැහැදිලි කරයි (domain shift, feature mismatch, samples ප්‍රමාණවත් නොවීම).
 
-**දේශීය IP කැමරා Baseline දත්ත සහ Hypothesis H1 Clause 2 තහවුරු කිරීම (Step 20, Decision D-024, `reports/experiments/camera_baseline_summary.md`):**
-- **කැමරා දත්ත ලබා ගැනීම:** IoT-23 දත්ත කට්ටලයේ benign දත්ත අතර IP කැමරා නොමැති වීම නිසා ඇති වූ domain shift ගැටලුව විසඳීමට, Tapo C200 කැමරා පරිසරයේ ප්‍රධාන ක්‍රියාකාරකම් 5 ක් (RTSP 1080p වීඩියෝ විකාශනය 54.88%, Web/API management 18.86%, ONVIF/SSDP discovery 8.32%, සහ NTP/DNS 11.46%) නිරූපණය වන පරිදි flows 5,000 ක් [`sensor/collect_camera_traffic.py`](file:///d:/intrusion%20detection/sensor/collect_camera_traffic.py) මඟින් capture කර `data/local/benign/2026-10-31/conn.log` හි තැන්පත් කරන ලදී (Metadata පමණි — කිසිදු video payload එකක් සුරැකෙන්නේ නැත).
-- **Hypothesis H1 Clause 2 ඇගයීම:** දත්ත flows 5,000 ම `make_features()` සහ `ids_bundle_v1.joblib` හරහා යවා ඇගයීමට ලක් කළ විට:
-  - **Raw Benign Accuracy:** **100.00%** (flows 5,000 ම නිවැරදිව `Benign` ලෙස හඳුනා ගැනිණි).
-  - **Raw False Positive Rate (FPR):** **0.000%** (Hypothesis H1 හි $\le 5.0\%$ ඉලක්කය විශිෂ්ට ලෙස සපුරා ඇත — **PASS**).
-  - **Active Blocking FPR:** **0.000%** (කිසිදු සාමාන්‍ය කැමරා දත්ත ප්‍රවාහයක් සඳහා firewall blocking ක්‍රියාත්මක නොවන බැවින් වීඩියෝ දර්ශන විසන්ධි නොවේ).
+**දේශීය කැමරා traffic (Step 20) — තවම මැන නැත (not measured yet):**
+- 2026-10-31 දින `sensor/collect_camera_traffic.py` මගින් සාදන ලද flows 5,000 **synthetic** දත්ත විය (script එකකින් සාදන ලදී; සැබෑ කැමරාවකින් නොවේ). ඒවා `data/local/synthetic/` හි software test සඳහා පමණක් තබා ඇත; ප්‍රතිඵලයක් ලෙස වාර්තා නොකරයි (D-042).
+- සැබෑ මිනුම සඳහා sensor එකේ Zeek සහ lab කැමරාව (හෝ supervisor අනුමත simulator එකක්, D-038) අවශ්‍යයි. ඉන්පසු `python sensor/collect_camera_traffic.py --conn-log data/local/benign/<date>/conn.log --source real` ධාවනය කරන්න.
 
 ---
 
@@ -319,7 +325,7 @@ Confidence threshold එකට අඩු events **alert පමණක්** කර
     - *Active Response Candidate:* Confidence අගය block threshold ඉක්මවන විට, allowlist පරීක්ෂා කර `ACTIVE_BLOCK_CANDIDATE` (response_status: "candidate") ලෙස firewall වෙත යොමු කරයි.
   - *Allowlist Immunity (Section 3.7):* කළමනාකරණ IP ලිපින (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`) කිසිවිටෙකත් block candidate නොවන අතර, ස්වයංක්‍රීයව `ALERT_ONLY` (response_status: "allowlist_protected") ලෙස සටහන් වේ.
   - *Burst Coalescing (Section 3.6 Tip 3):* තත්පර 60 ක් ඇතුළත එකම source, destination, සහ attack class එක සහිත burst flows තනි incident එකක් ලෙස coalesce වී `flow_count` වැඩි වේ.
-  - *උප-තත්පර ප්‍රමාද කාල නිරීක්ෂණය (Hypothesis H1 Clause 3):* `zeek_ts` -> `adapter_ts` -> `detect_ts` -> `decision_ts` -> `db_ts` -> `emit_ts` දක්වා අදියර 6 ම කාල මුද්‍රා සටහන් කර සම්පූර්ණ `pipeline_latency_ms` ගණනය කරයි.
+  - *ප්‍රමාද කාල නිරීක්ෂණය (Latency tracking — Table 9 ඉලක්කය: median < 2 s, p95 < 5 s; H1 හි කොටසක් නොවේ):* `zeek_ts` -> `adapter_ts` -> `detect_ts` -> `decision_ts` -> `db_ts` -> `emit_ts` දක්වා අදියර 6 ම කාල මුද්‍රා සටහන් කර සම්පූර්ණ `pipeline_latency_ms` ගණනය කරයි.
 
 **බලයලත් Device Discovery සහ Camera හඳුනාගැනීමේ සේවාව (Step 27, Decision D-031):**
 - **බලයලත් Scanner Service ([`core_engine/scanner_service.py`](file:///d:/intrusion%20detection/core_engine/scanner_service.py)):**

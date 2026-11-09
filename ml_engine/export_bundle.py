@@ -1,17 +1,17 @@
-"""ml_engine/export_bundle.py - Consolidate and Export Production Model Bundle & Model Card.
+"""ml_engine/export_bundle.py - Step 18: save the model bundle and write the model card.
 
-Governing Standards:
-- Group 03 Research Proposal: Sections 2.4, 3.4, 3.7; Table 7 (FR-06); Table 9; Table 11; FR-01, FR-02, FR-03.
-- Step-by-Step Guide: Step 18 (Save the model bundle and model card).
-- Mitchell et al. (2019): "Model Cards for Model Reporting".
+Proposal links: Section 3.3 step 7 ("Save the whole preprocessing pipeline together with the
+trained model"), Sections 2.4 and 3.4, Table 9.
 
-This script:
-1. Loads the base Random Forest bundle (`ml_engine/models/rf_model.joblib`).
-2. Loads the calibrated model wrapper (`ml_engine/models/calibrated_rf_model.joblib`).
-3. Loads the operational threshold dual-matrix (`reports/experiments/operational_thresholds.json`).
-4. Assembles the unified, self-contained production bundle: `ml_engine/models/ids_bundle_v1.joblib`.
-5. Executes bundle verification self-test on simulated live Zeek connection records.
-6. Generates the comprehensive formal Model Card: `reports/experiments/model_card.md`.
+Inputs (all written by earlier steps; nothing is typed in by hand):
+    ml_engine/models/rf_model.joblib                 Step 14 (pipeline, best parameters, CV scores)
+    ml_engine/models/calibrated_rf_model.joblib      Step 17 (calibration fitted on grouped OOF data)
+    reports/experiments/operational_thresholds.json  Step 17 (thresholds from OOF data)
+    reports/experiments/step17_results.json          Step 17 (final held-out check)
+    reports/experiments/evaluation_iot23.csv         Step 16 (raw model comparison on 34-1)
+Outputs:
+    ml_engine/models/ids_bundle_v1.joblib
+    reports/experiments/model_card.md
 """
 
 from __future__ import annotations
@@ -24,452 +24,225 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import joblib
 import numpy as np
 import pandas as pd
+import sklearn
 
-# Add project root to sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from ml_engine.features import FEATURE_COLUMNS, CATEGORICAL_FEATURES, NUMERICAL_FEATURES, make_features
+from ml_engine.features import CATEGORICAL_FEATURES, FEATURE_COLUMNS, NUMERICAL_FEATURES, make_features
 
 TARGET_CLASSES = [0, 1, 2, 3, 4]
 CLASS_NAMES = ["Benign", "DDoS_DoS", "PortScan", "CnC", "Malware_Download"]
 CLASS_TO_NAME = dict(zip(TARGET_CLASSES, CLASS_NAMES))
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
+                    handlers=[logging.StreamHandler(sys.stdout)])
 logger = logging.getLogger("export_bundle")
 
 
 def get_git_commit_hash() -> str:
-    """Retrieve current Git commit hash."""
     try:
-        cmd = ["git", "rev-parse", "--short", "HEAD"]
-        return subprocess.check_output(cmd, cwd=str(PROJECT_ROOT)).decode("utf-8").strip()
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=str(PROJECT_ROOT)).decode().strip()
     except Exception:
-        return "1165df5"
+        return "unknown"
 
 
-def build_production_bundle(
-    rf_model_path: Path,
-    calibrated_model_path: Path,
-    thresholds_json_path: Path,
-    bundle_version: str = "v1.0.0",
-) -> Dict[str, Any]:
-    """Assemble all operational artifacts into a single unified bundle dictionary.
+def build_production_bundle(rf_model_path: Path, calibrated_model_path: Path, thresholds_json_path: Path,
+                            step17_results_path: Path, bundle_version: str = "v1.2.0") -> Dict[str, Any]:
+    """Put the pipeline, the calibrated model, the thresholds and the measured results in one bundle."""
+    base = joblib.load(rf_model_path)
+    cal = joblib.load(calibrated_model_path)
+    thresholds_cfg = json.loads(thresholds_json_path.read_text(encoding="utf-8"))
+    step17 = json.loads(step17_results_path.read_text(encoding="utf-8"))
+    ho = step17["heldout_final_check"]
 
-    Args:
-        rf_model_path: Path to rf_model.joblib.
-        calibrated_model_path: Path to calibrated_rf_model.joblib.
-        thresholds_json_path: Path to operational_thresholds.json.
-        bundle_version: Version identifier string.
-
-    Returns:
-        Complete production bundle dictionary.
-    """
-    logger.info("Loading base Random Forest bundle from: %s", rf_model_path)
-    base_bundle = joblib.load(rf_model_path)
-    pipeline = base_bundle["pipeline"]
-
-    logger.info("Loading calibrated model bundle from: %s", calibrated_model_path)
-    cal_bundle = joblib.load(calibrated_model_path)
-    calibrated_pipeline = cal_bundle["calibrated_pipeline"]
-
-    logger.info("Loading operational thresholds configuration from: %s", thresholds_json_path)
-    with open(thresholds_json_path, "r", encoding="utf-8") as f:
-        thresholds_config = json.load(f)
-
-    git_hash = get_git_commit_hash()
-    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    # Hardcoded explainable decision rules extracted in Step 17
-    decision_rules = [
-        {
-            "class_name": "DDoS_DoS",
-            "reason_code": "DOS_HIGH_RATE_PACKET_FLOOD",
-            "trigger_condition": "resp_port_cat == well_known AND pkt_ratio <= 0.23 AND orig_ip_bytes > 59",
-            "firewall_action": "nftables drop source IP (rate-limit/drop)",
-            "explanation": "High-volume inbound unidirectional packet flood targeted at standard service ports with negligible return acknowledgment.",
-        },
-        {
-            "class_name": "PortScan",
-            "reason_code": "SCAN_RAPID_PROBE_SWEEP",
-            "trigger_condition": "conn_state in (S0, REJ) AND duration < 0.05s AND resp_pkts == 0",
-            "firewall_action": "nftables block source IP for 30 minutes",
-            "explanation": "Unanswered TCP SYN probes traversing multiple ports in rapid succession without payload exchange.",
-        },
-        {
-            "class_name": "CnC",
-            "reason_code": "CNC_PERSISTENT_BEACON",
-            "trigger_condition": "duration > 0.0s AND orig_bytes < 50 AND orig_pkts in (1, 2) AND resp_port_cat == dynamic",
-            "firewall_action": "nftables isolate camera destination to external C&C IP",
-            "explanation": "Periodic low-byte keepalive telemetry sent to an external dynamic destination port indicating botnet command session.",
-        },
-        {
-            "class_name": "Malware_Download",
-            "reason_code": "MALWARE_STAGING_TRANSFER",
-            "trigger_condition": "resp_bytes > 5000 AND conn_state == SF AND service in (http, ftp)",
-            "firewall_action": "nftables isolate infected IP camera immediately",
-            "explanation": "Substantial inbound payload transferred over application layer service indicating binary staging or second-stage dropper.",
-        },
-    ]
-
-    bundle: Dict[str, Any] = {
-        # Core Models
-        "pipeline": pipeline,
-        "calibrated_model": calibrated_pipeline,
-        # Feature Schema
+    return {
+        "pipeline": base["pipeline"],
+        "calibrated_model": cal["calibrated_pipeline"],
         "feature_columns": FEATURE_COLUMNS,
         "categorical_features": CATEGORICAL_FEATURES,
         "numerical_features": NUMERICAL_FEATURES,
-        # Target Specification
         "classes": TARGET_CLASSES,
         "class_names": CLASS_NAMES,
         "class_to_name": CLASS_TO_NAME,
-        # Operational Decision Framework
-        "operational_thresholds": thresholds_config["classes"],
-        "safety_guardrails": thresholds_config["safety_guardrails"],
-        "decision_rules": decision_rules,
-        # Provenance and Metrics Metadata
+        "operational_thresholds": thresholds_cfg["classes"],
+        "threshold_rules": thresholds_cfg.get("metadata", {}).get("rules", {}),
+        "example_decision_paths": step17.get("example_decision_paths", []),
         "metadata": {
-            "bundle_name": "iot_camera_ids_production_bundle",
+            "bundle_name": "iot_camera_ids_bundle",
             "bundle_version": bundle_version,
-            "created_at": now_str,
-            "git_commit": git_hash,
-            "scikit_learn_version": joblib.__version__,
-            "author": "Group 03 - University of Sri Jayewardenepura",
-            "governing_proposal": "Group03_Proposal.pdf (Sections 2.4, 3.4, 3.7)",
-            "training_samples_count": 1384070,
-            "training_scenarios_count": 22,
-            "hyperparameters": base_bundle.get("best_params", {}),
-            "level_1_cv_macro_f1": 0.3630,
-            "level_1_cv_accuracy": 0.4500,
-            "level_2_heldout_scenario": "CTU-IoT-Malware-Capture-34-1",
-            "level_2_heldout_accuracy": 0.7672,
-            "level_2_heldout_weighted_f1": 0.7746,
-            "level_2_heldout_macro_f1_5class": 0.4028,
-            "level_2_heldout_macro_f1_present": 0.5035,
-            "level_2_benign_fpr": 0.05096,
-            "inference_latency_us_flow": 4.52,
-            "inference_throughput_fps": 221181,
+            "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "git_commit": get_git_commit_hash(),
+            "scikit_learn_version": sklearn.__version__,
+            "calibration_method": cal.get("calibration_method"),
+            "calibration_method_id": cal.get("calibration_method_id"),
+            "hyperparameters": base.get("best_params", {}),
+            "random_seed": base.get("random_seed"),
+            "training_samples_count": base.get("training_samples_count"),
+            "level_1_oof_macro_f1": base.get("overall_macro_f1"),
+            "level_1_mean_fold_macro_f1": base.get("mean_fold_macro_f1"),
+            "level_1_std_fold_macro_f1": base.get("std_fold_macro_f1"),
+            "level_1_oof_benign_fpr": base.get("benign_fpr"),
+            "level_2_heldout_scenario": step17["meta"]["heldout_scenario"],
+            "level_2_heldout_flows": ho["flows"],
+            "level_2_accuracy": ho["accuracy"],
+            "level_2_macro_f1_5class": ho["macro_f1_5class"],
+            "level_2_macro_f1_present": ho["macro_f1_present_classes"],
+            "level_2_weighted_f1": ho["weighted_f1"],
+            "level_2_benign_fpr_argmax": ho["benign_fpr_argmax"],
+            "level_2_benign_alert_rate": ho["benign_alert_rate"],
+            "level_2_benign_block_candidate_rate": ho["benign_block_candidate_rate"],
+            "inference_latency_us_flow": base.get("inference_latency_us"),
+            "inference_throughput_fps": base.get("throughput_fps"),
         },
     }
 
-    return bundle
-
 
 def verify_bundle_integrity(bundle: Dict[str, Any]) -> None:
-    """Verify bundle structure and execute end-to-end inference test on simulated Zeek flows."""
-    logger.info("Executing bundle integrity self-test...")
-    expected_keys = [
-        "pipeline",
-        "calibrated_model",
-        "feature_columns",
-        "categorical_features",
-        "numerical_features",
-        "classes",
-        "class_names",
-        "operational_thresholds",
-        "safety_guardrails",
-        "decision_rules",
-        "metadata",
-    ]
-    for k in expected_keys:
+    """Check the bundle has every part and gives valid probabilities on example Zeek records.
+
+    The three records below are hand-made software test inputs, not measured traffic.
+    """
+    for k in ["pipeline", "calibrated_model", "feature_columns", "classes", "class_names",
+              "operational_thresholds", "metadata"]:
         if k not in bundle:
-            raise KeyError(f"Production bundle missing critical key: '{k}'")
-
-    pipeline = bundle["pipeline"]
-    calibrated = bundle["calibrated_model"]
-
-    # Simulated Zeek connection records
-    simulated_records = [
-        # 1. Normal benign streaming / DNS
-        {
-            "proto": "udp",
-            "service": "dns",
-            "conn_state": "SF",
-            "history": "Dd",
-            "id.orig_p": 54123,
-            "id.resp_p": 53,
-            "duration": 0.02,
-            "orig_bytes": 48,
-            "resp_bytes": 128,
-            "missed_bytes": 0,
-            "orig_pkts": 1,
-            "orig_ip_bytes": 76,
-            "resp_pkts": 1,
-            "resp_ip_bytes": 156,
-        },
-        # 2. High-rate SYN DDoS flood
-        {
-            "proto": "tcp",
-            "service": "-",
-            "conn_state": "S0",
-            "history": "S",
-            "id.orig_p": 44321,
-            "id.resp_p": 80,
-            "duration": 0.0,
-            "orig_bytes": 0,
-            "resp_bytes": 0,
-            "missed_bytes": 0,
-            "orig_pkts": 1000,
-            "orig_ip_bytes": 60000,
-            "resp_pkts": 0,
-            "resp_ip_bytes": 0,
-        },
-        # 3. CnC keep-alive probe
-        {
-            "proto": "tcp",
-            "service": "-",
-            "conn_state": "OTH",
-            "history": "C",
-            "id.orig_p": 50123,
-            "id.resp_p": 49160,
-            "duration": 0.01,
-            "orig_bytes": 12,
-            "resp_bytes": 0,
-            "missed_bytes": 0,
-            "orig_pkts": 1,
-            "orig_ip_bytes": 52,
-            "resp_pkts": 0,
-            "resp_ip_bytes": 0,
-        },
+            raise KeyError(f"Bundle is missing '{k}'")
+    records = [
+        {"proto": "udp", "service": "dns", "conn_state": "SF", "history": "Dd", "id.orig_p": 54123, "id.resp_p": 53,
+         "duration": 0.02, "orig_bytes": 48, "resp_bytes": 128, "missed_bytes": 0, "orig_pkts": 1,
+         "orig_ip_bytes": 76, "resp_pkts": 1, "resp_ip_bytes": 156},
+        {"proto": "tcp", "service": "-", "conn_state": "S0", "history": "S", "id.orig_p": 44321, "id.resp_p": 80,
+         "duration": 0.0, "orig_bytes": 0, "resp_bytes": 0, "missed_bytes": 0, "orig_pkts": 1,
+         "orig_ip_bytes": 40, "resp_pkts": 0, "resp_ip_bytes": 0},
+        {"proto": "tcp", "service": "-", "conn_state": "OTH", "history": "C", "id.orig_p": 50123, "id.resp_p": 49160,
+         "duration": 0.01, "orig_bytes": 12, "resp_bytes": 0, "missed_bytes": 0, "orig_pkts": 1,
+         "orig_ip_bytes": 52, "resp_pkts": 0, "resp_ip_bytes": 0},
     ]
-
-    # Process features through shared feature extractor
-    df_raw = pd.DataFrame(simulated_records)
-    feat_df = make_features(df_raw)
-
-    # 1. Pipeline predict test
-    preds = pipeline.predict(feat_df)
-    assert len(preds) == len(simulated_records), "Pipeline prediction length mismatch"
-    assert set(preds).issubset(set(TARGET_CLASSES)), "Predicted classes out of bounds"
-
-    # 2. Calibrated predict_proba test
-    cal_probs = calibrated.predict_proba(feat_df)
-    assert cal_probs.shape == (len(simulated_records), 5), "Probability matrix dimension mismatch"
-    assert np.allclose(cal_probs.sum(axis=1), 1.0, atol=1e-3), "Probabilities do not sum to 1.0"
-
-    logger.info(
-        "Bundle verification PASSED: Correctly predicted sample classes %s with valid probabilities.",
-        preds.tolist(),
-    )
+    feats = make_features(pd.DataFrame(records))
+    probs = bundle["calibrated_model"].predict_proba(feats)
+    assert probs.shape == (len(records), 5), "probability matrix has the wrong shape"
+    assert np.allclose(probs.sum(axis=1), 1.0, atol=1e-3), "probabilities do not add up to 1"
+    logger.info("Bundle self-test passed (valid probabilities for %d example records).", len(records))
 
 
-def generate_model_card(bundle: Dict[str, Any], output_path: Path) -> None:
-    """Generate comprehensive formal Model Card markdown document following Mitchell et al."""
-    meta = bundle["metadata"]
-    rules = bundle["decision_rules"]
-    thresholds = bundle["operational_thresholds"]
+def _pct(v, d=2):
+    return "—" if v is None else f"{float(v) * 100:.{d}f}%"
 
-    md_lines = [
-        "# Model Card: IoT IP-Camera Intrusion Detection Engine (v1.0.0)",
+
+def _num(v, d=4):
+    return "—" if v is None else f"{float(v):.{d}f}"
+
+
+def generate_model_card(bundle: Dict[str, Any], step17: Dict[str, Any], output_path: Path) -> None:
+    m = bundle["metadata"]
+    th = bundle["operational_thresholds"]
+    ho = step17["heldout_final_check"]
+    hp = {k.replace("model__", ""): v for k, v in (m.get("hyperparameters") or {}).items()}
+    hp_text = ", ".join(f"{k}={v!r}" for k, v in sorted(hp.items())) or "see rf_model.joblib"
+    met = m["level_2_macro_f1_5class"] >= 0.85
+
+    L: List[str] = [
+        f"# Model Card: IP-Camera IDS Random Forest ({m['bundle_version']})",
         "",
-        "**Governing Proposal:** BICT Honours Research Proposal, Group 03, University of Sri Jayewardenepura  ",
-        f"**Model Version:** `{meta['bundle_version']}`  ",
-        f"**Date Generated:** {meta['created_at']}  ",
-        f"**Git Commit:** `{meta['git_commit']}`  ",
-        f"**Model Bundle Path:** `ml_engine/models/ids_bundle_v1.joblib`  ",
-        "**Model Type:** Bagging Ensemble (`RandomForestClassifier`) with Sigmoid/Platt Calibration (`CalibratedClassifierCV`)  ",
+        f"**Created:** {m['created_at']} · **Git commit:** `{m['git_commit']}` · **scikit-learn:** {m['scikit_learn_version']}  ",
+        "**Bundle:** `ml_engine/models/ids_bundle_v1.joblib` (pipeline, calibrated model, thresholds and results together; proposal 3.3 step 7)",
         "",
-        "---",
+        "## 1. Model",
         "",
-        "## 1. Model Details",
+        "- Preprocessing: `OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1, min_frequency=50)` on 6 categorical features; 13 numeric features passed through (no scaling; proposal 3.3).",
+        f"- Classifier: `RandomForestClassifier({hp_text})`, chosen by random search inside grouped cross-validation (Step 14).",
+        f"- Calibration: {m['calibration_method']} (Step 17; method chosen in Step 17a, see `calibration_selection.md`, D-044).",
+        "- Input: the 19 flow features made by `ml_engine/features.py` (proposal Table 6). Raw IP addresses, UID and file names are never inputs.",
+        "- Output: one of 5 classes (Benign, DDoS_DoS, PortScan, CnC, Malware_Download), the confidence and the model version (FR-02).",
         "",
-        "- **Developer:** Group 03 Research Team (Department of Information and Communication Technology, USJ).",
-        "- **Model Architecture:**",
-        "  - Preprocessing: `ColumnTransformer` with `OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1, min_frequency=50)` applied to 6 categorical columns.",
-        "  - Estimator: `RandomForestClassifier(n_estimators=150, max_depth=25, min_samples_split=2, min_samples_leaf=4, max_features='log2', class_weight='balanced', random_state=42)`.",
-        "  - Probability Calibration: `CalibratedClassifierCV(method='sigmoid')` with `FrozenEstimator`.",
-        "- **Input Specification:** Exactly 19 flow-level statistical features derived from live Zeek `conn.log` streams via `ml_engine/features.py` (6 categorical, 13 numerical).",
-        "- **Target Specification:** 5 mutually exclusive target classes (`0: Benign`, `1: DDoS_DoS`, `2: PortScan`, `3: CnC`, `4: Malware_Download`).",
-        "- **License:** Research Prototype for Academic Examination.",
+        "## 2. Intended use",
         "",
-        "---",
+        "- Research prototype for a small, separated IP-camera lab network (proposal 1.2).",
+        "- Uses connection metadata only; it does not read packet content.",
+        "- Not a certified firewall product, and it does not claim to catch every new or zero-day attack (proposal 1.2).",
         "",
-        "## 2. Intended Use & Scope",
+        "## 3. Data",
         "",
-        "- **Intended Domain:** Real-time intrusion detection and automated edge defense for IP-camera IoT local networks (e.g., Tapo C200 camera streaming subnets).",
-        "- **Primary Deployment Mode:** Passive sensor mode with Zeek connection log tailing, emitting real-time Socket.IO alerts and executing nftables firewall responses on confirmed attacks.",
-        "- **Out-of-Scope Uses:**",
-        "  - General enterprise WAN intrusion detection.",
-        "  - Deep Packet Inspection (DPI) or unencrypted payload inspection (the model uses flow metadata only).",
-        "  - Autonomous blocking on critical gateway infrastructure (strictly blocked by allowlist guardrails).",
+        f"- Training: {m['training_samples_count']:,} flows sampled from 22 IoT-23 v1.0.0 scenarios (Step 12). The local CSV copy was checked against the official files (`reports/iot23_copy_verification.md`).",
+        f"- Held-out test (Level 2): `{m['level_2_heldout_scenario']}`, {m['level_2_heldout_flows']:,} flows (no Malware_Download flows).",
+        "- Local camera traffic (Level 3): **not yet measured.** The only file so far is synthetic software-test data (decision D-038); the real measurement is Step 20 in the lab.",
+        "- No IoT-23 benign device is an IP camera (proposal 2.3), so results on IoT-23 do not show how the model behaves on camera traffic.",
         "",
-        "---",
+        "## 4. Results",
         "",
-        "## 3. Training & Validation Data",
+        "| Level | Measure | Value | Proposal target (Table 9) |",
+        "| --- | --- | ---: | --- |",
+        f"| 1. Grouped CV (22 scenarios) | Out-of-fold macro-F1 | {_num(m['level_1_oof_macro_f1'])} | no target; reported |",
+        f"| 1. Grouped CV | Mean fold macro-F1 ± std | {_num(m['level_1_mean_fold_macro_f1'])} ± {_num(m['level_1_std_fold_macro_f1'])} | no target; reported |",
+        f"| 2. Held-out 34-1 | Macro-F1, 5 classes | {_num(m['level_2_macro_f1_5class'])} | ≥ 0.85 → **{'met' if met else 'not met'}** |",
+        f"| 2. Held-out 34-1 | Macro-F1, classes present | {_num(m['level_2_macro_f1_present'])} | reported |",
+        f"| 2. Held-out 34-1 | Accuracy / weighted F1 | {_num(m['level_2_accuracy'])} / {_num(m['level_2_weighted_f1'])} | reported (not the main result, proposal 3.4) |",
+        f"| 2. Held-out 34-1 | IoT-23 benign flows predicted as attack | {_pct(m['level_2_benign_fpr_argmax'], 3)} | not the H1 measure (H1 uses local camera traffic) |",
+        f"| 2. Held-out 34-1 | IoT-23 benign flows reaching a block threshold | {_pct(m['level_2_benign_block_candidate_rate'], 3)} | reported |",
+        "| 3. Local camera traffic | Benign FPR | not measured yet | ≤ 5% |",
+        f"| Speed | Model inference per flow (PC) | {_num(m['inference_latency_us_flow'], 2)} µs | end-to-end target: median < 2 s, p95 < 5 s (Step 37) |",
         "",
-        "### Training Corpus (IoT-23 Benchmark):",
-        f"- **Flow Count:** {meta['training_samples_count']:,} flows across {meta['training_scenarios_count']} heterogeneous malware capture scenarios.",
-        "- **Class Balancing:** Stratified sampling capped at $N=50,000$ rows per (scenario, class) combination with 100% minority preservation for `CnC` flows (Decision `D-016`).",
-        "- **Imbalance Reduction:** Raw class ratio reduced from $4,354 : 1$ to $10.2 : 1$.",
+        "### Per-class results on 34-1 (deployed calibrated model, top class)",
         "",
-        "### Evaluation Architecture (Three-Level Plan - Decision `D-017`):",
-        "1. **Level 1 (Grouped Cross-Validation):** 5-fold cross-validation grouped strictly by `scenario_id` (`StratifiedGroupKFold`) across all 22 training captures, completely preventing intra-session data leakage.",
-        f"2. **Level 2 (Held-Out Zero-Day Scenario):** Dedicated held-out capture `{meta['level_2_heldout_scenario']}` (Mirai botnet, 23,145 flows: 14,394 DDoS_DoS, 6,706 CnC, 1,923 Benign, 122 PortScan). Kept 100% untouched and unsealed only in Step 16 (Checkpoint C4).",
-        "3. **Level 3 (Physical Lab Camera Baseline):** Physical Tapo C200 1080p RTSP/H.264 video streaming baseline (Step 20) and 6 controlled lab test scenarios (Phase 9).",
-        "",
-        "---",
-        "",
-        "## 4. Quantitative Performance Metrics",
-        "",
-        "### Summary Benchmark Table:",
-        "",
-        "| Evaluation Milestone | Metric Name | Measured Value | Standard / Target | Status |",
-        "| :--- | :--- | :---: | :---: | :--- |",
-        f"| **Level 1 (Grouped CV)** | Out-of-Fold Macro-F1 | **{meta['level_1_cv_macro_f1']:.4f}** | Cross-Scenario Baseline | ✅ PASS |",
-        f"| **Level 1 (Grouped CV)** | Out-of-Fold Accuracy | **{meta['level_1_cv_accuracy']*100:.2f}%** | 1,384,070 flows | ✅ PASS |",
-        f"| **Level 2 (Held-Out 34-1)** | Overall Accuracy | **{meta['level_2_heldout_accuracy']*100:.2f}%** | Generalisation Baseline | ✅ PASS (+31.72% gain) |",
-        f"| **Level 2 (Held-Out 34-1)** | Weighted F1-Score | **{meta['level_2_heldout_weighted_f1']:.4f}** | Multi-class coherence | ✅ PASS |",
-        f"| **Level 2 (Held-Out 34-1)** | Macro-F1 (5 classes) | **{meta['level_2_heldout_macro_f1_5class']:.4f}** | $\\ge 0.85$ (Raw Threshold) | ⚠️ Diagnosed (Zero Support) |",
-        f"| **Level 2 (Held-Out 34-1)** | Macro-F1 (4 present) | **{meta['level_2_heldout_macro_f1_present']:.4f}** | Classes with samples | ✅ Verified |",
-        f"| **Level 2 (Held-Out 34-1)** | Benign False Positive Rate | **{meta['level_2_benign_fpr']*100:.3f}%** | $\\le 5.0\\%$ (Hypothesis H1) | **✅ PASS** (98 / 1,923 flows) |",
-        f"| **Inference Efficiency** | Per-Flow Latency | **{meta['inference_latency_us_flow']:.2f} µs/flow** | $< 1,000,000$ µs (1.0 s) | **✅ PASS** (>220,000x faster) |",
-        f"| **Inference Efficiency** | Throughput | **{meta['inference_throughput_fps']:,} flows/s** | Edge sensor capacity | **✅ PASS** |",
-        "",
-        "### Per-Class Area Under Precision-Recall Curve (PR-AUC):",
-        "- `DDoS_DoS`: **0.9976** (Flawless flood ranking)",
-        "- `CnC`: **0.9786** (Exceptional botnet beacon ranking)",
-        "- `Benign`: **0.9554** (High legitimate flow ranking)",
-        "- `PortScan`: **0.8230** (Strong scanning reconnaissance ranking)",
-        "",
-        "---",
-        "",
-        "## 5. Cost-Sensitive Operational Decision Thresholds",
-        "",
-        "| Class Name | Passive Alert Threshold | Passive Precision | Passive Recall | Active Response Threshold | Active Precision | Active Recall | Firewall Policy |",
-        "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |",
+        "| Class | Support | Precision | Recall | F1 | PR-AUC |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
     ]
-
-    for cname, pdata in thresholds.items():
-        if cname == "Benign":
-            md_lines.append(f"| **`{cname}`** | N/A | 100.0% | 94.90% | N/A | 100.0% | 94.90% | `ALLOW_ALWAYS` |")
-            continue
-        p_act = pdata["active_response_threshold"]
-        p_pas = pdata["passive_alert_threshold"]
-        prec_act = f"{pdata['active_precision']*100:.2f}%" if "active_precision" in pdata else "N/A"
-        rec_act = f"{pdata['active_recall']*100:.2f}%" if "active_recall" in pdata else "N/A"
-        prec_pas = f"{pdata['passive_precision']*100:.2f}%" if "passive_precision" in pdata else "N/A"
-        rec_pas = f"{pdata['passive_recall']*100:.2f}%" if "passive_recall" in pdata else "N/A"
-        act_name = f"`{pdata['action']}`"
-        md_lines.append(
-            f"| **`{cname}`** | **{p_pas:.2f}** | {prec_pas} | **{rec_pas}** | **{p_act:.2f}** | **{prec_act}** | {rec_act} | {act_name} |"
-        )
-
-    md_lines.extend([
+    for n in CLASS_NAMES:
+        c = ho["per_class"][n]
+        L.append(f"| {n} | {c['support']:,} | {c['precision']:.4f} | {c['recall']:.4f} | {c['f1']:.4f} | {_num(c['pr_auc'])} |")
+    L += [
         "",
-        "---",
+        "## 5. Alert and block thresholds (Step 17; chosen from grouped out-of-fold training data only)",
         "",
-        "## 6. Explainable Decision Rules & Audit Reason Codes",
+        "| Class | Alert threshold | Block threshold | Action (Table 5) |",
+        "| --- | ---: | ---: | --- |",
+    ]
+    for n in CLASS_NAMES[1:]:
+        c = th[n]
+        bt = "none — alert only" if c.get("active_response_threshold") is None else f"{c['active_response_threshold']:.2f}"
+        L.append(f"| {n} | {c['passive_alert_threshold']:.2f} | {bt} | {c.get('action', '')} |")
+    L += [
         "",
-    ])
-
-    for r in rules:
-        md_lines.extend([
-            f"### `{r['reason_code']}` ({r['class_name']})",
-            f"- **Rule Split Threshold:** `{r['trigger_condition']}`",
-            f"- **Action:** {r['firewall_action']}",
-            f"- **Audit Explanation:** {r['explanation']}",
-            "",
-        ])
-
-    md_lines.extend([
-        "---",
+        "A block also needs every safety rule of the response policy (master switch, allowlist, local-network protection, repeats inside the time window, rule expiry). See `docs/response_policy.md`.",
         "",
-        "## 7. Ethical Considerations & Safety Guardrails",
+        "## 6. Limits",
         "",
-        "1. **Management Allowlist:** The engine strictly enforces `config/settings.yaml` allowlists. IP addresses of the Sensor, Gateway router, NVR, and Admin workstation are permanently exempt from automated drop/isolate rules.",
-        "2. **Private Network Checks:** Local internal camera devices are never blocked from internal management access unless anomalous outbound C&C communication is verified.",
-        "3. **Multi-Event Thresholding:** Active blocking requires `min_repeats >= 3` occurrences within a 60-second window to prevent single transient packet anomalies from triggering disruptive firewall blocks.",
-        "4. **Rule Expiration (TTL):** Every active nftables block rule automatically expires after 30 minutes unless refreshed by sustained attack telemetry.",
-        "5. **Data Minimization:** Raw packet payloads are discarded immediately; flow metrics follow the 90/30/90 retention policy (Decision `D-011`).",
+        "- Held-out macro-F1 is below the H1 target. Likely reasons named in proposal 1.5: domain shift between scenarios, and too few examples in some classes. The per-class table shows which classes are weak.",
+        "- Scenario 34-1 was opened in Step 16 before the Step 17 redo. Nothing in Step 17 was chosen from it, but this is reported as a limitation.",
+        "- The model has not yet been tested on our own camera traffic (Level 3).",
+        "- One feature-importance value or one decision path is not proof of what caused an attack (proposal 3.4).",
         "",
-        "---",
-        "",
-        "## 8. Caveats, Limitations & Next Steps",
-        "",
-        "- **Domain Shift on Benign Telemetry:** The IoT-23 dataset contains no IP camera streams in its benign partition. Evaluating benign false alarm rates on real 1080p camera traffic is explicitly scheduled for **Step 20**.",
-        "- **Zero Support for Payload Downloads in 34-1:** `CTU-IoT-Malware-Capture-34-1` contains no file staging flows, which mathematically bounds raw unweighted 5-class Macro-F1.",
-        "- **Track 1 Milestone Concluded:** With Step 18 complete, all offline dataset engineering, model training, benchmarking, calibration, and bundling are 100% complete.",
-        "- **Next Phase:** Track 2 (Live Sensor Telemetry, Steps 19–22) integrating Zeek on the Linux sensor.",
-    ])
-
+    ]
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text("\n".join(md_lines), encoding="utf-8")
-    logger.info("Saved formal Model Card to: %s", output_path)
+    output_path.write_text("\n".join(L) + "\n", encoding="utf-8")
 
 
 def main() -> None:
-    """Main CLI entry point for Step 18."""
-    parser = argparse.ArgumentParser(
-        description="Step 18: Save production model bundle and publish formal model card."
-    )
-    parser.add_argument(
-        "--rf-model-path",
-        type=Path,
-        default=Path("ml_engine/models/rf_model.joblib"),
-        help="Path to rf_model.joblib.",
-    )
-    parser.add_argument(
-        "--calibrated-model-path",
-        type=Path,
-        default=Path("ml_engine/models/calibrated_rf_model.joblib"),
-        help="Path to calibrated_rf_model.joblib.",
-    )
-    parser.add_argument(
-        "--thresholds-json-path",
-        type=Path,
-        default=Path("reports/experiments/operational_thresholds.json"),
-        help="Path to operational_thresholds.json.",
-    )
-    parser.add_argument(
-        "--output-bundle-path",
-        type=Path,
-        default=Path("ml_engine/models/ids_bundle_v1.joblib"),
-        help="Output destination path for unified production bundle.",
-    )
-    parser.add_argument(
-        "--output-model-card-path",
-        type=Path,
-        default=Path("reports/experiments/model_card.md"),
-        help="Output destination path for formal Model Card.",
-    )
-    args = parser.parse_args()
+    ap = argparse.ArgumentParser(description="Step 18: save the model bundle and write the model card.")
+    ap.add_argument("--rf-model-path", type=Path, default=PROJECT_ROOT / "ml_engine/models/rf_model.joblib")
+    ap.add_argument("--calibrated-model-path", type=Path, default=PROJECT_ROOT / "ml_engine/models/calibrated_rf_model.joblib")
+    ap.add_argument("--thresholds-json-path", type=Path, default=PROJECT_ROOT / "reports/experiments/operational_thresholds.json")
+    ap.add_argument("--step17-results-path", type=Path, default=PROJECT_ROOT / "reports/experiments/step17_results.json")
+    ap.add_argument("--output-bundle-path", type=Path, default=PROJECT_ROOT / "ml_engine/models/ids_bundle_v1.joblib")
+    ap.add_argument("--output-model-card-path", type=Path, default=PROJECT_ROOT / "reports/experiments/model_card.md")
+    args = ap.parse_args()
 
-    logger.info("Starting Step 18: Production Model Bundle Export & Model Card Publication...")
-    start_time = time.perf_counter()
-
-    # 1. Assemble bundle
-    bundle = build_production_bundle(
-        args.rf_model_path,
-        args.calibrated_model_path,
-        args.thresholds_json_path,
-        bundle_version="v1.0.0",
-    )
-
-    # 2. Verify bundle integrity
+    t0 = time.perf_counter()
+    bundle = build_production_bundle(args.rf_model_path, args.calibrated_model_path, args.thresholds_json_path,
+                                     args.step17_results_path)
     verify_bundle_integrity(bundle)
-
-    # 3. Serialize unified bundle
     args.output_bundle_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(bundle, args.output_bundle_path, compress=3)
-    bundle_size_mb = args.output_bundle_path.stat().st_size / (1024 * 1024)
-    logger.info("Saved production model bundle to %s (%.2f MB)", args.output_bundle_path, bundle_size_mb)
-
-    # 4. Generate formal Model Card
-    generate_model_card(bundle, args.output_model_card_path)
-
-    elapsed = time.perf_counter() - start_time
-    logger.info("Step 18 successfully completed in %.2f seconds! Track 1 is now 100%% complete.", elapsed)
+    step17 = json.loads(args.step17_results_path.read_text(encoding="utf-8"))
+    generate_model_card(bundle, step17, args.output_model_card_path)
+    logger.info("Step 18 finished in %.1f s (bundle %.1f MB).", time.perf_counter() - t0,
+                args.output_bundle_path.stat().st_size / 1e6)
 
 
 if __name__ == "__main__":

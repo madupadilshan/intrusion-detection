@@ -285,6 +285,20 @@ def evaluate_pipeline_grouped_cv(
     return metrics, oof_preds
 
 
+
+def _ranking_text(df_results: pd.DataFrame) -> str:
+    """Plain, data-driven ranking of the models by out-of-fold macro-F1."""
+    order = df_results.sort_values("overall_macro_f1", ascending=False)
+    parts = [f"{r.model_name} {r.overall_macro_f1:.4f}" for r in order.itertuples()]
+    best = order.iloc[0]
+    lines = [
+        "- Out-of-fold macro-F1, highest first: " + "; ".join(parts) + ".",
+        f"- Highest out-of-fold macro-F1: **{best.model_name}**.",
+        "- Each validation fold contains only scenarios that the model never saw, so these scores show "
+        "how well a model transfers to new scenarios.",
+    ]
+    return "\n".join(lines)
+
 def export_model_comparison_report(
     report_path: Path,
     csv_path: Path,
@@ -315,11 +329,10 @@ This report presents the empirical comparison of three distinct machine learning
 2. **Linear Baseline Classifier (Logistic Regression):** Classical linear model with One-Hot categorical encoding and feature standardisation (`StandardScaler`).
 3. **Gradient Boosting Classifier (`HistGradientBoostingClassifier`):** State-of-the-art sequential gradient-boosted decision trees.
 
-### Primary Research Finding:
-- **Random Forest** remains the selected **primary operational model** for the prototype defense engine. As established in Proposal Section 2.4 and Section 3.4, Random Forest provides the ideal balance between:
-  1. **Auditability & Explainability:** Tree decision paths, feature splits, and categorical rules can be inspected transparently to formulate human-readable firewall response rules.
-  2. **Predictable Sub-Millisecond Latency:** Per-flow inference latency is **6.46 µs/flow** (154,746 flows/sec), far exceeding the 1.0-second real-time response budget.
-  3. **Operational Stability:** Robust against unscaled network outliers and resilient to rare/unseen network categories via OrdinalEncoding without exploding feature dimensionality.
+### Main finding (Level 1, grouped out-of-fold):
+{_ranking_text(df_results)}
+
+**Model choice:** Random Forest stays the main model of the prototype. The proposal (Section 2.4) keeps it as the main model "because it is easier to look inside its decisions", and asks for this comparison to show whether it gives a good balance between accuracy and speed (Section 1.3). The numbers below are reported as measured, including where another model scores higher.
 
 ---
 
@@ -327,49 +340,34 @@ This report presents the empirical comparison of three distinct machine learning
 
 | Evaluation Metric | Random Forest (Bagging) | Logistic Regression (Linear) | HistGradientBoosting (Boosting) | Target / Benchmark |
 | :--- | :---: | :---: | :---: | :--- |
-| **Out-of-Fold Macro-F1** | **{df_results.loc[df_results['model_name']=='Random Forest', 'overall_macro_f1'].values[0]:.4f}** | {df_results.loc[df_results['model_name']=='Logistic Regression', 'overall_macro_f1'].values[0]:.4f} | **{df_results.loc[df_results['model_name']=='HistGradientBoosting', 'overall_macro_f1'].values[0]:.4f}** | Highest Macro-F1 |
-| **Fold Mean Macro-F1** | **{df_results.loc[df_results['model_name']=='Random Forest', 'mean_fold_macro_f1'].values[0]:.4f} ± {df_results.loc[df_results['model_name']=='Random Forest', 'std_fold_macro_f1'].values[0]:.4f}** | {df_results.loc[df_results['model_name']=='Logistic Regression', 'mean_fold_macro_f1'].values[0]:.4f} ± {df_results.loc[df_results['model_name']=='Logistic Regression', 'std_fold_macro_f1'].values[0]:.4f} | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'mean_fold_macro_f1'].values[0]:.4f} ± {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'std_fold_macro_f1'].values[0]:.4f} | Cross-Scenario Stability |
+| **Out-of-Fold Macro-F1** | **{df_results.loc[df_results['model_name']=='Random Forest', 'overall_macro_f1'].values[0]:.4f}** | {df_results.loc[df_results['model_name']=='Logistic Regression', 'overall_macro_f1'].values[0]:.4f} | **{df_results.loc[df_results['model_name']=='HistGradientBoosting', 'overall_macro_f1'].values[0]:.4f}** | reported (no target) |
+| **Fold Mean Macro-F1** | **{df_results.loc[df_results['model_name']=='Random Forest', 'mean_fold_macro_f1'].values[0]:.4f} ± {df_results.loc[df_results['model_name']=='Random Forest', 'std_fold_macro_f1'].values[0]:.4f}** | {df_results.loc[df_results['model_name']=='Logistic Regression', 'mean_fold_macro_f1'].values[0]:.4f} ± {df_results.loc[df_results['model_name']=='Logistic Regression', 'std_fold_macro_f1'].values[0]:.4f} | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'mean_fold_macro_f1'].values[0]:.4f} ± {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'std_fold_macro_f1'].values[0]:.4f} | reported |
 | **Overall Accuracy** | {df_results.loc[df_results['model_name']=='Random Forest', 'overall_accuracy'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='Logistic Regression', 'overall_accuracy'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'overall_accuracy'].values[0]*100:.2f}% | Secondary metric |
 | **Recall: `Benign`** | {df_results.loc[df_results['model_name']=='Random Forest', 'recall_Benign'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='Logistic Regression', 'recall_Benign'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'recall_Benign'].values[0]*100:.2f}% | Legitimate flow preservation |
 | **Recall: `DDoS_DoS`** | {df_results.loc[df_results['model_name']=='Random Forest', 'recall_DDoS_DoS'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='Logistic Regression', 'recall_DDoS_DoS'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'recall_DDoS_DoS'].values[0]*100:.2f}% | High-rate flood defense |
 | **Recall: `PortScan`** | {df_results.loc[df_results['model_name']=='Random Forest', 'recall_PortScan'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='Logistic Regression', 'recall_PortScan'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'recall_PortScan'].values[0]*100:.2f}% | Reconnaissance detection |
 | **Recall: `CnC` (Minority)** | **{df_results.loc[df_results['model_name']=='Random Forest', 'recall_CnC'].values[0]*100:.2f}%** | {df_results.loc[df_results['model_name']=='Logistic Regression', 'recall_CnC'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'recall_CnC'].values[0]*100:.2f}% | Botnet beacon detection |
 | **Recall: `Malware_Download`** | **{df_results.loc[df_results['model_name']=='Random Forest', 'recall_Malware_Download'].values[0]*100:.2f}%** | {df_results.loc[df_results['model_name']=='Logistic Regression', 'recall_Malware_Download'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'recall_Malware_Download'].values[0]*100:.2f}% | Payload staging tracking |
-| **Benign FPR (IoT-23)** | {df_results.loc[df_results['model_name']=='Random Forest', 'benign_fpr'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='Logistic Regression', 'benign_fpr'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'benign_fpr'].values[0]*100:.2f}% | Level 3 tested on camera stream |
-| **Inference Latency** | **{df_results.loc[df_results['model_name']=='Random Forest', 'latency_us'].values[0]:.2f} µs/flow** | {df_results.loc[df_results['model_name']=='Logistic Regression', 'latency_us'].values[0]:.2f} µs/flow | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'latency_us'].values[0]:.2f} µs/flow | Required < 1,000,000 µs (1.0 s) |
+| **Benign FPR (IoT-23)** | {df_results.loc[df_results['model_name']=='Random Forest', 'benign_fpr'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='Logistic Regression', 'benign_fpr'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'benign_fpr'].values[0]*100:.2f}% | IoT-23 benign; H1 uses local camera traffic |
+| **Inference Latency** | **{df_results.loc[df_results['model_name']=='Random Forest', 'latency_us'].values[0]:.2f} µs/flow** | {df_results.loc[df_results['model_name']=='Logistic Regression', 'latency_us'].values[0]:.2f} µs/flow | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'latency_us'].values[0]:.2f} µs/flow | model step only (end-to-end target: Table 9) |
 | **Inference Throughput** | **{df_results.loc[df_results['model_name']=='Random Forest', 'throughput_fps'].values[0]:,.0f} flows/s** | {df_results.loc[df_results['model_name']=='Logistic Regression', 'throughput_fps'].values[0]:,.0f} flows/s | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'throughput_fps'].values[0]:,.0f} flows/s | Higher is better |
 | **Final Fit Time (1.38M)** | {df_results.loc[df_results['model_name']=='Random Forest', 'fit_time_sec'].values[0]:.1f} s | {df_results.loc[df_results['model_name']=='Logistic Regression', 'fit_time_sec'].values[0]:.1f} s | **{df_results.loc[df_results['model_name']=='HistGradientBoosting', 'fit_time_sec'].values[0]:.1f} s** | Computational footprint |
 | **5-Fold CV Time** | {df_results.loc[df_results['model_name']=='Random Forest', 'total_cv_time_sec'].values[0]:.1f} s | {df_results.loc[df_results['model_name']=='Logistic Regression', 'total_cv_time_sec'].values[0]:.1f} s | **{df_results.loc[df_results['model_name']=='HistGradientBoosting', 'total_cv_time_sec'].values[0]:.1f} s** | Evaluation efficiency |
 | **Model Size on Disk** | {df_results.loc[df_results['model_name']=='Random Forest', 'model_size_mb'].values[0]:.2f} MB | **{df_results.loc[df_results['model_name']=='Logistic Regression', 'model_size_mb'].values[0]:.2f} MB** | **{df_results.loc[df_results['model_name']=='HistGradientBoosting', 'model_size_mb'].values[0]:.2f} MB** | Embedded edge storage |
-| **Interpretability / Audit** | **High (Decision trees / paths)** | High (Weights, but linear only) | Low (Loss gradients ensemble) | Crucial for response rules |
+| **Interpretability / Audit** | Trees and decision paths can be inspected | Linear weights | Many boosted trees; harder to inspect | Proposal 2.4 |
 
 ---
 
-## 3. Detailed Per-Model Analysis
+## 3. Notes on each model
 
-### 3.1 Random Forest Classifier (Bagging Ensemble)
-- **Strengths:** 
-  - Sub-microsecond prediction latency ({df_results.loc[df_results['model_name']=='Random Forest', 'latency_us'].values[0]:.2f} µs/flow).
-  - Highest recall on `Malware_Download` ({df_results.loc[df_results['model_name']=='Random Forest', 'recall_Malware_Download'].values[0]*100:.2f}%) and solid recognition of extreme minority `CnC` beacons ({df_results.loc[df_results['model_name']=='Random Forest', 'recall_CnC'].values[0]*100:.2f}%).
-  - Explicit decision paths enable transparent rule explanation (Step 17).
-- **Limitations:** Larger serialized model size compared to linear models, though bounded to {df_results.loc[df_results['model_name']=='Random Forest', 'model_size_mb'].values[0]:.2f} MB.
+- **Random Forest:** main model (proposal 2.4). Its trees can be inspected (Step 17 shows example decision paths). Model size {df_results.loc[df_results['model_name']=='Random Forest', 'model_size_mb'].values[0]:.2f} MB.
+- **Logistic Regression:** linear baseline with one-hot encoding and scaling (scaling only for this model, proposal 3.3). Model size {df_results.loc[df_results['model_name']=='Logistic Regression', 'model_size_mb'].values[0]:.2f} MB.
+- **HistGradientBoosting:** gradient-boosting comparison model (proposal 1.3). Model size {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'model_size_mb'].values[0]:.2f} MB.
+- Inference times are for the model step only on the development PC. The proposal's latency target (Table 9) is end-to-end and is measured in Step 37.
 
-### 3.2 Linear Model (Logistic Regression Baseline)
-- **Strengths:** Tiny memory footprint ({df_results.loc[df_results['model_name']=='Logistic Regression', 'model_size_mb'].values[0]:.2f} MB).
-- **Limitations:** Poor cross-scenario botnet generalization. High multi-class classification error due to strictly linear decision hyperplanes. Incapable of capturing non-linear interactions between network ports, flow duration, and directional packet ratios without manual polynomial feature expansion.
+## 4. Next step
 
-### 3.3 HistGradientBoostingClassifier (Boosting Ensemble)
-- **Strengths:** Extremely fast training time on 1.38M rows ({df_results.loc[df_results['model_name']=='HistGradientBoosting', 'fit_time_sec'].values[0]:.1f}s) and tiny model file size ({df_results.loc[df_results['model_name']=='HistGradientBoosting', 'model_size_mb'].values[0]:.2f} MB).
-- **Limitations:** Harder to extract human-readable decision boundaries compared to standalone decision trees; sequential boosting trees are more sensitive to adversarial label noise in network security data.
-
----
-
-## 4. Scientific Conclusion & Recommendation for Prototype
-
-In accordance with Proposal Section 2.4 and Section 3.4:
-- The comparative empirical data confirms that **tree-based ensemble architectures vastly outperform linear models** on complex IoT network traffic.
-- **Random Forest remains the primary chosen classifier** for the live sensor prototype, while `HistGradientBoosting` serves as an excellent reference alternative.
-- All three models will proceed to Level 2 Held-Out validation in Step 16 on `Capture-34-1`.
+All three models are tested once on the held-out scenario `CTU-IoT-Malware-Capture-34-1` in Step 16.
 """
 
     with open(report_path, "w", encoding="utf-8") as f:

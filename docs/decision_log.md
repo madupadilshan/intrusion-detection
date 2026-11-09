@@ -143,6 +143,7 @@ Every important project decision is written here: the date, the decision, the re
 - **Proposal link:** Table 6; Section 3.3 (steps 2–5); Section 3.5; Objectives O1, O2.
 
 ## D-016 — 2026-10-25 — Stratified sampling strategy, per-class scenario cap (N=50,000), and minority class preservation
+> **Note (D-039, 8 Nov 2026):** four scenario names in the sampling tables were corrected (8-1/9-1, 35-1/36-1).
 - **Decision:** Execute Step 12 stratified sampling using [`ml_engine/sample_dataset.py`](file:///d:/intrusion%20detection/ml_engine/sample_dataset.py) with the following parameters:
   - **Cap per (scenario, class):** $N = 50,000$ rows, selected uniformly at random with fixed seed `42` (`config/settings.yaml`).
   - **Minority Class Rule:** Retain 100% of all minority class flows whose count $\le N$. Consequently, all 48,992 `CnC` flows across all 22 training scenarios are preserved without dropping a single flow.
@@ -157,6 +158,7 @@ Every important project decision is written here: the date, the decision, the re
 - **Proposal link:** Section 3.3 step 6; Table 11; Objective O1.
 
 ## D-017 — 2026-10-25 — Formal three-level model evaluation architecture and held-out scenario isolation
+> **Note (D-042, 8 Nov 2026):** Level 3 uses a lab IP camera or a camera simulator confirmed with the supervisor (D-038); it has not been run yet.
 - **Decision:** Adopt the three-level evaluation framework formalized in [`reports/test_split_plan.md`](file:///d:/intrusion%20detection/reports/test_split_plan.md) prior to model training:
   - **Level 1 — Grouped Cross-Validation:** 5-fold cross-validation on the 22 training scenarios using `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` with `groups = scenario_id`. Guarantees flows from any capture scenario stay strictly together within train or validation folds, eliminating intra-session data leakage during hyperparameter search (Steps 14, 15, 17).
   - **Level 2 — Held-Out Zero-Day Scenario:** Isolate scenario `CTU-IoT-Malware-Capture-34-1` (Mirai botnet, 23,145 flows: 14,394 DDoS_DoS, 6,706 CnC, 1,923 Benign, 122 PortScan) into dedicated directory [`data/processed/heldout/held_out_test.parquet`](file:///d:/intrusion%20detection/data/processed/heldout/held_out_test.parquet). The held-out dataset is 100% untouched (no under-sampling, no artificial balancing). In accordance with Supervisor Checkpoint C4, this file is sealed and opened ONLY in Step 16 to evaluate unseen zero-day botnet generalization.
@@ -169,6 +171,7 @@ Every important project decision is written here: the date, the decision, the re
 - **Proposal link:** Section 3.4; Objective O2; Hypotheses H1, H2; Supervisor Checkpoint C4.
 
 ## D-018 — 2026-10-31 — Random Forest hyperparameter selection and Level 1 Grouped Cross-Validation
+> **Numbers replaced by D-043 (9 Nov 2026):** Step 14 was run again after the scenario-name fix (D-039). New out-of-fold macro-F1 0.3422; the numbers below are history.
 - **Decision:** Execute Step 14 Random Forest classifier training using [`ml_engine/train.py`](file:///d:/intrusion%20detection/ml_engine/train.py) with the following specifications:
   - **Pipeline Architecture:** Scikit-learn Pipeline with `ColumnTransformer` (OrdinalEncoder with `handle_unknown="use_encoded_value"`, `unknown_value=-1`, `min_frequency=50` on 6 categorical features; numerical features passed through without scaling) followed by `RandomForestClassifier`.
   - **Hyperparameter Search:** Executed `RandomizedSearchCV` (12 candidates, 5 folds = 60 fits) scored on `f1_macro` within `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` using `groups = scenario_id`.
@@ -189,6 +192,7 @@ Every important project decision is written here: the date, the decision, the re
 - **Proposal link:** Sections 2.4, 3.3 step 5, 3.4; Objective O2.
 
 ## D-019 — 2026-10-31 — Model comparison benchmarks and justification of Random Forest as primary prototype classifier
+> **Numbers replaced by D-043 (9 Nov 2026):** new out-of-fold macro-F1 HGB 0.4331 > RF 0.3422 > LR 0.2722. RF stays the main model for the reason given in D-043.
 - **Decision:** Execute Step 15 model benchmarking using [`ml_engine/compare_models.py`](file:///d:/intrusion%20detection/ml_engine/compare_models.py) comparing three distinct algorithmic families across the exact same 1,384,070 flows from `data/processed/train_features.parquet` under identical 5-fold Level 1 Grouped Cross-Validation (`StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` with `groups = scenario_id`):
   1. **Random Forest (Bagging Ensemble):** Tuned parameters (`n_estimators=150`, `max_depth=25`, `class_weight='balanced'`), OrdinalEncoder with unknown category handling.
   2. **Logistic Regression (Linear Baseline):** `LogisticRegression(class_weight="balanced", max_iter=200, solver="lbfgs")`, `OneHotEncoder(handle_unknown="ignore", sparse_output=True)` for categoricals, and `StandardScaler(with_mean=False)` for numerical features.
@@ -220,6 +224,8 @@ Every important project decision is written here: the date, the decision, the re
 - **Proposal link:** Sections 1.3, 2.4, 3.4; Table 9; Objective O2.
 
 ## D-020 — 2026-10-31 — Level 2 held-out zero-day evaluation (Capture-34-1), assessment of Hypothesis H1, and preservation of raw test integrity
+> **New results in D-043 (9 Nov 2026).**
+> **Updated by D-039 and D-040 (8 Nov 2026):** results were made again after the scenario-name fix; see `reports/experiments/evaluation_iot23.md`. FPR on IoT-23 benign flows is not the H1 measure.
 - **Decision:** Execute Step 16 evaluation using [`ml_engine/evaluate.py`](file:///d:/intrusion%20detection/ml_engine/evaluate.py) on the held-out scenario `CTU-IoT-Malware-Capture-34-1` (23,145 flows: 14,394 `DDoS_DoS`, 6,706 `CnC`, 1,923 `Benign`, 122 `PortScan`, 0 `Malware_Download`) sealed in [`data/processed/heldout/held_out_test.parquet`](file:///d:/intrusion%20detection/data/processed/heldout/held_out_test.parquet) under Supervisor Checkpoint C4:
   1. **Primary Random Forest Model Performance:**
      - Overall Accuracy: **76.72%** (vs 45.00% on Level 1 CV, a **+31.72%** gain).
@@ -254,6 +260,7 @@ Every important project decision is written here: the date, the decision, the re
 - **Proposal link:** Sections 1.3, 2.4, 3.4; Table 9; Hypothesis H1; RQ1, RQ2; Supervisor Checkpoint C4.
 
 ## D-021 — 2026-10-31 — Probability calibration (Sigmoid scaling), operational threshold dual-matrix, and decision path extraction
+> **Replaced by D-040 (8 Nov 2026):** thresholds and calibration redone from grouped out-of-fold data; the numbers below are no longer valid.
 - **Decision:** Execute Step 17 using [`ml_engine/calibrate_and_explain.py`](file:///d:/intrusion%20detection/ml_engine/calibrate_and_explain.py) to resolve raw threshold limitations through empirical calibration, threshold optimization, and model explainability:
   1. **Probability Calibration:**
      - Calibrate Random Forest using `CalibratedClassifierCV(FrozenEstimator(pipe), method="sigmoid")` on a stratified 50,000-flow sample from `data/processed/train_features.parquet`.
@@ -275,6 +282,7 @@ Every important project decision is written here: the date, the decision, the re
 - **Proposal link:** Sections 2.4, 3.4, 3.7; Table 7 (FR-06); Table 9; Table 11; FR-03, FR-06; Hypothesis H1.
 
 ## D-022 — 2026-10-31 — Production model bundle export (`ids_bundle_v1.joblib`) and formal Model Card publication (`model_card.md`) concluding Track 1
+> **Updated by D-040 (8 Nov 2026):** the bundle and model card are now built from the result files.
 - **Decision:** Execute Step 18 using [`ml_engine/export_bundle.py`](file:///d:/intrusion%20detection/ml_engine/export_bundle.py) to package all offline ML components into a single unified deployment artifact and document model governance:
   1. **Production Model Bundle Assembly:**
      - Consolidate the base Random Forest pipeline, Platt/Sigmoid calibrated classifier, 19-feature schema definitions (`FEATURE_COLUMNS`, `CATEGORICAL_FEATURES`, `NUMERICAL_FEATURES`), target class mappings (`TARGET_CLASSES`, `CLASS_NAMES`), operational dual-threshold matrix ([`reports/experiments/operational_thresholds.json`](file:///d:/intrusion%20detection/reports/experiments/operational_thresholds.json)), safety guardrails (`min_repeats: 3`, `repeat_window_seconds: 60`, `max_rule_minutes: 30`, `allowlist_protected: True`), and explainable decision rules into a self-contained binary: `ml_engine/models/ids_bundle_v1.joblib` (30.84 MB, compressed with joblib zlib level 3).
@@ -314,6 +322,7 @@ Every important project decision is written here: the date, the decision, the re
 - **Proposal link:** Section 3.3 step 1, Section 3.5, Section 3.7; Table 7 (FR-01); Table 8; Guide Step 19.
 
 ## D-024 — 2026-10-31 — Local IP-camera benign baseline collection, empirical FPR validation, and Hypothesis H1 Clause 2 verification (Step 20)
+> **Replaced by D-042 (8 Nov 2026):** the flows were synthetic; the H1 result below is withdrawn.
 - **Decision:** Execute Step 20 using [`sensor/collect_camera_traffic.py`](file:///d:/intrusion%20detection/sensor/collect_camera_traffic.py) to capture and evaluate local benign IP-camera network telemetry matching the Tapo C200 camera environment (Proposal Section 1.6, 2.3, 3.4 Level 3 baseline, 5.1; Table 11; Hypothesis H1):
   1. **Operational Camera Traffic Capture:**
      - Recorded 5,000 benign flows representing 5 distinct surveillance sessions: continuous RTSP 1080p H.264 streaming to NVR (54.88%), HTTP/HTTPS camera web admin management (25.34%), ONVIF/SSDP discovery probes (8.32%), NTP/DNS time and name resolution (11.46%).
@@ -359,6 +368,7 @@ Every important project decision is written here: the date, the decision, the re
 - **Proposal link:** Section 3.5; Figure 3; Table 7 (FR-01); Guide Step 21.
 
 ## D-026 — 2026-10-31 — Offline vs live schema verification, zero training-serving skew certification, and resolution of Research Question RQ3 (Step 22)
+> **Replaced by D-042 (8 Nov 2026):** the check used synthetic data and does not answer RQ3.
 - **Decision:** Execute Step 22 schema audit using [`tools/schema_check.py`](file:///d:/intrusion%20detection/tools/schema_check.py) comparing offline training features (`data/processed/train_features.parquet`, 1,384,070 flows) against live Zeek sensor features (`data/local/benign/2026-10-31/conn.log`, 5,000 camera flows) and certify Supervisor Checkpoint C6:
   1. **Strict Feature Alignment:**
      - Confirmed 100% exact match across all 19 candidate features in locked order (`proto`, `service`, `conn_state`, `history`, `orig_port_cat`, `resp_port_cat`, `duration`, `orig_bytes`, `resp_bytes`, `missed_bytes`, `orig_pkts`, `orig_ip_bytes`, `resp_pkts`, `resp_ip_bytes`, `orig_bytes_per_pkt`, `resp_bytes_per_pkt`, `byte_ratio`, `pkt_ratio`, `is_incomplete_flow`).
@@ -488,6 +498,7 @@ Every important project decision is written here: the date, the decision, the re
 - **Proposal link:** Section 3.6 (Figure 2, Figure 4, Consolidated Flask backend); Table 7 (FR-01, FR-03, FR-04, FR-05, FR-06, FR-07, FR-08); Section 3.7 (Lab safety rules); Decisions D-004, D-011, D-027, D-028; Guide Step 25.
 
 ## D-030 — 2026-10-31 — Detector and decision engine architecture, calibrated inference, dual thresholds, allowlist safety, burst coalescing, and latency tracking (Step 26)
+> **Note (D-041, 8 Nov 2026):** the latency target is median < 2 s and 95th percentile < 5 s (proposal Table 9), not sub-second.
 - **Decision:** Architect and implement the core real-time intrusion detector ([`core_engine/detector.py`](file:///d:/intrusion%20detection/core_engine/detector.py)) and decision engine ([`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py)) uniting live Zeek network telemetry with the production machine learning bundle and operational thresholds per Proposal Figures 2 and 3, Sections 3.4, 3.6, 3.7, and Requirements FR-01, FR-02, FR-03, FR-04:
   1. **Detector Engine Architecture ([`core_engine/detector.py`](file:///d:/intrusion%20detection/core_engine/detector.py)):**
      - Loads production model bundle `ml_engine/models/ids_bundle_v1.joblib` once at startup (caching calibrated pipeline, feature columns, and metadata) with zero repetitive disk I/O.
@@ -709,6 +720,7 @@ Every important project decision is written here: the date, the decision, the re
 - **Proposal link:** Sections 1.2, 2.5, 3.7; Figure 5; Table 7 (FR-06); Guide Step 33.
 
 ## D-038 — 2026-11-08 — Virtual Camera Testbed, MediaMTX / Android Simulator, Live Pipeline Runner, and Synthetic Baseline Disclosure (Step 20 Audit, Step 26 Pipeline)
+> **Wording corrected by D-042:** agreed by the team; to be confirmed with the supervisor.
 - **Decision:** Formally adopt the virtualized camera network testbed architecture per Proposal Section 5.1 and Table 8, address live pipeline runner integration, harmonize router settings, and transparently disclose baseline data origins:
   1. **Virtual Camera Testbed Approval (Proposal Section 5.1 & Table 8):**
      - Proposal Section 5.1 explicitly sanctions: *"The laboratory will have at least one IP camera or an approved camera simulator..."* and Table 8 mandates *"a lab network that we control and can set up again."*
@@ -744,3 +756,126 @@ Every important project decision is written here: the date, the decision, the re
 
 
 
+
+## D-039 — 2026-11-08 — Dataset copy checked against the official IoT-23 files; 4 scenario names corrected
+- **Decision:** Fix the file-to-scenario map in `ml_engine/manifest.py`, then rebuild every result that uses scenario names (Steps 9, 10, 12, 14–18).
+- **What was found:**
+  - Proposal 3.2 says we may use a copy only if we can check where it came from and what was changed. The local files (`dataset1.csv` … `dataset23.csv`) are a CSV copy of the official `conn.log.labeled` files.
+  - `tools/verify_iot23_copy.py` compares the first flow (`ts`, `uid`) of each local file with the first flow of each official file on the Stratosphere server (only the first 8 KB is downloaded). Result: 19 files matched; 4 names were wrong:
+    - `dataset4.csv` is official **9-1** (the map said 8-1);
+    - `dataset5.csv` is official **8-1** (the map said 9-1);
+    - `dataset15.csv` is official **36-1** (the map said 35-1);
+    - `dataset16.csv` is official **35-1** (the map said 36-1).
+  - After the fix: **23 / 23 match** (`reports/iot23_copy_verification.md`).
+  - The label totals of all 20 malicious scenarios match the official website, with one exception: for 33-1 the website lists "Okiru-Attack 13,609,467" but our copy says "Okiru". Small pieces of the official 33-1 file were downloaded (byte ranges at 10 positions). The official file also says **`Okiru`**, so our copy is correct and the website summary is not.
+  - The held-out scenario 34-1 was always mapped correctly.
+- **Effect:** the training data is the same rows as before; only 4 scenario names changed. All reports were made again from the corrected data.
+- **Still to record:** where the CSV copy was downloaded from (folder `D:\Download\archive`; probably a Kaggle upload). Write the page link in this decision when known.
+- **Who agreed:** project owner (8 Nov 2026).
+- **Proposal link:** Section 3.2; O1.
+
+## D-040 — 2026-11-08 — Step 17 redone: calibration and thresholds from grouped out-of-fold data only (replaces D-021; updates D-020, D-022)
+- **Decision:**
+  - Step 14 now saves the grouped out-of-fold (OOF) probabilities (`data/processed/rf_oof_predictions.npz`).
+  - Step 17 fits a per-class sigmoid calibration on the OOF probabilities, and chooses the thresholds from the calibrated OOF data with fixed rules: alert threshold = lowest value with precision ≥ 0.50; block threshold = lowest value with precision ≥ 0.95 **and** at most 1% of benign flows reaching it. A class with no such value is **never blocked automatically** (alert only).
+  - The held-out scenario 34-1 is used once, to report the final deployed model with the fixed thresholds, and for permutation importance (proposal 2.4).
+- **Why (what was wrong in D-021):**
+  - The old thresholds were numbers typed into the code after the 34-1 results had been seen. Their precision and recall were then measured on 34-1. Proposal 3.4 says the test set is not touched while choosing settings.
+  - The old calibration was fitted on rows that the model had been trained on.
+  - The old "decision rules extracted from the Random Forest" were hand-written text. Step 17 now shows real decision paths from the trained trees, and the reason codes are labelled as team-made names.
+  - The model card numbers were typed in by hand. `export_bundle.py` now reads them from the result files.
+- **Limitation:** 34-1 results were seen before this redo. Nothing is chosen from 34-1 now, but this is reported.
+- **Who agreed:** project owner (8 Nov 2026).
+- **Proposal link:** Sections 2.4, 3.4; Table 9.
+
+## D-041 — 2026-11-08 — Controlled automatic response connected; "local network" taken from settings
+- **Decision:**
+  - `DecisionEngine.process_flows()` now sends every block candidate to the response policy (`respond_to_outcome`). The firewall adapter is called only when all safety rules pass. Before this, no automatic block could happen.
+  - The policy decides "local device" with `lab.local_networks` from `settings.yaml`, not "any private address". Before this, the lab attacker `10.10.10.50` (a private address, but outside) could never be blocked.
+  - `auto_response` is **off** by default everywhere.
+  - Dashboard settings (`allowlist`, `min_confidence`, `min_repeats`, `repeat_window_seconds`, `max_rule_minutes`) are checked and applied to the running policy at once, and on server start. Before this they were saved but had no effect.
+  - `response.adapter` is the one setting that chooses the adapter (`firewall_config_from_settings`).
+  - The reason code of every block decision is saved on the attack event (`response_reason`); the dashboard shows the response status of each alert (proposal 3.6).
+- **Latency target correction (D-029, D-030):** the target is the proposal's Table 9 target, median decision < 2 s and 95th percentile < 5 s, measured end to end in Step 37. It is not "sub-second".
+- **Who agreed:** project owner (8 Nov 2026).
+- **Proposal link:** Sections 2.5, 3.4, 3.6, 3.7; Table 5; Table 9; FR-06, FR-07; RQ5.
+
+## D-042 — 2026-11-08 — Steps 19, 20 and 22 re-opened; D-024 and D-026 replaced; D-038 wording corrected
+- **Decision:**
+  - **D-024 is replaced.** The 5,000 "camera" flows of 31 Oct 2026 were made by a script, not captured. The result "FPR 0.000%, H1 clause 2 PASS" is withdrawn. Hypothesis H1's FPR part has **not been tested yet**.
+  - **D-026 is replaced.** The Step 22 check used the same synthetic file, so it does not answer RQ3. The check tool is kept, and its report now states the data source. It must be run again on a real capture.
+  - The synthetic file was moved to `data/local/synthetic/`; real captures go to `data/local/benign/`. Both scripts now need `--source real|synthetic`, and only `real` results can be reported.
+  - Steps 19, 20 and 22 are set back to **🟡 Started** in the guide: the software is ready, the lab run is not done.
+  - **D-038 wording:** the camera simulator and the virtual lab were agreed by the team on 8 Nov 2026. The proposal says "approved camera simulator", so the choice is **to be confirmed with the supervisor** at the next meeting.
+- **Who agreed:** project owner (8 Nov 2026).
+- **Proposal link:** Sections 1.5 (H1), 3.5, 5.1; Table 11; RQ3.
+
+## D-043 — 2026-11-09 — Model Steps 14–18 run again after the scenario-name fix; results recorded; two open questions for the team
+> **Updated by D-044 and D-045 (9 Nov 2026):** open question 2 (CnC) is solved: the calibration is now `temperature`, which keeps the model's top class; deployed model on 34-1 macro-F1 0.4530. Open question 1 (no automatic block) is still open (issue 23). The Step 17 numbers below are for the old sigmoid calibration.
+- **What was done:** after D-039 (4 scenario names corrected) and D-040 (new Step 17 method), Steps 14, 15, 16, 17 and 18 were run again on 8–9 Nov 2026. All numbers from 31 Oct 2026 (for example 0.3630, 0.4028, 76.72%, 30.84 MB) are replaced. Older entries (D-018 to D-022) keep their old numbers as history.
+- **Results (from the result files):**
+  - Step 14, grouped CV, Random Forest: out-of-fold macro-F1 **0.3422** (mean fold 0.3353 ± 0.1704); best `n_estimators=100`, `max_depth=18`; model 4.30 MB; model step 4.66 µs per flow on the PC.
+  - Step 15, out-of-fold macro-F1: HistGradientBoosting **0.4331**, Random Forest 0.3422, Logistic Regression 0.2722. HistGradientBoosting scored higher. Random Forest stays the main model because proposal Section 2.4 chose it for its tree paths, which can be explained; the model step of all three takes microseconds, so speed does not decide. This is reported, not hidden.
+  - Step 16, held-out 34-1, uncalibrated Random Forest: macro-F1 0.4530 (5 classes) / 0.5662 (4 classes present); accuracy 0.8063; CnC recall 0.3671; PortScan precision 0.0424.
+  - Step 17, deployed calibrated model on 34-1: macro-F1 **0.3405** (5 classes) / 0.4256 (4 present); accuracy 0.6998; 0% of IoT-23 benign flows reach a block threshold.
+  - Step 18: bundle `v1.1.0`, 9.3 MB; model card filled from the result files.
+- **H1 part 1 (macro-F1 ≥ 0.85 on the held-out scenario): not met.** H1 part 2 (FPR ≤ 5% on local camera traffic) is not tested yet (D-042).
+- **Open question 1 — no automatic block.** With the fixed rules of D-040, no class reached "precision ≥ 0.95 and benign trigger rate ≤ 1%" on the out-of-fold data. So every attack class is **alert only**. With `auto_response` on, the system still blocks nothing by itself; manual block and unblock work. Table 10 expects "source blocked or rate-limited" in some scenarios.
+- **Open question 2 — calibration removes CnC.** On the out-of-fold data, calibration raises macro-F1 (0.3422 → 0.4526) but the calibrated model never picks CnC (recall 0.475 → 0). On 34-1, all 6,706 CnC flows are called PortScan or Benign.
+- **Rule for answering both questions:** any change (for example a different calibration, a different model, or a different block rule) must be chosen and justified with the out-of-fold training data only, written here **before** it is tested, and then checked once on 34-1. 34-1 must not be used to choose. If nothing is changed, the lab tests run in alert-only mode and this is reported as a result.
+- **Who agreed:** results recorded by the project owner (9 Nov 2026). The two questions are open for the team and the supervisor.
+- **Proposal link:** Sections 1.5 (H1), 2.4, 3.4, 3.7; Tables 9 and 10.
+
+## D-044 — 2026-11-09 — How the Step 17 calibration method is chosen (rule written before the comparison is run)
+- **Why:** D-043 found that the per-class sigmoid calibration makes the model never pick CnC (out-of-fold CnC recall 0.475 → 0). The owner decided (9 Nov 2026) to change the calibration step so that every class can be found, and so that blocking is possible where the data supports it.
+- **What the data shows (out-of-fold, before any change):**
+  - Each DDoS scenario is a different flood type (TCP SYN in 17-1, TCP reset in 35-1, UDP in 7-1 and 43-1, `OTH` in 60-1). A model that has not seen a scenario calls most of its DDoS flows Benign (raw out-of-fold DDoS recall 0.002).
+  - 78% of IoT-23 benign flows are single unanswered packets (`conn_state = S0`), which look like single flood packets. One flow on its own does not show the flood rate.
+  - The raw model calls 228,000 flows CnC, but only 23,257 are really CnC (precision about 10%). The per-class sigmoid sees this and pushes CnC down until it never wins.
+- **The model stays Random Forest** (proposal Section 2.4). Its settings were already chosen in Step 14 by grouped-CV macro-F1. HistGradientBoosting scored higher in Step 15 (D-043), but the proposal chose Random Forest and this decision does not change that.
+- **Candidates (all fitted on Step 14 out-of-fold probabilities only):**
+  1. `none` — raw Random Forest probabilities.
+  2. `sigmoid_per_class` — the current method (D-040).
+  3. `temperature` — one temperature on the log-probabilities (softmax); keeps the top class of the raw model.
+  4. `multinomial` — multinomial logistic regression on the 5 log-probabilities.
+  5. `multinomial_balanced` — the same with `class_weight="balanced"` (each class counts equally, which matches macro-F1).
+- **How each candidate is scored (cross-fitted):** for each of the 5 grouped folds, the calibrator is fitted on the out-of-fold rows of the other 4 folds and applied to this fold. So no row is scored by a calibrator fitted on that row. Measures: macro-F1, recall per class, Brier score, and whether any class reaches the block rule of D-040 (precision ≥ 0.95 and benign trigger rate ≤ 1%).
+- **Selection rule (fixed now):**
+  1. Keep only candidates where **every one of the 5 classes has recall ≥ 0.05** (no class is silenced).
+  2. Among those, choose the **highest macro-F1**.
+  3. If no candidate passes step 1, choose the candidate with the **highest lowest-class recall**; if two are equal, the higher macro-F1.
+- **After the choice:** the chosen method is fitted on all out-of-fold rows; thresholds are chosen as in D-040; the held-out scenario 34-1 is used **once** for the final check. 34-1 is not used to choose anything.
+- **Limitation (written honestly):** the team has already seen out-of-fold and 34-1 results for `none` (Step 16) and `sigmoid_per_class` (D-043) before writing this rule.
+- **Who agreed:** project owner (9 Nov 2026).
+- **Proposal link:** Sections 2.4, 3.4; Table 9.
+
+## D-045 — 2026-11-09 — The method chosen by D-044 failed the final check; calibration changed to `temperature`
+- **What happened:** the D-044 rule chose `multinomial` (out-of-fold macro-F1 0.3750; every class found; PortScan reached the block rule). The single final check on the held-out scenario 34-1 then gave **macro-F1 0.0458** (5 classes), accuracy 0.0817. 14,260 of 14,394 DDoS flows were called Benign, and all 6,706 CnC flows were called DDoS or PortScan. On the synthetic camera file (D-042, software test only), 80% of the flows were called attacks.
+- **Why it failed:** `multinomial` has 30 weights. It learns *which class the model confuses with which* when the model meets a scenario it has not seen (for example, "raw DDoS score high" often meant Benign in the out-of-fold data). These confusions depend on which scenarios were left out of each fold. The final model is trained on all 22 scenarios, so its mistakes are different, and the learned corrections make things worse. `multinomial_balanced` and `sigmoid_per_class` can change the top class in the same way.
+- **New principle:** calibration may change **how sure** the model is, but **not which class wins**. Only `none` and `temperature` follow this.
+- **Decision:** use **`temperature`** (one number; it keeps the Random Forest's top class and only rescales the confidence). On the out-of-fold data it has the same macro-F1 as `none` (0.3422) and a better Brier score (0.1454 vs 0.1759), so the confidence values are more reliable for the thresholds.
+- **This breaks the D-044 rule:** `temperature` does not pass step 1 (out-of-fold DDoS recall 0.0016). The out-of-fold DDoS recall is low because each DDoS scenario is a different flood type (D-044). This is written here as a deviation, not hidden.
+- **Honest limit:** this choice was made **after** seeing a 34-1 result. So 34-1 is no longer a clean unseen test. Its numbers are reported, but the clean test of the model is now the local lab data (Level 3, Steps 20 and 35). All 23 IoT-23 scenarios are already used (22 for training, 34-1), so no other unseen IoT-23 scenario is left.
+- **What this means for blocking:** with `temperature`, no class reaches the D-040 block rule on the out-of-fold data. Flow features alone cannot reach 95% precision across unseen scenarios (D-044). Making automatic blocking possible needs either a rule over repeated flows from the same source (the response policy already counts repeats), or new rate features (for example, flows per source in a time window). Both need a separate team decision.
+- **Who agreed:** project owner (9 Nov 2026).
+- **Proposal link:** Sections 2.4, 3.4; Table 9.
+
+## D-046 — 2026-11-09 — Block thresholds follow proposal 3.4 (confidence threshold + repeats); original-label results; full dataset copy check (rules written before the results)
+- **Why:** a check of the project against the proposal (9 Nov 2026) found that the D-040 block rule asks one single flow to be right 95% of the time. The proposal does not ask for this. Proposal 3.4 says: *"One high prediction will not cause an automatic block by itself. The event must pass a confidence threshold, and it must happen again inside a set time window. Events with lower confidence will only send an alert."* Because of the D-040 rule, no class could ever be blocked, so Table 10 scenarios 2–4 could not work. The safety floor `response.min_confidence: 0.85` was also above almost every calibrated confidence (issue 26).
+- **Part 1 — how block thresholds are chosen now (replaces the block part of D-040; the alert part of D-040 stays):**
+  - Data: the calibrated grouped out-of-fold training data only (Step 14 + Step 17a). Each training flow now keeps its time and IP addresses as audit columns (Step 12; never model inputs, proposal Table 6).
+  - The live response rule is replayed on this data: for class *k* and a candidate threshold *t*, a flow is a block candidate when the top class is *k* and its confidence is at least *t*. A block fires when the same target has at least `min_repeats` (3) block candidates of class *k* inside `repeat_window_seconds` (60 s), and the target is not already blocked. A block lasts `max_rule_minutes` (30). The target follows Table 5 and `response_policy.py`: the source for DDoS and PortScan; the outside destination for CnC and Malware_Download. Replay is done per scenario.
+  - A block is **wrong** if the flow that fires it is truly Benign.
+  - **Block threshold** for class *k* = the lowest *t* (from the class alert threshold up to 0.99, step 0.01) where: (a) at least 95% of the blocks are not wrong; (b) at most 1% of the benign targets are ever blocked; and (c) there are at least 10 blocks, so there is evidence. If no *t* meets all three, the class stays **alert only**.
+  - The safety floor `response.min_confidence` is set to **0.30**, the lowest value a threshold can take, so the per-class thresholds decide. It can still be raised from the dashboard (FR-07).
+  - Limit: the training data is a sample (at most 50,000 flows per class and scenario), so repeats are rarer than in real traffic. This mostly removes attack flows (large classes are cut most), so the replay is expected to under-count correct blocks rather than wrong ones.
+- **Part 2 — original-label results (proposal 3.2: *"When there are enough samples, we will report results for both the grouped classes and the original detailed labels"*):** Step 17 reports, for every original IoT-23 label with at least 30 flows, how many flows were put in the right group, on the out-of-fold data and on 34-1.
+- **Part 3 — dataset copy (proposal 3.2):** `tools/verify_iot23_copy.py` now checks the first **and last** flow of every file against the official files, and the label totals against the official IoT-23 website.
+- **Who agreed:** project owner (9 Nov 2026).
+- **Proposal link:** Sections 3.2, 3.4, 3.7; Tables 5, 6, 9, 10.
+- **Results (9 Nov 2026, recorded after the rules above):**
+  - Step 12 was run again only to keep the audit columns. The 22 old columns are identical in every row (checked), and the rows still line up with the saved out-of-fold predictions, so the model was **not** retrained.
+  - Block thresholds from the replay on out-of-fold data: **PortScan 0.30** (413 blocks; 96.6% fired by malicious flows; 3 of 28,594 benign targets blocked), **CnC 0.39** (142 blocks; 100% fired by malicious flows; 0 benign targets blocked). **DDoS_DoS: alert only** (at every threshold almost all replayed blocks were fired by benign flows). **Malware_Download: alert only** (only 5 blocks, fewer than the 10 needed as evidence).
+  - Replay on 34-1 with these thresholds (reported only): PortScan 27 blocks, 1 fired by a benign flow (1 of the 2 benign hosts in 34-1 was blocked once); most PortScan blocks there were fired by CnC flows of the infected device, which the live policy would not block because that device is local (local-network protection, proposal 3.7). CnC: 1 block, correct.
+  - Original-label results are in `reports/experiments/thresholds_and_explanation.md`, Section 8. The weakest labels on out-of-fold data are `DDoS` (0.16% put in the right group) and `C&C` (6.3%); on 34-1, `C&C` 36.7%.
+  - Dataset copy: first and last flows match the official files for 23/23 files; label totals match the official website for 17 scenarios. Three differ: 33-1 (`Okiru` in our copy vs `Okiru-Attack` on the website, same count; the official file says `Okiru`, D-039), 49-1 (14 `FileDownload` flows not on the website) and 52-1 (2 `C&C-Mirai` flows not on the website). The 3 honeypot captures are not listed on the website.

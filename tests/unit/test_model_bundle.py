@@ -3,7 +3,7 @@
 Validates:
 1. Production bundle existence, integrity, and key structures.
 2. Model pipelines and calibrated inference functionality on feature frames.
-3. Operational thresholds and safety guardrails configuration completeness.
+3. Operational thresholds (chosen in Step 17 from grouped OOF data) and example decision paths.
 4. Model card document presence and mandatory sections adherence.
 """
 
@@ -41,8 +41,8 @@ def test_bundle_structure_and_keys(model_bundle):
         "class_names",
         "class_to_name",
         "operational_thresholds",
-        "safety_guardrails",
-        "decision_rules",
+        "threshold_rules",
+        "example_decision_paths",
         "metadata",
     ]
     for key in expected_keys:
@@ -52,14 +52,13 @@ def test_bundle_structure_and_keys(model_bundle):
 def test_bundle_metadata(model_bundle):
     """Verify metadata contains versioning, training metrics, and provenance."""
     meta = model_bundle["metadata"]
-    assert "bundle_version" in meta
-    assert meta["bundle_version"] == "v1.0.0"
-    assert "training_samples_count" in meta
-    assert meta["training_samples_count"] == 1384070
-    assert "level_2_heldout_scenario" in meta
+    assert str(meta["bundle_version"]).startswith("v1.")
+    assert meta["training_samples_count"] > 0
     assert meta["level_2_heldout_scenario"] == "CTU-IoT-Malware-Capture-34-1"
-    assert "inference_latency_us_flow" in meta
-    assert meta["inference_latency_us_flow"] < 100.0  # Well below 1s latency requirement
+    # Results are read from the real result files, not typed in by hand
+    for key in ("level_1_oof_macro_f1", "level_2_macro_f1_5class", "level_2_macro_f1_present"):
+        assert 0.0 <= float(meta[key]) <= 1.0
+    assert "out-of-fold" in str(meta["calibration_method"])
 
 
 def test_bundle_operational_rules_and_guardrails(model_bundle):
@@ -68,19 +67,23 @@ def test_bundle_operational_rules_and_guardrails(model_bundle):
     for cname in ["Benign", "DDoS_DoS", "PortScan", "CnC", "Malware_Download"]:
         assert cname in thresholds, f"Missing class '{cname}' in operational thresholds"
 
-    guardrails = model_bundle["safety_guardrails"]
-    assert "min_repeats" in guardrails
-    assert guardrails["min_repeats"] >= 2
-    assert "repeat_window_seconds" in guardrails
-    assert "allowlist_protected" in guardrails
-    assert guardrails["allowlist_protected"] is True
+    assert thresholds["Benign"]["active_response_threshold"] is None
+    for cname in ["DDoS_DoS", "PortScan", "CnC", "Malware_Download"]:
+        c = thresholds[cname]
+        assert 0.0 < c["passive_alert_threshold"] <= 1.0
+        # None means: never blocked automatically (alert only)
+        if c["active_response_threshold"] is not None:
+            assert c["active_response_threshold"] >= c["passive_alert_threshold"]
+        assert c["reason_code"]
 
-    rules = model_bundle["decision_rules"]
-    assert len(rules) >= 4
-    for r in rules:
-        assert "reason_code" in r
-        assert "firewall_action" in r
-        assert "trigger_condition" in r
+    rules = model_bundle["threshold_rules"]
+    # D-046: block thresholds come from replaying the repeat rule (proposal 3.4)
+    assert rules["block_min_safe_share"] >= rules["alert_min_precision"]
+    assert rules["replay_min_repeats"] >= 2
+
+    for path in model_bundle["example_decision_paths"]:
+        assert path["class_name"] in thresholds
+        assert len(path["conditions"]) >= 1
 
 
 def test_bundle_inference_execution(model_bundle):
@@ -143,15 +146,16 @@ def test_model_card_file():
     assert MODEL_CARD_PATH.exists(), f"Model card missing at {MODEL_CARD_PATH}"
     content = MODEL_CARD_PATH.read_text(encoding="utf-8")
     mandatory_headers = [
-        "# Model Card: IoT IP-Camera Intrusion Detection Engine",
-        "## 1. Model Details",
-        "## 2. Intended Use & Scope",
-        "## 3. Training & Validation Data",
-        "## 4. Quantitative Performance Metrics",
-        "## 5. Cost-Sensitive Operational Decision Thresholds",
-        "## 6. Explainable Decision Rules & Audit Reason Codes",
-        "## 7. Ethical Considerations & Safety Guardrails",
-        "## 8. Caveats, Limitations & Next Steps",
+        "# Model Card:",
+        "## 1. Model",
+        "## 2. Intended use",
+        "## 3. Data",
+        "## 4. Results",
+        "## 5. Alert and block thresholds",
+        "## 6. Limits",
     ]
     for header in mandatory_headers:
         assert header in content, f"Model card missing mandatory section: {header}"
+    # The card must not claim results that were not measured
+    assert "Local camera traffic (Level 3): **not yet measured.**" in content or "Level 3" in content
+    assert "PASS" not in content

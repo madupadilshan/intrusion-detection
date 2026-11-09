@@ -1,5 +1,14 @@
 # Real-Time Intrusion Detection and Autonomous Response System for IP-Camera IoT Networks Using Machine Learning
 
+> **නිවැරදි කිරීමේ දැන්වීම (2026 නොවැම්බර් 8) — මුලින්ම මෙය කියවන්න.** පහත ලැයිස්තුව ඉංග්‍රීසියෙන් ඇත; මෙම ගොනුවේ පෙළ පහත කරුණු සමඟ නොගැලපේ නම්, පහත කරුණු නිවැරදියි. / **Correction notice (8 November 2026) — read this first.** A full check against the proposal found errors in earlier text. Where this file disagrees with the points below, the points below are correct (decisions D-039 to D-042 in `docs/decision_log.md`):
+> 1. The 5,000 "camera" flows of 31 Oct 2026 were **made by a script**, not captured from a Tapo C200 or any camera. The result "FPR 0.000%, H1 clause 2 PASS" is **withdrawn**. The FPR part of H1 is **not tested yet** (Step 20 in the lab).
+> 2. The Step 22 schema check used the same synthetic file, so **RQ3 is not answered yet**.
+> 3. Hypothesis H1 has two parts only: macro-F1 ≥ 0.85 on the held-out scenarios, and benign FPR ≤ 5% on our local camera traffic. Latency is a separate Table 9 target: median decision < 2 s and 95th percentile < 5 s, end to end. It is **not** "sub-second", and the model inference time (microseconds) is not the end-to-end time.
+> 4. The held-out macro-F1 is **below** the 0.85 target (see `reports/experiments/model_card.md` for the current numbers). This is reported as it is (proposal Table 9).
+> 5. Step 17 was redone: calibration and thresholds now come from grouped out-of-fold training data only (D-040).
+> 6. Four scenario names in the dataset map were swapped (8-1/9-1 and 35-1/36-1) and were corrected (D-039).
+> 7. The automatic response was not connected before 8 Nov 2026; it is now connected, off by default, and still has to be tested in the lab (D-041).
+
 # සම්පූර්ණ ව්‍යාපෘති මාර්ගෝපදේශය (A to Z Master Guide)
 
 **පර්යේෂණ කණ්ඩායම:** Group 03
@@ -64,15 +73,12 @@ Proposal එකෙහි (Section 1.5, පිටුව 10) දක්වා ඇ�
 
 > *"If the IoT-23 flow features are mapped carefully and the Random Forest is trained in a scenario-aware way, then the model will reach a macro-F1 score of at least 0.85 when tested against the held-out scenarios from the dataset, while keeping the false-positive rate for benign traffic at 5% or less on the local IP-camera traffic we control."*
 
-**උපකල්පනයේ වගන්ති 2 සහ සැබෑ පර්යේෂණ ප්‍රතිඵල (Verification Results):**
+**උපකල්පනයේ කොටස් 2 සහ වර්තමාන තත්ත්වය (Current status, 8 Nov 2026):**
 
-- **Clause 1 (Macro-F1 & Latency on Held-out scenario):**පුහුණු කිරීමට නොගත් මුද්‍රා තැබූ `Capture-34-1` (Mirai) scenario එක මත Level 2 ඇගයීමේදී (`reports/experiments/evaluation_iot23.csv`):
-  - Accuracy: **76.72%**
-  - Held-out Inference Latency: **4.52 µs/flow** (තත්පරයකට flows 221,181 ක්).
-  - PR-AUCs: DDoS_DoS = **0.9976**, PortScan = **0.8230**, CnC = **0.9786**.
-- **Clause 2 (Benign camera traffic FPR $\le 5\%$):**සැබෑ TP-Link Tapo C200 කැමරාවක සජීවී RTSP streaming flows 5,000 ක් මත පරීක්ෂා කළ විට (`reports/experiments/camera_baseline_summary.md`):
-  - False Positive Rate (FPR): **0.000%** (0 / 5,000 flows). වීඩියෝ stream එකට බාධා වන කිසිදු වැරදි block එකක් සිදු නොවීය.
-    ➔ **උපකල්පනය ($\mathcal{H}_1$) ප්‍රායෝගිකව සම්පූර්ණයෙන්ම සනාථ විය.**
+- **Part 1 — held-out scenario macro-F1 ≥ 0.85:** `Capture-34-1` මත ලැබුණු macro-F1 අගය ඉලක්කයට **වඩා අඩුයි (not met)**. නවතම අගයන් `reports/experiments/model_card.md` හි ඇත. Proposal (Table 9) අනුව ප්‍රතිඵලය කුමක් වුවත් එලෙසම වාර්තා කළ යුතුයි.
+- **Part 2 — local camera traffic FPR ≤ 5%:** **තවම පරීක්ෂා කර නැත (not tested yet).** 2026-10-31 දින flows 5,000 script එකකින් සාදන ලද synthetic දත්ත විය; ඒවා සැබෑ කැමරාවකින් ලබාගත් ඒවා නොවේ (D-042). සැබෑ මිනුම Step 20 හිදී lab එකේ කැමරාවෙන් (හෝ supervisor අනුමත simulator එකෙන්) කළ යුතුයි.
+- **Latency** H1 හි කොටසක් නොවේ. එය Table 9 ඉලක්කයකි: median decision < 2 s, 95th percentile < 5 s (Step 37 හිදී මනිනු ලැබේ).
+  ➔ **H1 තවම සනාථ වී නැත (H1 is not confirmed).**
 
 ### 1.4 පර්යේෂණ ප්‍රශ්න 5 (Research Questions RQ1–RQ5 per Proposal Section 1.5, Page 11)
 
@@ -202,7 +208,7 @@ flowchart TD
 - [`sensor/local.zeek`](<file:///d:/intrusion%20detection/sensor/local.zeek>): Zeek monitor එක සඳහා ලියන ලද ප්‍රතිපත්තිය. Connection flows තත්‍ය කාලීනව streaming JSON log එකක් ලෙස `conn.log` වෙත ලිවීමට සකසා ඇත (Step 19).
 - [`sensor/run_zeek.sh`](<file:///d:/intrusion%20detection/sensor/run_zeek.sh>): Linux sensor පරිගණකය මත Zeek daemon එකක් ලෙස පසුබිමේ ධාවනය කරවන Bash ස්ක්‍රිප්ටය.
 - [`sensor/zeek_runner.py`](<file:///d:/intrusion%20detection/sensor/zeek_runner.py>): Windows සංවර්ධන ලැප්ටොප් එකේදී පරීක්ෂණ සඳහා සැබෑ conn.log ආකෘතියෙන්ම JSON flows උත්පාදනය කරන simulation harness එක.
-- [`sensor/collect_camera_traffic.py`](<file:///d:/intrusion%20detection/sensor/collect_camera_traffic.py>): සැබෑ TP-Link Tapo C200 කැමරාවක RTSP, HTTP, ONVIF flows 5,000 ක් ලබාගෙන Model එකට දී පරීක්ෂා කර FPR = 0.000% බව ඔප්පු කළ ස්ක්‍රිප්ටය (Step 20, Decision `D-024`).
+- [`sensor/collect_camera_traffic.py`](<file:///d:/intrusion%20detection/sensor/collect_camera_traffic.py>): camera traffic (`conn.log`) එකක් model එකට දී FPR මනින script එක. `--source real` ලෙස සැබෑ lab capture එකක් දුන් විට පමණක් ප්‍රතිඵලය H1 සඳහා වලංගුයි; `--generate-synthetic` දත්ත software test එකක් පමණයි (D-042).
 - [`sensor/ids_inline.nft`](<file:///d:/intrusion%20detection/sensor/ids_inline.nft>): Layer 2 Inline Bridge mode එක සඳහා ලියන ලද Linux `nftables` නීති මාලාව (`table bridge ids`). Dynamic timed sets සහ source-only allowlist අඩංගු වේ (Step 32).
 - [`sensor/ids_router.nft`](<file:///d:/intrusion%20detection/sensor/ids_router.nft>): Layer 3 Passive Router mode එක සඳහා ලියන ලද OpenWrt / Linux router නීති මාලාව (`table inet ids`).
 
@@ -523,7 +529,7 @@ cd "D:\intrusion detection"
 
 #### Q1: මෙම පද්ධතියේ ප්‍රධාන පරමාර්ථය කුමක්ද?
 
-> **A:** IP කැමරා IoT ජාල වලට එල්ල වන සයිබර් ප්‍රහාර (DDoS, Botnets, Scans, CnC) network flow මට්ටමින් තත්‍ය කාලීනව හඳුනාගෙන, නීත්‍යානුකූල video streaming සේවාවන්ට බාධාවක් නොවන සේ මිනිස් මැදිහත්වීමකින් තොරව Linux firewall හෝ router මට්ටමින් sub-second කාලයකදී ස්වයංක්‍රීයව mitigate කිරීමයි.
+> **A:** කුඩා IP-camera IoT ජාලයක network flow මට්ටමින් ප්‍රහාර (DDoS, port scan, C&C, malware/download) near real time හඳුනාගෙන, සාක්ෂි dashboard එකේ පෙන්වා, safety rules (allowlist, confidence, repeats, rule expiry, manual unblock) සමඟ පාලිතව ප්‍රතිචාර දැක්වීම. Latency ඉලක්කය proposal Table 9 අනුව median decision < 2 s, 95th percentile < 5 s.
 
 #### Q2: ඔබ පුහුණු කිරීමට භාවිත කළ දත්ත කට්ටලය කුමක්ද? පැරණි KDD / CICIDS භාවිත නොකළේ ඇයි?
 
@@ -535,7 +541,7 @@ cd "D:\intrusion detection"
 
 #### Q4: Deep Learning (CNN / LSTM) භාවිත නොකළේ ඇයි?
 
-> **A:** Deep Learning මොඩල වලට අධික GPU සම්පත් සහ වැඩි inference කාලයක් (milliseconds ගණනක්) අවශ්‍යයි. අපගේ පද්ධතිය ක්‍රියාත්මක වන්නේ සීමිත සම්පත් ඇති Edge Sensor එකක් මත බැවින්, sub-second latency එකක් ලබා ගැනීමටත්, තත්පරයකට flows 150,000 කට වඩා වර්ගීකරණය කිරීමටත් Random Forest වඩාත් කාර්යක්ෂම වේ.
+> **A:** Proposal (1.3, 2.4) අනුව: Random Forest මිශ්‍ර (categorical + numeric) features සමඟ ක්‍රියා කරයි, prediction වේගවත්ය, එක් එක් class එකට probability එකක් දෙයි, සහ feature importance / decision paths පරීක්ෂා කළ හැකිය ("easier to look inside its decisions"). එය හොඳම model එක යැයි අපි උපකල්පනය නොකරමු — Logistic Regression සහ HistGradientBoosting සමඟ සසඳා ඇත (`reports/experiments/model_comparison.md`), සහ එහි ප්‍රතිඵල එලෙසම වාර්තා කරමු.
 
 #### Q5: Data Leakage වැළැක්වීමට ඔබ භාවිත කළ validation ක්‍රමය කුමක්ද?
 
@@ -547,7 +553,7 @@ cd "D:\intrusion detection"
 
 #### Q7: Hypothesis H1 සනාථ කළේ කෙසේද?
 
-> **A:** Hypothesis H1 හි සඳහන් වන්නේ Random Forest මගින් sub-second inference latency සහ benign camera stream මත FPR $\le 5\%$ ලබා ගත හැකි බවයි. Step 14 හිදී inference latency එක **6.46 µs** ලෙසත්, Step 20 හිදී සැබෑ Tapo C200 කැමරාවේ flows 5,000 ක් මත Benign FPR එක **0.000%** ලෙසත් ලැබී H1 සම්පූර්ණයෙන්ම සනාථ විය.
+> **A:** H1 හි කොටස් දෙකක් ඇත: (1) held-out scenario මත macro-F1 ≥ 0.85, (2) අපගේ local camera traffic මත benign FPR ≤ 5%. Part 1: `Capture-34-1` මත ලැබුණු අගය ඉලක්කයට වඩා අඩුයි — එය අපි අවංකව වාර්තා කරනවා, හේතු ලෙස scenario අතර domain shift සහ සමහර classes වල දුර්වල recall/precision පෙන්වනවා (`model_card.md`). Part 2: සැබෑ camera traffic මත තවම මැන නැත; පෙර synthetic දත්ත ප්‍රතිඵලයක් ලෙස භාවිතා නොකරයි. Latency H1 හි කොටසක් නොවේ (Table 9: median < 2 s, p95 < 5 s).
 
 #### Q8: Probability Calibration කළේ ඇයි?
 
@@ -624,7 +630,7 @@ cd "D:\intrusion detection"
 
 #### Q25: මේ මුළු පද්ධතියේම ඇති ප්‍රධානතම නව්‍යතාවය (Novel Contribution) කුමක්ද?
 
-> **A:** සාමාන්‍ය IDS මගින් කරන්නේ alert එකක් දීම පමණි. අපගේ පද්ධතිය මගින් IP කැමරා වල සජීවී surveillance video stream එක කිසිසේත්ම විසන්ධි නොවන බවට (Allowlist Immunity & Direction-aware matrix මගින්) සහතික වෙමින්, sub-second කාලයකදී kernel මට්ටමින් auto-expiring firewall mitigation ස්වයංක්‍රීයව සිදු කිරීමයි.
+> **A:** සාමාන්‍ය IDS එකක් alert එකක් පමණක් දෙයි. අපගේ පද්ධතිය safety rules සියල්ල සමත් වූ විට පමණක් block කරයි: allowlist (router, sensor, admin PC, NVR කිසිවිටෙක block නොවේ), local camera devices ආරක්ෂාව, confidence threshold, time window එක තුළ repeats, සෑම rule එකක්ම ස්වයංක්‍රීයව expire වීම, සහ admin ට manual unblock. මෙය වැරදි block එකක අවදානම අඩු කරයි; එය කිසිවිටෙක සිදු නොවන බවට සහතිකයක් නොවේ. Automatic response default ලෙස off වේ.
 
 ---
 

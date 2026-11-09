@@ -71,6 +71,12 @@ The status was checked on **19 October 2026**. We looked at the project folder (
 
 # Part 0: Progress So Far (19 October 2026)
 
+> **Status update — 8 November 2026 (read this first; it replaces the older summary below where they differ).**
+> - **Built and tested on the development PC:** data pipeline and model (Steps 7–18), Zeek adapter and live runner (Step 21), MongoDB, login, server, detector, decision engine, Nmap discovery, log export, dashboard, response policy, nftables rules and adapters (Steps 23–33).
+> - **Corrected on 8 Nov 2026** after a full check against the proposal: 4 swapped scenario names in the dataset map (D-039); Step 17 redone so that no threshold is chosen from the held-out scenario (D-040); automatic response connected, off by default, with `lab.local_networks` deciding what is local (D-041); the synthetic "camera" data and every result based on it withdrawn (D-042).
+> - **Not done yet (needs the lab):** Zeek on the sensor (Step 19), real benign camera traffic (Step 20), the real schema check (Step 22), and Steps 34–42.
+> - **Hypothesis H1 is not confirmed:** the held-out macro-F1 is below 0.85, and the camera-traffic FPR is not measured yet.
+
 ## 0.1 What has been done from the beginning?
 
 1. **The research proposal is written** (July 2026). Everything in this guide is based on it. The PDF is at `Desktop\research\Group03_Proposal.pdf`. It is not in the project folder yet.
@@ -120,26 +126,26 @@ The status was checked on **19 October 2026**. We looked at the project folder (
 | 4    | Settings file and decision log             | ✅     | Local `config/settings.yaml`, `.env` and `docs/decision_log.md` (D-001 to D-013) complete; allowlist confirmed. |
 | 5    | Build the lab network                      | ⬜     | Hardware track: requires physical lab equipment (proceed to Step 6 on Development PC).      |
 | 6    | Threat model and requirement checklist     | ✅     | `docs/threat_model.md` and `docs/requirements_checklist.md` (FR-01–FR-08, O1–O6) complete.  |
-| 7    | Download IoT-23 and make a manifest        | ✅     | All 23 official IoT-23 scenarios in `data/raw/iot23/` (44.13 GB, 325.3M flows); `ml_engine/manifest.py` executed; `reports/dataset_manifest.csv` complete. |
+| 7    | Download IoT-23 and make a manifest        | ✅     | Local CSV copy of all 23 IoT-23 v1.0.0 scenarios in `data/raw/iot23/` (44.13 GB, 325.3M flows). `tools/verify_iot23_copy.py`: first and last flow match the official files for 23/23; label totals match the official website for 17 scenarios, 3 small label differences explained (D-039, D-046); download source still to record (issue 22). |
 | 8    | Write and freeze the label mapping         | ✅     | Frozen `config/label_mapping.yaml` to 5 target classes (D-014); all 17 labels resolved; ambiguous excluded (0.0031%). |
 | 9    | Data-quality report                        | ✅     | `reports/data_quality_report.md` complete with Class x Scenario matrix (325.3M flows), missing rates & charts. |
 | 10   | Load and clean the data                    | ✅     | Streamed all 23 scenarios (325.3M flows); imputed Zeek nulls; 10,240 ambiguous excluded; 23 Parquet files in `data/interim/` (10.62 GB); summary in `reports/interim_data_summary.md`. |
 | 11   | Shared feature code                        | ✅     | `ml_engine/features.py` unified engine; 19 features (6 cat, 13 num); 10 unit tests in `tests/unit/test_features.py` passed (D-015). |
-| 12   | Sampling and class balance                 | ✅     | `ml_engine/sample_dataset.py`; capped $N=50,000$/class; 100% CnC kept (48,992 flows); 1,384,070 flows in `data/processed/train_features.parquet` (10.81 MB, 0 NaNs); reports in `reports/sampling_report.md` (D-016). |
+| 12   | Sampling and class balance                 | ✅     | `ml_engine/sample_dataset.py`; capped $N=50,000$/class per scenario; 1,384,070 training flows; re-run 9 Nov 2026 to keep audit columns (time, IPs, original label; never model inputs, D-046): feature columns identical, model not retrained (D-016, D-046). |
 | 13   | Plan the three test levels                 | ✅     | Three-level plan in `reports/test_split_plan.md`; Level 1 Grouped CV (`StratifiedGroupKFold`); Level 2 Held-out `Capture-34-1` (23,145 flows sealed in `data/processed/heldout/`); Level 3 Lab camera; tests passed in `tests/unit/test_sampling_and_splits.py` (D-017). |
-| 14   | Train the Random Forest                    | ✅     | `ml_engine/train.py` Pipeline + ColumnTransformer; Level 1 Grouped CV (`StratifiedGroupKFold`); tuned `n_estimators=150, max_depth=25`; model bundle saved in `ml_engine/models/rf_model.joblib` (15.19 MB, 6.46 µs latency); reports in `reports/experiments/` (D-018). |
-| 15   | Compare with other models                  | ✅     | `ml_engine/compare_models.py`; 3 models compared on 1.38M flows (5-fold Grouped CV); Macro-F1: HGB 0.3950 > RF 0.3630 > LR 0.3486; RF retained as primary for auditability & 6.46 µs latency; reports in `reports/experiments/model_comparison.md` (D-019). |
-| 16   | Evaluate on the held-out scenario          | ✅     | `ml_engine/evaluate.py`; evaluated on `Capture-34-1` (23,145 flows); RF Accuracy = 76.72%, Benign FPR = 5.096%, Generalisation Gap = +0.0398; PR-AUCs 0.82–0.99; H1 diagnosed (D-020). |
-| 17   | Calibration, explanation, thresholds       | ✅     | `ml_engine/calibrate_and_explain.py`; Sigmoid CalibratedClassifierCV; Brier score DDoS 0.0552 ➔ 0.0288 (-47.7%); Gini & Permutation importance; dual operational thresholds in `operational_thresholds.json` (D-021). |
-| 18   | Model bundle and model card                | ✅     | Unified bundle in `ml_engine/models/ids_bundle_v1.joblib` (30.84 MB); Mitchell et al. (2019) model card in [`reports/experiments/model_card.md`](file:///d:/intrusion%20detection/reports/experiments/model_card.md); verified by 5 unit tests (D-022). Track 1 complete. |
-| 19   | Run Zeek on the sensor                     | ✅     | `sensor/local.zeek` streaming JSON policy; `sensor/run_zeek.sh` daemon manager; `sensor/zeek_runner.py` cross-platform runner & simulation engine; 5 unit tests passed (D-023). |
-| 20   | Collect our own benign camera traffic      | ✅     | 5,000 benign camera flows (RTSP, HTTP, ONVIF, DNS, NTP) in `data/local/benign/2026-10-31/conn.log`; 100% Benign accuracy; FPR = 0.000% <= 5% (Hypothesis H1 Clause 2 verified); reports in [`reports/experiments/camera_baseline_summary.md`](file:///d:/intrusion%20detection/reports/experiments/camera_baseline_summary.md) (D-024). |
+| 14   | Train the Random Forest                    | ✅     | `ml_engine/train.py`; grouped CV by scenario; re-run 8 Nov 2026 after D-039: out-of-fold macro-F1 **0.3422** (fold mean 0.3353 ± 0.1704); best `n_estimators=100, max_depth=18`; 4.30 MB; out-of-fold probabilities saved for Step 17 (D-018, D-040, D-043). |
+| 15   | Compare with other models                  | ✅     | `ml_engine/compare_models.py`; re-run 9 Nov 2026: out-of-fold macro-F1 HGB **0.4331** > RF 0.3422 > LR 0.2722; RF kept as the main model per proposal 2.4 (explainable tree paths); `reports/experiments/model_comparison.md` (D-019, D-043). |
+| 16   | Evaluate on the held-out scenario          | ✅     | `ml_engine/evaluate.py`; re-run 9 Nov 2026 on `Capture-34-1` (23,145 flows): uncalibrated RF macro-F1 0.4530 (5 classes) / 0.5662 (4 present); H1 part 1 **not met** (D-020, D-043). |
+| 17   | Calibration, explanation, thresholds       | ✅     | Redone 8–9 Nov 2026: `temperature` calibration (D-045); deployed model on 34-1 macro-F1 **0.4530**; block thresholds by replaying the proposal's repeat rule (D-046): **PortScan 0.30, CnC 0.39**, DDoS and Malware alert only; results per original label added. |
+| 18   | Model bundle and model card                | ✅     | Re-run 9 Nov 2026: `ml_engine/models/ids_bundle_v1.joblib` v1.2.0 (9.3 MB, not in Git, `temperature` calibration); `reports/experiments/model_card.md` filled from the result files (D-022, D-045). |
+| 19   | Run Zeek on the sensor                     | 🟡     | Re-opened 8 Nov 2026 (D-042): config, start script and tests ready; Zeek not yet run on the Linux sensor. |
+| 20   | Collect our own benign camera traffic      | 🟡     | Re-opened 8 Nov 2026 (D-042): the 31 Oct flows were synthetic and the result is withdrawn; real capture pending (`collect_camera_traffic.py --source real`). |
 | 21   | Zeek adapter                               | ✅     | `core_engine/zeek_adapter.py` streaming JSON adapter; offset persistence in `.zeek_adapter_state.json`; micro-batching (`batch_size=100`, `timeout=0.5s`); direction & device enrichment; 9 unit tests passed (D-025). |
-| 22   | Offline vs live schema check               | ✅     | `tools/schema_check.py` verified 100% feature match (19 features); 0 NaNs; novel categories (RTSP, ONVIF) handled safely; 7 unit tests passed; `reports/schema_check.md` published; Checkpoint C6 & RQ3 resolved (D-026). Track 2 complete. |
+| 22   | Offline vs live schema check               | 🟡     | Re-opened 8 Nov 2026 (D-042): `tools/schema_check.py` ready; run on the real capture to answer RQ3. |
 | 23   | Set up MongoDB                             | ✅     | `core_engine/db_service.py` 9 collections, full block history compound non-unique index, dynamic settings, TTL indexes (D-027). 18 dedicated unit/integration tests passed. |
 | 24   | Login and secrets                          | ✅     | `core_engine/auth.py` bcrypt hashing, 8-hour JWT access tokens, `tools/create_admin.py` CLI provisioning, route decorators, system_logs audit integration (D-028). 21 unit tests passed. |
 | 25   | Flask + Socket.IO server                   | ✅     | `core_engine/app.py` 15 REST endpoints, authenticated WebSocket push telemetry, lab safety guardrails (D-029). 13 integration tests passed. |
-| 26   | Detector and decision engine               | ✅     | `core_engine/detector.py`, `core_engine/decision_engine.py` calibrated ML inference, dual thresholds, allowlist safety, burst coalescing, sub-second latency tracking (D-030). 19 tests passed. |
+| 26   | Detector and decision engine               | ✅     | `detector.py`, `decision_engine.py`: calibrated inference, alert/block thresholds from Step 17, allowlist, burst coalescing, stage timestamps; block candidates go to the response policy (D-030, D-041). |
 | 27   | Device discovery (Nmap)                    | ✅     | `core_engine/scanner_service.py` authorized Nmap scanner, multi-evidence camera heuristics, approved subnet restrictions (192.168.50.0/24), camera confirmation RBAC API (D-031). 17 tests passed (12 unit, 5 integration). |
 | 28   | Log export                                 | ✅     | `core_engine/export_service.py` forensic log export in RFC 4180 CSV & JSON, multi-attribute filtering (time, class, IP, status, severity), system_logs audit invariant (D-032). 14 tests passed (10 unit, 4 integration). Phase 6 100% COMPLETE. |
 | 29   | Clean up the React app                     | ✅     | `my-app/` cleaned, legacy routes/styles removed, single `REACT_APP_API_URL` config (`src/config.js`), Axios Bearer auth interceptors (`services/api.js`), `socket.io-client` with JWT auth (`services/socket.js`), zero fake attacks, verified with passing Jest test and production build (D-033). |
@@ -161,26 +167,32 @@ The status was checked on **19 October 2026**. We looked at the project folder (
 
 | Status                     | Number of steps | Steps             |
 | -------------------------- | --------------- | ----------------- |
-| ✅ Fully done              | 32              | 0, 1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33 |
+| ✅ Fully done              | 29              | 0, 1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33 |
 | 🔧 Done, small changes left | 0               | —                 |
-| 🟡 Started                 | 2               | 3, 41             |
+| 🟡 Started                 | 5               | 3, 19, 20, 22, 41 |
 | ♻️ Old code to reuse       | 0               | —                 |
 | ⬜ Not started             | 9               | 5, 34, 35, 36, 37, 38, 39, 40, 42 |
 
 ## 0.3 What to do next, in order
 
-1. **Step 0 through Step 33 are ✅ Done.** The Windows PC development environment (`.venv`) is active, all packages are installed and locked, local `config/settings.yaml` and `.env` are configured with confirmed allowlist and secure cryptographic keys, the threat model (`docs/threat_model.md`) and requirements checklist (`docs/requirements_checklist.md`) are complete, the official IoT-23 dataset manifest ([`reports/dataset_manifest.csv`](file:///d:/intrusion%20detection/reports/dataset_manifest.csv), 325.3M flows) is generated with SHA-256 hashes, the label mapping ([`config/label_mapping.yaml`](file:///d:/intrusion%20detection/config/label_mapping.yaml)) is frozen to 5 classes under `D-014`, the data-quality audit report ([`reports/data_quality_report.md`](file:///d:/intrusion%20detection/reports/data_quality_report.md)) is complete with charts, the chunked data loader pipeline ([`ml_engine/load_iot23.py`](file:///d:/intrusion%20detection/ml_engine/load_iot23.py)) has cleaned and exported all scenarios into typed, compressed Parquet files in `data/interim/`, the unified feature extraction engine ([`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py)) is implemented, tested (10 passed unit tests), and locked under Decision `D-015`, stratified sampling (`ml_engine/sample_dataset.py`, 1.38M flows, D-016) is complete, the three-level evaluation plan (`reports/test_split_plan.md`, D-017) is locked, the Random Forest model is trained and tuned (`ml_engine/train.py`, 15.19 MB, 6.46 µs latency, D-018), multi-model benchmarking (`ml_engine/compare_models.py`, D-019) is complete, Level 2 held-out evaluation (`ml_engine/evaluate.py`, D-020) is complete, Step 17 probability calibration, explainability, and operational threshold matrix tuning ([`ml_engine/calibrate_and_explain.py`](file:///d:/intrusion%20detection/ml_engine/calibrate_and_explain.py), D-021) is complete, Step 18 unified production model bundle export (`ml_engine/models/ids_bundle_v1.joblib`, 30.84 MB) and formal Model Card publication ([`reports/experiments/model_card.md`](file:///d:/intrusion%20detection/reports/experiments/model_card.md), D-022) is complete, Step 19 Zeek live monitoring policies, daemon manager (`sensor/run_zeek.sh`), and simulation test harness (`sensor/zeek_runner.py`, D-023) is complete, Step 20 benign IP-camera baseline collection and Hypothesis H1 Clause 2 FPR validation ([`sensor/collect_camera_traffic.py`](file:///d:/intrusion%20detection/sensor/collect_camera_traffic.py), 5,000 flows, 0.000% FPR, D-024) is complete, Step 21 real-time Zeek streaming ingestion adapter ([`core_engine/zeek_adapter.py`](file:///d:/intrusion%20detection/core_engine/zeek_adapter.py), 23,108 fps throughput, D-025) is complete, Step 22 offline vs live feature schema audit ([`tools/schema_check.py`](file:///d:/intrusion%20detection/tools/schema_check.py), 100% 19-feature alignment, zero training-serving skew, Checkpoint C6 & RQ3 resolved, D-026) is complete, Step 23 MongoDB database setup ([`core_engine/db_service.py`](file:///d:/intrusion%20detection/core_engine/db_service.py), 9 collections, full block history audit trail, dynamic settings, TTL indexes, D-027) is complete, Step 24 Authentication and secrets management ([`core_engine/auth.py`](file:///d:/intrusion%20detection/core_engine/auth.py), [`tools/create_admin.py`](file:///d:/intrusion%20detection/tools/create_admin.py), bcrypt, 8h JWT tokens, system_logs audit, D-028) is complete, Step 25 Consolidated Flask + Socket.IO server ([`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py), 15 REST endpoints, authenticated WebSocket push telemetry, lab safety guardrails, D-029) is complete, Step 26 Detector and decision engine ([`core_engine/detector.py`](file:///d:/intrusion%20detection/core_engine/detector.py), [`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py), calibrated inference, dual thresholds, allowlist safety, burst coalescing, and latency tracking, D-030) is complete, Step 27 Device discovery (Nmap) ([`core_engine/scanner_service.py`](file:///d:/intrusion%20detection/core_engine/scanner_service.py), authorized Nmap scanner, multi-evidence camera heuristics, approved subnet restrictions, camera confirmation RBAC API, D-031) is complete, Step 28 Log export ([`core_engine/export_service.py`](file:///d:/intrusion%20detection/core_engine/export_service.py), RFC 4180 CSV & JSON multi-attribute filtered export, system_logs audit invariant, D-032) is complete, Step 29 React frontend cleanup ([`my-app/src/config.js`](file:///d:/intrusion%20detection/my-app/src/config.js), Bearer auth interceptors, Socket.IO auth, D-033) is complete, Step 30 Canonical 7-page dashboard suite ([`my-app/src/pages/`](file:///d:/intrusion%20detection/my-app/src/pages/), responsive Layout, operator verification badges, D-034) is complete, Step 31 Autonomous response policy and safety guardrail engine ([`core_engine/response_policy.py`](file:///d:/intrusion%20detection/core_engine/response_policy.py), D-035) is complete, Step 32 native Linux nftables rulesets and kernel adapter ([`sensor/ids_inline.nft`](file:///d:/intrusion%20detection/sensor/ids_inline.nft), [`core_engine/firewall/nftables_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/nftables_adapter.py), D-036) is complete, and Step 33 modular response adapter suite and engine integration ([`core_engine/firewall/base.py`](file:///d:/intrusion%20detection/core_engine/firewall/base.py), [`router_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/router_adapter.py), [`simulation_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/simulation_adapter.py), D-037) is complete with 204 passing automated tests.
-2. **Track 1 — Dataset & Machine Learning Pipeline is 100% COMPLETE (Steps 7–18).**
-3. **Track 2 — Lab Hardware, Sensor & Live Zeek Integration is 100% COMPLETE (Steps 19–22).**
-4. **Phase 6 — System Integration, Database & Response APIs is 100% COMPLETE (Steps 23–28).**
-5. **Phase 7 — React Dashboard and Alerts is 100% COMPLETE (Steps 29–30).**
-6. **Phase 8 — Firewall Response Controls is IN PROGRESS (Steps 31–33 ✅ Done; Step 34 next):**
-   - **Step 34 (Next):** Manual block/unblock controls, auto-expiry timer tracking, and crash restart recovery.
-7. **Phase 9 — Controlled Attack Scenarios & Benchmarks (Steps 35–40):**
-   - **Steps 35–39:** Execute the 6 controlled test scenarios (Table 10), measure latency, throughput, and system reliability.
-   - **Steps 40–42:** Compile final evaluation results, complete thesis documentation, and prepare final live demonstration.
+**First, three tasks that need no hardware (9 Nov 2026):**
 
-**Do not jump ahead** to the backend, scanner or firewall (Steps 24–34) before the model and the schema check are done. Those parts need the model bundle (Step 18) and the checked feature list (Step 22).
+A. ~~Decide how automatic blocking should work~~ **Done 9 Nov 2026 (D-046):** block thresholds follow proposal 3.4 (confidence threshold + repeats); PortScan and CnC can be blocked, DDoS and Malware are alert only.
+B. **Write down where the IoT-23 CSV copy was downloaded from** (page link and date). The content already matches the official files (D-039).
+C. **Confirm the lab type with the supervisor** (real camera or camera simulator; physical or virtual lab), and update D-038.
+
+**Then the lab work:**
+
+1. **Set up the lab (Step 5).** A real camera, or a camera simulator confirmed with the supervisor (D-038), a switch that can mirror ports (or a virtual switch), a Linux sensor, a lab router, an attack computer and the admin PC. Fill in the real IPs and models in `docs/ethics/lab_plan_and_rules.md`.
+2. **Prepare the sensor (Step 3b/3c).** Ubuntu, Zeek, MongoDB, Python `.venv`, the project from Git, and `ml_engine/models/ids_bundle_v1.joblib` copied by USB (it is not in Git).
+3. **Step 19:** run Zeek on the mirror port; check real `conn.log` lines.
+4. **Step 20:** capture real benign camera traffic for several hours; run `sensor/collect_camera_traffic.py --conn-log ... --source real`.
+5. **Step 22:** run `tools/schema_check.py --live-path ... --source real`. Drop and retrain any feature that cannot be made the same way (proposal 3.5).
+6. **Step 34:** manual block/unblock from the dashboard, rule expiry shown in the database, recovery after a restart.
+7. **Step 35:** the 6 scenarios of proposal Table 10, with `auto_response: true` only during these tests; write each run in the lab logbook.
+8. **Steps 36–42:** requirement tests, speed and resources, reliability, usability, results, final documents, demo and data clean-up.
+
+**Keep this order.** Steps 19, 20 and 22 use real traffic with `auto_response: false`. Turn `auto_response` on only in Step 35, and only after task A is decided. If Step 22 shows that a feature cannot be made the same way live, retrain (Steps 14–18) before Step 35.
 
 ## 0.4 Which steps depend on which (➕ Extra)
 
@@ -1437,7 +1449,8 @@ def make_features(df):
 > - Script: [`ml_engine/sample_dataset.py`](file:///d:/intrusion%20detection/ml_engine/sample_dataset.py) executed inside `.venv`.
 > - Sampling rule: Capped at $N = 50,000$ rows per (scenario, class) using fixed seed `42` (`config/settings.yaml`).
 > - Minority preservation: 100% of all 48,992 `CnC` flows across all 22 training scenarios preserved (zero flows lost).
-> - Training output: [`data/processed/train_features.parquet`](file:///d:/intrusion%20detection/data/processed/train_features.parquet) (1,384,070 rows, 10.81 MB snappy parquet, 0 NaNs).
+> - Training output: [`data/processed/train_features.parquet`](file:///d:/intrusion%20detection/data/processed/train_features.parquet) (1,384,070 rows, 0 NaNs).
+> - **Update 9 Nov 2026 (D-046):** both output files now also keep 5 audit columns (`ts`, `id.orig_h`, `id.resp_h`, `id.resp_p`, `detailed_label`). They are never model inputs (proposal Table 6: "used only for grouping and audit"); Step 17 uses them to replay the repeat rule and to report results per original label. The 22 old columns are identical in every row.
 > - Imbalance ratio reduced from 4,354 : 1 down to 10.2 : 1. Peak RAM during sampling stayed under 180 MB.
 > - Reports: [`reports/sampling_summary.csv`](file:///d:/intrusion%20detection/reports/sampling_summary.csv) and [`reports/sampling_report.md`](file:///d:/intrusion%20detection/reports/sampling_report.md).
 > - Decision: `D-016` recorded in [`docs/decision_log.md`](file:///d:/intrusion%20detection/docs/decision_log.md).
@@ -1507,17 +1520,17 @@ def make_features(df):
 
 ## Step 14. Train the Random Forest
 
-> **Status: ✅ Done (31 Oct 2026)**
+> **Status: ✅ Done (first run 31 Oct 2026; run again 8 Nov 2026 after the scenario-name fix, D-039)**
 >
-> - Script: [`ml_engine/train.py`](file:///d:/intrusion%20detection/ml_engine/train.py) executed inside `.venv`.
-> - Architecture: Scikit-learn `Pipeline` pairing unknown-handling `OrdinalEncoder` (`ColumnTransformer`, `min_frequency=50`) with `RandomForestClassifier`.
-> - Tuning: `RandomizedSearchCV` (12 candidates, 5 folds = 60 fits) on Level 1 `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` scored by `f1_macro`.
-> - Optimal Hyperparameters: `n_estimators=150`, `max_depth=25`, `min_samples_split=2`, `min_samples_leaf=4`, `max_features='log2'`, `class_weight='balanced'`.
-> - Level 1 Grouped CV (Full 1,384,070 flows): Out-of-fold Macro-F1 = `0.3630` (fold mean: `0.4651 ± 0.3279`, fold max: `0.9997`).
-> - Performance & Safety: Latency = **6.46 µs/flow** (154,746 flows/sec); Model file size = **15.19 MB** compressed (depth bounding prevented tree explosion, replacing the unusable 820 MB legacy model).
-> - Artifacts: Saved to `ml_engine/models/rf_model.joblib`, `reports/experiments/rf_search.csv`, `reports/experiments/rf_cv_results.csv`, `reports/experiments/rf_training_report.md`.
-> - Tests: 5 unit tests passed in [`tests/unit/test_train.py`](file:///d:/intrusion%20detection/tests/unit/test_train.py).
-> - Decision: `D-018` recorded in [`docs/decision_log.md`](file:///d:/intrusion%20detection/docs/decision_log.md).
+> - Script: [`ml_engine/train.py`](file:///d:/intrusion%20detection/ml_engine/train.py), run inside `.venv`.
+> - Model: one scikit-learn `Pipeline` (`OrdinalEncoder` that handles unknown values, `min_frequency=50`, then `RandomForestClassifier`).
+> - Tuning: `RandomizedSearchCV` (12 candidates × 5 folds) with `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)`, groups = `scenario_id`, scored by macro-F1.
+> - Best settings (8 Nov run): `n_estimators=100`, `max_depth=18`, `min_samples_split=5`, `min_samples_leaf=4`, `max_features='sqrt'`, `class_weight='balanced'`.
+> - Level 1 grouped CV (1,384,070 flows, 22 scenarios): out-of-fold macro-F1 = **0.3422**; mean fold macro-F1 = 0.3353 ± 0.1704.
+> - Model step only, on the PC: 4.66 µs per flow; model file 4.30 MB. (This is not the end-to-end time of proposal Table 9; that is Step 37.)
+> - New: the out-of-fold probabilities are saved to `data/processed/rf_oof_predictions.npz`, so Step 17 can choose thresholds without the held-out scenario (D-040).
+> - Files: `ml_engine/models/rf_model.joblib`, `reports/experiments/rf_search.csv`, `rf_cv_results.csv`, `rf_training_report.md`.
+> - The 31 Oct numbers (0.3630, 15.19 MB) came from data with 4 wrong scenario names and are replaced (D-039, D-043).
 
 **Why:** This is the main model of the prototype.
 
@@ -1583,18 +1596,22 @@ search.fit(X_train, y_train, groups=groups_train)
 
 ## Step 15. Compare with other models
 
-> **Status: ✅ Done (31 October 2026)**
+> **Status: ✅ Done (first run 31 Oct 2026; run again 9 Nov 2026 after D-039)**
 
 **Why:** We must **check**, not assume, that Random Forest gives a good balance of accuracy and speed.
 
-**Completed implementation:**
-- Implemented [`ml_engine/compare_models.py`](file:///d:/intrusion%20detection/ml_engine/compare_models.py) comparing 3 model architectures across all 1,384,070 flows under the exact same 5-fold Level 1 Grouped Cross-Validation (`StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` with `groups = scenario_id`):
-  1. **Random Forest (Bagging Ensemble):** Out-of-fold Macro-F1 = `0.3630`, fold mean = `0.4651 ± 0.3279`, `CnC` recall = `44.89%`, inference latency = **6.46 µs/flow** (154,746 flows/s), model size = `15.19 MB`.
-  2. **Logistic Regression (Linear Baseline):** Out-of-fold Macro-F1 = `0.3486`, fold mean = `0.3431 ± 0.1357`, `CnC` recall = `13.97%`, inference latency = **1.91 µs/flow** (524,882 flows/s), model size = `0.01 MB`.
-  3. **HistGradientBoosting (Boosting Ensemble):** Out-of-fold Macro-F1 = `0.3950`, fold mean = `0.4670 ± 0.3021`, `CnC` recall = `44.08%`, inference latency = **19.10 µs/flow** (52,353 flows/s), model size = `0.68 MB`.
-- **Selected Prototype Model Justification (D-019):** Random Forest is retained as the operational detector because its decision tree paths provide the interpretability required to generate transparent firewall response rules (Step 17 & Phase 8), its inference is ~3x faster than Gradient Boosting, and it yields the highest recall on minority `CnC` botnet traffic (44.89% vs 13.97% for Linear).
-- All 3 models serialized in `ml_engine/models/` (`rf_model.joblib`, `lr_model.joblib`, `hgb_model.joblib`).
-- Automated unit test suite [`tests/unit/test_compare_models.py`](file:///d:/intrusion%20detection/tests/unit/test_compare_models.py) passed 5 tests (26 repository unit tests passed in total).
+**Result (9 Nov 2026 run):** [`ml_engine/compare_models.py`](file:///d:/intrusion%20detection/ml_engine/compare_models.py) compared 3 models on the same 1,384,070 flows with the same 5-fold grouped CV (groups = `scenario_id`).
+
+| Model | Out-of-fold macro-F1 | Mean fold macro-F1 | CnC recall | Model step per flow (PC) | Size |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Random Forest | 0.3422 | 0.3353 ± 0.1704 | 44.9% | 4.66 µs | 4.30 MB |
+| Logistic Regression | 0.2722 | 0.2723 ± 0.1048 | 12.8% | 1.52 µs | 0.01 MB |
+| HistGradientBoosting | **0.4331** | 0.4160 ± 0.1102 | 45.5% | 17.12 µs | 0.68 MB |
+
+- **HistGradientBoosting scored higher than Random Forest.** We report this as measured.
+- Random Forest stays the main model because the proposal (Section 2.4) chose it for its tree paths, which can be explained, and for its speed. The model step of all three takes only microseconds, far below the 2-second whole-system target, so speed does not decide between them. This choice is written in D-019 and D-043.
+- The 31 Oct numbers (HGB 0.3950 > RF 0.3630 > LR 0.3486) are replaced (D-039).
+- All 3 models are saved in `ml_engine/models/`. Tests: [`tests/unit/test_compare_models.py`](file:///d:/intrusion%20detection/tests/unit/test_compare_models.py).
 
 **Output:** [`reports/experiments/model_comparison.md`](file:///d:/intrusion%20detection/reports/experiments/model_comparison.md) and [`reports/experiments/model_comparison.csv`](file:///d:/intrusion%20detection/reports/experiments/model_comparison.csv).
 
@@ -1604,28 +1621,31 @@ search.fit(X_train, y_train, groups=groups_train)
 
 ## Step 16. Evaluate on the held-out scenario
 
-> **Status: ✅ Done (31 October 2026)**
+> **Status: ✅ Done (first run 31 Oct 2026; run again 9 Nov 2026 after D-039)**
 
 **Why:** This is the real test of the model on data it has never seen (Supervisor Checkpoint C4).
 
-**Completed implementation:**
-- Implemented [`ml_engine/evaluate.py`](file:///d:/intrusion%20detection/ml_engine/evaluate.py) evaluating the primary Random Forest model and baseline classifiers on the dedicated held-out zero-day scenario [`data/processed/heldout/held_out_test.parquet`](file:///d:/intrusion%20detection/data/processed/heldout/held_out_test.parquet) (`CTU-IoT-Malware-Capture-34-1`, Mirai botnet, 23,145 flows).
-- **Primary Random Forest Results:**
-  - Overall Accuracy: **76.72%** (Level 1 CV was 45.00%, a **+31.72%** generalisation gain).
-  - Weighted F1-score: **0.7746**.
-  - Macro-F1 (all 5 classes): **0.4028** (Macro-F1 on the 4 present classes: **0.5035**).
-  - Generalisation Gap (Macro-F1): **+0.0398** ($0.4028 - 0.3630$).
-  - Benign False Positive Rate (FPR): **5.096%** (only 98 false alarms out of 1,923 benign flows, matching the $\le 5\%$ H1 target closely).
-  - Inference Latency: **4.52 µs/flow** (221,181 flows/s).
-- **Per-Class Breakdown (Random Forest):**
-  - `DDoS_DoS`: Recall = **99.07%**, Precision = **99.99%**, F1 = **0.9953**, PR-AUC = **0.9976** (14,260 / 14,394 detected).
-  - `CnC`: Recall = **23.20%**, Precision = **96.65%**, F1 = **0.3742**, PR-AUC = **0.9786** (1,556 / 6,706 detected).
-  - `Benign`: Recall = **94.90%**, Precision = **40.04%**, F1 = **0.5632**, PR-AUC = **0.9554** (1,825 / 1,923 preserved).
-  - `PortScan`: Recall = **94.26%**, Precision = **4.24%**, F1 = **0.0812**, PR-AUC = **0.8230** (115 / 122 detected).
-  - `Malware_Download`: 0 flows in scenario (Support = 0, F1 = 0.0000).
-- **Hypothesis H1 Assessment (D-020):**
-  - First clause (Macro-F1 $\ge 0.85$): Not met under default raw 0.5 threshold due to arithmetic constraint of zero support for `Malware_Download` (capping max score at 0.8000) and keep-alive beacon overlap. However, PR-AUC is exceptional (0.8230 to 0.9976) across all classes. In accordance with supervisor rules, test data was not altered; threshold tuning is deferred to Step 17.
-- **Unit Testing:** 5 unit tests in [`tests/unit/test_evaluate.py`](file:///d:/intrusion%20detection/tests/unit/test_evaluate.py) passed (31 total unit tests passing across repository).
+**Result (9 Nov 2026 run):** [`ml_engine/evaluate.py`](file:///d:/intrusion%20detection/ml_engine/evaluate.py) tested the **uncalibrated** models on the held-out scenario `CTU-IoT-Malware-Capture-34-1` (23,145 flows; file `data/processed/heldout/held_out_test.parquet`). The model actually used by the live system is the calibrated one; its result is in Step 17.
+
+| Random Forest on 34-1 (uncalibrated) | Value |
+| --- | ---: |
+| Macro-F1, 5 classes | 0.4530 |
+| Macro-F1, 4 classes present | 0.5662 |
+| Accuracy / weighted F1 | 0.8063 / 0.8285 |
+| IoT-23 benign flows predicted as attack | 5.148% (99 of 1,923) |
+
+| Class (RF, uncalibrated) | Support | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: | ---: |
+| Benign | 1,923 | 0.4997 | 0.9485 | 0.6546 |
+| DDoS_DoS | 14,394 | 0.9999 | 0.9908 | 0.9953 |
+| PortScan | 122 | 0.0424 | 0.9426 | 0.0812 |
+| CnC | 6,706 | 0.9781 | 0.3671 | 0.5339 |
+| Malware_Download | 0 | — | — | — |
+
+- **H1 part 1 (macro-F1 ≥ 0.85): not met.** 34-1 has no Malware_Download flows, so that class scores 0 and the 5-class macro-F1 cannot be above 0.80. Even on the 4 classes present the score is 0.57. PortScan precision is very low (most flows called PortScan are really CnC or Benign).
+- The IoT-23 benign rate above is **not** the H1 FPR measure. H1 uses our own camera traffic (Step 20).
+- The 31 Oct numbers (0.4028, 76.72%) are replaced (D-039, D-043).
+- Tests: [`tests/unit/test_evaluate.py`](file:///d:/intrusion%20detection/tests/unit/test_evaluate.py).
 
 **Output:**
 - [`reports/experiments/evaluation_iot23.md`](file:///d:/intrusion%20detection/reports/experiments/evaluation_iot23.md)
@@ -1638,20 +1658,49 @@ search.fit(X_train, y_train, groups=groups_train)
 
 ## Step 17. Calibration, explanation and final thresholds
 
-> **Status: ✅ Done (31 October 2026)**
+> **Status: ✅ Done (redone 8–9 Nov 2026: D-040, D-043, D-044, D-045, D-046). The 31 Oct method and numbers are withdrawn.**
 
 **Why:** Confidence values will start automatic responses, so we must check that they can be trusted (Checkpoint C5).
 
-**Completed implementation:**
-- Implemented [`ml_engine/calibrate_and_explain.py`](file:///d:/intrusion%20detection/ml_engine/calibrate_and_explain.py) performing probability calibration, explainability analysis, and cost-sensitive threshold optimization:
-  1. **Probability Calibration:** Applied `CalibratedClassifierCV(FrozenEstimator(pipe), method="sigmoid")` on a stratified 50,000-flow sample from `train_features.parquet`. Brier score for `DDoS_DoS` reduced from **0.0552** to **0.0288** (-47.7% reduction in probabilistic loss). Serialized bundle saved to `ml_engine/models/calibrated_rf_model.joblib`.
-  2. **Feature Importance & Auditability:** Computed Gini tree importances (`resp_port_cat`: 24.01%, `orig_ip_bytes`: 19.23%, `duration`: 13.82%) and Permutation Importances on held-out test data (`conn_state`: 23.60%, `history`: 21.60%, `duration`: 6.86%). Plotted in [`reports/experiments/feature_importance.png`](file:///d:/intrusion%20detection/reports/experiments/feature_importance.png).
-  3. **Extracted Decision Rules & Reason Codes:** Formulated human-auditable reason codes (`DOS_HIGH_RATE_PACKET_FLOOD`, `SCAN_RAPID_PROBE_SWEEP`, `CNC_PERSISTENT_BEACON`, `MALWARE_STAGING_TRANSFER`) with explicit feature split conditions for Phase 8 firewall automation.
-  4. **Cost-Sensitive Operational Threshold Dual-Matrix:** Decoupled active firewall response from passive alerting in [`reports/experiments/operational_thresholds.json`](file:///d:/intrusion%20detection/reports/experiments/operational_thresholds.json):
-     - Active Response (Firewall Block/Isolate, FPR <= 1.0%): `DDoS_DoS` $P \ge 0.70$ (99.99% prec, 99.07% rec), `CnC` $P \ge 0.60$ (95.05% prec), `PortScan` $P \ge 0.65$, `Malware_Download` $P \ge 0.85$.
-     - Passive Alerting (Dashboard Alerts): `CnC` $P \ge 0.25$ (boosts botnet beacon recall from 23.20% to 27.47%–38.99% with 97.05% precision), `PortScan` $P \ge 0.30$, `DDoS_DoS` $P \ge 0.50$.
-     - `Benign`: Protected by `ALLOW_ALWAYS` policy.
-- Automated unit test suite [`tests/unit/test_calibrate_and_explain.py`](file:///d:/intrusion%20detection/tests/unit/test_calibrate_and_explain.py) passed 4 tests (35 repository unit tests passed in total).
+**Method now (D-040, D-044, D-045, D-046):** [`ml_engine/select_calibration.py`](file:///d:/intrusion%20detection/ml_engine/select_calibration.py) (Step 17a) and [`ml_engine/calibrate_and_explain.py`](file:///d:/intrusion%20detection/ml_engine/calibrate_and_explain.py)
+1. **Choosing the calibration method (Step 17a):** 5 methods were compared on the Step 14 out-of-fold probabilities only, each fold calibrated by a fit on the other folds (`reports/experiments/calibration_selection.md`).
+   - The D-044 rule chose `multinomial`. It **failed** the final check on 34-1 (macro-F1 0.0458): it turned most DDoS flows into Benign (D-045).
+   - Reason: it learns how the model confuses classes on unseen out-of-fold scenarios, and those confusions do not carry over to the final model.
+   - New principle (D-045): calibration may change **how sure** the model is, but **not which class wins**. The method used now is **`temperature`** (one number; keeps the Random Forest's top class).
+2. **Thresholds, from the calibrated out-of-fold data only, with fixed rules:**
+   - alert threshold (D-040) = the lowest value (0.30–0.99) where precision ≥ 0.50 (if never reached: the value with the best precision);
+   - block threshold (D-046, proposal 3.4: *"The event must pass a confidence threshold, and it must happen again inside a set time window"*): the live response rule is **replayed** on the training flows, using their time and IP addresses (kept by Step 12 as audit columns, never model inputs). A block fires when the same target has 3 block candidates within 60 s and is not already blocked (a block lasts 30 min). The block threshold is the lowest value with at least 10 blocks, at least 95% of them fired by truly malicious flows, and at most 1% of benign targets blocked;
+   - if no value meets the block rule, the class is **alert only** (never blocked automatically).
+   - The old D-040 block rule (one single flow must be right 95% of the time) is not in the proposal and is replaced.
+3. **34-1:** used for the final check and for permutation importance (proposal 2.4). Because the D-045 choice was made after a 34-1 result, **34-1 is no longer a clean unseen test**. The clean test is now the lab data (Steps 20 and 35).
+4. **Decision paths:** real paths from the trained trees. The reason codes (`DOS_HIGH_RATE_PACKET_FLOOD` and the others) are names the team made.
+
+**Result (9 Nov 2026, `temperature`):**
+
+| Measure | Value |
+| --- | ---: |
+| Deployed model on 34-1: macro-F1, 5 classes | **0.4530** |
+| Deployed model on 34-1: macro-F1, 4 classes present | 0.5662 |
+| Deployed model on 34-1: accuracy | 0.8063 |
+| IoT-23 benign flows on 34-1 that raise an alert / reach a block threshold | 2.5% / 0.0% |
+
+| Class | Alert threshold | Block threshold (D-046) | Replay on training data: blocks / fired by malicious / benign targets blocked | 34-1 recall (top class) | 34-1 alert recall |
+| --- | ---: | --- | --- | ---: | ---: |
+| DDoS_DoS | 0.33 | **none: alert only** | almost all replayed blocks were fired by benign flows | 0.9908 | 0.9908 |
+| PortScan | 0.30 | **0.30** | 413 / 96.6% / 3 of 28,594 | 0.9426 | 0.9426 |
+| CnC | 0.39 | **0.39** | 142 / 100% / 0 | 0.3671 | **0.0073** |
+| Malware_Download | 0.30 | **none: alert only** | only 5 blocks (fewer than 10) | no flows in 34-1 | — |
+
+Replay on 34-1 with these thresholds (reported only): PortScan 27 blocks, 1 fired by a benign flow; CnC 1 block, correct.
+
+**Results per original IoT-23 label (proposal 3.2):** Section 8 of `thresholds_and_explanation.md`. On the out-of-fold data, the weakest labels are `DDoS` (0.16% put in the right group) and `C&C` (6.3%); `Okiru` 73.7%, `C&C-HeartBeat` 66.2%. On 34-1: `DDoS` 99.1%, `PartOfAHorizontalPortScan` 94.3%, `C&C` 36.7%.
+
+**What this means:**
+- **CnC is found again** at the model level (36.7% of CnC flows get CnC as the top class; 98% of these are right). But the CnC alert threshold (0.39) was set by the fallback rule, because CnC never reached 50% precision on the out-of-fold data. Most CnC flows on 34-1 are below 0.39, so only 0.7% raise an alert.
+- **Automatic blocking now works the proposal's way (D-046)** for PortScan and CnC. Table 10 scenario 2 (Nmap scan) and scenario 4 (C&C-like outbound) can show a block.
+- **DDoS stays alert only.** On unseen training scenarios most flows called DDoS are benign, so a block would be unsafe. Table 10 scenario 3 expects "blocked or rate-limited"; with this model it will show alerts, and a manual block from the dashboard. This is reported as a result. Rate features over a time window (proposal Table 6, "rate over a time window if we use it") are the proposal's way to improve it later.
+
+**Files:** [`thresholds_and_explanation.md`](file:///d:/intrusion%20detection/reports/experiments/thresholds_and_explanation.md), [`operational_thresholds.json`](file:///d:/intrusion%20detection/reports/experiments/operational_thresholds.json), `step17_results.json`, `calibration_curve.png`, `feature_importance.png`, `ml_engine/models/calibrated_rf_model.joblib`. Tests: [`tests/unit/test_calibrate_and_explain.py`](file:///d:/intrusion%20detection/tests/unit/test_calibrate_and_explain.py).
 
 **Output:**
 - [`reports/experiments/thresholds_and_explanation.md`](file:///d:/intrusion%20detection/reports/experiments/thresholds_and_explanation.md)
@@ -1665,9 +1714,9 @@ search.fit(X_train, y_train, groups=groups_train)
 
 ## Step 18. Save the model bundle and model card
 
-> **Status: ✅ Done (31 October 2026)**
+> **Status: ✅ Done (run again 9 Nov 2026, bundle `v1.2.0`, D-045)**
 >
-> Unified production bundle serialized to `ml_engine/models/ids_bundle_v1.joblib` (30.84 MB, gitignored). Formal Model Card published to [`reports/experiments/model_card.md`](file:///d:/intrusion%20detection/reports/experiments/model_card.md) per Mitchell et al. (2019). Verified by 5 automated unit tests in [`tests/unit/test_model_bundle.py`](file:///d:/intrusion%20detection/tests/unit/test_model_bundle.py) (all 40 repository tests passing). Track 1 (Steps 7–18) is 100% complete. Decision `D-022` recorded.
+> [`ml_engine/export_bundle.py`](file:///d:/intrusion%20detection/ml_engine/export_bundle.py) writes `ml_engine/models/ids_bundle_v1.joblib` (v1.2.0, `temperature` calibration, 9.3 MB, not in Git) and [`reports/experiments/model_card.md`](file:///d:/intrusion%20detection/reports/experiments/model_card.md). All numbers in the model card are read from the result files, not typed in. The bundle self-test passed. Tests: [`tests/unit/test_model_bundle.py`](file:///d:/intrusion%20detection/tests/unit/test_model_bundle.py). The 31 Oct bundle (30.84 MB) is replaced (D-040, D-043).
 
 **Why:** One file holds everything the live system needs, so offline and live use exactly the same steps.
 
@@ -1679,20 +1728,21 @@ search.fit(X_train, y_train, groups=groups_train)
 import joblib, sklearn
 
 bundle = {
-    "pipeline": final_pipeline,          # encoder + model, fitted together
-    "calibrated_model": calibrated_pipeline, # Platt/sigmoid calibrated model
-    "feature_columns": FEATURE_COLUMNS,  # exact order (19 features)
+    "pipeline": final_pipeline,              # encoder + model, fitted together
+    "calibrated_model": calibrated_pipeline, # temperature calibration fitted on out-of-fold data (D-045)
+    "feature_columns": FEATURE_COLUMNS,      # exact order (19 features)
     "categorical_features": CATEGORICAL_FEATURES,
     "numerical_features": NUMERICAL_FEATURES,
     "classes": TARGET_CLASSES,
     "class_names": CLASS_NAMES,
-    "operational_thresholds": thresholds_config["classes"],
-    "safety_guardrails": thresholds_config["safety_guardrails"],
-    "decision_rules": decision_rules,
+    "class_to_name": CLASS_TO_NAME,
+    "operational_thresholds": thresholds_json["classes"],
+    "threshold_rules": thresholds_json["metadata"]["rules"],
+    "example_decision_paths": step17_results["example_decision_paths"],
     "metadata": {
-        "bundle_version": "v1.0.0",
-        "training_samples_count": 1384070,
-        "inference_latency_us_flow": 4.52,
+        "bundle_version": "v1.2.0",
+        "level_1_oof_macro_f1": ...,        # read from the result files
+        "level_2_macro_f1_5class": ...,
         ...
     }
 }
@@ -1717,9 +1767,10 @@ joblib.dump(bundle, "ml_engine/models/ids_bundle_v1.joblib", compress=3)
 
 ## Step 19. Run Zeek on the sensor
 
-> **Status: ✅ Done (31 October 2026)**
+> **Status: 🟡 Started — software ready, not yet run on the sensor (re-opened 8 Nov 2026, D-042)**
 >
-> Zeek streaming JSON policy created in [`sensor/local.zeek`](file:///d:/intrusion%20detection/sensor/local.zeek) with continuous unrotated logging (`rotation_interval = 0 sec`) and checksum override (`ignore_checksums = T`). Sensor daemon execution script created in [`sensor/run_zeek.sh`](file:///d:/intrusion%20detection/sensor/run_zeek.sh). Cross-platform controller, live/pcap runner, and synthetic IP-camera telemetry simulator implemented in [`sensor/zeek_runner.py`](file:///d:/intrusion%20detection/sensor/zeek_runner.py). Verified with 5 dedicated unit tests in [`tests/unit/test_zeek_config.py`](file:///d:/intrusion%20detection/tests/unit/test_zeek_config.py) (all 45 repository unit tests passing). Decision `D-023` recorded.
+> Ready: `sensor/local.zeek` (JSON logs, no rotation, `ignore_checksums = T`), `sensor/run_zeek.sh` (start/stop/status on an interface or a PCAP), `sensor/zeek_runner.py` (checks and test tools), 5 unit tests.
+> **Left:** install Zeek on the Linux sensor (Step 3b), run it on the mirror port (or the virtual-lab capture interface), and confirm that real `conn.log` lines pass `verify_conn_log_schema`. The 31 Oct check used generated records, not Zeek output.
 
 **Why:** Zeek makes the live connection records (flows) from the traffic.
 
@@ -1762,7 +1813,7 @@ sudo zeek -C -i <interface> /path/to/project/sensor/local.zeek
 
 **Output:** [`sensor/local.zeek`](file:///d:/intrusion%20detection/sensor/local.zeek), [`sensor/run_zeek.sh`](file:///d:/intrusion%20detection/sensor/run_zeek.sh), [`sensor/zeek_runner.py`](file:///d:/intrusion%20detection/sensor/zeek_runner.py), [`tests/unit/test_zeek_config.py`](file:///d:/intrusion%20detection/tests/unit/test_zeek_config.py).
 
-**Done when:** Zeek writes newline-delimited JSON connection records to `conn.log`, and `verify_conn_log_schema` passes with 0 NaNs and all 19 features matching `ml_engine/features.py`. Verified by 5 unit tests. Status is ✅ Done.
+**Done when:** Zeek **on the sensor** writes newline-delimited JSON connection records to `conn.log`, and `verify_conn_log_schema` passes on those real records with 0 NaNs and all 19 features matching `ml_engine/features.py`.
 
 **Output:** `sensor/local.zeek`; Zeek writing `conn.log`.
 
@@ -1774,9 +1825,11 @@ sudo zeek -C -i <interface> /path/to/project/sensor/local.zeek
 
 ## Step 20. Collect our own benign camera traffic
 
-> **Status: ✅ Done (31 October 2026)**
+> **Status: 🟡 Started — real capture not done (re-opened 8 Nov 2026, D-042; replaces D-024)**
 >
-> 5,000 benign camera connection flows collected across 5 multi-session camera activities (RTSP 1080p H.264 video streaming, HTTP/HTTPS web admin management, ONVIF/SSDP device discovery, NTP/DNS support, background keep-alives) in `data/local/benign/2026-10-31/conn.log` via [`sensor/collect_camera_traffic.py`](file:///d:/intrusion%20detection/sensor/collect_camera_traffic.py). Evaluated against production model bundle: **Raw Benign Accuracy = 100.00%**, **Raw FPR = 0.000% <= 5% (Hypothesis H1 Clause 2 verified)**, **Active Blocking FPR = 0.000% <= 1%**. Formal report in [`reports/experiments/camera_baseline_summary.md`](file:///d:/intrusion%20detection/reports/experiments/camera_baseline_summary.md). Lab logbook updated ([`docs/lab_logbook.md`](file:///d:/intrusion%20detection/docs/lab_logbook.md), Entry 2). Decision `D-024` recorded.
+> The 5,000 flows of 31 Oct 2026 were **made by a script** (`generate_camera_flow()`), not captured from a camera. They were moved to `data/local/synthetic/` and are labelled synthetic test data. The old result "FPR 0.000%, H1 clause 2 PASS" is **withdrawn**.
+> Ready: `sensor/collect_camera_traffic.py --conn-log <real conn.log> --source real` measures the FPR and writes the report.
+> **Left:** capture real benign traffic from the lab camera (or the camera simulator confirmed with the supervisor, D-038), save it in `data/local/benign/<date>/conn.log`, write the logbook entry, and run the check with `--source real`.
 
 **Why:** IoT-23 has no camera in its normal data. To test H1 (FPR ≤ 5% on local camera traffic), we need real normal camera traffic.
 
@@ -1799,7 +1852,7 @@ sudo zeek -C -i <interface> /path/to/project/sensor/local.zeek
 
 **Output:** `data/local/benign/`, [`reports/experiments/camera_baseline_summary.md`](file:///d:/intrusion%20detection/reports/experiments/camera_baseline_summary.md), [`reports/experiments/camera_baseline_summary.csv`](file:///d:/intrusion%20detection/reports/experiments/camera_baseline_summary.csv), [`docs/lab_logbook.md`](file:///d:/intrusion%20detection/docs/lab_logbook.md), [`tests/unit/test_camera_traffic.py`](file:///d:/intrusion%20detection/tests/unit/test_camera_traffic.py).
 
-**Done when:** You have enough local benign flows, covering all the normal activities, to measure the false-positive rate. Verified with 5,000 flows: FPR = 0.000% <= 5% (H1 Clause 2 PASSED). Status is ✅ Done.
+**Done when:** You have enough **real** local benign flows, covering all the normal activities, to measure the false-positive rate, and the report says `Data source: REAL`.
 
 **Proposal:** Sections 1.6, 2.3, 3.4 (third level); Table 11; H1.
 
@@ -1859,9 +1912,10 @@ def follow(path):
 
 ## Step 22. Offline vs live feature check (schema check)
 
-> **Status: ✅ Done (31 October 2026)**
+> **Status: 🟡 Started — tool ready, real check not done (re-opened 8 Nov 2026, D-042; replaces D-026)**
 >
-> Offline vs live feature schema audit completed via [`tools/schema_check.py`](file:///d:/intrusion%20detection/tools/schema_check.py) comparing `train_features.parquet` (1,384,070 flows) and live Zeek camera telemetry (5,000 flows). 100% exact match across all 19 features in locked order, strict dtype compatibility, 0.000% null rate, physical feasibility verified, novel camera categories (`rtsp`, `ssdp`, `onvif`, `ntp`) safely encoded into index `-1`, and end-to-end inference verified at 36,923 fps with 0.000% FPR. Audit report published at [`reports/schema_check.md`](file:///d:/intrusion%20detection/reports/schema_check.md) and metrics at [`reports/schema_check.csv`](file:///d:/intrusion%20detection/reports/schema_check.csv). Verified by 7 unit tests in [`tests/unit/test_schema_check.py`](file:///d:/intrusion%20detection/tests/unit/test_schema_check.py). Checkpoint C6 fulfilled; Research Question RQ3 formally answered. Decision `D-026` recorded. Track 2 is 100% COMPLETE.
+> `tools/schema_check.py` compares column names and order, data types, ranges, missing values, categories and distributions (KS test), and runs the model on the live features. The 31 Oct run used the synthetic file, so it does **not** answer RQ3. The tool now needs `--source real|synthetic` and writes the source at the top of the report.
+> **Left:** run `python tools/schema_check.py --live-path data/local/benign/<date>/conn.log --source real` on the real capture from Step 20, and record any feature that must be dropped (proposal 3.5).
 
 **Why:** If live features are made differently from training features, the model gets the wrong input. The predictions are then wrong, **with no error message**. This step stops that.
 
@@ -2048,6 +2102,8 @@ def on_connect(auth):
 ## Step 26. Build the detector and decision engine
 
 > **Status: ✅ Done (31 Oct 2026)**
+>
+> **Update 8 Nov 2026 (D-041):** block candidates now go to the response policy inside `process_flows()` (`respond_to_outcome`); the live runner `core_engine/runner.py` feeds Zeek flows to it. Latency target = median < 2 s, p95 < 5 s (Table 9), measured in Step 37 — not "sub-second".
 
 **Why:** This joins everything together: flow → features → prediction → decision → record → dashboard → response (proposal Figure 3).
 
@@ -2235,6 +2291,8 @@ The layout must work on any screen size (proposal Table 8: "a dashboard that fit
 ## Step 31. Write the response policy (the safety rules)
 
 > **Status: ✅ Fully done** (1 Nov 2026, Decision D-035)
+>
+> **Update 8 Nov 2026 (D-041):** "local device" now comes from `lab.local_networks` (so the 10.10.10.0/24 test attacker can be blocked); `auto_response` is off by default; dashboard settings are applied at once. See `docs/response_policy.md` v2.0.
 
 **Why:** A wrong block could cut off the administrator or the NVR. The policy makes sure the system acts only when it is safe.
 
@@ -2355,6 +2413,8 @@ sudo nft list set bridge ids block_src                                    # list
 ## Step 33. Build the response adapters
 
 > **Status: ✅ Fully done** (1 Nov 2026, Decision D-037)
+>
+> **Update 8 Nov 2026 (D-041):** the adapter is chosen only by `response.adapter`; `ROUTER_USER` from `.env` is now used. Real blocking on the router has not been tested yet (Step 35).
 
 **Why:** The same decision must work in both deployment modes.
 

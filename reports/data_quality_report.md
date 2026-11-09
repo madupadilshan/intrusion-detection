@@ -49,8 +49,8 @@ This matrix maps the exact distribution of the 5 classes across all 23 scenarios
 | `CTU-Honeypot-Capture-4-1` | dataset1.csv | 452 | 0 | 0 | 0 | 0 | 0 | 452 |
 | `CTU-Honeypot-Capture-5-1` | dataset2.csv | 1,374 | 0 | 0 | 0 | 0 | 0 | 1,374 |
 | `CTU-Honeypot-Capture-7-1` | dataset3.csv | 130 | 0 | 0 | 0 | 0 | 0 | 130 |
-| `CTU-IoT-Malware-Capture-8-1` | dataset4.csv | 22,548 | 0 | 6,355,745 | 0 | 0 | 0 | 6,378,293 |
-| `CTU-IoT-Malware-Capture-9-1` | dataset5.csv | 2,181 | 0 | 0 | 8,222 | 0 | 0 | 10,403 |
+| `CTU-IoT-Malware-Capture-9-1` | dataset4.csv | 22,548 | 0 | 6,355,745 | 0 | 0 | 0 | 6,378,293 |
+| `CTU-IoT-Malware-Capture-8-1` | dataset5.csv | 2,181 | 0 | 0 | 8,222 | 0 | 0 | 10,403 |
 | `CTU-IoT-Malware-Capture-7-1` | dataset6.csv | 75,955 | 39,584 | 0 | 5,778 | 11,333,397 | 0 | 11,454,714 |
 | `CTU-IoT-Malware-Capture-60-1` | dataset7.csv | 2,476 | 3,578,457 | 0 | 95 | 0 | 0 | 3,581,028 |
 | `CTU-IoT-Malware-Capture-52-1` | dataset8.csv | 1,794 | 0 | 19,779,564 | 6 | 14 | 0 | 19,781,378 |
@@ -60,8 +60,8 @@ This matrix maps the exact distribution of the 5 classes across all 23 scenarios
 | `CTU-IoT-Malware-Capture-43-1` | dataset12.csv | 20,574,934 | 65,803 | 37,911,674 | 3,498 | 8,765,900 | 0 | 67,321,809 |
 | `CTU-IoT-Malware-Capture-42-1` | dataset13.csv | 4,420 | 0 | 0 | 0 | 6 | 0 | 4,426 |
 | `CTU-IoT-Malware-Capture-39-1` | dataset14.csv | 7,337 | 0 | 73,559,437 | 1,530 | 0 | 677 | 73,568,981 |
-| `CTU-IoT-Malware-Capture-35-1` | dataset15.csv | 2,663 | 0 | 0 | 15,688 | 13,626,744 | 3 | 13,645,098 |
-| `CTU-IoT-Malware-Capture-36-1` | dataset16.csv | 8,262,389 | 2,185,302 | 0 | 81 | 12 | 3 | 10,447,787 |
+| `CTU-IoT-Malware-Capture-36-1` | dataset15.csv | 2,663 | 0 | 0 | 15,688 | 13,626,744 | 3 | 13,645,098 |
+| `CTU-IoT-Malware-Capture-35-1` | dataset16.csv | 8,262,389 | 2,185,302 | 0 | 81 | 12 | 3 | 10,447,787 |
 | `CTU-IoT-Malware-Capture-34-1` | dataset17.csv | 1,923 | 14,394 | 122 | 6,706 | 0 | 0 | 23,145 |
 | `CTU-IoT-Malware-Capture-33-1` | dataset18.csv | 1,380,791 | 0 | 39,459,055 | 5,278 | 13,609,467 | 0 | 54,454,591 |
 | `CTU-IoT-Malware-Capture-3-1` | dataset19.csv | 4,536 | 0 | 145,597 | 8 | 0 | 5,962 | 156,103 |
@@ -88,8 +88,8 @@ Under Proposal Section 3.4, evaluation requires testing on a **held-out scenario
 | `CTU-IoT-Malware-Capture-3-1` | Benign, PortScan, CnC | 156,103 | 3 classes | ✅ **Prime Candidate:** Contains multiple attack classes + benign; moderate flow size. |
 | `CTU-IoT-Malware-Capture-33-1` | Benign, PortScan, CnC, Malware_Download | 54,454,591 | 4 classes | ℹ️ Single dominant class or extreme volume (>50M rows). |
 | `CTU-IoT-Malware-Capture-34-1` | Benign, DDoS_DoS, PortScan, CnC | 23,145 | 4 classes | ✅ **Prime Candidate:** Contains multiple attack classes + benign; moderate flow size. |
-| `CTU-IoT-Malware-Capture-35-1` | Benign, CnC, Malware_Download | 13,645,098 | 3 classes | ✅ **Prime Candidate:** Contains multiple attack classes + benign; moderate flow size. |
-| `CTU-IoT-Malware-Capture-36-1` | Benign, DDoS_DoS, CnC, Malware_Download | 10,447,787 | 4 classes | ✅ **Prime Candidate:** Contains multiple attack classes + benign; moderate flow size. |
+| `CTU-IoT-Malware-Capture-35-1` | Benign, DDoS_DoS, CnC, Malware_Download | 10,447,787 | 4 classes | ✅ **Prime Candidate:** Contains multiple attack classes + benign; moderate flow size. |
+| `CTU-IoT-Malware-Capture-36-1` | Benign, CnC, Malware_Download | 13,645,098 | 3 classes | ✅ **Prime Candidate:** Contains multiple attack classes + benign; moderate flow size. |
 | `CTU-IoT-Malware-Capture-39-1` | Benign, PortScan, CnC | 73,568,981 | 3 classes | ℹ️ Single dominant class or extreme volume (>50M rows). |
 | `CTU-IoT-Malware-Capture-42-1` | Benign, Malware_Download | 4,426 | 2 classes | ℹ️ Single dominant class or extreme volume (>50M rows). |
 | `CTU-IoT-Malware-Capture-43-1` | Benign, DDoS_DoS, PortScan, CnC, Malware_Download | 67,321,809 | 5 classes | ℹ️ Single dominant class or extreme volume (>50M rows). |
@@ -99,8 +99,8 @@ Under Proposal Section 3.4, evaluation requires testing on a **held-out scenario
 | `CTU-IoT-Malware-Capture-52-1` | Benign, PortScan, CnC, Malware_Download | 19,781,378 | 4 classes | ℹ️ Single dominant class or extreme volume (>50M rows). |
 | `CTU-IoT-Malware-Capture-60-1` | Benign, DDoS_DoS, CnC | 3,581,028 | 3 classes | ✅ **Prime Candidate:** Contains multiple attack classes + benign; moderate flow size. |
 | `CTU-IoT-Malware-Capture-7-1` | Benign, DDoS_DoS, CnC, Malware_Download | 11,454,714 | 4 classes | ✅ **Prime Candidate:** Contains multiple attack classes + benign; moderate flow size. |
-| `CTU-IoT-Malware-Capture-8-1` | Benign, PortScan | 6,378,293 | 2 classes | 🟡 Viable for PortScan-specific held-out generalization test. |
-| `CTU-IoT-Malware-Capture-9-1` | Benign, CnC | 10,403 | 2 classes | ℹ️ Single dominant class or extreme volume (>50M rows). |
+| `CTU-IoT-Malware-Capture-8-1` | Benign, CnC | 10,403 | 2 classes | ℹ️ Single dominant class or extreme volume (>50M rows). |
+| `CTU-IoT-Malware-Capture-9-1` | Benign, PortScan | 6,378,293 | 2 classes | 🟡 Viable for PortScan-specific held-out generalization test. |
 
 ---
 

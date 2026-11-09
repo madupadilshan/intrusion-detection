@@ -27,13 +27,16 @@ from pathlib import Path
 from collections import Counter
 from typing import Dict, Tuple, Any, List
 
-# Official 1-to-1 mapping between Kaggle/extracted CSVs and CTU IoT-23 scenarios
+# 1-to-1 mapping between the local CSV copy (dataset1..23.csv) and the official
+# IoT-23 v1.0.0 scenarios. Checked against the official conn.log.labeled files by
+# tools/verify_iot23_copy.py (first ts + uid of every file; decision D-039).
+# Fixed on 8 Nov 2026: dataset4/5 (9-1 / 8-1) and dataset15/16 (36-1 / 35-1) were swapped.
 SCENARIO_MAP: Dict[str, str] = {
     "dataset1.csv": "CTU-Honeypot-Capture-4-1",
     "dataset2.csv": "CTU-Honeypot-Capture-5-1",
     "dataset3.csv": "CTU-Honeypot-Capture-7-1",
-    "dataset4.csv": "CTU-IoT-Malware-Capture-8-1",
-    "dataset5.csv": "CTU-IoT-Malware-Capture-9-1",
+    "dataset4.csv": "CTU-IoT-Malware-Capture-9-1",
+    "dataset5.csv": "CTU-IoT-Malware-Capture-8-1",
     "dataset6.csv": "CTU-IoT-Malware-Capture-7-1",
     "dataset7.csv": "CTU-IoT-Malware-Capture-60-1",
     "dataset8.csv": "CTU-IoT-Malware-Capture-52-1",
@@ -43,8 +46,8 @@ SCENARIO_MAP: Dict[str, str] = {
     "dataset12.csv": "CTU-IoT-Malware-Capture-43-1",
     "dataset13.csv": "CTU-IoT-Malware-Capture-42-1",
     "dataset14.csv": "CTU-IoT-Malware-Capture-39-1",
-    "dataset15.csv": "CTU-IoT-Malware-Capture-35-1",
-    "dataset16.csv": "CTU-IoT-Malware-Capture-36-1",
+    "dataset15.csv": "CTU-IoT-Malware-Capture-36-1",
+    "dataset16.csv": "CTU-IoT-Malware-Capture-35-1",
     "dataset17.csv": "CTU-IoT-Malware-Capture-34-1",
     "dataset18.csv": "CTU-IoT-Malware-Capture-33-1",
     "dataset19.csv": "CTU-IoT-Malware-Capture-3-1",

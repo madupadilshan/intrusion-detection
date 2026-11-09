@@ -1,8 +1,8 @@
 metric,value
+data_source,synthetic
 total_camera_flows,5000
-benign_classified_flows,5000
 false_alarm_flows,0
-raw_benign_fpr,0.00000
-active_blocked_fpr,0.00000
-passive_alert_fpr,0.00000
-h1_clause_2_status,PASS
+benign_fpr,0.00000
+alert_rate,0.00000
+block_candidate_rate,0.00000
+h1_fpr_result,not tested (synthetic data)

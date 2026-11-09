@@ -624,8 +624,9 @@ class DatabaseService:
         event_id: str,
         status: Optional[str] = None,
         response_status: Optional[str] = None,
+        response_reason: Optional[str] = None,
     ) -> bool:
-        """Update incident confirmation status or response outcome."""
+        """Update incident confirmation status, response outcome, or the policy reason code."""
         if not self.is_connected() or not event_id:
             return False
         updates: Dict[str, Any] = {}
@@ -633,6 +634,8 @@ class DatabaseService:
             updates["status"] = status
         if response_status:
             updates["response_status"] = response_status
+        if response_reason:
+            updates["response_reason"] = response_reason
         if not updates:
             return False
         try:

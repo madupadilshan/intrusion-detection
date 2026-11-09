@@ -51,3 +51,10 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+
+// Attack events from the API and from Socket.IO carry `event_id` (and `_id`), not `id`.
+// Give every event an `id` so pages can find, confirm and update it.
+export const withEventId = (event) => ({
+  ...event,
+  id: event?.event_id || event?.id || event?._id,
+});

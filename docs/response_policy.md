@@ -1,117 +1,104 @@
-# Response Policy and Safety Guardrail Specifications
+# Response Policy and Safety Rules
 
-**Document Version:** 1.0.0  
-**Project:** Real-Time Intrusion Detection and Autonomous Response System for IP-Camera IoT Networks  
-**Group:** 03 — BICT (Hons), Faculty of Technology, University of Sri Jayewardenepura  
-**Governing Proposal Sections:** Sections 2.5, 3.4, 3.6, 3.7; Table 5; Requirements FR-06, FR-07; Research Question RQ5; Supervisor Checkpoint C7.
-
----
-
-## 1. Executive Summary & Purpose
-
-In an operational IP-camera surveillance network, an erroneous or unconstrained automated defense action risks severing mission-critical video streams, isolating the Network Video Recorder (NVR), or locking out system administrators. 
-
-This document defines the formal **Autonomous Response Policy and Safety Guardrails** governing the system. It enforces direction-aware rules, calibrated multi-class decision trees, sliding-window repeat coalescing, permanent allowlist immunity, and bounded rule lifetimes.
+**Version:** 2.0 (8 November 2026; replaces version 1.0)
+**Proposal:** Sections 2.5, 3.4, 3.7; Table 5; Table 9; Table 10; Table 11; FR-06, FR-07; RQ5
+**Code:** `core_engine/response_policy.py`, `core_engine/decision_engine.py` (`respond_to_outcome`)
+**Tests:** `tests/unit/test_response_policy.py`, `tests/unit/test_auto_response.py`
 
 ---
 
-## 2. Research Question Alignment (RQ5)
+## 1. Why this policy exists
 
-> **Research Question RQ5:**  
-> *How can an autonomous intrusion response engine mitigate malicious IP camera network traffic (DDoS, scans, C&C) without disrupting authorized administrative access or benign video streaming?*
+> **RQ5 (proposal 1.5):** "What safety rules do we need so that automatic response does not stop normal camera access?"
 
-**Policy Solution:**
-1. **Zero-Touch Benign Traffic:** Normal RTSP streaming, playback, and ONVIF discovery are never subjected to firewall drop actions.
-2. **Direction-Aware Targeting:** Incoming floods and scanner sweeps drop the external source IP; outgoing Command & Control beacons drop the external destination IP; local cameras are never blocked from transmitting to the NVR unless emergency local quarantine is specifically triggered.
-3. **Multi-Barrier Safety Verification:** Automated blocking requires passing seven independent, non-bypassable safety checkpoints.
+A wrong alert only wastes time. A wrong block can cut off the administrator or stop the NVR recording (proposal 2.5). So the system blocks only when **every** rule in Section 4 passes, every block ends by itself, and the administrator can always unblock by hand.
 
----
+## 2. From a flow to a decision
 
-## 3. Direction-Aware Mitigation Matrix
+1. Zeek writes a finished flow to `conn.log`. The live runner (`core_engine/runner.py`) reads it.
+2. The model gives the top class and its calibrated probability (the *confidence*).
+3. The decision engine compares the confidence with the two thresholds of that class (chosen in Step 17 from training data only, `reports/experiments/operational_thresholds.json`):
+   - below the **alert threshold** → ignored as noise;
+   - at or above the alert threshold → **alert** (saved in MongoDB, shown on the dashboard);
+   - at or above the **block threshold** → **block candidate** → goes to the response policy (Section 4).
+4. A class whose block threshold is `none` is **never blocked automatically**. It only raises alerts.
+5. **How the block thresholds are chosen (D-046, proposal 3.4).** Step 17 replays this whole rule (confidence threshold, then `min_repeats` candidates for the same target inside `repeat_window_seconds`, one block per target per `max_rule_minutes`) on the grouped out-of-fold training flows. The block threshold is the lowest value where at least 10 blocks happen, at least 95% of them are fired by a truly malicious flow, and at most 1% of the benign targets are blocked. Current values (9 Nov 2026): PortScan 0.30, CnC 0.39; DDoS_DoS and Malware_Download are alert only. See `reports/experiments/operational_thresholds.json`.
+5. Benign flows go only to the traffic summary (FR-03). They are never blocked.
 
-Per Group 03 Proposal Table 5 and Section 3.7, response actions are conditioned on both the predicted attack class and the verified network traffic direction:
+## 3. What is blocked, by class and direction (proposal Table 5)
 
-| Attack Class | Traffic Vector / Direction | Automated Action (If Safety Passes) | Target Entity | Duration | Default Reason Code |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Benign** | Any direction | Log flow aggregate to summary only. **NEVER BLOCK.** | None | — | `SKIP_BENIGN` |
-| **PortScan** | External Inbound (`outside -> camera`) | Alert. Block scanner source IP after `min_repeats` within window. | Source IP | 30 mins | `AUTO_PORTSCAN_REPEATED` |
-| **DDoS_DoS** | External Inbound (`outside -> camera`) | Alert. Rate-limit or drop source IP after `min_repeats`. | Source IP | 60 mins | `AUTO_DDOS_BLOCK` |
-| **CnC** | Internal Outbound (`camera -> outside`) | Alert. Drop communication to external C&C server. | Destination IP | 60 mins | `AUTO_CNC_DEST_BLOCK` |
-| **Malware_Download** | Inbound / Outbound | Alert. Drop staging source / quarantine infected device. | External IP | 60 mins | `AUTO_MALWARE_BLOCK` |
-| **Any Attack** | Below Confidence Threshold | Passive Alert only. No firewall modification. | None | — | `SKIP_LOW_CONFIDENCE` |
+"Local" means inside `lab.local_networks` in `config/settings.yaml` (the camera LAN, for example `192.168.50.0/24`). Everything else is "outside", including the private test network `10.10.10.0/24`.
 
----
+| Class | Typical direction | Target of the block | Rule time | Reason code |
+| --- | --- | --- | --- | --- |
+| Benign | any | never blocked | — | `SKIP_BENIGN` |
+| PortScan | outside → camera | the scanner (source IP), only after repeats | 30 min | `AUTO_PORTSCAN_REPEATED` |
+| DDoS_DoS | outside → camera | the flood source (source IP) | up to `max_rule_minutes` | `AUTO_DDOS_BLOCK` |
+| CnC | local device → outside | the outside destination (C&C server) | up to `max_rule_minutes` | `AUTO_CNC_DEST_BLOCK` |
+| Malware_Download | outside ↔ local | the outside host | up to `max_rule_minutes` | `AUTO_MALWARE_BLOCK` |
 
-## 4. The 7 Safety Checkpoints
+Notes:
+- Isolating a local device (Table 5: "isolate the device") is allowed only when `response.allow_device_isolation: true`. It is `false` by default, so a local camera is never blocked automatically.
+- Rate limiting (Table 5: "rate-limit or block") exists in the firewall adapters (`rate_limit()`), but the automatic policy uses block. Rate limiting can be used by hand.
 
-Before any automated firewall rule (`nftables` drop/rate-limit) is dispatched, the `ResponsePolicy` evaluates seven mandatory safety rules. If any check fails, **no mitigation action is applied**, but an audit event is logged with the corresponding `SKIP_*` reason code:
+## 4. The safety rules (all must pass)
 
 ```mermaid
 flowchart TD
-    A["Attack Event Received"] --> C1{"1. Auto-Response Master Enabled?"}
+    A["Block candidate"] --> C1{"1. auto_response on?"}
     C1 -- No --> S1["SKIP_AUTO_RESPONSE_DISABLED"]
-    C1 -- Yes --> C2{"2. Confidence >= Threshold?"}
+    C1 -- Yes --> C2{"2. Confidence >= block threshold?"}
     C2 -- No --> S2["SKIP_LOW_CONFIDENCE"]
-    C2 -- Yes --> C3{"3. Target on Allowlist?"}
-    C3 -- Yes --> S3["SKIP_ALLOWLIST (Immunity)"]
-    C3 -- No --> C4{"4. Private Network Target?"}
-    C4 -- Yes & No Isolate --> S4["SKIP_PRIVATE_TARGET"]
-    C4 -- External or Isolate OK --> C5{"5. Repeated >= min_repeats?"}
-    C5 -- No --> S5["SKIP_NOT_REPEATED (Candidate Alert)"]
-    C5 -- Yes --> C6["6. Assign Bounded Expiry (max_rule_minutes)"]
-    C6 --> C7["7. Generate Reason Code & Log Audit Trail"]
-    C7 --> ACT["Enforce Firewall Rule via Adapter"]
+    C2 -- Yes --> C3{"3. Target or source on the allowlist?"}
+    C3 -- Yes --> S3["SKIP_ALLOWLIST"]
+    C3 -- No --> C4{"4. Target is a local device?"}
+    C4 -- "Yes (and isolation off)" --> S4["SKIP_PRIVATE_TARGET"]
+    C4 -- No --> C5{"5. Seen min_repeats times in the window?"}
+    C5 -- No --> S5["SKIP_NOT_REPEATED"]
+    C5 -- Yes --> C6["6. Rule time = min(class time, max_rule_minutes)"]
+    C6 --> C7["7. Apply rule, save reason code and audit records"]
 ```
 
-### Checkpoint 1: Master Enablement (`auto_response`)
-- The system checks `settings.auto_response`. If disabled by the administrator, the engine operates in passive alerting mode only (`SKIP_AUTO_RESPONSE_DISABLED`).
+1. **Master switch.** `response.auto_response` in `settings.yaml`. **Default: off.** Turn it on only for planned lab tests, and write that in the lab logbook.
+2. **Confidence.** The confidence must reach the class block threshold from Step 17. `response.min_confidence` (default 0.30, D-046) is a lower limit for every class: a class threshold below it is raised to it.
+3. **Allowlist.** Router, sensor, admin PC and NVR (`allowlist` in `settings.yaml`) are never blocked. The firewall adapters check the allowlist again before they change any rule.
+4. **Local-network protection.** A target inside `lab.local_networks` is not blocked, unless device isolation is allowed.
+5. **Repeats.** The same target and class must be seen `min_repeats` times within `repeat_window_seconds` (default 3 times in 60 seconds). One high prediction never blocks by itself (proposal 3.4).
+6. **Rule expiry.** Every rule has a timeout and is removed by nftables when it ends (`max_rule_minutes`, default 30).
+7. **Audit.** Every block is saved in `blocklist` and `response_actions`, and the dashboard gets a `blocklist_update`. For every block candidate, the reason code (an `AUTO_*` code when acted, a `SKIP_*` code when not) is saved on the attack event as `response_reason`.
 
-### Checkpoint 2: Minimum Calibrated Confidence (`min_confidence`)
-- The predicted probability for the attack class must satisfy $P(\text{class}) \ge \tau_{\text{active}}$ (default $\ge 0.60 - 0.85$ depending on class). Low-confidence inferences generate alerts but never trigger automated firewall drops (`SKIP_LOW_CONFIDENCE`).
+While a block on an IP is active, new flows from the same attack do not create new rules (`already_blocked`). After a manual unblock, a new attack can be blocked again.
 
-### Checkpoint 3: Management Allowlist Immunity
-- Verified against the lab management allowlist (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`).
-- **Rule:** An allowlisted IP is **never blocked under any circumstances**. If an attack pattern originates from or targets an allowlisted IP, the action is downgraded to `ALERT_ONLY` with reason `SKIP_ALLOWLIST`.
+## 5. Settings the administrator can change
 
-### Checkpoint 4: Private Subnet Target Protection
-- Private IP addresses (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) represent local infrastructure.
-- Inbound drops must never be applied to internal camera IPs, as doing so would break local NVR ingestion. Private nodes are only isolated if the operator explicitly authorizes device quarantine (`SKIP_PRIVATE_TARGET`).
+| Setting | Where | Applied |
+| --- | --- | --- |
+| `auto_response`, `allow_device_isolation`, `adapter`, `local_networks` | `config/settings.yaml` | at server start |
+| `allowlist`, `min_confidence`, `min_repeats`, `repeat_window_seconds`, `max_rule_minutes` | dashboard Settings page (`PUT /api/settings`) | at once; each change is saved with its old value, new value, user, time and reason (FR-07) |
 
-### Checkpoint 5: Sliding-Window Repeat Coalescing (`min_repeats`)
-- To avoid over-reacting to transient network spikes or single-packet anomalies, the engine tracks event occurrences using a memory-efficient `collections.defaultdict(deque)` sliding window.
-- **Condition:** $\text{Count}((IP, \text{class})) \ge \text{min\_repeats}$ within $\text{repeat\_window\_seconds}$ (default: 3 occurrences within 60 seconds).
-- Single events produce an alert and increment the counter, but do not block (`SKIP_NOT_REPEATED`).
+## 6. Reason codes
 
-### Checkpoint 6: Bounded Expiry (`max_rule_minutes`)
-- No firewall rule is indefinite. Every automated block is injected into `nftables` sets with an explicit timeout flag (`timeout 30m` or `timeout 60m`).
-- Maximum rule duration is clamped to `max_rule_minutes` (default: 60 minutes) to prevent permanent network partitioning.
+| Code | Meaning |
+| --- | --- |
+| `AUTO_PORTSCAN_REPEATED` | Outside scanner blocked after repeated scans |
+| `AUTO_DDOS_BLOCK` | Flood source blocked |
+| `AUTO_DDOS_RATELIMIT` | Flood source rate-limited (manual use) |
+| `AUTO_CNC_DEST_BLOCK` | Outside C&C destination blocked |
+| `AUTO_MALWARE_BLOCK` | Outside download/staging host blocked |
+| `ADMIN_MANUAL_ENFORCEMENT` / `ADMIN_MANUAL_UNBLOCK` | Administrator block / unblock from the dashboard |
+| `SKIP_BENIGN` | Benign traffic; never blocked |
+| `SKIP_AUTO_RESPONSE_DISABLED` | Master switch is off |
+| `SKIP_LOW_CONFIDENCE` | Confidence below the block threshold (or the class is alert-only) |
+| `SKIP_ALLOWLIST` | Allowlisted management device |
+| `SKIP_PRIVATE_TARGET` | Target is a local camera-network device |
+| `SKIP_NOT_REPEATED` | Not repeated enough inside the time window yet |
 
-### Checkpoint 7: Complete Reason Code & Audit Invariant
-- Every executed block and every skipped action must be recorded with an immutable reason code to `system_logs` and `response_actions` in MongoDB.
+## 7. Where blocks are applied (proposal 1.2, Figure 5)
 
----
+| Mode | Who blocks | Setting |
+| --- | --- | --- |
+| Passive (default) | the lab router, by SSH + nftables (`sensor/ids_router.nft`) | `response.adapter: router` |
+| Inline | the sensor itself (`sensor/ids_inline.nft`) | `response.adapter: nftables` |
+| Development on Windows | nothing is blocked; rules are only recorded and marked `simulated` | `response.adapter: simulation` |
 
-## 5. Canonical Reason Codes
-
-| Reason Code | Type | Description |
-| :--- | :--- | :--- |
-| `AUTO_PORTSCAN_REPEATED` | Automated Block | External scanner blocked after exceeding probe repeat count. |
-| `AUTO_DDOS_BLOCK` | Automated Block | Volumetric flood source blocked after threshold exceedance. |
-| `AUTO_DDOS_RATELIMIT` | Automated Limit | Flooding source subjected to rate limiting. |
-| `AUTO_CNC_DEST_BLOCK` | Automated Block | Outbound C&C destination server blocked from camera reach. |
-| `AUTO_MALWARE_BLOCK` | Automated Block | Staging host blocked during malware download attempt. |
-| `MANUAL_BLOCK` | Operator Action | Security administrator manually enforced block via dashboard. |
-| `MANUAL_UNBLOCK` | Operator Action | Security administrator manually removed block via dashboard. |
-| `RULE_EXPIRED` | Maintenance | Timeout set expired and rule automatically aged out. |
-| `SKIP_BENIGN` | Guardrail Skip | Benign traffic flow; blocking prohibited. |
-| `SKIP_ALLOWLIST` | Guardrail Skip | Target is an allowlisted management asset (immunity triggered). |
-| `SKIP_PRIVATE_TARGET` | Guardrail Skip | Target is an internal IP camera; drop averted to maintain NVR. |
-| `SKIP_LOW_CONFIDENCE` | Guardrail Skip | Model prediction confidence below operational threshold. |
-| `SKIP_NOT_REPEATED` | Guardrail Skip | Flow has not met minimum repetition threshold within window. |
-| `SKIP_AUTO_RESPONSE_DISABLED` | Guardrail Skip | Master auto-response switch is disabled by administrator. |
-
----
-
-## 6. Implementation Reference
-
-The policy is implemented in [`core_engine/response_policy.py`](file:///d:/intrusion%20detection/core_engine/response_policy.py) and integrated into [`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py). Unit test suite [`tests/unit/test_response_policy.py`](file:///d:/intrusion%20detection/tests/unit/test_response_policy.py) validates all 7 safety invariants and fulfills Checkpoint C7.
+Results from the `simulation` adapter must never be reported as real blocking.

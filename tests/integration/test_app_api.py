@@ -519,3 +519,27 @@ def test_socketio_event_broadcast_reception(test_setup):
 
     client_sio.disconnect()
 
+
+
+def test_settings_change_is_applied_to_running_policy(test_setup):
+    """FR-07: a setting saved from the dashboard changes the running response policy at once,
+    a wrong value is refused, and GET /api/settings shows the values in use."""
+    client = test_setup["client"]
+    token = test_setup["admin_token"]
+    engine = test_setup["app"].config["decision_engine"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = client.put("/api/settings", headers=headers,
+                      json={"key": "min_repeats", "value": 7, "reason": "lab test"})
+    assert resp.status_code == 200
+    assert engine.policy.min_repeats == 7
+
+    bad = client.put("/api/settings", headers=headers, json={"key": "min_confidence", "value": 3})
+    assert bad.status_code == 400
+
+    current = client.get("/api/settings", headers=headers).get_json()["settings"]
+    assert current["min_repeats"] == 7
+    assert "allowlist" in current and "auto_response" in current
+
+    hist = client.get("/api/settings/history", headers=headers).get_json()["history"]
+    assert any(h["key"] == "min_repeats" and h["new_value"] == 7 for h in hist)

@@ -1,5 +1,14 @@
 # Project Execution Record and Command Log
 
+> **Correction notice (8 November 2026) — read this first.** A full check against the proposal found errors in earlier text. Where this file disagrees with the points below, the points below are correct (decisions D-039 to D-042 in `docs/decision_log.md`):
+> 1. The 5,000 "camera" flows of 31 Oct 2026 were **made by a script**, not captured from a Tapo C200 or any camera. The result "FPR 0.000%, H1 clause 2 PASS" is **withdrawn**. The FPR part of H1 is **not tested yet** (Step 20 in the lab).
+> 2. The Step 22 schema check used the same synthetic file, so **RQ3 is not answered yet**.
+> 3. Hypothesis H1 has two parts only: macro-F1 ≥ 0.85 on the held-out scenarios, and benign FPR ≤ 5% on our local camera traffic. Latency is a separate Table 9 target: median decision < 2 s and 95th percentile < 5 s, end to end. It is **not** "sub-second", and the model inference time (microseconds) is not the end-to-end time.
+> 4. The held-out macro-F1 is **below** the 0.85 target (see `reports/experiments/model_card.md` for the current numbers). This is reported as it is (proposal Table 9).
+> 5. Step 17 was redone: calibration and thresholds now come from grouped out-of-fold training data only (D-040).
+> 6. Four scenario names in the dataset map were swapped (8-1/9-1 and 35-1/36-1) and were corrected (D-039).
+> 7. The automatic response was not connected before 8 Nov 2026; it is now connected, off by default, and still has to be tested in the lab (D-041).
+
 **Project:** Real-Time Intrusion Detection and Response System for IP-Camera IoT Networks Using Machine Learning  
 **Team:** Group 03 — University of Sri Jayewardenepura  
 **Local Workspace:** `D:\intrusion detection`  
@@ -394,8 +403,9 @@ Use this document to reproduce any step, review past work, prepare for superviso
 * **Objective:** Ingest the complete official IoT-23 dataset (v1.0.0) into `data/raw/iot23/`, replace flawed unverified legacy data, compute cryptographic SHA-256 hashes across all 23 scenario files, count total connection flows and label breakdowns, and generate the definitive audit manifest (`reports/dataset_manifest.csv`) for scientific reproducibility (Proposal Section 3.2, Objective O1).
 * **Date:** 23 October 2026
 * **How It Was Done:**
-  1. Dataset Placement:
-     - Verified official IoT-23 files located in `D:\Download\archive` containing 23 scenario CSVs (`dataset1.csv` through `dataset23.csv`).
+  1. Dataset Placement & Verification:
+     - Verified source archive `D:\Download\archive.zip` (9,164,399,808 bytes, downloaded 2026-10-19 16:49) extracted into `D:\Download\archive` on 2026-10-23 21:53 containing 23 scenario CSVs (`dataset1.csv` through `dataset23.csv`).
+     - Verified authenticity against official CTU Stratosphere repository (`https://mcfp.felk.cvut.cz/publicDatasets/IoT-23-Dataset/` and `https://www.stratosphereips.org/datasets-iot23`) using `tools/verify_iot23_copy.py` (Proposal 3.2): 23/23 first flows match, 23/23 last flows match, and minor discrepancies verified verbatim against raw CTU server files via HTTP range requests (`reports/iot23_copy_verification.md`, D-039, D-046).
      - Moved all 23 scenario files (44.13 GB total) into the designated local folder `data/raw/iot23/`.
      - Confirmed `data/raw/` is strictly ignored by `.gitignore` so no multi-gigabyte data files enter Git version control.
   2. Manifest Script Implementation ([`ml_engine/manifest.py`](file:///d:/intrusion%20detection/ml_engine/manifest.py)):

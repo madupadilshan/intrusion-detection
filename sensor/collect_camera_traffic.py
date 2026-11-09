@@ -18,8 +18,9 @@ This module:
    - Device discovery & announcements (ONVIF WS-Discovery UDP 3702, SSDP UDP 1900, mDNS UDP 5353)
    - Network time synchronization (NTP UDP 123) and DNS resolution (UDP 53)
    - Background TCP keep-alive polling & telemetry
-3. Saves flow logs to `data/local/benign/<date>/conn.log` in streaming Zeek JSON format.
-4. Generates a development baseline audit report at `reports/experiments/camera_baseline_summary.md`.
+3. Saves synthetic flow logs to `data/local/synthetic/<date>/conn.log` (real lab captures go to `data/local/benign/`).
+4. Checks ANY conn.log with evaluate_camera_baseline_fpr(data_source="real"|"synthetic"). Only a REAL
+   lab capture counts for Hypothesis H1; synthetic data is a software test, never a result.
 """
 
 from __future__ import annotations
@@ -53,8 +54,8 @@ logging.basicConfig(
 logger = logging.getLogger("collect_camera_traffic")
 
 # Standard lab network IP allocation (Proposal 3.8, Step 4, settings.yaml)
-DEFAULT_CAMERA_IP = "192.168.50.101"
-DEFAULT_NVR_IP = "192.168.50.200"
+DEFAULT_CAMERA_IP = "192.168.50.30"   # lab plan, Section 3
+DEFAULT_NVR_IP = "192.168.50.20"     # lab plan; on the allowlist
 DEFAULT_GATEWAY_IP = "192.168.50.1"
 DEFAULT_ADMIN_PC_IP = "192.168.50.10"
 DEFAULT_SENSOR_IP = "192.168.50.5"
@@ -261,7 +262,7 @@ def collect_benign_camera_traffic(
     """Generate and record benign IP-camera network traffic flows matching Tapo C200 activities.
 
     Args:
-        output_dir: Root directory for local captures (`data/local/benign`).
+        output_dir: Root directory for synthetic test logs (`data/local/synthetic`).
         total_flows: Number of flow records to collect.
         session_weights: Proportions for each activity type.
         date_str: Subfolder date string (default: current UTC date).
@@ -304,247 +305,184 @@ def collect_benign_camera_traffic(
     return conn_log_path
 
 
+def _flagged(probs: np.ndarray, thresholds: Dict[str, Any], key: str) -> np.ndarray:
+    """Flows flagged at a threshold level, with the same rule as the decision engine:
+    the top class is an attack class AND its probability >= that class threshold."""
+    pred = np.argmax(probs, axis=1)
+    conf = probs.max(axis=1)
+    flags = np.zeros(len(pred), dtype=bool)
+    for idx, name in enumerate(CLASS_NAMES):
+        if idx == 0:
+            continue
+        t = (thresholds.get(name) or {}).get(key)
+        if t is not None:
+            flags |= (pred == idx) & (conf >= float(t))
+    return flags
+
+
+CLASS_NAMES = ["Benign", "DDoS_DoS", "PortScan", "CnC", "Malware_Download"]
+
+
 def evaluate_camera_baseline_fpr(
     conn_log_path: Path,
     bundle_path: Path = Path("ml_engine/models/ids_bundle_v1.joblib"),
     report_output_path: Path = Path("reports/experiments/camera_baseline_summary.md"),
     csv_output_path: Path = Path("reports/experiments/camera_baseline_summary.csv"),
+    data_source: str = "synthetic",
 ) -> Dict[str, Any]:
-    """Evaluate benign camera traffic through the production model bundle to measure Benign FPR (H1).
+    """Measure how many benign camera flows the deployed model calls an attack.
 
-    Args:
-        conn_log_path: Path to collected benign camera conn.log.
-        bundle_path: Path to ids_bundle_v1.joblib.
-        report_output_path: Destination for the markdown evaluation summary.
-        csv_output_path: Destination for per-session breakdown CSV.
-
-    Returns:
-        Evaluation summary metrics dictionary.
+    data_source:
+        "real"      - captured by Zeek from the lab camera (or approved simulator) on the
+                      mirror port. Only this counts for Hypothesis H1 (FPR <= 5%).
+        "synthetic" - made by generate_camera_flow() for software testing. NOT evidence.
     """
-    logger.info("Loading production model bundle from %s...", bundle_path)
+    if data_source not in ("real", "synthetic"):
+        raise ValueError("data_source must be 'real' or 'synthetic'")
     bundle = joblib.load(bundle_path)
-    pipeline = bundle["pipeline"]
     calibrated = bundle["calibrated_model"]
     thresholds = bundle["operational_thresholds"]
 
-    logger.info("Loading benign camera connection records from %s...", conn_log_path)
     records = []
+    skipped = 0
     with open(conn_log_path, "r", encoding="utf-8") as f:
         for line in f:
-            if line.strip():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            try:
                 records.append(json.loads(line))
-
+            except json.JSONDecodeError:
+                skipped += 1
     df_raw = pd.DataFrame(records)
     total_flows = len(df_raw)
-    logger.info("Total benign camera flows loaded: %d", total_flows)
+    if total_flows == 0:
+        raise ValueError(f"No flows found in {conn_log_path}")
 
-    # Transform through shared feature extraction engine
     feat_df = make_features(df_raw)
     nan_count = int(feat_df.isna().sum().sum())
-    assert nan_count == 0, f"Encountered {nan_count} NaNs in camera feature extraction"
-
-    # Pipeline default prediction
-    preds = pipeline.predict(feat_df)
-    # Calibrated probabilities
     probs = calibrated.predict_proba(feat_df)
+    preds = np.argmax(probs, axis=1)
 
-    # Class 0 is Benign
-    benign_correct = int((preds == 0).sum())
-    false_alarms = total_flows - benign_correct
+    false_alarms = int((preds != 0).sum())
     raw_fpr = false_alarms / total_flows
+    alert_flags = _flagged(probs, thresholds, "passive_alert_threshold")
+    block_flags = _flagged(probs, thresholds, "active_response_threshold")
+    breakdown = {CLASS_NAMES[int(k)]: int(v) for k, v in pd.Series(preds).value_counts().sort_index().items()}
+    proto_dist = df_raw["proto"].value_counts().to_dict() if "proto" in df_raw else {}
+    service_dist = df_raw["service"].value_counts().to_dict() if "service" in df_raw else {}
 
-    # Breakdown of false alarms by predicted class
-    pred_series = pd.Series(preds)
-    breakdown = pred_series.value_counts().to_dict()
-
-    # Active response threshold false positive rate (would it trigger active firewall block?)
-    # Attack classes: 1: DDoS_DoS, 2: PortScan, 3: CnC, 4: Malware_Download
-    active_blocked_count = 0
-    passive_alert_count = 0
-
-    for i in range(total_flows):
-        p_ddos = probs[i, 1]
-        p_scan = probs[i, 2]
-        p_cnc = probs[i, 3]
-        p_mal = probs[i, 4]
-
-        # Check Active Response Thresholds
-        if (
-            p_ddos >= thresholds["DDoS_DoS"]["active_response_threshold"]
-            or p_scan >= thresholds["PortScan"]["active_response_threshold"]
-            or p_cnc >= thresholds["CnC"]["active_response_threshold"]
-            or p_mal >= thresholds["Malware_Download"]["active_response_threshold"]
-        ):
-            active_blocked_count += 1
-
-        # Check Passive Alert Thresholds
-        if (
-            p_ddos >= thresholds["DDoS_DoS"]["passive_alert_threshold"]
-            or p_scan >= thresholds["PortScan"]["passive_alert_threshold"]
-            or p_cnc >= thresholds["CnC"]["passive_alert_threshold"]
-            or p_mal >= thresholds["Malware_Download"]["passive_alert_threshold"]
-        ):
-            passive_alert_count += 1
-
-    active_blocked_fpr = active_blocked_count / total_flows
-    passive_alert_fpr = passive_alert_count / total_flows
-
-    # Statistical summary by transport protocol and service
-    proto_dist = df_raw["proto"].value_counts().to_dict()
-    service_dist = df_raw["service"].value_counts().to_dict()
-
+    is_real = data_source == "real"
+    h1_result = ("met" if raw_fpr <= 0.05 else "not met") if is_real else "not tested (synthetic data)"
     summary = {
         "conn_log_path": str(conn_log_path),
+        "data_source": data_source,
         "total_camera_flows": total_flows,
-        "benign_correct_count": benign_correct,
+        "skipped_lines": skipped,
+        "feature_nan_count": nan_count,
         "false_alarm_count": false_alarms,
         "raw_fpr": raw_fpr,
-        "active_blocked_count": active_blocked_count,
-        "active_blocked_fpr": active_blocked_fpr,
-        "passive_alert_count": passive_alert_count,
-        "passive_alert_fpr": passive_alert_fpr,
-        "h1_clause_2_pass": raw_fpr <= 0.05,
+        "alert_count": int(alert_flags.sum()),
+        "alert_rate": float(alert_flags.mean()),
+        "block_candidate_count": int(block_flags.sum()),
+        "block_candidate_rate": float(block_flags.mean()),
+        "predicted_class_counts": breakdown,
+        "h1_fpr_result": h1_result,
         "proto_distribution": proto_dist,
         "service_distribution": service_dist,
     }
+    logger.info(
+        "Flows: %d | predicted as attack: %d (%.3f%%) | alerts: %d | block candidates: %d | H1: %s",
+        total_flows, false_alarms, raw_fpr * 100, summary["alert_count"], summary["block_candidate_count"], h1_result,
+    )
 
-    logger.info("Camera Baseline Evaluation Complete:")
-    logger.info("  Total Flows: %d", total_flows)
-    logger.info("  Raw Benign Accuracy: %.2f%% (%d / %d)", (benign_correct / total_flows) * 100, benign_correct, total_flows)
-    logger.info("  Raw False Alarm Rate (FPR): %.3f%% (Target <= 5.0%%)", raw_fpr * 100)
-    logger.info("  Active Blocking False Positive Rate: %.3f%%", active_blocked_fpr * 100)
-    logger.info("  Hypothesis H1 Clause 2 (FPR <= 5%%): %s", "PASS" if raw_fpr <= 0.05 else "FAIL")
-
-    # Export Summary CSV
-    df_metrics = pd.DataFrame([
-        {"metric": "total_camera_flows", "value": total_flows},
-        {"metric": "benign_classified_flows", "value": benign_correct},
-        {"metric": "false_alarm_flows", "value": false_alarms},
-        {"metric": "raw_benign_fpr", "value": f"{raw_fpr:.5f}"},
-        {"metric": "active_blocked_fpr", "value": f"{active_blocked_fpr:.5f}"},
-        {"metric": "passive_alert_fpr", "value": f"{passive_alert_fpr:.5f}"},
-        {"metric": "h1_clause_2_status", "value": "PASS" if raw_fpr <= 0.05 else "FAIL"},
-    ])
     csv_output_path.parent.mkdir(parents=True, exist_ok=True)
-    df_metrics.to_csv(csv_output_path, index=False)
-    logger.info("Saved camera baseline metrics to %s", csv_output_path)
+    pd.DataFrame([
+        {"metric": "data_source", "value": data_source},
+        {"metric": "total_camera_flows", "value": total_flows},
+        {"metric": "false_alarm_flows", "value": false_alarms},
+        {"metric": "benign_fpr", "value": f"{raw_fpr:.5f}"},
+        {"metric": "alert_rate", "value": f"{summary['alert_rate']:.5f}"},
+        {"metric": "block_candidate_rate", "value": f"{summary['block_candidate_rate']:.5f}"},
+        {"metric": "h1_fpr_result", "value": h1_result},
+    ]).to_csv(csv_output_path, index=False)
 
-    # Export Markdown Report
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    md_content = f"""# Benign IP-Camera Baseline Traffic Report (Step 20)
-
-**Project:** Real-Time Intrusion Detection and Response System for IP-Camera IoT Networks  
-**Governing Standard:** Proposal Section 1.6, 2.3, 3.4 (Level 3 Baseline), 5.1; Table 11; Hypothesis H1  
-**Date Generated:** {now_str}  
-**Dataset Source:** Local Tapo C200 IP-Camera Traffic Capture (`{conn_log_path}`)  
-**Model Bundle:** `{bundle_path}`  
-
----
-
-## 1. Executive Summary & Hypothesis H1 Verification
-
-| Metric | Target Standard | Measured Value | Evaluation Outcome |
-| :--- | :---: | :---: | :--- |
-| **Total Benign Flows** | $> 1,000$ flows | **{total_flows:,} flows** | ✅ Statistically Sufficient |
-| **Raw False Positive Rate (FPR)** | $\\le 5.0\\%$ (Hypothesis H1) | **{raw_fpr * 100:.3f}%** ({false_alarms} / {total_flows}) | **✅ PASS (Hypothesis H1 Clause 2)** |
-| **Active Blocking FPR** | $\\le 1.0\\%$ (Zero video drop) | **{active_blocked_fpr * 100:.3f}%** ({active_blocked_count} / {total_flows}) | **✅ PASS (Operational Guardrail)** |
-| **Passive Alert FPR** | $\\le 10.0\\%$ | **{passive_alert_fpr * 100:.3f}%** ({passive_alert_count} / {total_flows}) | ✅ Controlled Alert Surface |
-| **Feature Extraction NaNs** | Exactly 0 NaNs | **0 NaNs** (19 features) | ✅ Zero Feature Skew |
-
-> **Significance for Viva & Thesis Defense:**
-> Because the benchmark IoT-23 dataset contained no IP camera devices in its normal partition, this local capture provides the **empirical proof that our trained model generalizes seamlessly to real RTSP camera streaming** without triggering disruptive false firewall blocks.
-
----
-
-## 2. Traffic Composition & Protocol Breakdown
-
-### Transport Layer Protocols:
-"""
-    for proto, cnt in proto_dist.items():
-        pct = (cnt / total_flows) * 100
-        md_content += f"- **`{proto}`:** {cnt:,} flows ({pct:.2f}%)\n"
-
-    md_content += "\n### Application Services:\n"
-    for srv, cnt in service_dist.items():
-        pct = (cnt / total_flows) * 100
-        md_content += f"- **`{srv}`:** {cnt:,} flows ({pct:.2f}%)\n"
-
-    md_content += f"""
----
-
-## 3. Operational Multi-Session Camera Activities (Proposal 5.1)
-
-1. **RTSP 1080p H.264 Video Streaming:** Continuous TCP 554 / RTP UDP 30000+ payload transmission representing real-time surveillance streaming to NVR (`192.168.50.200`).
-2. **Camera Admin Management & Live View:** HTTP (port 80) and HTTPS (port 443) camera configuration sessions and pan-tilt-zoom control requests.
-3. **ONVIF / SSDP Device Discovery:** Multicast WS-Discovery probes (UDP 3702), SSDP (UDP 1900), and mDNS (UDP 5353) announcements.
-4. **Network Time & Name Resolution:** Periodic NTP time synchronization (UDP 123) and gateway DNS lookups (UDP 53).
-5. **Background TCP Keep-Alives:** Periodic low-volume handshake polling confirming connection health.
-
----
-
-## 4. Ethical Compliance & Data Privacy (Decision D-011)
-
-- **Zero Video Payload Storage:** The capture pipeline strictly extracts Zeek connection metadata (`conn.log`). Raw video frames, camera imagery, and audio streams are discarded immediately at the sensor NIC.
-- **Data Isolation:** Camera test captures are retained under the agreed 180-day research retention duration and permanently exempt from public Git tracking.
-"""
-
+    if is_real:
+        source_line = "**Data source:** REAL capture — Zeek `conn.log` from the lab mirror port (metadata only)"
+        note = (
+            "This is the Level 3 measurement for Hypothesis H1 (FPR <= 5% on the local IP-camera traffic we control). "
+            "Write the camera model (or simulator name), the capture dates and the activities in the lab logbook."
+        )
+    else:
+        source_line = "**Data source:** SYNTHETIC — made by `generate_camera_flow()` for software testing (decision D-038)"
+        note = (
+            "**This is not a measurement.** The flows were made by a script, not captured from a camera. They only show "
+            "that the pipeline runs end to end. They are not evidence for Hypothesis H1, and they must not be reported as results."
+        )
+    lines = [
+        "# Benign Camera Traffic Check (Step 20)",
+        "",
+        source_line + "  ",
+        f"**File:** `{conn_log_path}`  ",
+        f"**Model bundle:** `{bundle_path}`  ",
+        f"**Generated:** {now_str}",
+        "",
+        "> " + note,
+        "",
+        "## Results",
+        "",
+        "| Measure | Value | Proposal target |",
+        "| --- | ---: | --- |",
+        f"| Flows checked | {total_flows:,} | — |",
+        f"| Benign flows predicted as an attack (FPR) | {raw_fpr * 100:.3f}% ({false_alarms:,} / {total_flows:,}) | <= 5% (H1) → **{h1_result}** |",
+        f"| Flows that would raise an alert | {summary['alert_rate'] * 100:.3f}% ({summary['alert_count']:,}) | reported |",
+        f"| Flows that reach a block threshold | {summary['block_candidate_rate'] * 100:.3f}% ({summary['block_candidate_count']:,}) | reported (a block also needs the policy checks) |",
+        f"| Missing values after feature making | {nan_count} | 0 |",
+        "",
+        "Predicted classes: " + ", ".join(f"{k} {v:,}" for k, v in breakdown.items()),
+        "",
+        "Protocols: " + ", ".join(f"{k} {v:,}" for k, v in proto_dist.items()),
+        "",
+        "Services: " + ", ".join(f"{k} {v:,}" for k, v in service_dist.items()),
+        "",
+        "Only connection metadata is used; no video or audio is stored (proposal 3.8). "
+        "Keep periods follow `docs/ethics/data_retention_plan.md`.",
+        "",
+    ]
     report_output_path.parent.mkdir(parents=True, exist_ok=True)
-    report_output_path.write_text(md_content, encoding="utf-8")
-    logger.info("Saved camera baseline audit report to %s", report_output_path)
-
+    report_output_path.write_text("\n".join(lines), encoding="utf-8")
     return summary
 
 
 def main() -> None:
-    """CLI entrypoint for benign camera traffic collection and evaluation."""
-    parser = argparse.ArgumentParser(
-        description="Step 20: Collect and Evaluate Benign IP-Camera Network Traffic."
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=Path("data/local/benign"),
-        help="Destination directory for benign camera logs.",
-    )
-    parser.add_argument(
-        "--count",
-        type=int,
-        default=5000,
-        help="Number of camera connection flows to record/generate.",
-    )
-    parser.add_argument(
-        "--bundle-path",
-        type=Path,
-        default=Path("ml_engine/models/ids_bundle_v1.joblib"),
-        help="Path to production model bundle.",
-    )
-    parser.add_argument(
-        "--report-path",
-        type=Path,
-        default=Path("reports/experiments/camera_baseline_summary.md"),
-        help="Path to markdown evaluation report.",
-    )
-    parser.add_argument(
-        "--csv-path",
-        type=Path,
-        default=Path("reports/experiments/camera_baseline_summary.csv"),
-        help="Path to output CSV summary.",
-    )
+    """Command line.
+
+    Real lab capture (Step 20):
+        python sensor/collect_camera_traffic.py --conn-log /var/log/ids-zeek/conn.log --source real
+    Synthetic software test only:
+        python sensor/collect_camera_traffic.py --generate-synthetic --count 5000
+    """
+    parser = argparse.ArgumentParser(description="Step 20: check benign camera traffic against the model.")
+    parser.add_argument("--conn-log", type=Path, help="Zeek conn.log (JSON lines) to check.")
+    parser.add_argument("--source", choices=["real", "synthetic"], help="Where the conn.log came from.")
+    parser.add_argument("--generate-synthetic", action="store_true",
+                        help="Make a synthetic conn.log first (software test only; never a result).")
+    parser.add_argument("--output-dir", type=Path, default=Path("data/local/synthetic"))
+    parser.add_argument("--count", type=int, default=5000)
+    parser.add_argument("--bundle-path", type=Path, default=Path("ml_engine/models/ids_bundle_v1.joblib"))
+    parser.add_argument("--report-path", type=Path, default=Path("reports/experiments/camera_baseline_summary.md"))
+    parser.add_argument("--csv-path", type=Path, default=Path("reports/experiments/camera_baseline_summary.csv"))
     args = parser.parse_args()
 
-    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-    conn_log_path = collect_benign_camera_traffic(
-        output_dir=args.output_dir,
-        total_flows=args.count,
-        date_str=date_str,
-    )
-
-    evaluate_camera_baseline_fpr(
-        conn_log_path=conn_log_path,
-        bundle_path=args.bundle_path,
-        report_output_path=args.report_path,
-        csv_output_path=args.csv_path,
-    )
+    if args.generate_synthetic:
+        conn_log_path = collect_benign_camera_traffic(output_dir=args.output_dir, total_flows=args.count)
+        source = "synthetic"
+    else:
+        if args.conn_log is None or args.source is None:
+            parser.error("give --conn-log and --source (real|synthetic), or use --generate-synthetic")
+        conn_log_path, source = args.conn_log, args.source
+    evaluate_camera_baseline_fpr(conn_log_path, args.bundle_path, args.report_path, args.csv_path, data_source=source)
 
 
 if __name__ == "__main__":

@@ -1,125 +1,68 @@
-# Model Card: IoT IP-Camera Intrusion Detection Engine (v1.0.0)
+# Model Card: IP-Camera IDS Random Forest (v1.2.0)
 
-**Governing Proposal:** BICT Honours Research Proposal, Group 03, University of Sri Jayewardenepura  
-**Model Version:** `v1.0.0`  
-**Date Generated:** 2026-10-31 22:35:09  
-**Git Commit:** `1165df5`  
-**Model Bundle Path:** `ml_engine/models/ids_bundle_v1.joblib`  
-**Model Type:** Bagging Ensemble (`RandomForestClassifier`) with Sigmoid/Platt Calibration (`CalibratedClassifierCV`)  
+**Created:** 2026-11-09 10:56:34 · **Git commit:** `94fff92` · **scikit-learn:** 1.7.2  
+**Bundle:** `ml_engine/models/ids_bundle_v1.joblib` (pipeline, calibrated model, thresholds and results together; proposal 3.3 step 7)
 
----
+## 1. Model
 
-## 1. Model Details
+- Preprocessing: `OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1, min_frequency=50)` on 6 categorical features; 13 numeric features passed through (no scaling; proposal 3.3).
+- Classifier: `RandomForestClassifier(class_weight='balanced', max_depth=18, max_features='sqrt', min_samples_leaf=4, min_samples_split=5, n_estimators=100)`, chosen by random search inside grouped cross-validation (Step 14).
+- Calibration: one temperature on the log-probabilities (softmax); keeps the raw top class; fitted on grouped out-of-fold probabilities (method chosen in Step 17a: D-044 rule, D-045 final choice) (Step 17; method chosen in Step 17a, see `calibration_selection.md`, D-044).
+- Input: the 19 flow features made by `ml_engine/features.py` (proposal Table 6). Raw IP addresses, UID and file names are never inputs.
+- Output: one of 5 classes (Benign, DDoS_DoS, PortScan, CnC, Malware_Download), the confidence and the model version (FR-02).
 
-- **Developer:** Group 03 Research Team (Department of Information and Communication Technology, USJ).
-- **Model Architecture:**
-  - Preprocessing: `ColumnTransformer` with `OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1, min_frequency=50)` applied to 6 categorical columns.
-  - Estimator: `RandomForestClassifier(n_estimators=150, max_depth=25, min_samples_split=2, min_samples_leaf=4, max_features='log2', class_weight='balanced', random_state=42)`.
-  - Probability Calibration: `CalibratedClassifierCV(method='sigmoid')` with `FrozenEstimator`.
-- **Input Specification:** Exactly 19 flow-level statistical features derived from live Zeek `conn.log` streams via `ml_engine/features.py` (6 categorical, 13 numerical).
-- **Target Specification:** 5 mutually exclusive target classes (`0: Benign`, `1: DDoS_DoS`, `2: PortScan`, `3: CnC`, `4: Malware_Download`).
-- **License:** Research Prototype for Academic Examination.
+## 2. Intended use
 
----
+- Research prototype for a small, separated IP-camera lab network (proposal 1.2).
+- Uses connection metadata only; it does not read packet content.
+- Not a certified firewall product, and it does not claim to catch every new or zero-day attack (proposal 1.2).
 
-## 2. Intended Use & Scope
+## 3. Data
 
-- **Intended Domain:** Real-time intrusion detection and automated edge defense for IP-camera IoT local networks (e.g., Tapo C200 camera streaming subnets).
-- **Primary Deployment Mode:** Passive sensor mode with Zeek connection log tailing, emitting real-time Socket.IO alerts and executing nftables firewall responses on confirmed attacks.
-- **Out-of-Scope Uses:**
-  - General enterprise WAN intrusion detection.
-  - Deep Packet Inspection (DPI) or unencrypted payload inspection (the model uses flow metadata only).
-  - Autonomous blocking on critical gateway infrastructure (strictly blocked by allowlist guardrails).
+- Training: 1,384,070 flows sampled from 22 IoT-23 v1.0.0 scenarios (Step 12). The local CSV copy was checked against the official files (`reports/iot23_copy_verification.md`).
+- Held-out test (Level 2): `CTU-IoT-Malware-Capture-34-1`, 23,145 flows (no Malware_Download flows).
+- Local camera traffic (Level 3): **not yet measured.** The only file so far is synthetic software-test data (decision D-038); the real measurement is Step 20 in the lab.
+- No IoT-23 benign device is an IP camera (proposal 2.3), so results on IoT-23 do not show how the model behaves on camera traffic.
 
----
+## 4. Results
 
-## 3. Training & Validation Data
+| Level | Measure | Value | Proposal target (Table 9) |
+| --- | --- | ---: | --- |
+| 1. Grouped CV (22 scenarios) | Out-of-fold macro-F1 | 0.3422 | no target; reported |
+| 1. Grouped CV | Mean fold macro-F1 ± std | 0.3353 ± 0.1704 | no target; reported |
+| 2. Held-out 34-1 | Macro-F1, 5 classes | 0.4530 | ≥ 0.85 → **not met** |
+| 2. Held-out 34-1 | Macro-F1, classes present | 0.5662 | reported |
+| 2. Held-out 34-1 | Accuracy / weighted F1 | 0.8063 / 0.8285 | reported (not the main result, proposal 3.4) |
+| 2. Held-out 34-1 | IoT-23 benign flows predicted as attack | 5.148% | not the H1 measure (H1 uses local camera traffic) |
+| 2. Held-out 34-1 | IoT-23 benign flows reaching a block threshold | 2.236% | reported |
+| 3. Local camera traffic | Benign FPR | not measured yet | ≤ 5% |
+| Speed | Model inference per flow (PC) | 4.66 µs | end-to-end target: median < 2 s, p95 < 5 s (Step 37) |
 
-### Training Corpus (IoT-23 Benchmark):
-- **Flow Count:** 1,384,070 flows across 22 heterogeneous malware capture scenarios.
-- **Class Balancing:** Stratified sampling capped at $N=50,000$ rows per (scenario, class) combination with 100% minority preservation for `CnC` flows (Decision `D-016`).
-- **Imbalance Reduction:** Raw class ratio reduced from $4,354 : 1$ to $10.2 : 1$.
+### Per-class results on 34-1 (deployed calibrated model, top class)
 
-### Evaluation Architecture (Three-Level Plan - Decision `D-017`):
-1. **Level 1 (Grouped Cross-Validation):** 5-fold cross-validation grouped strictly by `scenario_id` (`StratifiedGroupKFold`) across all 22 training captures, completely preventing intra-session data leakage.
-2. **Level 2 (Held-Out Zero-Day Scenario):** Dedicated held-out capture `CTU-IoT-Malware-Capture-34-1` (Mirai botnet, 23,145 flows: 14,394 DDoS_DoS, 6,706 CnC, 1,923 Benign, 122 PortScan). Kept 100% untouched and unsealed only in Step 16 (Checkpoint C4).
-3. **Level 3 (Physical Lab Camera Baseline):** Physical Tapo C200 1080p RTSP/H.264 video streaming baseline (Step 20) and 6 controlled lab test scenarios (Phase 9).
+| Class | Support | Precision | Recall | F1 | PR-AUC |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Benign | 1,923 | 0.4997 | 0.9485 | 0.6546 | 0.9479 |
+| DDoS_DoS | 14,394 | 0.9999 | 0.9908 | 0.9953 | 0.9976 |
+| PortScan | 122 | 0.0424 | 0.9426 | 0.0812 | 0.8601 |
+| CnC | 6,706 | 0.9781 | 0.3671 | 0.5339 | 0.9859 |
+| Malware_Download | 0 | 0.0000 | 0.0000 | 0.0000 | — |
 
----
+## 5. Alert and block thresholds (Step 17; chosen from grouped out-of-fold training data only)
 
-## 4. Quantitative Performance Metrics
+| Class | Alert threshold | Block threshold | Action (Table 5) |
+| --- | ---: | ---: | --- |
+| DDoS_DoS | 0.33 | none — alert only | drop_source |
+| PortScan | 0.30 | 0.30 | drop_source |
+| CnC | 0.39 | 0.39 | block_destination_or_isolate |
+| Malware_Download | 0.30 | none — alert only | block_by_direction |
 
-### Summary Benchmark Table:
+A block also needs every safety rule of the response policy (master switch, allowlist, local-network protection, repeats inside the time window, rule expiry). See `docs/response_policy.md`.
 
-| Evaluation Milestone | Metric Name | Measured Value | Standard / Target | Status |
-| :--- | :--- | :---: | :---: | :--- |
-| **Level 1 (Grouped CV)** | Out-of-Fold Macro-F1 | **0.3630** | Cross-Scenario Baseline | ✅ PASS |
-| **Level 1 (Grouped CV)** | Out-of-Fold Accuracy | **45.00%** | 1,384,070 flows | ✅ PASS |
-| **Level 2 (Held-Out 34-1)** | Overall Accuracy | **76.72%** | Generalisation Baseline | ✅ PASS (+31.72% gain) |
-| **Level 2 (Held-Out 34-1)** | Weighted F1-Score | **0.7746** | Multi-class coherence | ✅ PASS |
-| **Level 2 (Held-Out 34-1)** | Macro-F1 (5 classes) | **0.4028** | $\ge 0.85$ (Raw Threshold) | ⚠️ Diagnosed (Zero Support) |
-| **Level 2 (Held-Out 34-1)** | Macro-F1 (4 present) | **0.5035** | Classes with samples | ✅ Verified |
-| **Level 2 (Held-Out 34-1)** | Benign False Positive Rate | **5.096%** | $\le 5.0\%$ (Hypothesis H1) | **✅ PASS** (98 / 1,923 flows) |
-| **Inference Efficiency** | Per-Flow Latency | **4.52 µs/flow** | $< 1,000,000$ µs (1.0 s) | **✅ PASS** (>220,000x faster) |
-| **Inference Efficiency** | Throughput | **221,181 flows/s** | Edge sensor capacity | **✅ PASS** |
+## 6. Limits
 
-### Per-Class Area Under Precision-Recall Curve (PR-AUC):
-- `DDoS_DoS`: **0.9976** (Flawless flood ranking)
-- `CnC`: **0.9786** (Exceptional botnet beacon ranking)
-- `Benign`: **0.9554** (High legitimate flow ranking)
-- `PortScan`: **0.8230** (Strong scanning reconnaissance ranking)
+- Held-out macro-F1 is below the H1 target. Likely reasons named in proposal 1.5: domain shift between scenarios, and too few examples in some classes. The per-class table shows which classes are weak.
+- Scenario 34-1 was opened in Step 16 before the Step 17 redo. Nothing in Step 17 was chosen from it, but this is reported as a limitation.
+- The model has not yet been tested on our own camera traffic (Level 3).
+- One feature-importance value or one decision path is not proof of what caused an attack (proposal 3.4).
 
----
-
-## 5. Cost-Sensitive Operational Decision Thresholds
-
-| Class Name | Passive Alert Threshold | Passive Precision | Passive Recall | Active Response Threshold | Active Precision | Active Recall | Firewall Policy |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **`Benign`** | N/A | 100.0% | 94.90% | N/A | 100.0% | 94.90% | `ALLOW_ALWAYS` |
-| **`DDoS_DoS`** | **0.50** | 99.99% | **99.07%** | **0.70** | **99.99%** | 99.07% | `drop_source` |
-| **`PortScan`** | **0.30** | 4.24% | **94.26%** | **0.65** | **4.32%** | 94.26% | `drop_source` |
-| **`CnC`** | **0.25** | 97.05% | **27.47%** | **0.60** | **95.05%** | 14.32% | `isolate_target` |
-| **`Malware_Download`** | **0.50** | N/A | **N/A** | **0.85** | **N/A** | N/A | `isolate_target` |
-
----
-
-## 6. Explainable Decision Rules & Audit Reason Codes
-
-### `DOS_HIGH_RATE_PACKET_FLOOD` (DDoS_DoS)
-- **Rule Split Threshold:** `resp_port_cat == well_known AND pkt_ratio <= 0.23 AND orig_ip_bytes > 59`
-- **Action:** nftables drop source IP (rate-limit/drop)
-- **Audit Explanation:** High-volume inbound unidirectional packet flood targeted at standard service ports with negligible return acknowledgment.
-
-### `SCAN_RAPID_PROBE_SWEEP` (PortScan)
-- **Rule Split Threshold:** `conn_state in (S0, REJ) AND duration < 0.05s AND resp_pkts == 0`
-- **Action:** nftables block source IP for 30 minutes
-- **Audit Explanation:** Unanswered TCP SYN probes traversing multiple ports in rapid succession without payload exchange.
-
-### `CNC_PERSISTENT_BEACON` (CnC)
-- **Rule Split Threshold:** `duration > 0.0s AND orig_bytes < 50 AND orig_pkts in (1, 2) AND resp_port_cat == dynamic`
-- **Action:** nftables isolate camera destination to external C&C IP
-- **Audit Explanation:** Periodic low-byte keepalive telemetry sent to an external dynamic destination port indicating botnet command session.
-
-### `MALWARE_STAGING_TRANSFER` (Malware_Download)
-- **Rule Split Threshold:** `resp_bytes > 5000 AND conn_state == SF AND service in (http, ftp)`
-- **Action:** nftables isolate infected IP camera immediately
-- **Audit Explanation:** Substantial inbound payload transferred over application layer service indicating binary staging or second-stage dropper.
-
----
-
-## 7. Ethical Considerations & Safety Guardrails
-
-1. **Management Allowlist:** The engine strictly enforces `config/settings.yaml` allowlists. IP addresses of the Sensor, Gateway router, NVR, and Admin workstation are permanently exempt from automated drop/isolate rules.
-2. **Private Network Checks:** Local internal camera devices are never blocked from internal management access unless anomalous outbound C&C communication is verified.
-3. **Multi-Event Thresholding:** Active blocking requires `min_repeats >= 3` occurrences within a 60-second window to prevent single transient packet anomalies from triggering disruptive firewall blocks.
-4. **Rule Expiration (TTL):** Every active nftables block rule automatically expires after 30 minutes unless refreshed by sustained attack telemetry.
-5. **Data Minimization:** Raw packet payloads are discarded immediately; flow metrics follow the 90/30/90 retention policy (Decision `D-011`).
-
----
-
-## 8. Caveats, Limitations & Next Steps
-
-- **Domain Shift on Benign Telemetry:** The IoT-23 dataset contains no IP camera streams in its benign partition. Evaluating benign false alarm rates on real 1080p camera traffic is explicitly scheduled for **Step 20**.
-- **Zero Support for Payload Downloads in 34-1:** `CTU-IoT-Malware-Capture-34-1` contains no file staging flows, which mathematically bounds raw unweighted 5-class Macro-F1.
-- **Track 1 Milestone Concluded:** With Step 18 complete, all offline dataset engineering, model training, benchmarking, calibration, and bundling are 100% complete.
-- **Next Phase:** Track 2 (Live Sensor Telemetry, Steps 19–22) integrating Zeek on the Linux sensor.

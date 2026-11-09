@@ -40,6 +40,7 @@ from core_engine.scanner_service import ScannerService, UnauthorizedSubnetError
 from core_engine.export_service import ExportService
 from core_engine.firewall import (
     get_firewall_adapter,
+    firewall_config_from_settings,
     BaseFirewallAdapter,
     AllowlistImmunityError,
 )
@@ -121,9 +122,7 @@ def create_app(
     app.config["exporter"] = exporter
 
     # Firewall Response Adapter (Step 33, Problem 3 Fix)
-    firewall_cfg = dict(settings_cfg.get("firewall", {}))
-    if not firewall_cfg.get("type") and settings_cfg.get("response", {}).get("adapter"):
-        firewall_cfg["type"] = settings_cfg.get("response", {}).get("adapter")
+    firewall_cfg = firewall_config_from_settings(settings_cfg)
 
     firewall = firewall_adapter or get_firewall_adapter(
         config=firewall_cfg,
@@ -145,6 +144,14 @@ def create_app(
         settings_path=settings_file if settings_file.exists() else None,
     )
     app.config["decision_engine"] = decision_inst
+
+    # Re-apply settings the administrator changed earlier from the dashboard (FR-07)
+    if decision_engine is None:
+        try:
+            stored = {k: db.get_setting(k) for k in DecisionEngine.RUNTIME_SETTING_KEYS}
+            decision_inst.apply_runtime_settings({k: v for k, v in stored.items() if v is not None})
+        except Exception as exc:
+            logger.warning("Could not apply stored runtime settings: %s", exc)
 
     # Live Pipeline Runner (Problem 1 Fix)
     zeek_inst = zeek_adapter or ZeekAdapter(
@@ -603,6 +610,9 @@ def create_app(
             firewall.unblock(ip=clean_ip, direction="all")
         except Exception as e:
             logger.error("Firewall adapter unblock failed: %s", e)
+        engine_obj = app.config.get("decision_engine")
+        if engine_obj is not None and hasattr(engine_obj, "forget_block"):
+            engine_obj.forget_block(clean_ip)
 
         unblocked_count = db.remove_from_blocklist(ip=clean_ip, reason=reason, actor=actor)
         if unblocked_count == 0:
@@ -650,9 +660,20 @@ def create_app(
             val = db.get_setting(key)
             return jsonify({"status": "success", "key": key, "value": val}), 200
 
-        # Return primary operational settings
-        primary_keys = ["allowlist", "min_confidence", "min_repeats", "repeat_window_seconds", "max_rule_minutes"]
-        settings_map = {k: db.get_setting(k) for k in primary_keys}
+        # Return the values the running response policy uses now (FR-07).
+        # Values saved from the dashboard override settings.yaml; read-only items
+        # (auto_response, adapter) come from settings.yaml.
+        engine_obj = app.config.get("decision_engine")
+        settings_map: Dict[str, Any] = {}
+        if engine_obj is not None and hasattr(engine_obj, "get_runtime_settings"):
+            settings_map.update(engine_obj.get_runtime_settings())
+        for k in DecisionEngine.RUNTIME_SETTING_KEYS:
+            stored = db.get_setting(k)
+            if stored is not None:
+                settings_map[k] = stored
+        settings_map["adapter"] = getattr(firewall, "name", "unknown")
+        settings_map["firewall_simulated"] = bool(getattr(firewall, "is_simulated", True))
+        settings_map["editable_keys"] = list(DecisionEngine.RUNTIME_SETTING_KEYS)
         return jsonify({"status": "success", "settings": settings_map}), 200
 
     @app.route("/api/settings", methods=["PUT"])
@@ -670,10 +691,21 @@ def create_app(
         if not key:
             return jsonify({"error": "Bad Request", "message": "Setting 'key' must be specified."}), 400
 
+        engine_obj = app.config.get("decision_engine")
+        if key in DecisionEngine.RUNTIME_SETTING_KEYS:
+            try:
+                value = DecisionEngine.validate_runtime_setting(key, value)
+            except (ValueError, TypeError) as exc:
+                return jsonify({"error": "Bad Request", "message": str(exc)}), 400
+
         actor = getattr(g, "current_user", {}).get("sub", "admin")
         success = db.set_setting(key=key, value=value, updated_by=actor, reason=reason)
         if not success:
             return jsonify({"error": "Failed to update setting."}), 500
+
+        # Apply the new value to the running response policy at once (FR-07)
+        if engine_obj is not None and key in DecisionEngine.RUNTIME_SETTING_KEYS:
+            engine_obj.apply_runtime_settings({key: value})
 
         # Broadcast settings update
         settings_payload = {
@@ -695,11 +727,17 @@ def create_app(
     def get_settings_history():
         """Retrieve full immutable change history for an operational setting."""
         key = request.args.get("key", "").strip()
-        if not key:
-            return jsonify({"error": "Bad Request", "message": "Provide 'key' parameter."}), 400
+        if key:
+            history = db.get_setting_history(key)
+            return jsonify({"status": "success", "key": key, "history": history}), 200
 
-        history = db.get_setting_history(key)
-        return jsonify({"status": "success", "key": key, "history": history}), 200
+        # No key: combined history of all dashboard settings, newest first
+        combined: List[Dict[str, Any]] = []
+        for k in DecisionEngine.RUNTIME_SETTING_KEYS:
+            for item in db.get_setting_history(k):
+                combined.append({**item, "key": k})
+        combined.sort(key=lambda h: str(h.get("updated_at", "")), reverse=True)
+        return jsonify({"status": "success", "key": None, "history": combined}), 200
 
     # =========================================================================
     # 8. Log Export & System Audit (FR-08)

@@ -1,7 +1,7 @@
 # IoT-23 Sampling & Feature Extraction Report (Step 12 & 13)
 
-**Generated:** 2026-10-25 23:21:04  
-**Execution Runtime:** 256.83 seconds (4.28 minutes)  
+**Generated:** 2026-11-09 10:54:37  
+**Execution Runtime:** 397.39 seconds (6.62 minutes)  
 **Fixed Random Seed:** `42` (`config/settings.yaml`)  
 **Sampling Cap:** $N = 50,000$ flows per (scenario, class)  
 **Primary Engine:** `ml_engine/features.py` (`make_features`)  
@@ -63,8 +63,8 @@ This report documents the execution of **Step 12 (Sampling and class balance)** 
 | `CTU-IoT-Malware-Capture-21-1` | Train / Level 1 CV | 3,286 | 3,286 | 3,272 | 0 | 0 | 14 | 0 |
 | `CTU-IoT-Malware-Capture-3-1` | Train / Level 1 CV | 150,141 | 54,544 | 4,536 | 0 | 50,000 | 8 | 0 |
 | `CTU-IoT-Malware-Capture-33-1` | Train / Level 1 CV | 54,454,591 | 155,278 | 50,000 | 0 | 50,000 | 5,278 | 50,000 |
-| `CTU-IoT-Malware-Capture-35-1` | Train / Level 1 CV | 13,645,095 | 68,351 | 2,663 | 0 | 0 | 15,688 | 50,000 |
-| `CTU-IoT-Malware-Capture-36-1` | Train / Level 1 CV | 10,447,784 | 100,093 | 50,000 | 50,000 | 0 | 81 | 12 |
+| `CTU-IoT-Malware-Capture-35-1` | Train / Level 1 CV | 10,447,784 | 100,093 | 50,000 | 50,000 | 0 | 81 | 12 |
+| `CTU-IoT-Malware-Capture-36-1` | Train / Level 1 CV | 13,645,095 | 68,351 | 2,663 | 0 | 0 | 15,688 | 50,000 |
 | `CTU-IoT-Malware-Capture-39-1` | Train / Level 1 CV | 73,568,304 | 58,867 | 7,337 | 0 | 50,000 | 1,530 | 0 |
 | `CTU-IoT-Malware-Capture-42-1` | Train / Level 1 CV | 4,426 | 4,426 | 4,420 | 0 | 0 | 0 | 6 |
 | `CTU-IoT-Malware-Capture-43-1` | Train / Level 1 CV | 67,321,809 | 203,498 | 50,000 | 50,000 | 50,000 | 3,498 | 50,000 |
@@ -74,8 +74,8 @@ This report documents the execution of **Step 12 (Sampling and class balance)** 
 | `CTU-IoT-Malware-Capture-52-1` | Train / Level 1 CV | 19,781,378 | 51,814 | 1,794 | 0 | 50,000 | 6 | 14 |
 | `CTU-IoT-Malware-Capture-60-1` | Train / Level 1 CV | 3,581,028 | 52,571 | 2,476 | 50,000 | 0 | 95 | 0 |
 | `CTU-IoT-Malware-Capture-7-1` | Train / Level 1 CV | 11,454,714 | 145,362 | 50,000 | 39,584 | 0 | 5,778 | 50,000 |
-| `CTU-IoT-Malware-Capture-8-1` | Train / Level 1 CV | 6,378,293 | 72,548 | 22,548 | 0 | 50,000 | 0 | 0 |
-| `CTU-IoT-Malware-Capture-9-1` | Train / Level 1 CV | 10,403 | 10,403 | 2,181 | 0 | 0 | 8,222 | 0 |
+| `CTU-IoT-Malware-Capture-8-1` | Train / Level 1 CV | 10,403 | 10,403 | 2,181 | 0 | 0 | 8,222 | 0 |
+| `CTU-IoT-Malware-Capture-9-1` | Train / Level 1 CV | 6,378,293 | 72,548 | 22,548 | 0 | 50,000 | 0 | 0 |
 | **Training Total** | **22 Scenarios** | **325,276,561** | **1,384,070** | **345,424** | **239,585** | **500,000** | **48,992** | **250,069** |
 | **Held-Out Total** | **1 Scenario** | **23,145** | **23,145** | **1,923** | **14,394** | **122** | **6,706** | **0** |
 
@@ -95,5 +95,5 @@ The generated training feature matrix was verified against all project constrain
 3. **Data Integrity:**
    - Total rows in `train_features.parquet`: `1,384,070`
    - Total NaN / Null values across all columns: **0**
-   - Memory usage of training dataframe: **~758.28 MB**
+   - Memory usage of training dataframe: **~1050.29 MB**
    - Peak RAM consumed during sampling: **< 180 MB** (strictly within < 1 GB budget)

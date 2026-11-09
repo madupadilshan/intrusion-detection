@@ -1,0 +1,157 @@
+{
+  "meta": {
+    "generated": "2026-11-09 10:05:47",
+    "rows": 1384070,
+    "scenarios": 22,
+    "folds": 5,
+    "decision": "D-044 (rule), D-045 (final choice)",
+    "data": "grouped out-of-fold probabilities from Step 14; held-out scenario not used",
+    "scoring": "cross-fitted by fold",
+    "min_class_recall_rule": 0.05
+  },
+  "chosen_method": "temperature",
+  "reason": "D-045: only methods that keep the Random Forest's top class are allowed (none, temperature); 'temperature' has the lower mean Brier score",
+  "d044_rule_choice": {
+    "chosen_method": "multinomial",
+    "reason": "every class has recall >= 0.05 for: multinomial, multinomial_balanced; 'multinomial' has the highest macro-F1 among them"
+  },
+  "results": {
+    "none": {
+      "macro_f1": 0.3422,
+      "recall": {
+        "Benign": 0.5426,
+        "DDoS_DoS": 0.0016,
+        "PortScan": 0.3831,
+        "CnC": 0.4747,
+        "Malware_Download": 0.7365
+      },
+      "precision": {
+        "Benign": 0.3803,
+        "DDoS_DoS": 0.3311,
+        "PortScan": 0.5881,
+        "CnC": 0.1017,
+        "Malware_Download": 0.549
+      },
+      "f1": {
+        "Benign": 0.4472,
+        "DDoS_DoS": 0.0032,
+        "PortScan": 0.464,
+        "CnC": 0.1674,
+        "Malware_Download": 0.6291
+      },
+      "min_class_recall": 0.0016,
+      "mean_brier": 0.1759,
+      "classes_reaching_block_rule": []
+    },
+    "sigmoid_per_class": {
+      "macro_f1": 0.3633,
+      "recall": {
+        "Benign": 0.3632,
+        "DDoS_DoS": 0.2429,
+        "PortScan": 0.5323,
+        "CnC": 0.0004,
+        "Malware_Download": 0.7365
+      },
+      "precision": {
+        "Benign": 0.3356,
+        "DDoS_DoS": 0.4375,
+        "PortScan": 0.5185,
+        "CnC": 0.0007,
+        "Malware_Download": 0.5496
+      },
+      "f1": {
+        "Benign": 0.3488,
+        "DDoS_DoS": 0.3124,
+        "PortScan": 0.5253,
+        "CnC": 0.0005,
+        "Malware_Download": 0.6295
+      },
+      "min_class_recall": 0.0004,
+      "mean_brier": 0.1418,
+      "classes_reaching_block_rule": []
+    },
+    "temperature": {
+      "macro_f1": 0.3422,
+      "recall": {
+        "Benign": 0.5426,
+        "DDoS_DoS": 0.0016,
+        "PortScan": 0.3831,
+        "CnC": 0.4747,
+        "Malware_Download": 0.7365
+      },
+      "precision": {
+        "Benign": 0.3803,
+        "DDoS_DoS": 0.3311,
+        "PortScan": 0.5881,
+        "CnC": 0.1017,
+        "Malware_Download": 0.549
+      },
+      "f1": {
+        "Benign": 0.4472,
+        "DDoS_DoS": 0.0032,
+        "PortScan": 0.464,
+        "CnC": 0.1674,
+        "Malware_Download": 0.6291
+      },
+      "min_class_recall": 0.0016,
+      "mean_brier": 0.1454,
+      "classes_reaching_block_rule": []
+    },
+    "multinomial": {
+      "macro_f1": 0.375,
+      "recall": {
+        "Benign": 0.4981,
+        "DDoS_DoS": 0.3709,
+        "PortScan": 0.5705,
+        "CnC": 0.1417,
+        "Malware_Download": 0.2634
+      },
+      "precision": {
+        "Benign": 0.354,
+        "DDoS_DoS": 0.5831,
+        "PortScan": 0.6005,
+        "CnC": 0.0477,
+        "Malware_Download": 0.5271
+      },
+      "f1": {
+        "Benign": 0.4139,
+        "DDoS_DoS": 0.4534,
+        "PortScan": 0.5851,
+        "CnC": 0.0713,
+        "Malware_Download": 0.3513
+      },
+      "min_class_recall": 0.1417,
+      "mean_brier": 0.1765,
+      "classes_reaching_block_rule": [
+        "PortScan"
+      ]
+    },
+    "multinomial_balanced": {
+      "macro_f1": 0.3359,
+      "recall": {
+        "Benign": 0.4946,
+        "DDoS_DoS": 0.3621,
+        "PortScan": 0.2696,
+        "CnC": 0.4074,
+        "Malware_Download": 0.2634
+      },
+      "precision": {
+        "Benign": 0.3745,
+        "DDoS_DoS": 0.587,
+        "PortScan": 0.5892,
+        "CnC": 0.0468,
+        "Malware_Download": 0.527
+      },
+      "f1": {
+        "Benign": 0.4263,
+        "DDoS_DoS": 0.4479,
+        "PortScan": 0.37,
+        "CnC": 0.084,
+        "Malware_Download": 0.3513
+      },
+      "min_class_recall": 0.2634,
+      "mean_brier": 0.1932,
+      "classes_reaching_block_rule": []
+    }
+  }
+}

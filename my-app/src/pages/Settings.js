@@ -10,19 +10,18 @@ import Layout from "../components/Layout";
 import apiClient from "../services/api";
 
 const Settings = () => {
+  // Shown until the server answers; the real values come from GET /api/settings
   const [settings, setSettings] = useState({
-    min_confidence: 0.85,
+    min_confidence: 0.30,
     min_repeats: 3,
     repeat_window_seconds: 60,
-    max_rule_minutes: 60,
-    auto_response: true,
-    management_allowlist: [
-      "192.168.50.1",
-      "192.168.50.5",
-      "192.168.50.10",
-      "192.168.50.20",
-    ],
+    max_rule_minutes: 30,
+    auto_response: false,
+    adapter: "unknown",
+    firewall_simulated: true,
+    management_allowlist: [],
   });
+  const [original, setOriginal] = useState({});
   const [history, setHistory] = useState([]);
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState("");
@@ -34,8 +33,15 @@ const Settings = () => {
         apiClient.get("/api/settings/history").catch(() => ({ data: { history: [] } })),
       ]);
 
-      if (setRes.data) {
-        setSettings((prev) => ({ ...prev, ...setRes.data }));
+      const server = setRes.data?.settings;
+      if (server) {
+        const merged = {
+          ...server,
+          min_confidence: server.min_confidence ?? 0.30,
+          management_allowlist: server.allowlist || [],
+        };
+        setSettings((prev) => ({ ...prev, ...merged }));
+        setOriginal(merged);
       }
       if (histRes.data?.history) {
         setHistory(histRes.data.history);
@@ -55,14 +61,25 @@ const Settings = () => {
     setNotification("");
 
     try {
-      const res = await apiClient.put("/api/settings", settings);
-      if (res.data) {
-        setNotification("Operational thresholds successfully updated and logged in audit trail.");
-        loadSettings();
+      // The API saves ONE setting per request ({key, value, reason}) with its history (FR-07)
+      const keys = ["min_confidence", "min_repeats", "repeat_window_seconds", "max_rule_minutes"];
+      const changed = keys.filter((k) => settings[k] !== original[k]);
+      if (changed.length === 0) {
+        setNotification("No change to save.");
+        return;
       }
+      for (const k of changed) {
+        await apiClient.put("/api/settings", {
+          key: k,
+          value: settings[k],
+          reason: "Changed from the dashboard Settings page",
+        });
+      }
+      setNotification("Saved: " + changed.join(", ") + ". Each change is kept in the audit history.");
+      loadSettings();
     } catch (err) {
       setNotification(
-        err.response?.data?.error || "Failed to save settings. Admin privileges required."
+        err.response?.data?.message || err.response?.data?.error || "Failed to save settings. Admin privileges required."
       );
     } finally {
       setSaving(false);
@@ -98,20 +115,24 @@ const Settings = () => {
                 Autonomous Mitigation Master Switch
               </h3>
               <p className="text-xs text-gray-400 mt-0.5">
-                When enabled, the system automatically enforces nftables drops for repeated high-confidence attacks.
+                When on, a block happens only after every safety rule passes (allowlist, local-network protection, confidence, repeats, rule expiry).
               </p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.auto_response}
-                onChange={(e) =>
-                  setSettings({ ...settings, auto_response: e.target.checked })
-                }
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-            </label>
+            <div className="text-right text-xs">
+              <span
+                className={`px-2 py-1 rounded border font-semibold ${
+                  settings.auto_response
+                    ? "bg-red-950 text-red-300 border-red-700"
+                    : "bg-gray-900 text-gray-300 border-gray-700"
+                }`}
+              >
+                {settings.auto_response ? "ON" : "OFF"}
+              </span>
+              <p className="text-[11px] text-gray-500 mt-1">
+                Set in config/settings.yaml (response.auto_response). Turn on only for planned lab tests.
+                {" "}Adapter: {settings.adapter}{settings.firewall_simulated ? " (simulation: nothing is really blocked)" : ""}
+              </p>
+            </div>
           </div>
 
           {/* Operational Thresholds Grid */}
@@ -124,12 +145,12 @@ const Settings = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
                 <label className="block text-gray-400 mb-1">
-                  Minimum Confidence Threshold (0.50 – 0.99)
+                  Minimum Confidence for Any Block (0.30 – 0.99)
                 </label>
                 <div className="flex items-center gap-3">
                   <input
                     type="range"
-                    min="0.5"
+                    min="0.3"
                     max="0.99"
                     step="0.01"
                     value={settings.min_confidence}
@@ -146,7 +167,7 @@ const Settings = () => {
                   </span>
                 </div>
                 <span className="text-[11px] text-gray-500">
-                  Model confidence required before response candidate evaluation.
+                  Lowest confidence for any automatic block. Each class also has its own block threshold from Step 17 (D-046).
                 </span>
               </div>
 
@@ -254,7 +275,7 @@ const Settings = () => {
               >
                 <span className="text-emerald-300">{ip}</span>
                 <span className="text-[10px] text-gray-500 font-sans">
-                  {idx === 0 ? "Gateway" : idx === 1 ? "IDS Sensor" : idx === 2 ? "Admin PC" : "NVR"}
+                  never blocked
                 </span>
               </div>
             ))}
@@ -269,14 +290,19 @@ const Settings = () => {
           </div>
           <div className="divide-y divide-gray-800/60 text-xs">
             {history.length > 0 ? (
-              history.slice(0, 5).map((h, idx) => (
+              history.slice(0, 10).map((h, idx) => (
                 <div key={idx} className="p-3 flex items-center justify-between text-gray-400">
                   <div className="space-y-0.5">
-                    <span className="text-gray-200 font-semibold">{h.actor || "admin"}</span>
-                    <span className="text-gray-500 block text-[11px]">{h.note || "Updated thresholds"}</span>
+                    <span className="text-gray-200 font-semibold">
+                      {h.updated_by || "admin"} changed {h.key}
+                    </span>
+                    <span className="text-gray-500 block text-[11px]">
+                      {JSON.stringify(h.old_value)} → {JSON.stringify(h.new_value)}
+                      {h.reason ? " — " + h.reason : ""}
+                    </span>
                   </div>
                   <span className="text-gray-500 text-[11px]">
-                    {h.timestamp ? new Date(h.timestamp).toLocaleString() : "Recently"}
+                    {h.updated_at ? new Date(h.updated_at).toLocaleString() : ""}
                   </span>
                 </div>
               ))

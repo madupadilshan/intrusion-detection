@@ -173,6 +173,7 @@ def test_schema_check_full_pipeline_execution(tmp_path, mock_feature_dfs):
         bundle_path=DEFAULT_MODEL_BUNDLE,
         output_md=report_md,
         output_csv=report_csv,
+        data_source="synthetic",
     )
 
     assert success is True
@@ -184,7 +185,8 @@ def test_schema_check_full_pipeline_execution(tmp_path, mock_feature_dfs):
     assert (csv_df["overall_feature_status"] == "PASS").all()
 
     md_content = report_md.read_text(encoding="utf-8")
-    assert "Offline vs Live Feature Schema Audit Report (Step 22)" in md_content
-    assert "Supervisor Checkpoint C6" in md_content
+    assert "Offline vs Live Feature Check (Step 22)" in md_content
+    assert "Data source: SYNTHETIC" in md_content
+    assert "NOT evidence" in md_content
     assert "Research Question RQ3" in md_content
 

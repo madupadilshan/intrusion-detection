@@ -4,7 +4,6 @@ Governing Standards:
 - Group 03 Proposal: Sections 2.5, 3.5; Objective O3; Research Question RQ3; Table 11
 - Step-by-Step Guide: Step 22 (Offline vs live feature check / schema check)
 - Decision Log: D-026
-- Supervisor Checkpoint: C6 (Feature alignment and zero training-serving skew)
 
 Audits:
 1. Exact column names and locked ordering (19 candidate features).
@@ -13,7 +12,7 @@ Audits:
 4. Numerical dynamic ranges, physical feasibility, and statistical distribution shifts (KS 2-sample test).
 5. Categorical cardinality, domain coverage, and novel unseen category handling by the preprocessor.
 6. End-to-end inference execution against the production model bundle (ids_bundle_v1.joblib).
-7. Formal synthesis answering Research Question RQ3.
+7. A report that states whether the live data is real or synthetic (only real data answers RQ3).
 """
 
 from __future__ import annotations
@@ -54,7 +53,7 @@ logger = logging.getLogger("schema_check")
 
 # Default input and output paths
 DEFAULT_OFFLINE_PATH = PROJECT_ROOT / "data" / "processed" / "train_features.parquet"
-DEFAULT_LIVE_LOG_PATH = PROJECT_ROOT / "data" / "local" / "benign" / "2026-10-31" / "conn.log"
+DEFAULT_LIVE_LOG_PATH = PROJECT_ROOT / "data" / "local" / "synthetic" / "2026-10-31" / "conn.log"
 DEFAULT_MODEL_BUNDLE = PROJECT_ROOT / "ml_engine" / "models" / "ids_bundle_v1.joblib"
 DEFAULT_REPORT_MD = PROJECT_ROOT / "reports" / "schema_check.md"
 DEFAULT_REPORT_CSV = PROJECT_ROOT / "reports" / "schema_check.csv"
@@ -270,8 +269,12 @@ def run_full_schema_check(
     bundle_path: Path,
     output_md: Path,
     output_csv: Path,
+    data_source: str = "synthetic",
 ) -> bool:
-    """Execute all schema verification stages and publish reports."""
+    """Execute all schema verification stages and publish reports.
+
+    data_source: "real" (Zeek capture from the lab) or "synthetic" (software test data).
+    """
     logger.info("Loading offline training features from: %s", offline_path)
     offline_df = pd.read_parquet(offline_path)
 
@@ -334,144 +337,108 @@ def run_full_schema_check(
     pd.DataFrame(summary_rows).to_csv(output_csv, index=False)
     logger.info("Exported schema summary CSV to: %s", output_csv)
 
-    # 4. Generate GitHub-flavored Markdown Audit Report
-    report_content = f"""# Offline vs Live Feature Schema Audit Report (Step 22)
+    # 4. Markdown report (every verdict below comes from the checks above)
+    def verdict(ok: bool) -> str:
+        return "PASS" if ok else "FAIL"
 
-**Project:** Real-Time Intrusion Detection and Response System for IP-Camera IoT Networks Using Machine Learning  
-**Governing Standards:** Research Proposal Sections 2.5, 3.5; Objective O3; Research Question RQ3; Table 11; Supervisor Checkpoint C6  
-**Decision Reference:** `D-026`  
-**Date of Audit:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}  
-**Evaluation Environments:**
-- **Offline Training Data:** `{offline_path}` ({len(offline_df):,} flows)
-- **Live Sensor Telemetry:** `{live_path}` ({len(live_df):,} flows)
-- **Model Bundle Under Test:** `{bundle_path}`
+    n_dtype_ok = int((dtype_df["status"] == "PASS").sum())
+    n_null_ok = int((null_df["status"] == "PASS").sum())
+    n_range_ok = int((range_df["status"] == "PASS").sum())
+    shifted = range_df[range_df["ks_statistic"] >= 0.3]["feature"].tolist()
+    novel = {r["feature"]: r["novel_categories"] for _, r in cat_df.iterrows() if r["novel_categories"]}
+    is_real = data_source == "real"
+    if is_real:
+        source_note = ("REAL capture: Zeek `conn.log` from the lab mirror port. This report is the Step 22 evidence "
+                       "for Objective O3 and Research Question RQ3.")
+    else:
+        source_note = ("SYNTHETIC test data (decision D-038). This only shows that the check runs. It is NOT evidence "
+                       "for O3 or RQ3. Note: the synthetic file uses service names such as `rtsp`, `ssdp` and `onvif`; "
+                       "Zeek's standard analyzers may not produce these, so real Zeek output can look different.")
 
----
+    report_content = f"""# Offline vs Live Feature Check (Step 22)
 
-## Executive Summary: Supervisor Checkpoint C6 & RQ3 Resolution
+**Proposal:** Sections 2.5 and 3.5; Objective O3; Research Question RQ3; Table 11
+**Date:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}
+**Offline data:** `{offline_path}` ({len(offline_df):,} flows)
+**Live data:** `{live_path}` ({len(live_df):,} flows)
+**Model bundle:** `{bundle_path}`
 
-| Audit Dimension | Standard / Invariant | Result | Verdict |
-| :--- | :--- | :--- | :--- |
-| **Feature Set & Order** | Exactly 19 locked candidate features matching Proposal Table 6 | 19 / 19 matched in locked order | **PASS** |
-| **Data Types (Dtypes)** | Strict compatibility (Categoricals: object, Numericals: float32/int8) | 19 / 19 dtypes compatible | **PASS** |
-| **Missing Values (Nulls)** | Zero null/NaN/inf tolerance across offline and live streams | 0.000% nulls in offline & live | **PASS** |
-| **Numerical Ranges** | Physical feasibility (non-negative volume, ratios $\\in [0, 1]$) | 13 / 13 numerically feasible | **PASS** |
-| **Novel Categoricals** | Safe handling of camera-specific categories (RTSP, ONVIF) | Preprocessor maps unseen to `-1` safely | **PASS** |
-| **Model Inference** | End-to-end execution without exceptions; valid probabilities | $\\sum P_i = 1.0$, {inf_results.get('throughput_fps', 0):,.0f} fps | **PASS** |
-| **Overall Skew Check** | **Supervisor Checkpoint C6 (Zero Training-Serving Skew)** | **Zero Discrepancies** | **✅ PASSED** |
+> **Data source: {data_source.upper()}.** {source_note}
 
-> **Direct Answer to Research Question RQ3:**
-> *"To what extent do offline features match live sensor features without training-serving skew?"*
-> **Conclusion:** The offline and live feature schemas match with **100% syntactic and mathematical alignment** across all 19 candidate features. Using the unified extraction engine ([`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py)), zero training-serving skew is achieved. Novel categories native to IP-cameras (such as `service=rtsp` and `service=ssdp`) are gracefully absorbed by the model preprocessor without throwing exceptions, and inference executes at **{inf_results.get('throughput_fps', 0):,.0f} flows/sec** ({inf_results.get('latency_us_per_flow', 0):.2f} µs/flow) with zero false alarms (0.000% FPR).
+## Summary
 
----
+| Check (proposal 3.5) | Result | Verdict |
+| :--- | :--- | :--- |
+| Column names and order (19 features) | live {col_results['live_count']} / expected {col_results['expected_count']}; order match = {col_results['order_match']} | **{verdict(cols_ok)}** |
+| Data types | {n_dtype_ok} / {len(dtype_df)} compatible | **{verdict(dtypes_ok)}** |
+| Missing values | {n_null_ok} / {len(null_df)} features with no missing values | **{verdict(nulls_ok)}** |
+| Normal ranges (no negative counts; ratios in 0–1) | {n_range_ok} / {len(range_df)} numeric features valid | **{verdict(ranges_ok)}** |
+| Model runs on the live features | valid probabilities = {inf_results.get('probabilities_normalized')} | **{verdict(inf_ok)}** |
+| Categories not seen in training | {len(novel)} feature(s): {', '.join(f'`{k}`' for k in novel) or 'none'} | reported (encoded as unknown = -1) |
+| Summary distributions (KS statistic >= 0.3) | {len(shifted)} feature(s): {', '.join(f'`{f}`' for f in shifted) or 'none'} | reported (a large shift is a domain difference, see below) |
 
-## 1. Feature Columns and Ordering Audit
+**Format check overall: {verdict(overall_pass)}.** This means the live pipeline makes the same 19 columns, with the same types, without missing or impossible values, and the model accepts them. It does **not** mean the live traffic looks like IoT-23: the distribution and category rows show how different it is.
 
-- **Expected Feature Count:** 19 (6 Categorical, 13 Numerical)
-- **Offline Feature Count:** {col_results['offline_count']}
-- **Live Feature Count:** {col_results['live_count']}
-- **Exact Name Match:** {col_results['names_match']}
-- **Exact Sequence/Order Match:** {col_results['order_match']}
+## 1. Data types and missing values
 
-```text
-Locked Feature Order:
-{', '.join(FEATURE_COLUMNS)}
-```
-
----
-
-## 2. Data Types (Dtypes) and Missing Rates Audit
-
-| Feature | Kind | Offline Dtype | Live Dtype | Offline Null % | Live Null % | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Feature | Kind | Offline dtype | Live dtype | Offline missing % | Live missing % | Status |
+| :--- | :--- | :--- | :--- | ---: | ---: | :--- |
 """
-
     for _, row in dtype_df.iterrows():
-        feat = row["feature"]
-        nl_row = null_df[null_df["feature"] == feat].iloc[0]
+        nl_row = null_df[null_df["feature"] == row["feature"]].iloc[0]
         report_content += (
-            f"| `{feat}` | {row['kind']} | `{row['offline_dtype']}` | `{row['live_dtype']}` | "
-            f"{nl_row['offline_null_pct']:.2f}% | {nl_row['live_null_pct']:.2f}% | **{row['status']}** |\n"
+            f"| `{row['feature']}` | {row['kind']} | `{row['offline_dtype']}` | `{row['live_dtype']}` | "
+            f"{nl_row['offline_null_pct']:.2f} | {nl_row['live_null_pct']:.2f} | {row['status']} |\n"
         )
 
     report_content += """
----
+## 2. Numeric ranges and distributions
 
-## 3. Numerical Ranges and Statistical Comparison
+KS = two-sample Kolmogorov–Smirnov statistic on samples of up to 10,000 flows (0 = same distribution, 1 = no overlap).
 
-| Feature | Offline Min–Max | Live Min–Max | Offline Median (p95) | Live Median (p95) | KS Stat (p-val) | Physical Validity | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Feature | Offline min–max | Live min–max | Offline median (p95) | Live median (p95) | KS statistic | Range status |
+| :--- | :--- | :--- | :--- | :--- | ---: | :--- |
 """
-
     for _, row in range_df.iterrows():
-        off_range = f"{row['offline_min']} – {row['offline_max']}"
-        live_range = f"{row['live_min']} – {row['live_max']}"
-        off_med = f"{row['offline_median']} ({row['offline_p95']})"
-        live_med = f"{row['live_median']} ({row['live_p95']})"
-        ks_str = f"{row['ks_statistic']:.3f} ({row['ks_pvalue']:.1e})"
-        valid_str = "Feasible" if row["physically_feasible"] else "ANOMALY"
         report_content += (
-            f"| `{row['feature']}` | {off_range} | {live_range} | {off_med} | {live_med} | "
-            f"{ks_str} | {valid_str} | **{row['status']}** |\n"
+            f"| `{row['feature']}` | {row['offline_min']} – {row['offline_max']} | {row['live_min']} – {row['live_max']} | "
+            f"{row['offline_median']} ({row['offline_p95']}) | {row['live_median']} ({row['live_p95']}) | "
+            f"{row['ks_statistic']:.3f} | {row['status']} |\n"
         )
 
     report_content += """
-*Note on Kolmogorov-Smirnov Test:* The statistical distribution shift between IoT-23 and live IP-camera traffic is expected and natural: surveillance cameras transmit sustained 1080p H.264 video streams over RTSP (resulting in significantly higher `resp_bytes` and flow duration than the smart bulbs and doorlocks in IoT-23). The critical invariant is that all live metrics remain strictly within physically valid bounds with zero mathematical anomalies.
+## 3. Categories
 
----
-
-## 4. Categorical Domains and Novelty Handling
-
-| Feature | Offline Cardinality | Live Cardinality | Common Categories | Novel in Live | Handling Strategy |
-| :--- | :--- | :--- | :--- | :--- | :--- |
+| Feature | Offline categories | Live categories | In both | Not seen in training |
+| :--- | ---: | ---: | ---: | :--- |
 """
-
     for _, row in cat_df.iterrows():
-        novel_str = ", ".join(row["novel_categories"]) if row["novel_categories"] else "None (0 novel)"
+        novel_str = ", ".join(row["novel_categories"]) if row["novel_categories"] else "none"
         report_content += (
             f"| `{row['feature']}` | {row['offline_cardinality']} | {row['live_cardinality']} | "
-            f"{row['common_count']} | `{novel_str}` | OrdinalEncoder `-1` safe token |\n"
+            f"{row['common_count']} | `{novel_str}` |\n"
         )
 
     report_content += f"""
-### Analysis of Camera-Specific Novel Categories:
-In the live camera surveillance environment, Zeek identifies application-layer protocols native to video surveillance:
-- `service = 'rtsp'`: Real-Time Streaming Protocol (1080p video delivery to NVR).
-- `service = 'ssdp'`: Simple Service Discovery Protocol (UPnP discovery).
-- `service = 'onvif'`: Open Network Video Interface Forum discovery XML.
-- `service = 'ntp'`: Network Time Protocol camera synchronization.
+Categories not seen in training are encoded as "unknown" (-1). The model still runs, but it has never learned what these values mean, so predictions for such flows are less reliable.
 
-Because IoT-23 contained no IP cameras in its benign subset, these strings never appeared in offline training. The pipeline preprocessor successfully encodes all novel strings into the unallocated index `-1` (`unknown_value=-1`), preserving model execution without crashes.
+## 4. Model run on the live features
 
----
+- Flows: {inf_results.get('flows_evaluated', 0):,}
+- Probabilities valid (each row sums to 1): {inf_results.get('probabilities_normalized')}
+- Predicted classes: `{json.dumps(inf_results.get('prediction_breakdown', {}))}`
 
-## 5. End-to-End Model Bundle Verification
+## 5. What to do with the result (proposal 3.5)
 
-- **Model Bundle Path:** `{bundle_path}`
-- **Evaluation Flows:** {inf_results.get('flows_evaluated', 0):,} flows
-- **Probability Normalization:** {inf_results.get('probabilities_normalized')} (All probability vectors sum to 1.000)
-- **Inference Speed:** **{inf_results.get('latency_us_per_flow', 0):.2f} µs/flow** ({inf_results.get('throughput_fps', 0):,.0f} flows/second)
-- **Predictions Breakdown on Live Camera Baseline:**
-```json
-{json.dumps(inf_results.get('prediction_breakdown', {}), indent=2)}
-```
-- **Live Benign False Alarm Rate (FPR):** **0.000%** (100% of camera surveillance flows classified as Benign).
-
----
-
-## 6. Audit Verdict and Track 2 Milestone Completion
-
-1. **Zero Training-Serving Skew:** Confirmed. No features require dropping or retraining.
-2. **Supervisor Checkpoint C6:** PASSED.
-3. **Track 2 (Live Sensor Telemetry, Steps 19–22):** 100% COMPLETE.
-4. **Readiness for Phase 6 (Step 23 onward):** The live telemetry ingestion adapter and feature engine are fully validated and certified for integration with the MongoDB database service and Socket.IO backend.
+- If a feature fails the format checks, fix the live adapter, or drop the feature and train again.
+- A large distribution shift or new categories are not format errors. They show the domain difference between IoT-23 and our camera traffic, which is part of the answer to RQ3. Report them.
+- Run this check again on the **real** lab capture (`--source real`). Only that run answers RQ3.
 """
 
     output_md.parent.mkdir(parents=True, exist_ok=True)
     with open(output_md, "w", encoding="utf-8") as f:
         f.write(report_content)
-    logger.info("Published formal Markdown audit report to: %s", output_md)
+    logger.info("Published Markdown report to: %s", output_md)
 
     return overall_pass
 
@@ -511,6 +478,12 @@ def main() -> None:
         default=str(DEFAULT_REPORT_CSV),
         help=f"Output metrics CSV path (default: {DEFAULT_REPORT_CSV})",
     )
+    parser.add_argument(
+        "--source",
+        choices=["real", "synthetic"],
+        required=True,
+        help="Where the live file came from: real (lab Zeek capture) or synthetic (software test data).",
+    )
     args = parser.parse_args()
 
     success = run_full_schema_check(
@@ -519,13 +492,14 @@ def main() -> None:
         bundle_path=Path(args.bundle_path),
         output_md=Path(args.output_md),
         output_csv=Path(args.output_csv),
+        data_source=args.source,
     )
 
     if not success:
         logger.error("Schema check FAILED! Incompatible features detected.")
         sys.exit(1)
     else:
-        logger.info("Schema check PASSED with 100% compatibility! Checkpoint C6 fulfilled.")
+        logger.info("Format check passed (see the report for distribution and category differences).")
 
 
 if __name__ == "__main__":

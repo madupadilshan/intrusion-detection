@@ -4,7 +4,7 @@
 
 lab:
   approved_scan_subnets: ["192.168.50.0/24"]  # Nmap may scan ONLY these (Section 3.7)
-  local_networks: ["192.168.50.0/24"]         # used to decide traffic direction (in / out)
+  local_networks: ["192.168.50.0/24"]         # the camera LAN: decides traffic direction, and these devices are never auto-blocked. Do NOT list the "outside" test network here.
   sensor_mirror_interface: "eth1"             # sensor port that receives the switch mirror (no IP)
 
 allowlist:            # management IPs that are NEVER blocked (checked on the source IP)
@@ -15,19 +15,20 @@ allowlist:            # management IPs that are NEVER blocked (checked on the so
 
 response:
   deployment_mode: passive      # passive is the default (Table 11); or inline
-  adapter: router               # router (passive) | nftables (inline) | iptables | simulation
-  auto_response: false          # ➕ Extra: master switch; turn on only in approved tests
-  min_confidence: 0.85          # START value; final value chosen in Step 17
-  min_repeats: 3                # START value; final value chosen in Step 17
-  repeat_window_seconds: 60     # START value; final value chosen in Step 17
+  adapter: router               # router (passive mode: the lab router blocks) | nftables (inline mode: the sensor blocks) | simulation (development only; nothing is blocked)
+  auto_response: false          # master switch for automatic blocking; turn on only during planned lab tests
+  min_confidence: 0.30          # floor for ANY automatic block (D-046: the lowest value a threshold can take); the per-class block thresholds from Step 17 decide
+  min_repeats: 3                # an attack must repeat this many times inside the window before a block (proposal 3.4)
+  repeat_window_seconds: 60     # the time window for min_repeats
   max_rule_minutes: 30          # every rule expires (maximum rule time)
   allow_device_isolation: false # isolate a local device only if the policy allows
 
-firewall:                       # firewall adapter configuration (harmonized with response.adapter)
-  type: router                  # router (passive SSH) | nftables (inline Linux) | simulation
-  table_family: inet            # inet (router) | bridge (inline)
-  table_name: ids               # nftables table name
+firewall:                       # details for the adapter chosen in response.adapter
+  table_name: ids               # nftables table name (sensor/ids_router.nft, sensor/ids_inline.nft)
+  # table_family: inet          # optional; default is inet for router, bridge for nftables (inline)
   use_sudo: true
+  # router_host / router_port / router_user / router_key_file may be set here,
+  # or in .env as ROUTER_HOST / ROUTER_PORT / ROUTER_USER / ROUTER_KEY_FILE.
 
 zeek:
   conn_log_path: /var/log/ids-zeek/conn.log  # Zeek is started in this folder (Step 19)

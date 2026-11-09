@@ -5,7 +5,7 @@ core_engine/runner.py - Live Intrusion Detection & Telemetry Pipeline Runner.
 Governing Standards & Requirements:
 - Group 03 Proposal: Figures 2 & 3 ("Intrusion Detection Pipeline");
   Sections 3.3, 3.5, 3.7; Requirements Table 7: FR-01, FR-02, FR-03, FR-04, FR-06;
-  Hypothesis H1 Clause 3 (Sub-Second Latency Tracking).
+  Table 9 latency target (median decision < 2 s, 95th percentile < 5 s).
 - Connects the streaming Zeek conn.log reader directly into DecisionEngine.process_flows().
 - Enables real-time, zero-reload alert dispatch to the React SOC Dashboard via WebSockets.
 """
@@ -161,11 +161,13 @@ class LivePipelineRunner:
             outcomes = self.decision_engine.process_flows(batch)
             attacks = [
                 o for o in outcomes
-                if getattr(o, "action", "") in ("ALERT_ONLY", "ACTIVE_BLOCK_CANDIDATE", "ISOLATE_DEVICE", "RATE_LIMIT")
+                if getattr(o, "action", "") in ("ALERT_ONLY", "ACTIVE_BLOCK_CANDIDATE")
             ]
+            # DecisionEngine.process_flows() runs the response policy for every block
+            # candidate (respond_to_outcome); a new firewall rule sets these statuses.
             mitigations = [
                 o for o in outcomes
-                if getattr(o, "response_status", "") in ("blocked", "rate_limited", "isolated")
+                if getattr(o, "response_status", "") in ("blocked", "rate_limited")
             ]
 
             with self._lock:

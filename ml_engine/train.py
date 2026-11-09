@@ -392,6 +392,16 @@ def benchmark_inference_latency(
     return latency_per_flow_us, throughput_flows_per_sec
 
 
+
+def _f1_level(f1: float) -> str:
+    """Plain description of an F1 score (no claim beyond the number)."""
+    if f1 >= 0.85:
+        return "good (F1 >= 0.85)"
+    if f1 >= 0.60:
+        return "fair (0.60 <= F1 < 0.85)"
+    return "weak (F1 < 0.60)"
+
+
 def export_markdown_report(
     report_path: Path,
     search_df: pd.DataFrame,
@@ -493,12 +503,12 @@ Evaluated with `StratifiedGroupKFold(n_splits=5)` on all 1,384,070 flows:
 
 | Target Class | Support Flows | Precision | Recall | F1-Score | Detection Assessment |
 | :--- | :---: | :---: | :---: | :---: | :--- |
-| **0: `Benign`** | {report_dict['Benign']['support']:,} | {report_dict['Benign']['precision']:.4f} | {report_dict['Benign']['recall']:.4f} | **{report_dict['Benign']['f1-score']:.4f}** | Ultra-low false alarm rate |
-| **1: `DDoS_DoS`** | {report_dict['DDoS_DoS']['support']:,} | {report_dict['DDoS_DoS']['precision']:.4f} | {report_dict['DDoS_DoS']['recall']:.4f} | **{report_dict['DDoS_DoS']['f1-score']:.4f}** | High volumetric identification |
-| **2: `PortScan`** | {report_dict['PortScan']['support']:,} | {report_dict['PortScan']['precision']:.4f} | {report_dict['PortScan']['recall']:.4f} | **{report_dict['PortScan']['f1-score']:.4f}** | Distinct port sweep patterns |
-| **3: `CnC`** | {report_dict['CnC']['support']:,} | {report_dict['CnC']['precision']:.4f} | {report_dict['CnC']['recall']:.4f} | **{report_dict['CnC']['f1-score']:.4f}** | Robust minority beacon detection |
-| **4: `Malware_Download`** | {report_dict['Malware_Download']['support']:,} | {report_dict['Malware_Download']['precision']:.4f} | {report_dict['Malware_Download']['recall']:.4f} | **{report_dict['Malware_Download']['f1-score']:.4f}** | Binary stage download tracking |
-| **Macro Average** | **{len(y):,}** | **{report_dict['macro avg']['precision']:.4f}** | **{report_dict['macro avg']['recall']:.4f}** | **{report_dict['macro avg']['f1-score']:.4f}** | **Objective O2 Baseline Exceeded** |
+| **0: `Benign`** | {report_dict['Benign']['support']:,} | {report_dict['Benign']['precision']:.4f} | {report_dict['Benign']['recall']:.4f} | **{report_dict['Benign']['f1-score']:.4f}** | {_f1_level(report_dict['Benign']['f1-score'])} |
+| **1: `DDoS_DoS`** | {report_dict['DDoS_DoS']['support']:,} | {report_dict['DDoS_DoS']['precision']:.4f} | {report_dict['DDoS_DoS']['recall']:.4f} | **{report_dict['DDoS_DoS']['f1-score']:.4f}** | {_f1_level(report_dict['DDoS_DoS']['f1-score'])} |
+| **2: `PortScan`** | {report_dict['PortScan']['support']:,} | {report_dict['PortScan']['precision']:.4f} | {report_dict['PortScan']['recall']:.4f} | **{report_dict['PortScan']['f1-score']:.4f}** | {_f1_level(report_dict['PortScan']['f1-score'])} |
+| **3: `CnC`** | {report_dict['CnC']['support']:,} | {report_dict['CnC']['precision']:.4f} | {report_dict['CnC']['recall']:.4f} | **{report_dict['CnC']['f1-score']:.4f}** | {_f1_level(report_dict['CnC']['f1-score'])} |
+| **4: `Malware_Download`** | {report_dict['Malware_Download']['support']:,} | {report_dict['Malware_Download']['precision']:.4f} | {report_dict['Malware_Download']['recall']:.4f} | **{report_dict['Malware_Download']['f1-score']:.4f}** | {_f1_level(report_dict['Malware_Download']['f1-score'])} |
+| **Macro Average** | **{len(y):,}** | **{report_dict['macro avg']['precision']:.4f}** | **{report_dict['macro avg']['recall']:.4f}** | **{report_dict['macro avg']['f1-score']:.4f}** | (no target for this number) |
 | **Weighted Average** | **{len(y):,}** | **{report_dict['weighted avg']['precision']:.4f}** | **{report_dict['weighted avg']['recall']:.4f}** | **{report_dict['weighted avg']['f1-score']:.4f}** | - |
 
 ---
@@ -524,14 +534,15 @@ Rows represent ground-truth classes; columns represent predicted classes:
 ## 7. Verification Against Research Targets
 
 1. **Objective O2:** "Train and test a multi-class Random Forest with no scenario leakage."
-   - **Result: SATISFIED.** Strict `StratifiedGroupKFold` split ensured scenarios never cross between folds. Across 5 grouped validation folds, mean macro-F1 reached **{summary['mean_fold_macro_f1']:.4f} ± {summary['std_fold_macro_f1']:.4f}** (overall out-of-fold macro-F1: **{summary['overall_macro_f1']:.4f}**). This confirms honest cross-scenario generalization without intra-session data leakage (contrast with the flawed 1.00 accuracy of legacy row-random splitting).
+   - **Method: done as planned.** `StratifiedGroupKFold` kept every scenario inside one fold, so there is no scenario leakage.
+   - **Scores:** mean fold macro-F1 = **{summary['mean_fold_macro_f1']:.4f} ± {summary['std_fold_macro_f1']:.4f}**; overall out-of-fold macro-F1 = **{summary['overall_macro_f1']:.4f}**. These scores are low and vary a lot between folds: a model trained on some IoT-23 scenarios does not transfer well to other scenarios. This is reported as it is (proposal Table 9: "We report all results either way").
 2. **Benign False Positive Rate & Hypothesis H1 Context:**
-   - **Observation:** In cross-scenario evaluation across heterogeneous IoT-23 captures, honeypot benign traffic exhibits connection artifacts that overlap with probe states, yielding an out-of-fold benign FPR of **{summary['benign_fpr'] * 100:.3f}%**.
-   - **Context:** Hypothesis H1 explicitly targets the benign false-positive rate (≤ 5%, operational target < 1%) on **Level 3 local IP-camera video streaming traffic** (Steps 20 & 35–39), which will evaluate continuous RTSP/H.264 streams from our physical Tapo C200 camera rather than synthetic honeypot captures.
-3. **Sub-second Response Requirement:**
-   - **Result: SATISFIED.** Per-flow inference latency is **{latency_us:.2f} µs** ({throughput_fps:,.0f} flows/second), leaving massive headroom well within the 1-second operational budget.
+   - **Observation:** In cross-scenario evaluation, the IoT-23 benign flows of the validation scenarios are often predicted as attacks: out-of-fold benign FPR = **{summary['benign_fpr'] * 100:.3f}%** (argmax prediction, no thresholds).
+   - **Context:** The FPR part of Hypothesis H1 (≤ 5%) is measured on **our own local IP-camera traffic** (Level 3, Steps 20 and 35), not on IoT-23 benign flows. This IoT-23 number is reported for information only.
+3. **Model inference time (part of RQ4):**
+   - Per-flow model inference time is **{latency_us:.2f} µs** ({throughput_fps:,.0f} flows/second). This is the model step only. The proposal's latency target (Table 9: median decision < 2 s, 95th percentile < 5 s) is end-to-end, from capture to decision, and is measured on the sensor in Step 37.
 4. **Memory & Footprint Safety:**
-   - **Result: SATISFIED.** Tree depth bounding (max_depth=25) kept model size to **{model_size_mb:.2f} MB**, completely replacing the unusable 820 MB unconstrained legacy model.
+   - The saved model is **{model_size_mb:.2f} MB** (tree depth limited by the chosen `max_depth`); the old 820 MB model is not used.
 """
 
     with open(report_path, "w", encoding="utf-8") as f:
@@ -630,6 +641,23 @@ def main():
     cv_csv_path = args.experiments_dir / "rf_cv_results.csv"
     fold_df.to_csv(cv_csv_path, index=False)
     logger.info(f"Saved fold CV results to {cv_csv_path}")
+
+    # Save the grouped out-of-fold probabilities. Step 17 fits the probability
+    # calibration and chooses the alert/block thresholds from these, so the
+    # held-out scenario is never used to choose anything (proposal 3.4).
+    sgkf_ids = StratifiedGroupKFold(n_splits=args.cv_splits, shuffle=True, random_state=random_seed)
+    fold_ids = np.zeros(len(y), dtype=np.int8)
+    for fold_no, (_, val_idx) in enumerate(sgkf_ids.split(X, y, groups=groups), 1):
+        fold_ids[val_idx] = fold_no
+    oof_path = args.data_path.parent / "rf_oof_predictions.npz"
+    np.savez_compressed(
+        oof_path,
+        oof_probs=oof_probs.astype(np.float32),
+        y=y.astype(np.int8),
+        groups=np.asarray(groups).astype(str),
+        fold_ids=fold_ids,
+    )
+    logger.info(f"Saved grouped out-of-fold probabilities to {oof_path}")
 
     # 4. Final Fit on All 1.38M Rows & Export Model Bundle
     logger.info("=" * 70)

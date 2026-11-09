@@ -9,7 +9,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import Layout from "../components/Layout";
-import apiClient from "../services/api";
+import apiClient, { withEventId } from "../services/api";
 
 const CLASS_COLORS = {
   Benign: "#10b981",
@@ -40,7 +40,7 @@ const AttackHistory = () => {
       if (searchIp.trim()) query += `&ip=${encodeURIComponent(searchIp.trim())}`;
 
       const res = await apiClient.get(query);
-      const list = res.data?.events || [];
+      const list = (res.data?.events || []).map(withEventId);
       setEvents(list);
     } catch (err) {
       console.error("Failed to load attack history:", err);

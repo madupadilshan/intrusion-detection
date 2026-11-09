@@ -136,8 +136,9 @@ class ResponsePolicy:
         min_repeats: int = 3,
         repeat_window_seconds: int = 60,
         max_rule_minutes: int = 60,
-        auto_response: bool = True,
+        auto_response: bool = False,
         allow_device_isolation: bool = False,
+        local_networks: Optional[List[str]] = None,
     ) -> None:
         """
         Initialize the response policy engine.
@@ -149,11 +150,23 @@ class ResponsePolicy:
             repeat_window_seconds: Sliding window duration in seconds.
             max_rule_minutes: Maximum rule duration in minutes before expiry.
             auto_response: Master switch enabling or disabling automated actions.
-            allow_device_isolation: Whether private device isolation is permitted.
+                Off by default; it is turned on only for planned lab tests.
+            allow_device_isolation: Whether isolating a local device is permitted.
+            local_networks: The protected local (camera) networks, from settings
+                `lab.local_networks`. An address in these networks is a local device.
+                If not given, all RFC 1918 private ranges are treated as local.
+                (In our lab the "outside" attack network 10.10.10.0/24 is private but
+                NOT local, so `lab.local_networks` must be passed in real use.)
         """
         self.allowlist: set[str] = set(
             ip.strip() for ip in (allowlist if allowlist is not None else DEFAULT_ALLOWLIST)
         )
+        self.local_networks = []
+        for cidr in local_networks or []:
+            try:
+                self.local_networks.append(ipaddress.ip_network(str(cidr).strip(), strict=False))
+            except ValueError:
+                logger.warning("Ignoring invalid local network in settings: %s", cidr)
         self.min_confidence_map: Dict[str, float] = min_confidence_map or {
             "DDoS_DoS": 0.70,
             "PortScan": 0.65,
@@ -176,6 +189,19 @@ class ResponsePolicy:
             self.repeat_window_seconds,
             len(self.allowlist),
         )
+
+    def is_local(self, ip_str: str) -> bool:
+        """True if the address is a local (protected) device.
+
+        Uses `lab.local_networks` when it was given; otherwise any RFC 1918 address.
+        """
+        if not self.local_networks:
+            return is_private_ip(ip_str)
+        try:
+            ip_obj = ipaddress.ip_address(str(ip_str).strip())
+        except ValueError:
+            return False
+        return any(ip_obj in net for net in self.local_networks)
 
     def reset_history(self) -> None:
         """Clear the sliding-window repeat event history."""
@@ -290,14 +316,14 @@ class ResponsePolicy:
             default_reason = REASON_AUTO_DDOS_BLOCK
             requested_duration = 60
         elif p_class == "CnC":
-            # For C&C from camera to outside, block the external destination IP
-            target_ip = dst_ip if is_private_ip(src_ip) else src_ip
+            # Table 5: a local device talking to the outside -> block the outside destination
+            target_ip = dst_ip if self.is_local(src_ip) else src_ip
             action_direction = "outbound" if target_ip == dst_ip else "inbound"
             default_reason = REASON_AUTO_CNC_DEST_BLOCK
             requested_duration = 60
         elif p_class == "Malware_Download":
-            # Block external staging host
-            target_ip = src_ip if not is_private_ip(src_ip) else dst_ip
+            # Table 5: block the outside host, chosen by the traffic direction
+            target_ip = src_ip if not self.is_local(src_ip) else dst_ip
             action_direction = "inbound" if target_ip == src_ip else "outbound"
             default_reason = REASON_AUTO_MALWARE_BLOCK
             requested_duration = 60
@@ -359,9 +385,11 @@ class ResponsePolicy:
             )
 
         # ---------------------------------------------------------
-        # Safety Check 4: Private network target protection
+        # Safety Check 4: Local network target protection (proposal 3.7:
+        # "checks on private networks"). A local camera-network device is never
+        # blocked automatically unless device isolation is allowed in settings.
         # ---------------------------------------------------------
-        if is_private_ip(target_ip) and not self.allow_device_isolation:
+        if self.is_local(target_ip) and not self.allow_device_isolation:
             return PolicyDecision(
                 should_act=False,
                 action_type="none",

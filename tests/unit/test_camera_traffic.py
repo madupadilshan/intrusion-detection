@@ -70,8 +70,8 @@ def test_camera_features_extraction(tmp_path):
 
 
 def test_evaluate_camera_baseline_fpr(tmp_path):
-    """Test baseline FPR evaluation against production model bundle."""
-    output_dir = tmp_path / "local_benign"
+    """Synthetic data is checked and reported, but never judged against H1."""
+    output_dir = tmp_path / "local_synthetic"
     conn_log_path = collect_benign_camera_traffic(output_dir, total_flows=100, date_str="test_run")
 
     rep_md = tmp_path / "report.md"
@@ -81,23 +81,44 @@ def test_evaluate_camera_baseline_fpr(tmp_path):
         conn_log_path=conn_log_path,
         report_output_path=rep_md,
         csv_output_path=rep_csv,
+        data_source="synthetic",
     )
 
     assert summary["total_camera_flows"] == 100
-    assert summary["raw_fpr"] <= 0.05, f"Raw FPR must be <= 5% for H1 (got {summary['raw_fpr']})"
-    assert summary["active_blocked_fpr"] <= 0.01, f"Active blocking FPR must be <= 1% (got {summary['active_blocked_fpr']})"
-    assert summary["h1_clause_2_pass"] is True
-    assert rep_md.exists()
+    assert summary["data_source"] == "synthetic"
+    assert 0.0 <= summary["raw_fpr"] <= 1.0
+    assert summary["h1_fpr_result"] == "not tested (synthetic data)"
+    text = rep_md.read_text(encoding="utf-8")
+    assert "SYNTHETIC" in text and "not a measurement" in text
     assert rep_csv.exists()
 
 
+def test_evaluate_real_source_reports_h1_result(tmp_path):
+    """With data_source='real' the report gives a met / not met result for the FPR target."""
+    conn_log_path = collect_benign_camera_traffic(tmp_path / "x", total_flows=30, date_str="t")
+    summary = evaluate_camera_baseline_fpr(
+        conn_log_path=conn_log_path,
+        report_output_path=tmp_path / "r.md",
+        csv_output_path=tmp_path / "r.csv",
+        data_source="real",
+    )
+    assert summary["h1_fpr_result"] in ("met", "not met")
+    assert "REAL capture" in (tmp_path / "r.md").read_text(encoding="utf-8")
+
+
+def test_evaluate_rejects_unknown_source(tmp_path):
+    conn_log_path = collect_benign_camera_traffic(tmp_path / "y", total_flows=5, date_str="t")
+    with pytest.raises(ValueError):
+        evaluate_camera_baseline_fpr(conn_log_path, report_output_path=tmp_path / "a.md",
+                                     csv_output_path=tmp_path / "a.csv", data_source="camera")
+
+
 def test_camera_baseline_artifacts_exist():
-    """Verify official camera baseline report and CSV exist in reports/experiments/."""
+    """The committed report must say clearly that its data is synthetic."""
     assert REPORT_MD_PATH.exists(), f"Missing report at {REPORT_MD_PATH}"
     assert REPORT_CSV_PATH.exists(), f"Missing CSV at {REPORT_CSV_PATH}"
 
     content = REPORT_MD_PATH.read_text(encoding="utf-8")
-    assert "# Benign IP-Camera Baseline Traffic Report (Step 20)" in content
-    assert "Hypothesis H1 Clause 2" in content
-    assert "RTSP 1080p H.264 Video Streaming" in content
-
+    assert "# Benign Camera Traffic Check (Step 20)" in content
+    assert "SYNTHETIC" in content
+    assert "PASS" not in content
