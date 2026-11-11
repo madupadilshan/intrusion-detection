@@ -1156,9 +1156,9 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
   >
   > මෙම command එක run කළ සැණින් Docker පරිසරය තුළ පහත ප්‍රධාන පියවර 3 සම්බන්ධීකරණය වේ:
   >
-  > 1. **Attacker පරිගණකයේ Master C&C Server එකක් විවෘත වීම ([`lab_server.py`](file:///d:/intrusion%20detection/lab_virtual/lab.py#L242)):**
+  > 1. **Attacker පරිගණකයේ Master C&C Server එකක් විවෘත වීම ([`lab_server.py`](<file:///d:/intrusion%20detection/lab_virtual/lab.py#L242>)):**
   >    - Attacker කන්ටේනරය (`ids-lab-attack-server` / IP `10.10.10.50`) තුළ Port 6667 (IRC/Botnet control port) හරහා Command & Control (C&C) Master Server සේවාව සක්‍රිය වේ.
-  > 2. **කැමරාව තුළින් පිටතට Periodic Botnet Beacons යැවීම ([`camera_sim.py`](file:///d:/intrusion%20detection/lab_virtual/lab.py#L244)):**
+  > 2. **කැමරාව තුළින් පිටතට Periodic Botnet Beacons යැවීම ([`camera_sim.py`](<file:///d:/intrusion%20detection/lab_virtual/lab.py#L244>)):**
   >    - ආසාදිත කැමරාව (`ids-lab-camera` / IP `192.168.50.30`) තුළ malware bot ආසාදනයක් අනුකරණය කරමින්, සෑම තත්පර 5 කට වරක්ම (`--every 5`) පිටත ඇති Attacker C&C Server එක (`10.10.10.50`) වෙත periodic outbound beacons (keep-alive / reverse shell සංඥා) යවමින් "ඊළඟ command එක කුමක්ද?" කියා විමසයි.
   > 3. **පද්ධතියේ AI සහ Autonomous Mitigation ක්‍රියාත්මක වීම:**
   >    - **Zeek Sniffing:** Zeek sensor එක කැමරාවෙන් පිටතට යන මෙම periodic outbound flows ක්ෂණිකව capture කර `conn.log` හි ලියයි.
