@@ -14,7 +14,7 @@
 3. [Dashboard එක පද්ධතියට සම්බන්ධ වන ආකාරය සහ එහි පිටු 7 (The Dashboard Architecture)](#3-dashboard-එක-පද්ධතියට-සම්බන්ධ-වන-ආකාරය-සහ-එහි-පිටු-7-the-dashboard-architecture)
 4. [Virtual Lab එක Docker මඟින් නිර්මාණය කර ඇති ආකාරය සහ එහි සාක්ෂි (Virtual Lab Architecture & Proofs)](#4-virtual-lab-එක-docker-මඟින්-නිර්මාණය-කර-ඇති-ආකාරය-සහ-එහි-සාක්ෂි-virtual-lab-architecture--proofs)
    - 4.1 [Virtual Lab එක සකස් කර ඇති ආකාරය සහ එය ක්‍රියාත්මක වන සම්පූර්ණ යාන්ත්‍රණය (How it is Built & Operates)](#41-virtual-lab-එක-සකස්-කර-ඇති-ආකාරය-සහ-එය-ක්‍රියාත්මක-වන-සම්පූර්ණ-යාන්ත්‍රණය-how-it-is-built--operates)
-   - 4.2 [සෑම කොටසක්ම තනි තනියෙන් පරීක්ෂා කර පෙන්වන සාක්ෂි (Component-by-Component Proofs - පරීක්ෂණ 12)](#42-සෑම-කොටසක්ම-තනි-තනියෙන්-පරීක්ෂා-කර-පෙන්වන-සාක්ෂි-component-by-component-proofs)
+   - 4.2 [සෑම කොටසක්ම තනි තනියෙන් පරීක්ෂා කර පෙන්වන සාක්ෂි (Component-by-Component Proofs - පරීක්ෂණ 13)](#42-සෑම-කොටසක්ම-තනි-තනියෙන්-පරීක්ෂා-කර-පෙන්වන-සාක්ෂි-component-by-component-proofs)
      - 4.2.0 [ආරම්භයේ සිටම සියල්ල පණගන්වා ගැනීම (Cold Start Lifecycle)](#420-ආරම්භයේ-සිටම-සියල්ල-පණගන්වා-ගන්නා-ආකාරය-starting-the-entire-lab-from-scratch)
      - 4.2.1 [කැමරාවේ සේවාවන් තහවුරු කිරීම (IP Camera Verification - Scenario 1)](#421-කැමරාවේ-සේවාවන්-තහවුරු-කිරීම-ip-camera-dual-services-verification)
      - 4.2.2 [NVR වීඩියෝ දත්ත නොකඩවා ගලා ඒම (Continuous Video Ingestion)](#422-nvr-එක-වෙත-වීඩියෝ-දත්ත-නොකඩවා-ගලා-ඒම-තහවුරු-කිරීම-nvr-continuous-video-ingestion)
@@ -27,6 +27,7 @@
      - 4.2.9 [කැමරා වීඩියෝවට බාධාවක් නොවීම (Hypothesis H1 & RQ5)](#429-ප්‍රහාරය-අතරතුරදීත්-කැමරා-වීඩියෝවට-කිසිදු-බාධාවක්-නොවීම-zero-disruption-to-camera-operations---hypothesis-h1-target--rq5)
      - 4.2.10 [පාලනය කළ Nmap Scan මඟින් උපාංග සෙවීම (Device Discovery - FR-05)](#4210-පාලනය-කළ-nmap-scan-මඟින්-අනුමත-උපාංග-සහ-සේවාවන්-හඳුනාගැනීම-controlled-nmap-device-discovery---fr-05--section-37)
      - 4.2.11 [Manual Block/Unblock & Filtered Log Export (FR-07, FR-08 & Scenario 6)](#4211-පරිපාලකයාට-manual-block-unblock-කිරීම-සහ-audit-logs-export-කිරීම-manual-blockunblock-audit-trail--filtered-export---fr-07-fr-08-scenario-6-objective-o5)
+     - 4.2.12 [Machine Learning ආකෘතියේ පුහුණුව, නිරවද්‍යතාව සහ සජීවී වර්ගීකරණය තහවුරු කිරීම (ML Model Architecture, Training & Live Inference - FR-01, FR-02, Objective O2)](#4212-machine-learning-ආකෘතියේ-පුහුණුව-නිරවද්‍යතාව-සහ-සජීවී-වර්ගීකරණය-තහවුරු-කිරීම-ml-model-architecture-iot-23-training-zero-leakage-evaluation--live-inference-proof---objective-o2-table-6-table-7-fr-02-table-8-table-9)
 5. [සැබෑ උදාහරණ 2: සාමාන්‍ය අවස්ථාව සහ ප්‍රහාරක අවස්ථාව](#5-සැබෑ-උදාහරණ-2-සාමාන්‍ය-අවස්ථාව-සහ-ප්‍රහාරක-අවස්ථාව)
 6. [Supervisor ඉදිරියේ Presentation එකක් කරන ආකාරය (Step-by-Step Script)](#6-supervisor-ඉදිරියේ-presentation-එකක්-කරන-ආකාරය-step-by-step-script)
 
@@ -1457,6 +1458,159 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
   > *"Sir, this satisfies Objective O5, FR-06, FR-07, and FR-08. Our evaluation proves the administrator can manually intervene to enforce or rollback blocks, while maintaining full forensic reproducibility through CSV and JSON audit exports."*
+  >
+
+---
+
+### 4.2.12 Machine Learning ආකෘතියේ පුහුණුව, නිරවද්‍යතාව සහ සජීවී වර්ගීකරණය තහවුරු කිරීම (ML Model Architecture, IoT-23 Training, Zero-Leakage Evaluation & Live Inference Proof - Objective O2, Table 6, Table 7 FR-02, Table 8, Table 9)
+
+> 🎯 **Proposal එකේ මෙම පරීක්ෂණයෙන් සාක්ෂාත් වන අරමුණ සහ ඔප්පු වන කරුණු (What this Test Proves):**
+>
+> - **ඉටුවන පර්යේෂණ අරමුණ (Objective):** **Objective O2** ("Train an off-the-shelf classifier on IoT network data, tuned to catch real attacks while keeping the benign false-positive rate low") සහ **Objective O3** ("Validate the model in two steps: first on held-out scenarios to test generalisation, then on our own IP-camera traffic to measure false alarms").
+> - **සම්පූර්ණ වන ක්‍රියාකාරී අවශ්‍යතා (Requirements):**
+>   - **Table 7 FR-01 (Must):** Zeek logs වලින් Proposal Table 6 ට අනුකූලව flow features 27 ක් නිරවද්‍යව උකහා ගැනීම (Zero Training-Serving Skew).
+>   - **Table 7 FR-02 (Must):** ජාල ගමනාගමනය (flows) පන්ති 5 කට (Benign, DDoS_DoS, PortScan, CnC, Malware_Download) ක්‍රමාංකනය කළ සම්භාවිතා (calibrated confidence probabilities) සහ Model Version (`v3.1.0`) සමඟ වර්ගීකරණය කිරීම.
+> - **විසඳෙන පර්යේෂණ ගැටලු සහ විද්‍යාත්මක උපකල්පනය (Research Questions & Hypothesis):**
+>   - **RQ1 & RQ2:** IoT ජාල දත්ත මත පදනම්ව Random Forest ආකෘතියේ වර්ගීකරණ නිරවද්‍යතාව සහ විවිධ ප්‍රහාරක හැසිරීම් රටා හඳුනාගැනීම.
+>   - **Hypothesis H1:** මුළුමනින්ම නුදුටු Held-Out Scenario (`Capture-34-1`) මත Macro-F1 $\ge 0.85$ (පවතින පන්ති සඳහා 85.95% ලබා ඇත) සහ Local Benign FPR $\le 5.0\%$.
+>   - **Supervisor Checkpoint C4 & C6:** Zero Scenario Leakage Split (Scenario `Capture-34-1` පුහුණුවට කිසිසේත්ම නොගෙන මුද්‍රා තබා තැබීම) සහ Zero Training-Serving Skew (Offline training සඳහා සහ Live detection සඳහා එකම Feature Extractor කේතය භාවිතා කිරීම).
+> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පද්ධතිය තුළ ක්‍රියාත්මක වන AI / Machine Learning ආකෘතිය (Random Forest Classifier Model `v3.1.0`) නිකම්ම Dummy හෝ උපකල්පිත එකක් නොව, සැබෑ IoT-23 දත්ත කට්ටලයේ flows මිලියන 1.18 ක් මත විද්‍යාත්මකව පුහුණු කරන ලද (Trained), පුහුණුවේදී නුදුටු රහසිගත පරීක්ෂණ දත්ත (Held-out Test set) මත දැඩිව පරීක්ෂා කර තහවුරු කළ (Evaluated), සහ තත්පරයකට flows 125,000 කට වඩා වර්ගීකරණය කළ හැකි (7.96 µs per flow) සැබෑ නිෂ්පාදන මට්ටමේ AI මොඩලයක් බව සජීවී Terminal Commands මඟින් Supervisor ඉදිරියේ ඔප්පු කිරීමටයි.
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O2, Objective O3, FR-01, FR-02, and Table 9 Model Quality criteria. Our intrusion detection engine is powered by an optimized 100-tree Random Forest classifier bundle (v3.1.0) trained on 1,182,984 flows across 22 IoT-23 scenarios using 27 behavioral features. Evaluated under strict Level 2 Zero-Scenario-Leakage protocol on the unseen scenario Capture-34-1 (23,145 flows), our model achieved 93.22% overall accuracy, 93.67% weighted F1, and 85.95% Macro-F1 on active classes, with an ultra-low inference latency of 7.96 microseconds per flow."*
+
+---
+
+#### 🧠 Machine Learning ආකෘතිය නිර්මාණය කළ සහ පුහුණු කළ ආකාරය (Model Architecture & Training Details)
+
+1. **පුහුණු දත්ත කට්ටලය (Training Dataset - IoT-23 v1.0.0):**
+   - Stratosphere IoT-23 දත්ත කට්ටලයේ සම්පූර්ණ flows මිලියන 325.3 කින් (Scenarios 22 කින්) සකස් කරගත් **flows 1,182,984** ක stratified sample එකක් භාවිතා කර ඇත.
+   - **Variant WCD (Decisions D-051, D-052, D-054):** විශ්වාසදායක ලේබල් පමණක් තබා ගනිමින් (`label_trusted = True`) සහ මතභේදාත්මක flows ඉවත් කර වඩාත් පිරිසිදු දත්ත මත පුහුණු කර ඇත.
+   - දුර්ලභ C&C flows 100% ක්ම පුහුණු දත්ත තුළ සුරක්ෂිතව රඳවාගෙන ඇත.
+
+2. **Zero Scenario Leakage Split (Level 2 Scientific Validation - Checkpoint C4):**
+   - Proposal Section 3.3 සහ Checkpoint C4 අනුව, ආකෘතිය පුහුණු කිරීමේදී **`CTU-IoT-Malware-Capture-34-1` (Mirai botnet capture - flows 23,145)** දත්ත කට්ටලය සම්පූර්ණයෙන්ම වෙන් කර (Held-out) මුද්‍රා තැබිණි. ආකෘතිය පුහුණු කිරීමට එයින් එකඳු flow එකක්වත් භාවිතා නොකළ අතර, එය භාවිතා කළේ අවසාන විද්‍යාත්මක පරීක්ෂාවට (Generalisation Test) පමණි.
+
+3. **හැසිරීම් රටා ලක්ෂණ 27 (27 Behavioral Features - Proposal Table 6 & Zero-Skew):**
+   - `ml_engine/features.py` සහ `core_engine/zeek_adapter.py` මඟින් හරියටම එකම ලක්ෂණ 27 උකහා ගනී:
+     - **ප්‍රවාහන සහ සේවා (6 Categorical):** `proto`, `service`, `conn_state`, `history`, `orig_port_cat`, `resp_port_cat` (Ordinal Encoded).
+     - **තනි Flow එකක පරිමාව සහ කාලය (13 Numerical):** `duration`, `orig_bytes`, `resp_bytes`, `missed_bytes`, `orig_pkts`, `orig_ip_bytes`, `resp_pkts`, `resp_ip_bytes`, `orig_bytes_per_pkt`, `resp_bytes_per_pkt`, `byte_ratio`, `pkt_ratio`, `is_incomplete_flow`.
+     - **කාල කවුළු ලක්ෂණ (8 Window Features - D-051, D-052):** එකම මූලාශ්‍රයෙන් තත්පර 60 ක් තුළ සම්බන්ධතා ගණන (`src_conn_60s`), වෙනස් ගමනාන්ත ගණන (`src_udst_60s`), port scan ලක්ෂණ (`src_uport_60s`, `src_udst_ratio`), C&C beacon කාල පරතරය (`pair_gap`, `pair_gap_change`), සහ පැයක් තුළ අසාර්ථක වූ TCP උත්සාහයන් (`pair_fail_1h`).
+   - 🔒 **දැඩි ආරක්ෂක නීතිය (Rule 5):** IP Addresses, MAC addresses, UIDs හෝ File names ආකෘතියට කිසිවිටෙකත් input ලෙස ලබා නොදේ (Zero IP bias).
+
+4. **ඇල්ගොරිතමය සහ Hyperparameters (Random Forest Classifier):**
+   - **Estimators:** `n_estimators = 100` (Decision Trees 100 ක එකතුව).
+   - **Tree Constraints:** `max_depth = 25`, `max_features = 'log2'`, `min_samples_leaf = 4`, `min_samples_split = 2`.
+   - **Class Balancing:** `class_weight = 'balanced'` (අසමතුලිත දත්ත සඳහා ස්වයංක්‍රීයව බර තැබීම).
+   - **Probability Calibration:** `CalibratedClassifierCV` හරහා විශ්වාසනීය සම්භාවිතා ප්‍රතිශත ගණනය කිරීම.
+
+5. **ද්විත්ව මෙහෙයුම් සීමාවන් (Dual Operational Thresholds - Table 7 FR-02 & D-021):**
+   - **Passive Alert Threshold:** $P \ge 0.30$ (ඕනෑම ප්‍රහාරක පන්තියක සම්භාවිතාව 30% ඉක්මවූ විට Dashboard Alert නිකුත් වේ).
+   - **Active Block Threshold (Firewall Drop):** CnC $P \ge 0.30$, PortScan $P \ge 0.88$, DDoS $P \ge 0.30$ (Rate-limit). නිරපරාදේ කැමරාව block වීම වැළැක්වීමට (Zero False Block) දැඩි සීමාවන් පනවා ඇත.
+
+---
+
+#### 🧪 සජීවීව පරීක්ෂා කර පෙන්වන පියවර 3 (3 Executable Proof Steps)
+
+- **පියවර 1: Production Model Bundle Metadata සහ ගුණාංග පරීක්ෂාව (Inspect Bundle Metadata):**
+
+  ```powershell
+  .venv\Scripts\python.exe -c "import joblib; b = joblib.load('ml_engine/models/ids_bundle_v3.joblib'); m = b['metadata']; print(f'Model Name       : {m[\"bundle_name\"]} ({m[\"bundle_version\"]})'); print(f'Git Commit       : {m[\"git_commit\"]}'); print(f'Training Flows   : {m[\"training_samples_count\"]} flows (IoT-23 Variant {m[\"training_variant\"]})'); print(f'Feature Columns  : {len(b[\"feature_columns\"])} features'); print(f'Class Names      : {b[\"class_names\"]}'); print(f'Held-Out Test    : {m[\"level_2_heldout_scenario\"]} ({m[\"level_2_heldout_flows\"]} flows)'); print(f'Held-Out Accuracy: {m[\"level_2_accuracy\"]*100:.2f}%'); print(f'Present Macro-F1 : {m[\"level_2_macro_f1_present\"]*100:.2f}% (Target >= 85.0%)'); print(f'Inference Latency: {m[\"inference_latency_us_flow\"]:.2f} microseconds/flow')"
+  ```
+
+  > **කේතයෙන් සිදුවන දේ සරලව:** නිෂ්පාදන මට්ටමේ `ids_bundle_v3.joblib` ගොනුව load කර, පුහුණු කළ flows ගණන, features 27, classes 5, සහ held-out පරීක්ෂණ නිරවද්‍යතා අගයන් සෘජුවම terminal එකේ ප්‍රදර්ශනය කිරීම.
+
+  - **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
+
+    ```text
+    Model Name       : iot_camera_ids_bundle (v3.1.0)
+    Git Commit       : 26f69f5
+    Training Flows   : 1182984 flows (IoT-23 Variant WCD)
+    Feature Columns  : 27 features
+    Class Names      : ['Benign', 'DDoS_DoS', 'PortScan', 'CnC', 'Malware_Download']
+    Held-Out Test    : CTU-IoT-Malware-Capture-34-1 (23145 flows)
+    Held-Out Accuracy: 93.22%
+    Present Macro-F1 : 85.95% (Target >= 85.0%)
+    Inference Latency: 7.96 microseconds/flow
+    ```
+
+- **පියවර 2: සම්පූර්ණ Held-Out Test Evaluation එක නැවත ධාවනය කර විද්‍යාත්මක වාර්තාව තහවුරු කිරීම (Level 2 Scientific Evaluation):**
+
+  ```powershell
+  .venv\Scripts\python.exe ml_engine/evaluate.py
+  ```
+
+  > **කේතයෙන් සිදුවන දේ සරලව:** Proposal Section 3.4 සහ Step 16 අනුව, කිසිදා පුහුණුවට නොගත් `held_out_test.parquet` (Capture-34-1 flows 23,145) මත Random Forest, Logistic Regression සහ HistGradientBoosting ආකෘති 3 ම සසඳා සම්පූර්ණ විද්‍යාත්මක වාර්තාව නැවත උත්පාදනය කිරීම.
+
+  - **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
+
+    ```text
+    [INFO] Starting Step 16 Held-Out Scenario Evaluation...
+    [INFO] Loading sealed held-out test dataset from: data\processed\heldout\held_out_test.parquet
+    [INFO] Successfully verified scenario 'CTU-IoT-Malware-Capture-34-1' with 23145 flows across classes: {0: 1923, 1: 14394, 2: 122, 3: 6706}
+    [INFO] Evaluating model: Random Forest (Bagging) on 23145 held-out flows...
+    [INFO] Evaluating model: Logistic Regression (Linear) on 23145 held-out flows...
+    [INFO] Evaluating model: HistGradientBoosting (Boosting) on 23145 held-out flows...
+    [INFO] Saved evaluation summary CSV to: reports\experiments\evaluation_iot23.csv
+    [INFO] Saved held-out evaluation markdown report to: reports\experiments\evaluation_iot23.md
+    [INFO] Saved confusion matrix visualization to: reports\experiments\confusion_matrix_heldout.png
+    [INFO] Step 16 evaluation complete! Deliverables generated in reports\experiments
+    ```
+
+  - **ප්‍රතිඵල විශ්ලේෂණ සාරාංශය (Multi-Model Comparison Table):**
+
+    | පරීක්ෂණ මිණුම (Metric) | Random Forest (අපගේ Prototype) | Logistic Regression | HistGradientBoosting | Proposal ඉලක්කය (Table 9) |
+    | :--- | :---: | :---: | :---: | :--- |
+    | **Overall Accuracy** | **93.22%** | 89.05% | 96.50% | High Accuracy Benchmark |
+    | **Weighted F1-Score** | **0.9367 (93.67%)** | 0.9096 | 0.9656 | High F1 Benchmark |
+    | **Macro-F1 (Classes Present)** | **0.8595 (85.95%)** | 0.6985 | 0.8697 | **$\ge 0.85$ (H1 ඉලක්කය සම්පූර්ණයි!)** |
+    | **DDoS_DoS F1-Score** | **0.9947 (99.47%)** | 0.9412 | 0.9950 | Precision: 100.0%, Recall: 98.94% |
+    | **CnC F1-Score** | **0.8758 (87.58%)** | 0.7621 | 0.8842 | Precision: 95.87%, Recall: 80.61% |
+    | **PortScan F1-Score** | **0.8464 (84.64%)** | 0.6514 | 0.8521 | Precision: 77.93%, Recall: 92.62% |
+    | **Inference Latency per Flow** | **3.91 - 7.96 µs** | 3.83 µs | 12.98 µs | Table 9 Median $< 2.0\text{ s}$ ඉලක්කය ඉක්මවයි |
+    | **Throughput (Flows/Second)** | **> 125,000 flows/s** | 261,198 flows/s | 77,039 flows/s | Real-time Streaming Ready |
+
+- **පියවර 3: සජීවී Network Flows ලබාදී තත්‍ය කාලීන ML Inference සහ Calibrated Probabilities පරීක්ෂා කිරීම (Live Flow Classification Test):**
+
+  ```powershell
+  .venv\Scripts\python.exe -c "
+  import joblib, pandas as pd
+  bundle = joblib.load('ml_engine/models/ids_bundle_v3.joblib')
+  model, cols, classes = bundle['calibrated_model'], bundle['feature_columns'], bundle['class_names']
+  df = pd.read_parquet('data/processed/heldout/held_out_test.parquet')
+
+  print('=== REAL-TIME MODEL INFERENCE TEST ===')
+  for target in ['CnC', 'PortScan']:
+      sample = df[df['class_name'] == target].iloc[0:1]
+      probs = model.predict_proba(sample[cols])[0]
+      pred = classes[probs.argmax()]
+      print(f'Test Input: {target:10s} -> Predicted: {pred:10s} (Confidence: {probs.max()*100:5.2f}%)')
+      print(f'    Probabilities Distribution: {dict(zip(classes, [round(float(p), 4) for p in probs]))}')
+  "
+  ```
+
+  > **කේතයෙන් සිදුවන දේ සරලව:** Held-out dataset එකෙන් තෝරාගත් සැබෑ CnC botnet flow එකක් සහ PortScan flow එකක් Model එකට ලබාදී, එය තත්‍ය කාලීනව වර්ගීකරණය කර සම්භාවිතා ප්‍රතිශත ගණනය කරන අයුරු සජීවීව දැකබලා ගැනීම.
+
+  - **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
+
+    ```text
+    === REAL-TIME MODEL INFERENCE TEST ===
+    Test Input: CnC        -> Predicted: CnC        (Confidence: 92.17%)
+        Probabilities Distribution: {'Benign': 0.0184, 'DDoS_DoS': 0.0, 'PortScan': 0.0591, 'CnC': 0.9217, 'Malware_Download': 0.0007}
+    Test Input: PortScan   -> Predicted: PortScan   (Confidence: 57.82%)
+        Probabilities Distribution: {'Benign': 0.1446, 'DDoS_DoS': 0.0673, 'PortScan': 0.5782, 'CnC': 0.1981, 'Malware_Download': 0.0119}
+    ```
+
+- **🖥️ Dashboard එකෙන් මෙය සජීවීව පෙනෙන ආකාරය (What Appears on the Dashboard UI):**
+  1. **System Overview පිටුව (`http://localhost:5000/overview`):**
+     - දකුණු පස පහළ **"SYSTEM STATUS (MEASURED)"** කොටසේ:
+       - `Model`: **`v3.1.0`** (භාවිතා වන ආකෘතියේ සංස්කරණය පැහැදිලිව පෙන්වයි).
+       - `Time per flow, Zeek line to dashboard (median / 95%)`: **`112.3 ms / 144.9 ms`** (Model inference latency එක microseconds 7.96 ක් පමණක් වන බැවින් Zeek log එකේ සිට Dashboard එක දක්වා සම්පූර්ණ කාලය 112.3 ms ක් වැනි ඉතා සුළු අගයක් ගනී).
+     - **ATTACK CLASS DISTRIBUTION ප්‍රස්ථාරය:**
+       - Model එක මඟින් වර්ගීකරණය කළ Multiclass Inferences (DDoS, CnC, PortScan, Malware) රතු පැහැති තීර ප්‍රස්ථාරයක් මඟින් සජීවීව දක්වයි.
+
+- **මෙයින් ඔප්පු වන කරුණ:** Proposal Objective O2 ("Train an off-the-shelf classifier on IoT network data"), Objective O3 ("Validate on held-out scenarios"), Table 6 (27 Features), Table 7 FR-01 & FR-02 (Calibrated Multi-Class Inference), Table 8 (Evaluation Protocol), Table 9 (Accuracy, Macro-F1 $\ge 0.85$, Sub-second Latency), සහ Checkpoint C4 (Zero Scenario Leakage) යන සියල්ල 100% ක් නිවැරදිව සම්පූර්ණ කර ඇති බව තහවුරු වේ.
+- **Supervisor ට පැහැදිලි කරන ආකාරය:**
+
+  > *"Sir, this satisfies Objective O2, Objective O3, Table 6, Table 7 FR-01, FR-02, and Table 9. Our intrusion detection engine is powered by an optimized 100-tree Random Forest classifier bundle (v3.1.0) trained on 1,182,984 flows across 22 IoT-23 scenarios using 27 behavioral features. Evaluated under strict Level 2 Zero-Scenario-Leakage protocol on the unseen scenario Capture-34-1 (23,145 flows), our model achieved 93.22% overall accuracy, 93.67% weighted F1, and 85.95% Macro-F1 on active classes, with an ultra-low inference latency of 7.96 microseconds per flow."*
   >
 
 ---
