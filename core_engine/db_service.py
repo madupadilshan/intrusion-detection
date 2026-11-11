@@ -550,7 +550,7 @@ class DatabaseService:
             "predicted_class": clean_class,
             "confidence": confidence_val,
             "probabilities": event_data.get("probabilities") or {},
-            "model_version": str(event_data.get("model_version") or "ids_bundle_v1"),
+            "model_version": str(event_data.get("model_version") or "unknown"),
             "flow_features": event_data.get("flow_features") or event_data.get("features") or {},
             "evidence_note": str(event_data.get("evidence_note") or event_data.get("evidence") or ""),
             "reason_code": str(event_data.get("reason_code") or "GENERIC_ANOMALY"),
@@ -696,9 +696,11 @@ class DatabaseService:
         predicted_class: Optional[str] = None,
         confidence: Optional[float] = None,
         actor: str = "system_auto",
+        action: str = "block",
     ) -> Optional[str]:
         """
         Add an IP block record to the blocklist.
+        `action` is "block" or "rate_limit" (D-055), so startup recovery restores the same rule.
         Preserves complete historical audit trail: NEVER overwrites prior blocks!
         Inserts a distinct document with unique block_id.
         """
@@ -723,6 +725,7 @@ class DatabaseService:
             "block_id": block_id,
             "ip": clean_ip,
             "direction": clean_dir,
+            "action": "rate_limit" if str(action).strip().lower() == "rate_limit" else "block",
             "reason": reason.strip(),
             "linked_event_id": linked_event_id,
             "predicted_class": predicted_class,
@@ -1173,6 +1176,25 @@ class DatabaseService:
         except PyMongoError as e:
             logger.error(f"Error updating traffic summary: {e}")
             return False
+
+    def sum_traffic_flows(self, start_time: Optional[datetime] = None, class_name: Optional[str] = "Benign") -> int:
+        """Total flow count in traffic_summaries since start_time (database aggregate, no row limit)."""
+        if not self.is_connected():
+            return 0
+        match: Dict[str, Any] = {}
+        if class_name:
+            match["class_name"] = class_name
+        if start_time:
+            match["minute"] = {"$gte": start_time}
+        try:
+            rows = list(self.traffic_summaries.aggregate([
+                {"$match": match},
+                {"$group": {"_id": None, "n": {"$sum": "$flow_count"}}},
+            ]))
+            return int(rows[0]["n"]) if rows else 0
+        except PyMongoError as e:
+            logger.error(f"Error summing traffic summaries: {e}")
+            return 0
 
     def get_traffic_summaries(
         self,

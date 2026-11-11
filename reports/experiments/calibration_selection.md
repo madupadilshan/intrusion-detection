@@ -1,7 +1,7 @@
 # Step 17a: Choice of the Calibration Method (D-044)
 
-**Generated:** 2026-11-10 23:17:07  
-**Data:** grouped out-of-fold probabilities from Step 14 (1,184,004 flows, 22 scenarios, 5 folds). **The held-out scenario 34-1 is not used.**  
+**Generated:** 2026-11-11 09:29:45  
+**Data:** grouped out-of-fold probabilities from Step 14 (1,182,984 flows, 22 scenarios, 5 folds). **The held-out scenario 34-1 is not used.**  
 **Scoring:** cross-fitted — each fold is calibrated by a fit on the other folds.
 
 ## 1. Rule (written in D-044 before this comparison)
@@ -14,11 +14,11 @@
 
 | Method | Macro-F1 | Lowest class recall | Recall Benign | Recall DDoS_DoS | Recall PortScan | Recall CnC | Recall Malware_Download | Mean Brier | Classes reaching the block rule |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| `none` **(used)** | 0.7084 | 0.5252 | 0.9534 | 0.6658 | 0.5252 | 0.9466 | 0.7368 | 0.0921 | DDoS_DoS, PortScan, CnC, Malware_Download |
-| `sigmoid_per_class` | 0.7059 | 0.6013 | 0.6129 | 0.7881 | 0.6226 | 0.8721 | 0.6013 | 0.1027 | DDoS_DoS, CnC, Malware_Download |
-| `temperature` | 0.7084 | 0.5252 | 0.9534 | 0.6658 | 0.5252 | 0.9466 | 0.7368 | 0.1007 | DDoS_DoS, PortScan, Malware_Download |
-| `multinomial` | 0.6616 | 0.5525 | 0.5760 | 0.6536 | 0.5525 | 0.7632 | 0.7987 | 0.1282 | none |
-| `multinomial_balanced` | 0.6363 | 0.4142 | 0.6087 | 0.6881 | 0.4142 | 0.9567 | 0.7989 | 0.1411 | none |
+| `none` **(used)** | 0.7097 | 0.5707 | 0.9633 | 0.6224 | 0.5707 | 0.9642 | 0.7370 | 0.0925 | DDoS_DoS, PortScan, CnC, Malware_Download |
+| `sigmoid_per_class` (D-044 rule) | 0.7505 | 0.5971 | 0.8312 | 0.7900 | 0.6477 | 0.8967 | 0.5971 | 0.0998 | DDoS_DoS, CnC, Malware_Download |
+| `temperature` | 0.7097 | 0.5707 | 0.9633 | 0.6224 | 0.5707 | 0.9642 | 0.7370 | 0.0998 | DDoS_DoS, PortScan, CnC, Malware_Download |
+| `multinomial` | 0.6372 | 0.5388 | 0.6183 | 0.7046 | 0.5388 | 0.7395 | 0.6120 | 0.1367 | DDoS_DoS |
+| `multinomial_balanced` | 0.6307 | 0.4375 | 0.6144 | 0.6954 | 0.4375 | 0.9480 | 0.6521 | 0.1439 | DDoS_DoS |
 
 Method descriptions:
 
@@ -30,7 +30,7 @@ Method descriptions:
 
 ## 3. Choice
 
-**D-044 rule result: `none`** — every class has recall >= 0.05 for: none, sigmoid_per_class, temperature, multinomial, multinomial_balanced; 'none' has the highest macro-F1 among them.
+**D-044 rule result: `sigmoid_per_class`** — every class has recall >= 0.05 for: none, sigmoid_per_class, temperature, multinomial, multinomial_balanced; 'sigmoid_per_class' has the highest macro-F1 among them.
 
 This method then **failed** the single final check on the held-out scenario 34-1 (decision D-045): it learns how the model confuses classes on unseen out-of-fold scenarios, and these confusions do not carry over to the final model trained on all 22 scenarios. For example, it turned most 34-1 DDoS flows into Benign.
 

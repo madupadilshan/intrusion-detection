@@ -1,0 +1,61 @@
+# lab_hardware/settings.hardware.yaml - Settings for the HARDWARE lab (real camera, managed switch,
+# Linux sensor, lab router). Read through IDS_SETTINGS_FILE by lab_hardware/hwlab.py.
+# Same structure as config/settings.yaml. Change the values marked "CHANGE" to match your lab
+# (guide Step 5 IP plan). config/settings.yaml is not changed by the hardware lab.
+#
+# auto_response is NOT set here: `hwlab.py ids-start --auto-response on|off` writes it into
+# lab_hardware/runtime_settings.yaml (not in Git) for that run only, and the run's report says
+# which value was used. Default: off.
+
+lab:
+  approved_scan_subnets: ["192.168.50.0/24"]  # Nmap may scan ONLY these (proposal 3.7)
+  local_networks: ["192.168.50.0/24"]         # the camera LAN; never blocked automatically
+  sensor_mirror_interface: "enp2s0"           # CHANGE: the sensor's 2nd network port (mirror port, no IP). See `ip link`.
+  camera_ip: 192.168.50.30                    # CHANGE: the real IP camera
+  camera_ports: [80, 554]                     # CHANGE: the camera's web and RTSP ports (used to check "the camera service comes back")
+  camera_sim_ip: 192.168.50.31                # lab computer on the camera LAN that plays an infected camera (scenarios 4 and 5, D-054)
+  attack_ip: 10.10.10.50                      # attack test computer on the outside lab network
+
+allowlist:            # management IPs that are NEVER blocked (must match the `allow` set in sensor/ids_router.nft)
+  - 192.168.50.1      # lab router / gateway
+  - 192.168.50.5      # IDS sensor (management port)
+  - 192.168.50.10     # admin workstation
+  - 192.168.50.20     # NVR
+
+response:
+  deployment_mode: passive      # passive: switch mirror port + the router blocks (proposal Figure 5, left)
+  adapter: router               # nftables on the lab router, over SSH (inline mode: adapter nftables)
+  min_confidence: 0.30
+  min_repeats: 3
+  repeat_window_seconds: 60
+  max_rule_minutes: 30
+  allow_device_isolation: false
+  ddos_rate_limit: true         # D-055: rate-limit (not block) an outside DDoS source
+
+firewall:
+  table_name: ids
+  table_family: inet            # inline mode (sensor bridge): bridge
+  router_host: 192.168.50.1     # CHANGE if your router has another LAN address
+  router_port: 22
+  router_user: root
+  router_key_file: lab_hardware/keys/router_admin          # made by `hwlab.py setup`
+  router_known_hosts_file: lab_hardware/keys/known_hosts   # made by `hwlab.py trust-router`; ~/.ssh is not used
+  simulate: false
+  use_sudo: false
+
+server:
+  # Pages that may call the API. The backend serves the dashboard itself on port 5000.
+  cors_origins: ["http://192.168.50.5:5000", "http://192.168.50.5:3000"]   # CHANGE if the sensor has another address
+
+zeek:
+  conn_log_path: /var/log/ids-zeek/conn.log
+  files_log_path: /var/log/ids-zeek/files.log
+
+model:
+  bundle_path: ml_engine/models/ids_bundle_v3.joblib
+  random_seed: 42
+
+retention_days:
+  attack_events: 90
+  traffic_summaries: 30
+  system_logs: 90

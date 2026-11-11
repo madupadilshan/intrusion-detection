@@ -38,6 +38,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
+sys.path.insert(0, str(ROOT))
+from tools.lab_common import ip_in_sets, nft_sets, scenario_report  # noqa: E402
+
 KEYS = HERE / "keys"
 LOGS = HERE / "zeek_logs"
 COMPOSE = ["docker", "compose", "-f", str(HERE / "docker-compose.yml")]
@@ -51,6 +54,7 @@ REPORTS = ROOT / "reports" / "lab_tests" / "virtual"
 PY = sys.executable
 
 CAMERA, ATTACKER, CLOUD = "192.168.50.30", "10.10.10.50", "10.10.10.123"
+ADMIN, NVR = "192.168.50.10", "192.168.50.20"
 
 
 def run(cmd, check=True, capture=False, timeout=None):
@@ -160,7 +164,7 @@ def cmd_ids_start(_):
     tok = login()
     code, st = api("POST", "/api/v1/pipeline/start", tok)
     print(f"IDS backend running (pid {p.pid}), database {DB_NAME}; pipeline start: {code} {st.get('status', st)}")
-    print(f"Dashboard: http://localhost:3000  login in {LOGIN_FILE}")
+    print(f"Dashboard: http://localhost:5000 (served by the backend)  login in {LOGIN_FILE}")
 
 
 def cmd_ids_stop(_):
@@ -176,21 +180,7 @@ def cmd_ids_stop(_):
 
 # ------------------------------------------------------------------ status / reset
 def router_blocks() -> dict:
-    out = router_ssh("nft -j list table inet ids", check=False)
-    sets = {}
-    try:
-        for item in json.loads(out).get("nftables", []):
-            s = item.get("set")
-            if s and s["name"] in ("block_src", "block_dst", "limit_src"):
-                elems = []
-                for e in s.get("elem", []):
-                    v = e.get("elem", {}).get("val") if isinstance(e, dict) else e
-                    t = e.get("elem", {}).get("expires") if isinstance(e, dict) else None
-                    elems.append(f"{v}" + (f" (ends in {t}s)" if t else ""))
-                sets[s["name"]] = elems
-    except (ValueError, AttributeError):
-        sets["error"] = out.strip()[:300]
-    return sets
+    return nft_sets(router_ssh("nft -j list table inet ids", check=False))
 
 
 def conn_lines() -> int:
@@ -247,10 +237,12 @@ SCENARIOS = {
         "most flows benign; no high-confidence attack event", "no automatic block"),
     2: ("Authorised Nmap horizontal scan",
         "attack laptop: nmap -p 23,80,554 192.168.50.0/24",
-        "port-scan class or a scan alert", "the scanner blocked only if the policy allows; camera never blocked"),
+        "port-scan class or a scan alert",
+        "the scanner blocked only after the threshold; the allowlisted admin can still get in; camera never blocked"),
     3: ("Rate-limited DDoS-like traffic",
         "attack laptop: SYN flood to the camera port 80, 1000 packets/s for 20 s (tests/lab_scenarios/syn_flood.py)",
-        "DDoS/DoS prediction; more events than usual", "DDoS is alert only (D-046/D-051): no block expected"),
+        "DDoS/DoS prediction; more events than usual",
+        "the source rate-limited (D-055) or blocked; the camera service comes back"),
     4: ("C&C-like periodic outbound simulation",
         "lab C&C server on the attack laptop (port 6667 closed for the first 120 s); camera simulator "
         "connects every 5 s and keeps short chat sessions",
@@ -267,7 +259,7 @@ SCENARIOS = {
 
 
 def run_scenario(n: int, wait: float) -> dict:
-    notes = []
+    notes, checks = [], []
     if n == 1:
         notes.append(f"waited {wait:.0f} s with normal traffic only")
         time.sleep(wait)
@@ -275,11 +267,17 @@ def run_scenario(n: int, wait: float) -> dict:
         r = dexec("ids-lab-attacker", "nmap", "-p", "23,80,554", "192.168.50.0/24", timeout=600)
         notes.append("nmap output:\n" + "\n".join(l for l in r.stdout.splitlines() if l.strip())[-1500:])
         time.sleep(wait)
+        checks.append(("Admin PC can still open the camera page (admin -> camera:80)",
+                       "yes" if reach("ids-lab-admin", CAMERA, 80) else "NO"))
     elif n == 3:
+        before = reach("ids-lab-nvr", CAMERA, 554)
         r = dexec("ids-lab-attack-server", "python", "-u", "/lab/syn_flood.py", CAMERA, "--port", "80",
                   "--rate", "1000", "--seconds", "20", timeout=120)
         notes.append(r.stdout.strip())
         time.sleep(wait)
+        after = reach("ids-lab-nvr", CAMERA, 554) and reach("ids-lab-admin", CAMERA, 80)
+        checks.append(("Camera service (NVR -> camera:554, admin -> camera:80) before / after the flood",
+                       f"{'up' if before else 'DOWN'} / {'up (comes back)' if after else 'DOWN'}"))
     elif n == 4:
         dexec("ids-lab-attack-server", "python", "-u", "/lab/lab_server.py", "--role", "cnc",
               "--cnc-open-after", "120", detach=True)
@@ -303,11 +301,12 @@ def run_scenario(n: int, wait: float) -> dict:
         code2, res2 = api("DELETE", f"/api/blocklist/{ATTACKER}", tok, body={"reason": "Table 10 row 6 test done"})
         time.sleep(3)
         after = reach("ids-lab-attack-server", CAMERA, 80)
-        notes.append(f"attack laptop -> camera:80 before block: {'open' if before else 'blocked'}; "
-                     f"manual block API {code}; router sets {blocked_router}; during block: "
-                     f"{'open' if during else 'blocked'}; unblock API {code2}; after unblock: "
-                     f"{'open' if after else 'blocked'}")
-    return {"notes": notes}
+        notes.append(f"router sets during the block: {blocked_router}")
+        checks += [("Manual block / unblock API answers", f"{code} / {code2}"),
+                   ("Attack laptop -> camera:80 before / during / after the block",
+                    f"{'open' if before else 'blocked'} / {'open' if during else 'blocked'} / "
+                    f"{'open' if after else 'blocked'}")]
+    return {"notes": notes, "checks": checks}
 
 
 def cmd_scenario(args):
@@ -325,38 +324,34 @@ def cmd_scenario(args):
     code, bl = api("GET", "/api/blocklist", tok)
     blocks = bl.get("blocks", [])
     rblocks = router_blocks()
-    cam_blocked = any(b.get("ip") == CAMERA for b in blocks) or any(CAMERA in str(v) for v in rblocks.values())
-    code, st = api("GET", "/api/v1/pipeline/status", tok)
-
-    by = {}
-    for e in events:
-        k = (e.get("predicted_class"), e.get("src_ip"), e.get("dst_ip"), e.get("reason_code"))
-        b = by.setdefault(k, {"events": 0, "flows": 0, "max_conf": 0.0})
-        b["events"] += 1
-        b["flows"] += int(e.get("flow_count") or 1)
-        b["max_conf"] = max(b["max_conf"], float(e.get("confidence") or 0))
-    REPORTS.mkdir(parents=True, exist_ok=True)
+    checks = res["checks"]
+    if n == 1:
+        auto = [b for b in blocks if str(b.get("actor", "")).startswith("autonomous")]
+        checks.append(("Automatic blocks during the run", str(len(auto))))
+    elif n == 2:
+        top = max((float(e.get("confidence") or 0) for e in events if e.get("predicted_class") == "PortScan"), default=0)
+        checks += [("Highest PortScan confidence", f"{top:.2f}"),
+                   (f"Scanner {ATTACKER} blocked", ", ".join(ip_in_sets(ATTACKER, rblocks)) or "no")]
+    elif n == 3:
+        checks.append((f"Source {ATTACKER} rate-limited (limit_src) or blocked (block_src)",
+                       ", ".join(ip_in_sets(ATTACKER, rblocks)) or "NO"))
+    elif n == 4:
+        checks.append((f"C&C destination {ATTACKER} blocked (block_dst)",
+                       "yes" if ip_in_sets(ATTACKER, rblocks, ["block_dst"]) else "NO"))
+    elif n == 5:
+        checks.append(("File-type rule alerts (RULE_EXECUTABLE_DOWNLOAD)",
+                       str(sum(1 for e in events if e.get("reason_code") == "RULE_EXECUTABLE_DOWNLOAD"))))
+    code, summ = api("GET", "/api/summary", tok)
     path = REPORTS / f"scenario_{n}_{start.strftime('%Y%m%d_%H%M%S')}.md"
-    md = [f"# Virtual lab - Table 10 scenario {n}: {title}", "",
-          f"- **When (UTC):** {start:%Y-%m-%d %H:%M:%S} to {end:%H:%M:%S}",
-          "- **Where:** virtual lab (Docker, `lab_virtual/`): real packets, real Zeek, the real IDS backend "
-          "and pipeline, real nftables on the lab router. The devices are containers, not physical devices.",
-          f"- **How:** {how}", f"- **Expected (written before):** {expect}", f"- **Safe result needed:** {safe}",
-          f"- **Model:** {st.get('model_version') or 'see dashboard'}; Zeek flows during the run: "
-          f"{conn_lines() - lines0:,}", "", "## What the system did", "",
-          "| Class | Source | Destination | Reason | Events | Flows | Max confidence |",
-          "| --- | --- | --- | --- | ---: | ---: | ---: |"]
-    for (c, s, d, r), b in sorted(by.items(), key=lambda x: -x[1]["flows"]):
-        md.append(f"| {c} | {s} | {d} | {r} | {b['events']} | {b['flows']} | {b['max_conf']:.2f} |")
-    if not by:
-        md.append("| (no alerts) | | | | | | |")
-    md += ["", "## Blocks", "", f"- IDS blocklist (database): "
-           + (", ".join(f"{b['ip']} ({b.get('direction')}, {b.get('reason')})" for b in blocks) or "none"),
-           f"- Router nftables sets (what is really enforced): {rblocks}",
-           f"- Camera {CAMERA} blocked: **{'YES - WRONG' if cam_blocked else 'no (correct)'}**", "",
-           "## Notes", ""] + [f"```\n{x}\n```" for x in res["notes"]]
-    path.write_text("\n".join(md) + "\n", encoding="utf-8")
-    print("\n".join(md[10:]))
+    text = scenario_report(
+        path=path, title=f"Virtual lab - Table 10 scenario {n}: {title}",
+        where="virtual lab (Docker, `lab_virtual/`): real packets, real Zeek, the real IDS backend and pipeline, "
+              "real nftables on the lab router. The devices are containers, not physical devices.",
+        start=start, end=end, how=how, expect=expect, safe=safe,
+        model=(summ.get("system") or {}).get("model_version", "unknown"), flows=conn_lines() - lines0,
+        events=events, blocks=blocks, fw_sets=rblocks,
+        protected={CAMERA: "camera", ADMIN: "admin PC", NVR: "NVR"}, checks=checks, notes=res["notes"])
+    print(text.split("## What the system did", 1)[-1])
     print(f"\nreport: {path}")
 
 

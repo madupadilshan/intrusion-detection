@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -48,7 +49,9 @@ class LivePipelineRunner:
         self.files_follower: Optional[FilesLogFollower] = None
         if file_check is not None:
             path = Path(files_log_path) if files_log_path else Path(self.zeek_adapter.conn_log_path).parent / "files.log"
-            self.files_follower = FilesLogFollower(path, file_check)
+            # the reading place is kept next to the conn.log adapter's own state (data/local/)
+            state = Path(__file__).resolve().parent.parent / "data" / "local" / ".files_log_state.json"
+            self.files_follower = FilesLogFollower(path, file_check, state_path=state)
 
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
@@ -56,6 +59,10 @@ class LivePipelineRunner:
         self._status = "stopped"
         self._error_message: Optional[str] = None
 
+        # Measured speed (proposal Table 9, RQ4): time from reading a Zeek line to the
+        # dashboard push for each flow, and flows per second over the last minute.
+        self._latency_ms: deque = deque(maxlen=5000)
+        self._flow_times: deque = deque()
         self._metrics: Dict[str, Any] = {
             "started_at": None,
             "last_active": None,
@@ -67,6 +74,23 @@ class LivePipelineRunner:
 
         if auto_start:
             self.start()
+
+    def _speed(self) -> Dict[str, Any]:
+        """Median and 95th percentile of the measured per-flow time, and flows per second."""
+        now = time.monotonic()
+        while self._flow_times and self._flow_times[0][0] < now - 60.0:
+            self._flow_times.popleft()
+        out: Dict[str, Any] = {
+            "flows_per_second_60s": round(sum(n for _, n in self._flow_times) / 60.0, 2),
+            "latency_samples": len(self._latency_ms),
+            "latency_ms_p50": None,
+            "latency_ms_p95": None,
+        }
+        if self._latency_ms:
+            vals = sorted(self._latency_ms)
+            out["latency_ms_p50"] = round(vals[len(vals) // 2], 2)
+            out["latency_ms_p95"] = round(vals[min(len(vals) - 1, int(0.95 * len(vals)))], 2)
+        return out
 
     @property
     def is_running(self) -> bool:
@@ -82,7 +106,7 @@ class LivePipelineRunner:
                 "is_running": self.is_running,
                 "error_message": self._error_message,
                 "conn_log_path": str(self.zeek_adapter.conn_log_path),
-                "metrics": dict(self._metrics),
+                "metrics": {**self._metrics, **self._speed()},
                 "file_check": ({"files_log_path": str(self.files_follower.path),
                                 "running": self.files_follower.is_running,
                                 **self.files_follower.check.metrics}
@@ -186,7 +210,13 @@ class LivePipelineRunner:
                 if getattr(o, "response_status", "") in ("blocked", "rate_limited")
             ]
 
+            mono = time.monotonic()
             with self._lock:
+                for o in outcomes:
+                    v = getattr(o, "pipeline_latency_ms", None)
+                    if v is not None:
+                        self._latency_ms.append(float(v))
+                self._flow_times.append((mono, len(batch)))
                 self._metrics["batches_processed"] += 1
                 self._metrics["flows_processed"] += len(batch)
                 self._metrics["attacks_detected"] += len(attacks)

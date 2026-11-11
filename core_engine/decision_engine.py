@@ -26,12 +26,13 @@ from __future__ import annotations
 import os
 
 import json
+from collections import OrderedDict
 import logging
 import time
 from datetime import datetime, timezone
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import yaml
 
@@ -173,10 +174,18 @@ class DecisionEngine:
         # Active (blocking) thresholds per class come from the model bundle /
         # operational_thresholds.json (Step 17). A class with no active threshold
         # is never blocked automatically; it can only raise alerts.
+        # D-055: a class with no block threshold but a rate-limit threshold (DDoS_DoS) is
+        # rate-limited instead of blocked, unless settings response.ddos_rate_limit is false.
+        self.rate_limit_enabled: bool = bool(response_cfg.get("ddos_rate_limit", True))
+        self.rate_limit_classes: set = set()
         min_conf_map: Dict[str, float] = {}
         for cls_name, cls_cfg in self.thresholds.items():
             if isinstance(cls_cfg, dict) and cls_cfg.get("active_response_threshold") is not None:
                 min_conf_map[cls_name] = float(cls_cfg["active_response_threshold"])
+            elif (isinstance(cls_cfg, dict) and cls_cfg.get("rate_limit_threshold") is not None
+                  and self.rate_limit_enabled):
+                min_conf_map[cls_name] = float(cls_cfg["rate_limit_threshold"])
+                self.rate_limit_classes.add(cls_name)
             elif cls_name != "Benign":
                 min_conf_map[cls_name] = 1.01  # unreachable: alert only
         self.policy = ResponsePolicy(
@@ -189,10 +198,16 @@ class DecisionEngine:
             auto_response=bool(response_cfg.get("auto_response", False)),
             allow_device_isolation=bool(response_cfg.get("allow_device_isolation", False)),
             local_networks=(self.settings.get("lab", {}) or {}).get("local_networks"),
+            rate_limit_classes=sorted(self.rate_limit_classes),
         )
-        # IPs blocked by this engine and when the rule ends, so one attack does not
-        # create a new firewall rule for every single flow.
-        self._active_blocks: Dict[str, float] = {}
+        # (IP, action) handled by this engine and when the rule ends, so one attack does not
+        # create a new firewall rule for every single flow. A rate-limited source can still be
+        # blocked later by another class (for example a port scan from the same source).
+        self._active_blocks: Dict[Tuple[str, str], float] = {}
+        # Events already pushed to the dashboard: event_id -> [flows, last push time].
+        # The database joins the flows of one attack burst into one event, so the dashboard
+        # gets one "new_event" per event and then at most one "event_update" per second.
+        self._pushed_events: "OrderedDict[str, List[float]]" = OrderedDict()
         self._min_confidence_floor: Optional[float] = None
         # settings.yaml response.min_confidence = lowest confidence for any automatic block.
         if response_cfg.get("min_confidence") is not None:
@@ -295,6 +310,7 @@ class DecisionEngine:
                         predicted_class=details.get("class"),
                         confidence=details.get("confidence"),
                         actor=actor,
+                        action="rate_limit" if decision.action == "rate_limit" else "block",
                     )
                 except Exception as exc:
                     logger.error("Failed to save the block of %s in the blocklist: %s", decision.target_ip, exc)
@@ -566,6 +582,8 @@ class DecisionEngine:
         class_thresh = self.thresholds.get(p_class, FALLBACK_THRESHOLDS.get(p_class, {}))
         alert_raw = class_thresh.get("passive_alert_threshold", 0.50)
         block_raw = class_thresh.get("active_response_threshold", 0.70)
+        if block_raw is None and p_class in self.rate_limit_classes:
+            block_raw = class_thresh.get("rate_limit_threshold")  # D-055: rate-limit candidate
         alert_threshold = float(alert_raw) if alert_raw is not None else 0.50
         # None = Step 17 found no safe block threshold: this class only raises alerts.
         block_threshold = float(block_raw) if block_raw is not None else float("inf")
@@ -599,6 +617,7 @@ class DecisionEngine:
         # Persist to database if alert or candidate
         if action in ("ALERT_ONLY", "ACTIVE_BLOCK_CANDIDATE"):
             event_payload = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "src_ip": src_ip,
                 "src_port": src_port,
                 "dst_ip": dst_ip,
@@ -639,11 +658,11 @@ class DecisionEngine:
                 except Exception as e:
                     logger.error("Failed to record attack event in MongoDB: %s", e)
 
-            # Socket.IO real-time alert push
+            # Socket.IO real-time alert push (FR-04)
             emit_ts = time.time()
             if self.socketio is not None:
                 try:
-                    self.socketio.emit("new_event", event_payload)
+                    self._push_event(event_payload, event_id, emit_ts)
                 except Exception as e:
                     logger.error("Failed to emit new_event via Socket.IO: %s", e)
         else:
@@ -682,6 +701,31 @@ class DecisionEngine:
             },
             pipeline_latency_ms=round(latency_ms, 2),
         )
+
+    MAX_PUSHED_EVENTS = 20000
+
+    def _push_event(self, payload: Dict[str, Any], event_id: Optional[str], now: float) -> None:
+        """Send one "new_event" for a new event, then throttled "event_update" messages for
+        later flows of the same event (an attack burst can be thousands of flows)."""
+        key = str(event_id) if event_id else None
+        if key is None or key not in self._pushed_events:
+            self.socketio.emit("new_event", payload)
+            if key is not None:
+                self._pushed_events[key] = [1, now]
+                while len(self._pushed_events) > self.MAX_PUSHED_EVENTS:
+                    self._pushed_events.popitem(last=False)
+            return
+        info = self._pushed_events[key]
+        info[0] += 1
+        self._pushed_events.move_to_end(key)
+        if now - info[1] >= 1.0:
+            info[1] = now
+            self.socketio.emit("event_update", {
+                "event_id": key,
+                "flow_count": int(info[0]),
+                "last_seen": payload.get("timestamp"),
+                "confidence": payload.get("confidence"),
+            })
 
     def process_flows(self, flows: List[Dict[str, Any]]) -> List[DecisionOutcome]:
         """
@@ -793,18 +837,26 @@ class DecisionEngine:
             "repeat_window_seconds": self.policy.repeat_window_seconds,
             "max_rule_minutes": self.policy.max_rule_minutes,
             "auto_response": self.policy.auto_response,
-            "block_thresholds": {k: (None if v > 1.0 else v) for k, v in self.policy.min_confidence_map.items()},
+            "block_thresholds": {k: (None if v > 1.0 else v) for k, v in self.policy.min_confidence_map.items()
+                                 if k not in self.rate_limit_classes},
+            "rate_limit_thresholds": {k: self.policy.min_confidence_map[k] for k in sorted(self.rate_limit_classes)
+                                      if k in self.policy.min_confidence_map},
         }
 
     def _class_active_threshold(self, cls_name: str) -> float:
         cfg = self.thresholds.get(cls_name, {})
         if isinstance(cfg, dict) and cfg.get("active_response_threshold") is not None:
             return float(cfg["active_response_threshold"])
+        if (cls_name in self.rate_limit_classes and isinstance(cfg, dict)
+                and cfg.get("rate_limit_threshold") is not None):
+            return float(cfg["rate_limit_threshold"])
         return 1.01
 
     def forget_block(self, ip: str) -> None:
         """Forget an engine block after a manual unblock, so a new attack can be blocked again."""
-        self._active_blocks.pop(str(ip).strip(), None)
+        ip = str(ip).strip()
+        for key in [k for k in self._active_blocks if k[0] == ip]:
+            self._active_blocks.pop(key, None)
 
     def respond_to_outcome(self, outcome: DecisionOutcome) -> Optional[PolicyDecision]:
         """Run the response policy for a block candidate and act if every check passes.
@@ -829,7 +881,8 @@ class DecisionEngine:
             return decision
 
         now = time.time()
-        expires = self._active_blocks.get(decision.target_ip)
+        block_key = (decision.target_ip, decision.action_type)
+        expires = self._active_blocks.get(block_key)
         if expires is not None and expires > now:
             outcome.response_status = "already_blocked"
             return decision
@@ -847,7 +900,7 @@ class DecisionEngine:
 
         if outcome.response_status != "failed":
             outcome.response_status = "rate_limited" if decision.action_type == "rate_limit" else "blocked"
-            self._active_blocks[decision.target_ip] = now + 60.0 * max(1, decision.duration_minutes)
+            self._active_blocks[block_key] = now + 60.0 * max(1, decision.duration_minutes)
 
         if outcome.event_id and self.db is not None and hasattr(self.db, "update_attack_event_status"):
             try:

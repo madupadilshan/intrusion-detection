@@ -16,6 +16,11 @@ reports/experiments/variant_selection.json (read by ml_engine/training_rows.py).
 
 Run (after Step 14 for both variants):
   python ml_engine/select_variant.py --base WC --candidate WCD
+
+A later, written decision may deploy the other variant (D-054: the owner and the supervisor chose
+WCD after the out-of-fold results were seen). Then the rule's own result is still computed and
+written next to the decision, so the report shows both:
+  python ml_engine/select_variant.py --base WC --candidate WCD --decided WCD --decided-by D-054       --decided-reason "..."
 """
 
 from __future__ import annotations
@@ -87,7 +92,13 @@ def main() -> None:
                     help="extra out-of-fold file to score on the same rows, for comparison only "
                          "(e.g. 'v2.0.0 (26 features)=WC=data/processed/v2_26features/rf_oof_WC.npz')")
     ap.add_argument("--no-copy", action="store_true", help="only report; do not copy the chosen files")
+    ap.add_argument("--decided", choices=VARIANTS, default=None,
+                    help="deploy this variant because of a later written decision (needs --decided-by)")
+    ap.add_argument("--decided-by", default=None, help="decision-log entry, e.g. D-054")
+    ap.add_argument("--decided-reason", default="", help="one sentence: why the decision differs from the rule")
     args = ap.parse_args()
+    if args.decided and not args.decided_by:
+        raise SystemExit("--decided needs --decided-by (the decision-log entry)")
     base, cand = args.base, args.candidate
     decision = DECISION.get((base, cand), "D-052")
 
@@ -121,9 +132,15 @@ def main() -> None:
             labels[f"compare: {name}"] = f"{name}, compared rows"
 
     gain = res[f"{cand}_compared_rows"]["macro_f1"] - res[f"{base}_compared_rows"]["macro_f1"]
-    chosen = cand if gain >= MIN_GAIN else base
+    rule_choice = cand if gain >= MIN_GAIN else base
+    chosen = args.decided or rule_choice
+    if args.decided:
+        decision = f"{decision}, {args.decided_by}"
     out = {
         "decision": decision,
+        "rule_choice": rule_choice,
+        "decided_by": args.decided_by,
+        "decided_reason": args.decided_reason or None,
         "rule": (f"compare on the rows both variants keep; {cand} only if its macro-F1 is at least "
                  f"{MIN_GAIN} higher, else {base}"),
         "base": base,
@@ -168,7 +185,10 @@ def main() -> None:
         f"- Compared rows (kept by both {base} and {cand}): {out['compared_rows']:,}.",
         f"- Rows left out by the trusted-label rule (D-051): {out['rows_left_out_by_trusted_rule']:,}; "
         f"rows listed as disputed (D-052, `config/disputed_labels.yaml`): {out['rows_disputed']:,}.",
-        f"- {cand} minus {base} on the compared rows: {gain:+.4f}. **Chosen: {chosen}.**",
+        f"- {cand} minus {base} on the compared rows: {gain:+.4f}. Result of the rule: {rule_choice}.",
+        (f"- **Deployed: {chosen}, by decision {args.decided_by}** (made after these out-of-fold results were seen; "
+         f"see `docs/decision_log.md`). {args.decided_reason}".rstrip()
+         if args.decided else f"- **Deployed: {chosen}** (by the rule)."),
         "- Each variant has its own grouped folds (the fold split depends on the rows), "
         "so part of a difference can come from the fold split.",
         "- These are training-data (out-of-fold) results. The held-out result is in `evaluation_iot23.md`.",

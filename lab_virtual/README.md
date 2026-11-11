@@ -42,11 +42,7 @@ It does **not** replace the hardware lab. A real camera, a real switch mirror po
 .venv\Scripts\python.exe lab_virtual\lab.py status
 ```
 
-To open the dashboard, serve the built dashboard and open http://localhost:3000:
-
-```
-cd my-app\build; ..\..\.venv\Scripts\python.exe -m http.server 3000 --bind 127.0.0.1
-```
+Open the dashboard at http://localhost:5000. The backend serves the built dashboard; build it once with `cd my-app; npm run build`.
 
 The login is in `lab_virtual\keys\dashboard_login.txt`.
 

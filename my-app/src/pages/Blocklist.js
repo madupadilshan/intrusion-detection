@@ -223,7 +223,7 @@ const Blocklist = () => {
                           {rule.direction || "inbound"}
                         </td>
                         <td className="py-2.5 px-3 font-mono text-[11px] text-amber-300">
-                          {rule.reason || "AUTO_PORT_SCAN_REPEATED"}
+                          {rule.reason || "—"}
                         </td>
                         <td className="py-2.5 px-3 text-gray-400">
                           {rule.created_at ? new Date(rule.created_at).toLocaleTimeString() : "N/A"}
@@ -240,6 +240,7 @@ const Blocklist = () => {
                             }`}
                           >
                             {rule.status ? rule.status.toUpperCase() : "ACTIVE"}
+                            {rule.action === "rate_limit" ? " · RATE-LIMIT" : " · BLOCK"}
                           </span>
                         </td>
                         <td className="py-2.5 px-3 text-right">

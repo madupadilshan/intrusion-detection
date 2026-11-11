@@ -122,9 +122,9 @@ The status was checked on **19 October 2026**. We looked at the project folder (
 | 0    | Understand the project, literature review  | ✅     | Summary and literature notes written; Almashhadani citation removed (D-009); all members have read.         |
 | 1    | Lab plan, retention plan, logbook          | ✅     | All 3 files complete: device simulation/lab allocations, team permissions, keep periods (90/30/90).         |
 | 2    | Clean the folder and set up Git            | ✅     | Committed (`9f90ce1`) and pushed to GitHub. Backup done. Public repo accepted.                               |
-| 3    | Install the software                       | 🟡     | Step 3a ✅ done on Windows PC (.venv, pinned requirements, check_env PASSED). Step 3b/3c pending for lab.    |
+| 3    | Install the software                       | 🟡     | Step 3a ✅ done on Windows PC. Step 3b (sensor): `lab_hardware/install_sensor.sh` ready (Ubuntu 22.04: Zeek 8.0, MongoDB 8.0, nftables, Nmap, Python packages; 11 Nov 2026); not run yet. Step 3c: attack computer needs `nmap`, `python3`, `tests/lab_scenarios/`. |
 | 4    | Settings file and decision log             | ✅     | Local `config/settings.yaml`, `.env` and `docs/decision_log.md` (D-001 to D-013) complete; allowlist confirmed. |
-| 5    | Build the lab network                      | ⬜     | Hardware track: requires physical lab equipment (proceed to Step 6 on Development PC).      |
+| 5    | Build the lab network                      | ⬜     | Hardware track. Ready (11 Nov 2026): wiring, IP plan, OpenWrt / Linux router setup and switch mirror steps in `lab_hardware/README.md`; `docs/lab_network.md` template; `hwlab.py check` tests the "Done when" items. Real camera chosen (D-054). |
 | 6    | Threat model and requirement checklist     | ✅     | `docs/threat_model.md` and `docs/requirements_checklist.md` (FR-01–FR-08, O1–O6) complete.  |
 | 7    | Download IoT-23 and make a manifest        | ✅     | Local CSV copy of all 23 IoT-23 v1.0.0 scenarios in `data/raw/iot23/` (44.13 GB, 325.3M flows). `tools/verify_iot23_copy.py`: first and last flow match the official files for 23/23; label totals match the official website for 17 scenarios, 3 small label differences explained (D-039, D-046); download source still to record (issue 22). |
 | 8    | Write and freeze the label mapping         | ✅     | Frozen `config/label_mapping.yaml` to 5 target classes (D-014); all 17 labels resolved; ambiguous excluded (0.0031%). |
@@ -133,11 +133,11 @@ The status was checked on **19 October 2026**. We looked at the project folder (
 | 11   | Shared feature code                        | ✅     | `ml_engine/features.py` unified engine. **Updated 10 Nov 2026 (D-051, D-052):** 27 features = 19 one-flow features (6 cat, 13 num) + 8 window features from `ml_engine/window_features.py` (the same `WindowState` code in training and in the live Zeek adapter), including `pair_fail_1h` (failed tries to the same destination in the last hour, D-052); tests in `tests/unit/test_features.py` and `tests/unit/test_window_features.py` (18, incl. training = live check) (D-015, D-051, D-052). |
 | 12   | Sampling and class balance                 | ✅     | `ml_engine/sample_dataset.py`; capped $N=50,000$/class per scenario; 1,384,070 training flows. **Re-run 10 Nov 2026 (D-052):** window features (8) computed on all 325,299,706 flows in Zeek's order before sampling (70 min); same rows in the same order, earlier 26 columns identical (checked); `label_trusted` audit column (D-016, D-046, D-051, D-052). |
 | 13   | Plan the three test levels                 | ✅     | Three-level plan in `reports/test_split_plan.md`; Level 1 Grouped CV (`StratifiedGroupKFold`); Level 2 Held-out `Capture-34-1` (23,145 flows sealed in `data/processed/heldout/`); Level 3 Lab camera; tests passed in `tests/unit/test_sampling_and_splits.py` (D-017). |
-| 14   | Train the Random Forest                    | ✅     | `ml_engine/train.py`; grouped CV by scenario. **Re-run 10 Nov 2026 (D-052):** out-of-fold macro-F1 on the same rows: v1 0.3726, v2 0.7010, **WC 0.7085**, WCD 0.7097 → **WC chosen** by the rule written first (gain < 0.01; `reports/experiments/variant_selection.md`). WCD finds far more C&C conversations out-of-fold (41% vs 3%) — open decision, progress issue 45 (D-018, D-043, D-051, D-052). |
-| 15   | Compare with other models                  | ✅     | `ml_engine/compare_models.py`; **re-run 10 Nov 2026 (D-052):** out-of-fold macro-F1 RF **0.7084** > HGB 0.6947 > LR 0.6220 (same WC rows) (D-019, D-043, D-052). |
-| 16   | Evaluate on the held-out scenario          | ✅     | `ml_engine/evaluate.py`; **re-run 10 Nov 2026 (D-052)** on `Capture-34-1` (23,145 flows; **seen and studied before, not a clean test**): macro-F1 **0.6596** (5 classes) / **0.8244** (4 present), v2 0.6337 / 0.7921; PortScan precision 0.51 → 0.71; CnC recall 0.744 → 0.750 (C&C conversations still missed). H1 part 1 (≥ 0.85) **not met** (D-020, D-043, D-052). |
-| 17   | Calibration, explanation, thresholds       | ✅     | **Re-run 10 Nov 2026 (D-052):** Step 17a chose `none`; thresholds from out-of-fold data with the repeat-rule replay (D-046): block **CnC 0.30**, **PortScan 0.91**, DDoS and Malware_Download alert only; held-out final check macro-F1 0.6596. |
-| 18   | Model bundle and model card                | ✅     | **Re-run 10 Nov 2026:** `ml_engine/models/ids_bundle_v3.joblib` **v3.0.0** (5.2 MB, 27 features, variant WC, not in Git); v2 kept in `ml_engine/models/v2_26features/`, v1 in `v1_19features/`; `reports/experiments/model_card.md` filled from the result files (D-022, D-045, D-051, D-052). |
+| 14   | Train the Random Forest                    | ✅     | `ml_engine/train.py`; grouped CV by scenario. Out-of-fold macro-F1 on the same rows: v1 0.3726, v2 0.7010, WC 0.7085, WCD 0.7097. The D-052 rule gave WC; **WCD deployed by decision D-054 (11 Nov 2026)**: out-of-fold WCD finds 41% of the C&C conversations, WC 3% (`reports/experiments/variant_selection.md`) (D-018, D-051, D-052, D-054). |
+| 15   | Compare with other models                  | ✅     | `ml_engine/compare_models.py`; **re-run 11 Nov 2026 (WCD rows, D-054):** out-of-fold macro-F1 HGB **0.7391** > RF 0.7097 > LR 0.6257. RF stays the main model (proposal 2.4). Fixed: the RF accuracy and recall rows were typed-in numbers from an old run; now measured (D-056) (D-019, D-054, D-056). |
+| 16   | Evaluate on the held-out scenario          | ✅     | `ml_engine/evaluate.py`; **re-run 11 Nov 2026 (v3.1.0, WCD)** on `Capture-34-1` (**seen and studied before, not a clean test**): macro-F1 **0.8595** over the classes present (the H1 number, D-054) / 0.6876 over 5 classes (v3.0.0: 0.8244 / 0.6596); CnC recall 0.81; C&C conversations found 366 of 1,640 (v3.0.0: 3) (D-020, D-052, D-054). |
+| 17   | Calibration, explanation, thresholds       | ✅     | **Re-run 11 Nov 2026 (D-054, D-055):** Step 17a chose `none`; block **CnC 0.30**, **PortScan 0.88**; DDoS_DoS **rate-limit 0.30** (D-055); Malware_Download alert only. |
+| 18   | Model bundle and model card                | ✅     | **Re-run 11 Nov 2026:** `ml_engine/models/ids_bundle_v3.joblib` **v3.1.0** (17.7 MB, 27 features, variant WCD, not in Git); v3.0.0 kept in `ml_engine/models/v3_0_WC/`, v2 in `v2_26features/`, v1 in `v1_19features/`; model card regenerated (D-022, D-054). |
 | 19   | Run Zeek on the sensor                     | 🟡     | Re-opened 8 Nov 2026 (D-042): config, start script and tests ready; Zeek not yet run on the Linux sensor. |
 | 20   | Collect our own benign camera traffic      | 🟡     | Re-opened 8 Nov 2026 (D-042): the 31 Oct flows were synthetic and the result is withdrawn; real capture pending (`collect_camera_traffic.py --source real`). |
 | 21   | Zeek adapter                               | ✅     | `core_engine/zeek_adapter.py` streaming JSON adapter; offset persistence; micro-batching (`batch_size=100`, `timeout=0.5s`); direction & device enrichment; **8 window features added to every flow by `WindowState` (D-051, D-052)**; **file-type check on `files.log`** (`core_engine/file_check.py`, D-052); tested in the virtual lab with real Zeek 9.0.1 (D-053) (D-025, D-051, D-052, D-053). |
@@ -154,11 +154,11 @@ The status was checked on **19 October 2026**. We looked at the project folder (
 | 32   | nftables rules                             | ✅     | `sensor/ids_inline.nft` (bridge) & `sensor/ids_router.nft` (inet) rulesets; dynamic timeout sets (`block_src`, `block_dst`, `limit_src`); source-only allowlist; `core_engine/firewall/nftables_adapter.py` kernel adapter with dev simulation fallback; 12 unit tests passed (D-036). FR-06 fulfilled. |
 | 33   | Response adapters                          | ✅     | `core_engine/firewall/base.py` ABC; `router_adapter.py` passive SSH router mitigation; `simulation_adapter.py` in-memory dev engine; `__init__.py` factory; integrated with `DecisionEngine.execute_response()` & Flask blocklist REST API; 12 tests passed (8 unit, 4 integration) (D-037). FR-06 fulfilled. |
 | 34   | Manual control, expiry, restart recovery   | ✅     | Built and tested on the PC (simulation firewall): manual block/unblock with audit, `RuleExpiryWorker` (started with the server since 9 Nov fix), startup recovery (`reconcile_on_startup`) (D-047, D-048). Lab check with nftables/router in Steps 35 and 38. |
-| 35   | 6 controlled test scenarios                | ⬜     | —                                                                                                            |
-| 36   | Functional requirement tests               | ⬜     | —                                                                                                            |
-| 37   | Speed and resource use                     | ⬜     | —                                                                                                            |
-| 38   | Reliability tests                          | ⬜     | —                                                                                                            |
-| 39   | Usability and audit test                   | ⬜     | —                                                                                                            |
+| 35   | 6 controlled test scenarios                | 🟡     | Virtual lab: all 6 run (D-053, 10–11 Nov 2026, `reports/lab_tests/virtual/`). Hardware lab: `lab_hardware/hwlab.py scenario N --run R` ready (guided, checks each Table 10 safe result, writes `reports/lab_tests/hardware/`); not run yet. |
+| 36   | Functional requirement tests               | 🟡     | `tools/fr_tests.py` ready (11 Nov 2026): one automatic test per FR-01 to FR-08 on the running system → `reports/fr_tests.md`. Run it in the hardware lab. |
+| 37   | Speed and resource use                     | 🟡     | `tools/measure_latency.py` ready (11 Nov 2026): stage times (median, 95th percentile), flows/s, CPU and memory, Zeek packet loss (`capture_loss.log`, `stats.log`) → `reports/performance/`. Run it in the hardware lab under normal and attack load. |
+| 38   | Reliability tests                          | 🟡     | `hwlab.py reliability restart` and `reliability expiry` ready (11 Nov 2026); sensor restart and the inline bypass are done by hand (`lab_hardware/README.md`, `docs/lab_network.md`). |
+| 39   | Usability and audit test                   | 🟡     | Tasks and audit checklist in `docs/usability_tasks.md` (11 Nov 2026); every admin action now writes an audit record (D-056). Needs 3–5 people in the lab. |
 | 40   | Put all results together                   | ⬜     | —                                                                                                            |
 | 41   | Final documents                            | 🟡     | `README.md` started (overview and quick start).                                                              |
 | 42   | Final demo and data clean-up               | ⬜     | —                                                                                                            |
@@ -169,9 +169,9 @@ The status was checked on **19 October 2026**. We looked at the project folder (
 | -------------------------- | --------------- | ----------------- |
 | ✅ Fully done              | 30              | 0, 1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34 (34: lab check still in Steps 35 and 38) |
 | 🔧 Done, small changes left | 0               | —                 |
-| 🟡 Started                 | 5               | 3, 19, 20, 22, 41 |
+| 🟡 Started                 | 10              | 3, 19, 20, 22, 35, 36, 37, 38, 39, 41 (35–39: tools ready, hardware-lab run left) |
 | ♻️ Old code to reuse       | 0               | —                 |
-| ⬜ Not started             | 8               | 5, 35, 36, 37, 38, 39, 40, 42 |
+| ⬜ Not started             | 3               | 5, 40, 42 |
 
 ## 0.3 What to do next, in order
 
@@ -2511,6 +2511,14 @@ sudo nft list set bridge ids block_src                                    # list
 > This step needs the lab (Step 5) and a working system (Steps 19–34). The empty folder `tests/lab_scenarios/` is ready.
 >
 > **Update 10 Nov 2026 (D-053):** the scripts are now in `tests/lab_scenarios/` (`camera_sim.py`, `lab_server.py`, `syn_flood.py`). All 6 scenarios were run in the **virtual** lab (`lab_virtual/`, Docker, real Zeek and real router firewall); results in `reports/lab_tests/virtual/` and progress entry 3.73. These are rehearsals, not the hardware-lab results this step asks for.
+>
+> **Update 11 Nov 2026 (D-054, D-055, written before the hardware tests):** model v3.1.0 (WCD). The expected behaviour below replaces the 10 Nov notes where they differ:
+> - Scenario 2: PortScan block threshold is now **0.88**.
+> - Scenario 3: an outside DDoS source is now **rate-limited** automatically (D-055; to be confirmed with the supervisor before this test). The camera must come back.
+> - Scenario 4: the CnC block threshold stays 0.30.
+> - Scenarios 4 and 5: they use a camera-side lab computer (192.168.50.31), never the real camera (D-054).
+>
+> Run the tests with `lab_hardware/hwlab.py scenario N --run R`; how to set up the lab: `lab_hardware/README.md`.
 
 **Why:** These tests prove that the full system works safely (proposal Table 10).
 

@@ -22,6 +22,7 @@ response:
   repeat_window_seconds: 60
   max_rule_minutes: 30
   allow_device_isolation: false
+  ddos_rate_limit: true         # D-055: rate-limit (not block) an outside DDoS source; false = DDoS alert only
 
 firewall:
   table_name: ids

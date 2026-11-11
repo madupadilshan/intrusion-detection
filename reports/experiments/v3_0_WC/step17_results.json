@@ -1,0 +1,3220 @@
+{
+  "meta": {
+    "generated": "2026-11-10 23:24:06",
+    "oof_rows": 1184004,
+    "oof_scenarios": 22,
+    "heldout_scenario": "CTU-IoT-Malware-Capture-34-1",
+    "calibration_method_id": "none"
+  },
+  "level_1_oof": {
+    "macro_f1": 0.7084,
+    "accuracy": 0.6684
+  },
+  "calibration_oof": {
+    "Benign": {
+      "raw_brier": 0.0549,
+      "cal_brier": 0.0549
+    },
+    "DDoS_DoS": {
+      "raw_brier": 0.0735,
+      "cal_brier": 0.0735
+    },
+    "PortScan": {
+      "raw_brier": 0.1977,
+      "cal_brier": 0.1977
+    },
+    "CnC": {
+      "raw_brier": 0.0177,
+      "cal_brier": 0.0177
+    },
+    "Malware_Download": {
+      "raw_brier": 0.1167,
+      "cal_brier": 0.1167
+    }
+  },
+  "calibration_heldout": {
+    "Benign": {
+      "raw_brier": 0.0461,
+      "cal_brier": 0.0461
+    },
+    "DDoS_DoS": {
+      "raw_brier": 0.0097,
+      "cal_brier": 0.0097
+    },
+    "PortScan": {
+      "raw_brier": 0.0125,
+      "cal_brier": 0.0125
+    },
+    "CnC": {
+      "raw_brier": 0.0607,
+      "cal_brier": 0.0607
+    },
+    "Malware_Download": {
+      "raw_brier": null,
+      "cal_brier": null
+    }
+  },
+  "heldout_final_check": {
+    "flows": 23145,
+    "accuracy": 0.9158,
+    "macro_f1_5class": 0.6596,
+    "macro_f1_present_classes": 0.8244,
+    "weighted_f1": 0.9222,
+    "benign_fpr_argmax": 0.05668,
+    "benign_alert_rate": 0.05668,
+    "benign_block_candidate_rate": 0.04836,
+    "per_class": {
+      "Benign": {
+        "support": 1923,
+        "precision": 0.5229,
+        "recall": 0.9433,
+        "f1": 0.6728,
+        "pr_auc": 0.959
+      },
+      "DDoS_DoS": {
+        "support": 14394,
+        "precision": 0.9999,
+        "recall": 0.9895,
+        "f1": 0.9947,
+        "pr_auc": 0.9999,
+        "alert_precision": 0.9999,
+        "alert_recall": 0.9895,
+        "alert_benign_trigger_rate": 0.0
+      },
+      "PortScan": {
+        "support": 122,
+        "precision": 0.7078,
+        "recall": 0.8934,
+        "f1": 0.7899,
+        "pr_auc": 0.4396,
+        "alert_precision": 0.7078,
+        "alert_recall": 0.8934,
+        "alert_benign_trigger_rate": 0.0026,
+        "block_precision": 0.0,
+        "block_recall": 0.0,
+        "block_benign_trigger_rate": 0.0
+      },
+      "CnC": {
+        "support": 6706,
+        "precision": 0.9552,
+        "recall": 0.7502,
+        "f1": 0.8404,
+        "pr_auc": 0.9675,
+        "alert_precision": 0.9552,
+        "alert_recall": 0.7502,
+        "alert_benign_trigger_rate": 0.04836,
+        "block_precision": 0.9552,
+        "block_recall": 0.7502,
+        "block_benign_trigger_rate": 0.04836
+      },
+      "Malware_Download": {
+        "support": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "pr_auc": null,
+        "alert_precision": 0.0,
+        "alert_recall": 0.0,
+        "alert_benign_trigger_rate": 0.00572
+      }
+    },
+    "confusion_matrix": [
+      [
+        1814,
+        0,
+        5,
+        93,
+        11
+      ],
+      [
+        18,
+        14243,
+        2,
+        131,
+        0
+      ],
+      [
+        0,
+        1,
+        109,
+        12,
+        0
+      ],
+      [
+        1637,
+        0,
+        38,
+        5031,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  },
+  "block_replay_oof": {
+    "DDoS_DoS": [
+      {
+        "threshold": 0.3,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.31,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.32,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.33,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.34,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.35,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.36,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.37,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.38,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.39,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.4,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.41,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.42,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.43,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.44,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.45,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.46,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.47,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.48,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.49,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.5,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.51,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.52,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.53,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.54,
+        "blocks": 6,
+        "wrong_blocks": 1,
+        "right_class_blocks": 5,
+        "safe_share": 0.8333,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.55,
+        "blocks": 5,
+        "wrong_blocks": 1,
+        "right_class_blocks": 4,
+        "safe_share": 0.8,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.56,
+        "blocks": 5,
+        "wrong_blocks": 1,
+        "right_class_blocks": 4,
+        "safe_share": 0.8,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.57,
+        "blocks": 5,
+        "wrong_blocks": 1,
+        "right_class_blocks": 4,
+        "safe_share": 0.8,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.58,
+        "blocks": 4,
+        "wrong_blocks": 1,
+        "right_class_blocks": 3,
+        "safe_share": 0.75,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.59,
+        "blocks": 4,
+        "wrong_blocks": 1,
+        "right_class_blocks": 3,
+        "safe_share": 0.75,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.6,
+        "blocks": 4,
+        "wrong_blocks": 1,
+        "right_class_blocks": 3,
+        "safe_share": 0.75,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.61,
+        "blocks": 4,
+        "wrong_blocks": 1,
+        "right_class_blocks": 3,
+        "safe_share": 0.75,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.62,
+        "blocks": 3,
+        "wrong_blocks": 1,
+        "right_class_blocks": 2,
+        "safe_share": 0.6667,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.63,
+        "blocks": 3,
+        "wrong_blocks": 1,
+        "right_class_blocks": 2,
+        "safe_share": 0.6667,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.64,
+        "blocks": 3,
+        "wrong_blocks": 1,
+        "right_class_blocks": 2,
+        "safe_share": 0.6667,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.65,
+        "blocks": 3,
+        "wrong_blocks": 1,
+        "right_class_blocks": 2,
+        "safe_share": 0.6667,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.66,
+        "blocks": 3,
+        "wrong_blocks": 1,
+        "right_class_blocks": 2,
+        "safe_share": 0.6667,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.67,
+        "blocks": 3,
+        "wrong_blocks": 1,
+        "right_class_blocks": 2,
+        "safe_share": 0.6667,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.68,
+        "blocks": 3,
+        "wrong_blocks": 1,
+        "right_class_blocks": 2,
+        "safe_share": 0.6667,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.69,
+        "blocks": 3,
+        "wrong_blocks": 1,
+        "right_class_blocks": 2,
+        "safe_share": 0.6667,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.7,
+        "blocks": 3,
+        "wrong_blocks": 1,
+        "right_class_blocks": 2,
+        "safe_share": 0.6667,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.71,
+        "blocks": 3,
+        "wrong_blocks": 1,
+        "right_class_blocks": 2,
+        "safe_share": 0.6667,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.72,
+        "blocks": 2,
+        "wrong_blocks": 1,
+        "right_class_blocks": 1,
+        "safe_share": 0.5,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.73,
+        "blocks": 2,
+        "wrong_blocks": 1,
+        "right_class_blocks": 1,
+        "safe_share": 0.5,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.74,
+        "blocks": 2,
+        "wrong_blocks": 1,
+        "right_class_blocks": 1,
+        "safe_share": 0.5,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.75,
+        "blocks": 2,
+        "wrong_blocks": 1,
+        "right_class_blocks": 1,
+        "safe_share": 0.5,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.76,
+        "blocks": 2,
+        "wrong_blocks": 1,
+        "right_class_blocks": 1,
+        "safe_share": 0.5,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.77,
+        "blocks": 2,
+        "wrong_blocks": 1,
+        "right_class_blocks": 1,
+        "safe_share": 0.5,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.78,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.79,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.8,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.81,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.82,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.83,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.84,
+        "blocks": 0,
+        "wrong_blocks": 0,
+        "right_class_blocks": 0,
+        "safe_share": null,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 0
+      }
+    ],
+    "PortScan": [
+      {
+        "threshold": 0.3,
+        "blocks": 469,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9019,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 10
+      },
+      {
+        "threshold": 0.31,
+        "blocks": 469,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9019,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 10
+      },
+      {
+        "threshold": 0.32,
+        "blocks": 468,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9017,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 10
+      },
+      {
+        "threshold": 0.33,
+        "blocks": 467,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9015,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.34,
+        "blocks": 467,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9015,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.35,
+        "blocks": 467,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9015,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.36,
+        "blocks": 467,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9015,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.37,
+        "blocks": 467,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9015,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.38,
+        "blocks": 467,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9015,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.39,
+        "blocks": 467,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9015,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.4,
+        "blocks": 467,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9015,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.41,
+        "blocks": 467,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9015,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.42,
+        "blocks": 467,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9015,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.43,
+        "blocks": 467,
+        "wrong_blocks": 46,
+        "right_class_blocks": 392,
+        "safe_share": 0.9015,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.44,
+        "blocks": 467,
+        "wrong_blocks": 47,
+        "right_class_blocks": 392,
+        "safe_share": 0.8994,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.45,
+        "blocks": 467,
+        "wrong_blocks": 47,
+        "right_class_blocks": 392,
+        "safe_share": 0.8994,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.46,
+        "blocks": 467,
+        "wrong_blocks": 47,
+        "right_class_blocks": 392,
+        "safe_share": 0.8994,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.47,
+        "blocks": 466,
+        "wrong_blocks": 45,
+        "right_class_blocks": 393,
+        "safe_share": 0.9034,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.48,
+        "blocks": 466,
+        "wrong_blocks": 45,
+        "right_class_blocks": 393,
+        "safe_share": 0.9034,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.49,
+        "blocks": 466,
+        "wrong_blocks": 45,
+        "right_class_blocks": 393,
+        "safe_share": 0.9034,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.5,
+        "blocks": 466,
+        "wrong_blocks": 45,
+        "right_class_blocks": 393,
+        "safe_share": 0.9034,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.51,
+        "blocks": 465,
+        "wrong_blocks": 45,
+        "right_class_blocks": 392,
+        "safe_share": 0.9032,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.52,
+        "blocks": 459,
+        "wrong_blocks": 45,
+        "right_class_blocks": 386,
+        "safe_share": 0.902,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.53,
+        "blocks": 456,
+        "wrong_blocks": 45,
+        "right_class_blocks": 383,
+        "safe_share": 0.9013,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.54,
+        "blocks": 453,
+        "wrong_blocks": 45,
+        "right_class_blocks": 380,
+        "safe_share": 0.9007,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.55,
+        "blocks": 451,
+        "wrong_blocks": 45,
+        "right_class_blocks": 378,
+        "safe_share": 0.9002,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.56,
+        "blocks": 450,
+        "wrong_blocks": 45,
+        "right_class_blocks": 377,
+        "safe_share": 0.9,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.57,
+        "blocks": 447,
+        "wrong_blocks": 45,
+        "right_class_blocks": 375,
+        "safe_share": 0.8993,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.58,
+        "blocks": 447,
+        "wrong_blocks": 45,
+        "right_class_blocks": 375,
+        "safe_share": 0.8993,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.59,
+        "blocks": 446,
+        "wrong_blocks": 45,
+        "right_class_blocks": 367,
+        "safe_share": 0.8991,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.6,
+        "blocks": 443,
+        "wrong_blocks": 45,
+        "right_class_blocks": 362,
+        "safe_share": 0.8984,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.61,
+        "blocks": 441,
+        "wrong_blocks": 45,
+        "right_class_blocks": 360,
+        "safe_share": 0.898,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.62,
+        "blocks": 437,
+        "wrong_blocks": 45,
+        "right_class_blocks": 356,
+        "safe_share": 0.897,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.63,
+        "blocks": 436,
+        "wrong_blocks": 45,
+        "right_class_blocks": 355,
+        "safe_share": 0.8968,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.64,
+        "blocks": 435,
+        "wrong_blocks": 45,
+        "right_class_blocks": 354,
+        "safe_share": 0.8966,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.65,
+        "blocks": 433,
+        "wrong_blocks": 45,
+        "right_class_blocks": 356,
+        "safe_share": 0.8961,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.66,
+        "blocks": 432,
+        "wrong_blocks": 45,
+        "right_class_blocks": 354,
+        "safe_share": 0.8958,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.67,
+        "blocks": 432,
+        "wrong_blocks": 45,
+        "right_class_blocks": 359,
+        "safe_share": 0.8958,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.68,
+        "blocks": 431,
+        "wrong_blocks": 45,
+        "right_class_blocks": 358,
+        "safe_share": 0.8956,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.69,
+        "blocks": 429,
+        "wrong_blocks": 44,
+        "right_class_blocks": 357,
+        "safe_share": 0.8974,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.7,
+        "blocks": 429,
+        "wrong_blocks": 44,
+        "right_class_blocks": 355,
+        "safe_share": 0.8974,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.71,
+        "blocks": 426,
+        "wrong_blocks": 41,
+        "right_class_blocks": 357,
+        "safe_share": 0.9038,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.72,
+        "blocks": 424,
+        "wrong_blocks": 39,
+        "right_class_blocks": 356,
+        "safe_share": 0.908,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.73,
+        "blocks": 422,
+        "wrong_blocks": 39,
+        "right_class_blocks": 355,
+        "safe_share": 0.9076,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.74,
+        "blocks": 419,
+        "wrong_blocks": 39,
+        "right_class_blocks": 357,
+        "safe_share": 0.9069,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.75,
+        "blocks": 417,
+        "wrong_blocks": 37,
+        "right_class_blocks": 357,
+        "safe_share": 0.9113,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.76,
+        "blocks": 411,
+        "wrong_blocks": 33,
+        "right_class_blocks": 349,
+        "safe_share": 0.9197,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.77,
+        "blocks": 405,
+        "wrong_blocks": 33,
+        "right_class_blocks": 343,
+        "safe_share": 0.9185,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.78,
+        "blocks": 400,
+        "wrong_blocks": 33,
+        "right_class_blocks": 338,
+        "safe_share": 0.9175,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.79,
+        "blocks": 394,
+        "wrong_blocks": 31,
+        "right_class_blocks": 334,
+        "safe_share": 0.9213,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.8,
+        "blocks": 386,
+        "wrong_blocks": 31,
+        "right_class_blocks": 326,
+        "safe_share": 0.9197,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.81,
+        "blocks": 368,
+        "wrong_blocks": 31,
+        "right_class_blocks": 308,
+        "safe_share": 0.9158,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 6
+      },
+      {
+        "threshold": 0.82,
+        "blocks": 354,
+        "wrong_blocks": 31,
+        "right_class_blocks": 294,
+        "safe_share": 0.9124,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 6
+      },
+      {
+        "threshold": 0.83,
+        "blocks": 327,
+        "wrong_blocks": 30,
+        "right_class_blocks": 268,
+        "safe_share": 0.9083,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 6
+      },
+      {
+        "threshold": 0.84,
+        "blocks": 309,
+        "wrong_blocks": 30,
+        "right_class_blocks": 250,
+        "safe_share": 0.9029,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 6
+      },
+      {
+        "threshold": 0.85,
+        "blocks": 301,
+        "wrong_blocks": 30,
+        "right_class_blocks": 240,
+        "safe_share": 0.9003,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 6
+      },
+      {
+        "threshold": 0.86,
+        "blocks": 257,
+        "wrong_blocks": 30,
+        "right_class_blocks": 197,
+        "safe_share": 0.8833,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 6
+      },
+      {
+        "threshold": 0.87,
+        "blocks": 206,
+        "wrong_blocks": 26,
+        "right_class_blocks": 153,
+        "safe_share": 0.8738,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.88,
+        "blocks": 174,
+        "wrong_blocks": 23,
+        "right_class_blocks": 125,
+        "safe_share": 0.8678,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.89,
+        "blocks": 148,
+        "wrong_blocks": 20,
+        "right_class_blocks": 101,
+        "safe_share": 0.8649,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.9,
+        "blocks": 119,
+        "wrong_blocks": 15,
+        "right_class_blocks": 75,
+        "safe_share": 0.8739,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.91,
+        "blocks": 105,
+        "wrong_blocks": 3,
+        "right_class_blocks": 73,
+        "safe_share": 0.9714,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.92,
+        "blocks": 99,
+        "wrong_blocks": 1,
+        "right_class_blocks": 70,
+        "safe_share": 0.9899,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.93,
+        "blocks": 88,
+        "wrong_blocks": 1,
+        "right_class_blocks": 70,
+        "safe_share": 0.9886,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.94,
+        "blocks": 76,
+        "wrong_blocks": 0,
+        "right_class_blocks": 62,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.95,
+        "blocks": 73,
+        "wrong_blocks": 0,
+        "right_class_blocks": 58,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.96,
+        "blocks": 72,
+        "wrong_blocks": 0,
+        "right_class_blocks": 56,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.97,
+        "blocks": 69,
+        "wrong_blocks": 0,
+        "right_class_blocks": 53,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.98,
+        "blocks": 20,
+        "wrong_blocks": 0,
+        "right_class_blocks": 6,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.99,
+        "blocks": 0,
+        "wrong_blocks": 0,
+        "right_class_blocks": 0,
+        "safe_share": null,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 0
+      }
+    ],
+    "CnC": [
+      {
+        "threshold": 0.3,
+        "blocks": 381,
+        "wrong_blocks": 5,
+        "right_class_blocks": 303,
+        "safe_share": 0.9869,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.31,
+        "blocks": 381,
+        "wrong_blocks": 5,
+        "right_class_blocks": 303,
+        "safe_share": 0.9869,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.32,
+        "blocks": 381,
+        "wrong_blocks": 5,
+        "right_class_blocks": 303,
+        "safe_share": 0.9869,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.33,
+        "blocks": 380,
+        "wrong_blocks": 5,
+        "right_class_blocks": 302,
+        "safe_share": 0.9868,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.34,
+        "blocks": 379,
+        "wrong_blocks": 5,
+        "right_class_blocks": 301,
+        "safe_share": 0.9868,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.35,
+        "blocks": 379,
+        "wrong_blocks": 5,
+        "right_class_blocks": 301,
+        "safe_share": 0.9868,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.36,
+        "blocks": 379,
+        "wrong_blocks": 5,
+        "right_class_blocks": 301,
+        "safe_share": 0.9868,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.37,
+        "blocks": 377,
+        "wrong_blocks": 5,
+        "right_class_blocks": 299,
+        "safe_share": 0.9867,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.38,
+        "blocks": 377,
+        "wrong_blocks": 5,
+        "right_class_blocks": 299,
+        "safe_share": 0.9867,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.39,
+        "blocks": 377,
+        "wrong_blocks": 5,
+        "right_class_blocks": 299,
+        "safe_share": 0.9867,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.4,
+        "blocks": 375,
+        "wrong_blocks": 4,
+        "right_class_blocks": 298,
+        "safe_share": 0.9893,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.41,
+        "blocks": 374,
+        "wrong_blocks": 4,
+        "right_class_blocks": 297,
+        "safe_share": 0.9893,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.42,
+        "blocks": 374,
+        "wrong_blocks": 4,
+        "right_class_blocks": 297,
+        "safe_share": 0.9893,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.43,
+        "blocks": 371,
+        "wrong_blocks": 4,
+        "right_class_blocks": 294,
+        "safe_share": 0.9892,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.44,
+        "blocks": 370,
+        "wrong_blocks": 4,
+        "right_class_blocks": 293,
+        "safe_share": 0.9892,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.45,
+        "blocks": 370,
+        "wrong_blocks": 4,
+        "right_class_blocks": 293,
+        "safe_share": 0.9892,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.46,
+        "blocks": 370,
+        "wrong_blocks": 4,
+        "right_class_blocks": 293,
+        "safe_share": 0.9892,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.47,
+        "blocks": 369,
+        "wrong_blocks": 4,
+        "right_class_blocks": 292,
+        "safe_share": 0.9892,
+        "benign_targets_blocked": 2,
+        "benign_targets": 68621,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.48,
+        "blocks": 365,
+        "wrong_blocks": 3,
+        "right_class_blocks": 289,
+        "safe_share": 0.9918,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 17
+      },
+      {
+        "threshold": 0.49,
+        "blocks": 363,
+        "wrong_blocks": 3,
+        "right_class_blocks": 288,
+        "safe_share": 0.9917,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.5,
+        "blocks": 363,
+        "wrong_blocks": 3,
+        "right_class_blocks": 288,
+        "safe_share": 0.9917,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.51,
+        "blocks": 363,
+        "wrong_blocks": 3,
+        "right_class_blocks": 288,
+        "safe_share": 0.9917,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.52,
+        "blocks": 363,
+        "wrong_blocks": 3,
+        "right_class_blocks": 288,
+        "safe_share": 0.9917,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.53,
+        "blocks": 361,
+        "wrong_blocks": 2,
+        "right_class_blocks": 287,
+        "safe_share": 0.9945,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.54,
+        "blocks": 361,
+        "wrong_blocks": 2,
+        "right_class_blocks": 287,
+        "safe_share": 0.9945,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.55,
+        "blocks": 361,
+        "wrong_blocks": 2,
+        "right_class_blocks": 287,
+        "safe_share": 0.9945,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.56,
+        "blocks": 361,
+        "wrong_blocks": 2,
+        "right_class_blocks": 287,
+        "safe_share": 0.9945,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.57,
+        "blocks": 361,
+        "wrong_blocks": 2,
+        "right_class_blocks": 287,
+        "safe_share": 0.9945,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.58,
+        "blocks": 361,
+        "wrong_blocks": 2,
+        "right_class_blocks": 287,
+        "safe_share": 0.9945,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.59,
+        "blocks": 360,
+        "wrong_blocks": 2,
+        "right_class_blocks": 286,
+        "safe_share": 0.9944,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.6,
+        "blocks": 358,
+        "wrong_blocks": 1,
+        "right_class_blocks": 285,
+        "safe_share": 0.9972,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.61,
+        "blocks": 358,
+        "wrong_blocks": 1,
+        "right_class_blocks": 285,
+        "safe_share": 0.9972,
+        "benign_targets_blocked": 1,
+        "benign_targets": 68621,
+        "benign_target_rate": 1e-05,
+        "scenarios_with_blocks": 16
+      },
+      {
+        "threshold": 0.62,
+        "blocks": 357,
+        "wrong_blocks": 0,
+        "right_class_blocks": 285,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 15
+      },
+      {
+        "threshold": 0.63,
+        "blocks": 357,
+        "wrong_blocks": 0,
+        "right_class_blocks": 285,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 15
+      },
+      {
+        "threshold": 0.64,
+        "blocks": 357,
+        "wrong_blocks": 0,
+        "right_class_blocks": 284,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 15
+      },
+      {
+        "threshold": 0.65,
+        "blocks": 356,
+        "wrong_blocks": 0,
+        "right_class_blocks": 283,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 15
+      },
+      {
+        "threshold": 0.66,
+        "blocks": 355,
+        "wrong_blocks": 0,
+        "right_class_blocks": 282,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 15
+      },
+      {
+        "threshold": 0.67,
+        "blocks": 353,
+        "wrong_blocks": 0,
+        "right_class_blocks": 281,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 14
+      },
+      {
+        "threshold": 0.68,
+        "blocks": 353,
+        "wrong_blocks": 0,
+        "right_class_blocks": 281,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 14
+      },
+      {
+        "threshold": 0.69,
+        "blocks": 352,
+        "wrong_blocks": 0,
+        "right_class_blocks": 280,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.7,
+        "blocks": 352,
+        "wrong_blocks": 0,
+        "right_class_blocks": 280,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.71,
+        "blocks": 352,
+        "wrong_blocks": 0,
+        "right_class_blocks": 280,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.72,
+        "blocks": 352,
+        "wrong_blocks": 0,
+        "right_class_blocks": 280,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.73,
+        "blocks": 352,
+        "wrong_blocks": 0,
+        "right_class_blocks": 280,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.74,
+        "blocks": 352,
+        "wrong_blocks": 0,
+        "right_class_blocks": 280,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.75,
+        "blocks": 351,
+        "wrong_blocks": 0,
+        "right_class_blocks": 279,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.76,
+        "blocks": 347,
+        "wrong_blocks": 0,
+        "right_class_blocks": 275,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.77,
+        "blocks": 344,
+        "wrong_blocks": 0,
+        "right_class_blocks": 272,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.78,
+        "blocks": 344,
+        "wrong_blocks": 0,
+        "right_class_blocks": 272,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.79,
+        "blocks": 342,
+        "wrong_blocks": 0,
+        "right_class_blocks": 271,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.8,
+        "blocks": 341,
+        "wrong_blocks": 0,
+        "right_class_blocks": 270,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.81,
+        "blocks": 272,
+        "wrong_blocks": 0,
+        "right_class_blocks": 208,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.82,
+        "blocks": 251,
+        "wrong_blocks": 0,
+        "right_class_blocks": 206,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.83,
+        "blocks": 228,
+        "wrong_blocks": 0,
+        "right_class_blocks": 191,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.84,
+        "blocks": 228,
+        "wrong_blocks": 0,
+        "right_class_blocks": 191,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.85,
+        "blocks": 228,
+        "wrong_blocks": 0,
+        "right_class_blocks": 191,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.86,
+        "blocks": 227,
+        "wrong_blocks": 0,
+        "right_class_blocks": 190,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.87,
+        "blocks": 227,
+        "wrong_blocks": 0,
+        "right_class_blocks": 190,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.88,
+        "blocks": 227,
+        "wrong_blocks": 0,
+        "right_class_blocks": 190,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 13
+      },
+      {
+        "threshold": 0.89,
+        "blocks": 225,
+        "wrong_blocks": 0,
+        "right_class_blocks": 188,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 12
+      },
+      {
+        "threshold": 0.9,
+        "blocks": 225,
+        "wrong_blocks": 0,
+        "right_class_blocks": 188,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 12
+      },
+      {
+        "threshold": 0.91,
+        "blocks": 225,
+        "wrong_blocks": 0,
+        "right_class_blocks": 188,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 12
+      },
+      {
+        "threshold": 0.92,
+        "blocks": 224,
+        "wrong_blocks": 0,
+        "right_class_blocks": 187,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 12
+      },
+      {
+        "threshold": 0.93,
+        "blocks": 222,
+        "wrong_blocks": 0,
+        "right_class_blocks": 185,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 11
+      },
+      {
+        "threshold": 0.94,
+        "blocks": 218,
+        "wrong_blocks": 0,
+        "right_class_blocks": 183,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.95,
+        "blocks": 191,
+        "wrong_blocks": 0,
+        "right_class_blocks": 183,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 9
+      },
+      {
+        "threshold": 0.96,
+        "blocks": 183,
+        "wrong_blocks": 0,
+        "right_class_blocks": 183,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.97,
+        "blocks": 180,
+        "wrong_blocks": 0,
+        "right_class_blocks": 180,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.98,
+        "blocks": 168,
+        "wrong_blocks": 0,
+        "right_class_blocks": 168,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 6
+      },
+      {
+        "threshold": 0.99,
+        "blocks": 130,
+        "wrong_blocks": 0,
+        "right_class_blocks": 130,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      }
+    ],
+    "Malware_Download": [
+      {
+        "threshold": 0.3,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.31,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.32,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.33,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.34,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.35,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.36,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.37,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.38,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.39,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.4,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.41,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.42,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.43,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.44,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.45,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.46,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.47,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.48,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.49,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.5,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.51,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.52,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.53,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.54,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.55,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.56,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.57,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.58,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.59,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.6,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.61,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.62,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.63,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.64,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.65,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.66,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.67,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.68,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.69,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.7,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.71,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.72,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.73,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.74,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.75,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.76,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.77,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.78,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.79,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.8,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.81,
+        "blocks": 2,
+        "wrong_blocks": 0,
+        "right_class_blocks": 2,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.82,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.83,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.84,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.85,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.86,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.87,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.88,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.89,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.9,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.91,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.92,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.93,
+        "blocks": 0,
+        "wrong_blocks": 0,
+        "right_class_blocks": 0,
+        "safe_share": null,
+        "benign_targets_blocked": 0,
+        "benign_targets": 68621,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 0
+      }
+    ]
+  },
+  "block_replay_heldout": {
+    "PortScan": {
+      "threshold": 0.91,
+      "blocks": 0,
+      "wrong_blocks": 0,
+      "right_class_blocks": 0,
+      "safe_share": null,
+      "benign_targets_blocked": 0,
+      "benign_targets": 2,
+      "benign_target_rate": 0.0,
+      "scenarios_with_blocks": 0
+    },
+    "CnC": {
+      "threshold": 0.3,
+      "blocks": 30,
+      "wrong_blocks": 2,
+      "right_class_blocks": 26,
+      "safe_share": 0.9333,
+      "benign_targets_blocked": 2,
+      "benign_targets": 45,
+      "benign_target_rate": 0.04444,
+      "scenarios_with_blocks": 1
+    }
+  },
+  "original_labels_oof": [
+    {
+      "label": "Benign (no detailed label)",
+      "group": "Benign",
+      "flows": 145358,
+      "right_group_share": 0.9534,
+      "called_attack_share": 0.0466
+    },
+    {
+      "label": "C&C",
+      "group": "CnC",
+      "flows": 15289,
+      "right_group_share": 0.8365,
+      "called_attack_share": 0.8471
+    },
+    {
+      "label": "C&C-FileDownload",
+      "group": "Malware_Download",
+      "flows": 39,
+      "right_group_share": 0.7692,
+      "called_attack_share": 0.8205
+    },
+    {
+      "label": "C&C-HeartBeat",
+      "group": "CnC",
+      "flows": 33673,
+      "right_group_share": 0.9967,
+      "called_attack_share": 0.997
+    },
+    {
+      "label": "C&C-Torii",
+      "group": "CnC",
+      "flows": 30,
+      "right_group_share": 0.7667,
+      "called_attack_share": 0.9
+    },
+    {
+      "label": "DDoS",
+      "group": "DDoS_DoS",
+      "flows": 239585,
+      "right_group_share": 0.6658,
+      "called_attack_share": 0.8745
+    },
+    {
+      "label": "Okiru",
+      "group": "Malware_Download",
+      "flows": 250000,
+      "right_group_share": 0.7368,
+      "called_attack_share": 0.9998
+    },
+    {
+      "label": "PartOfAHorizontalPortScan",
+      "group": "PortScan",
+      "flows": 499989,
+      "right_group_share": 0.5252,
+      "called_attack_share": 0.9034
+    }
+  ],
+  "original_labels_heldout": [
+    {
+      "label": "Benign (no detailed label)",
+      "group": "Benign",
+      "flows": 1923,
+      "right_group_share": 0.9433,
+      "called_attack_share": 0.0567
+    },
+    {
+      "label": "C&C",
+      "group": "CnC",
+      "flows": 6706,
+      "right_group_share": 0.7502,
+      "called_attack_share": 0.7559
+    },
+    {
+      "label": "DDoS",
+      "group": "DDoS_DoS",
+      "flows": 14394,
+      "right_group_share": 0.9895,
+      "called_attack_share": 0.9987
+    },
+    {
+      "label": "PartOfAHorizontalPortScan",
+      "group": "PortScan",
+      "flows": 122,
+      "right_group_share": 0.8934,
+      "called_attack_share": 1.0
+    }
+  ],
+  "permutation_importance_top5": [
+    {
+      "feature": "resp_port_cat",
+      "perm_importance_mean": 0.18550970583890602
+    },
+    {
+      "feature": "pair_conn_60s",
+      "perm_importance_mean": 0.17082242802795816
+    },
+    {
+      "feature": "history",
+      "perm_importance_mean": 0.134030103636405
+    },
+    {
+      "feature": "conn_state",
+      "perm_importance_mean": 0.07495474893694283
+    },
+    {
+      "feature": "duration",
+      "perm_importance_mean": 0.03950976974736007
+    }
+  ],
+  "example_decision_paths": [
+    {
+      "class_name": "Benign",
+      "calibrated_probability": 1.0,
+      "conditions": [
+        "conn_state = S0 (code 6 > 5.5)",
+        "pair_conn_60s = 7 (<= 116.5)",
+        "pair_gap = 10.01 (> 1.431e-06)",
+        "proto = udp (code 2 > 1.5)",
+        "pair_gap_change = 0.003491 (<= 230.3)",
+        "src_udst_ratio = 0.1579 (> 0.06066)",
+        "pkt_ratio = 1 (> 0.9918)",
+        "pair_conn_60s = 7 (<= 13.5)"
+      ],
+      "path_length": 11
+    },
+    {
+      "class_name": "DDoS_DoS",
+      "calibrated_probability": 0.97,
+      "conditions": [
+        "conn_state = OTH (code 0 <= 5.5)",
+        "pair_fail_1h = 1.274e+04 (> 2014)",
+        "is_incomplete_flow = 1 (> 0.5)"
+      ],
+      "path_length": 3
+    },
+    {
+      "class_name": "PortScan",
+      "calibrated_probability": 0.5603,
+      "conditions": [
+        "conn_state = S0 (code 6 > 5.5)",
+        "pair_conn_60s = 6 (<= 116.5)",
+        "pair_gap = 0.5484 (> 1.431e-06)",
+        "proto = tcp (code 1 <= 1.5)",
+        "src_conn_60s = 6 (<= 159.5)",
+        "duration = 0 (<= 3.055)",
+        "resp_port_cat = dynamic (code 0 <= 2.5)",
+        "is_incomplete_flow = 1 (> 0.5)"
+      ],
+      "path_length": 11
+    },
+    {
+      "class_name": "CnC",
+      "calibrated_probability": 0.9881,
+      "conditions": [
+        "conn_state = S0 (code 6 > 5.5)",
+        "pair_conn_60s = 1 (<= 116.5)",
+        "pair_gap = 12.07 (> 1.431e-06)",
+        "proto = tcp (code 1 <= 1.5)",
+        "src_conn_60s = 1 (<= 159.5)",
+        "duration = 3.134 (> 3.055)",
+        "history = S (code 8 <= 8.5)",
+        "pair_gap_change = 4.878 (> -0.5)"
+      ],
+      "path_length": 9
+    }
+  ],
+  "rf_best_params": {
+    "model__n_estimators": 100,
+    "model__min_samples_split": 5,
+    "model__min_samples_leaf": 1,
+    "model__max_features": "log2",
+    "model__max_depth": 12,
+    "model__class_weight": "balanced"
+  },
+  "rf_inference_latency_us": 4.8099500010721385,
+  "rf_throughput_fps": 207902.36900115383,
+  "training_samples_count": 1184004
+}

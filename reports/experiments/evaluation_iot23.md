@@ -1,6 +1,6 @@
 # Level 2 Held-Out Scenario Evaluation Report (Step 16)
 
-**Generated:** 2026-11-10 23:12:36  
+**Generated:** 2026-11-11 09:24:45  
 **Governing Standards:** Group 03 Research Proposal (Sections 1.3, 2.4, 3.4; Table 9; Hypothesis H1; RQ1, RQ2)  
 **Evaluated Dataset:** `data/processed/heldout/held_out_test.parquet`  
 **Held-out scenario:** `CTU-IoT-Malware-Capture-34-1` (Mirai, 23,145 flows)  
@@ -14,10 +14,10 @@
 
 | H1 part | Target | Measured (Random Forest) | Result |
 | :--- | :---: | :---: | :--- |
-| Macro-F1 on the held-out scenario (5 classes) | >= 0.85 | **0.6596** (classes present: 0.8244) | **not met** |
+| Macro-F1 on the held-out scenario (5 classes) | >= 0.85 | **0.6876** (classes present: 0.8595) | **not met** |
 | Benign FPR on **local IP-camera traffic** | <= 5% | not measured in this step | measured in the lab (Steps 20 and 35) |
 
-For information only (not part of H1): IoT-23 benign flows in 34-1 predicted as an attack = **5.668%** (109 / 1,923). The model inference time is 3.67 µs per flow on the development PC; this is not the end-to-end latency in Table 9 (median < 2 s, p95 < 5 s), which is measured in Step 37.
+For information only (not part of H1): IoT-23 benign flows in 34-1 predicted as an attack = **5.616%** (108 / 1,923). The model inference time is 5.38 µs per flow on the development PC; this is not the end-to-end latency in Table 9 (median < 2 s, p95 < 5 s), which is measured in Step 37.
 
 ### Why the macro-F1 is below the target
 1. 34-1 has **no Malware_Download flows**. Any Malware_Download prediction is then a false positive, so this class gets F1 = 0 and the 5-class macro-F1 cannot be higher than 0.80. The score over the classes that are present is also reported.
@@ -31,17 +31,17 @@ For information only (not part of H1): IoT-23 benign flows in 34-1 predicted as 
 
 | Evaluation Metric | Random Forest (Bagging) | Logistic Regression (Linear) | HistGradientBoosting (Boosting) | Target / Ideal |
 | :--- | :---: | :---: | :---: | :--- |
-| **Macro-F1 (All 5 Target Classes)** | 0.6596 | 0.5924 | 0.6018 | Benchmark |
-| **Macro-F1 (4 Classes Present)** | 0.8244 | 0.7404 | 0.7522 | Benchmark |
-| **Overall Accuracy** | 91.58% | 93.80% | 90.48% | Benchmark |
-| **Weighted F1-Score** | 0.9222 | 0.9483 | 0.9111 | Benchmark |
-| **Macro Precision** | 0.6372 | 0.5700 | 0.5698 | Benchmark |
-| **Macro Recall** | 0.7153 | 0.7312 | 0.7091 | Benchmark |
-| **Benign FPR (Capture-34-1)** | 5.668% | 5.304% | 5.824% | Benchmark |
-| **Inference Latency per Flow** | 3.67 µs | 5.32 µs | 8.18 µs | Benchmark |
-| **Inference Throughput** | 272,674 flows/s | 187,993 flows/s | 122,276 flows/s | Benchmark |
-| **Level 1 Grouped CV Macro-F1** | 0.7084 | N/A | N/A | Benchmark |
-| **Generalisation Gap (L2 - L1)** | -0.0488 | N/A | N/A | Benchmark |
+| **Macro-F1 (All 5 Target Classes)** | 0.6876 | 0.5588 | 0.6958 | Benchmark |
+| **Macro-F1 (4 Classes Present)** | 0.8595 | 0.6985 | 0.8697 | Benchmark |
+| **Overall Accuracy** | 93.22% | 89.05% | 96.50% | Benchmark |
+| **Weighted F1-Score** | 0.9367 | 0.9096 | 0.9656 | Benchmark |
+| **Macro Precision** | 0.6643 | 0.5269 | 0.6771 | Benchmark |
+| **Macro Recall** | 0.7331 | 0.7239 | 0.7300 | Benchmark |
+| **Benign FPR (Capture-34-1)** | 5.616% | 6.500% | 5.720% | Benchmark |
+| **Inference Latency per Flow** | 5.38 µs | 4.75 µs | 20.89 µs | Benchmark |
+| **Inference Throughput** | 185,970 flows/s | 210,729 flows/s | 47,874 flows/s | Benchmark |
+| **Level 1 Grouped CV Macro-F1** | 0.7097 | N/A | N/A | Benchmark |
+| **Generalisation Gap (L2 - L1)** | -0.0220 | N/A | N/A | Benchmark |
 
 ---
 
@@ -49,10 +49,10 @@ For information only (not part of H1): IoT-23 benign flows in 34-1 predicted as 
 
 | Class Name | Target Class ID | Support (Flows) | Precision | Recall | F1-Score | PR-AUC | Primary Flow Pattern |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **`Benign`** | 0 | 1,923 | 0.5229 | 0.9433 | 0.6728 | 0.9590 | DNS queries, NTP sync, legitimate IoT chatter |
-| **`DDoS_DoS`** | 1 | 14,394 | 0.9999 | 0.9895 | 0.9947 | 0.9999 | High-rate UDP/TCP flooding (Mirai attack engine) |
-| **`PortScan`** | 2 | 122 | 0.7078 | 0.8934 | 0.7899 | 0.4414 | Reconnaissance SYN sweeps across ports |
-| **`CnC`** | 3 | 6,706 | 0.9552 | 0.7502 | 0.8404 | 0.9675 | Periodic botnet beaconing & telemetry |
+| **`Benign`** | 0 | 1,923 | 0.5836 | 0.9438 | 0.7212 | 0.9616 | DNS queries, NTP sync, legitimate IoT chatter |
+| **`DDoS_DoS`** | 1 | 14,394 | 1.0000 | 0.9894 | 0.9947 | 0.9997 | High-rate UDP/TCP flooding (Mirai attack engine) |
+| **`PortScan`** | 2 | 122 | 0.7793 | 0.9262 | 0.8464 | 0.4910 | Reconnaissance SYN sweeps across ports |
+| **`CnC`** | 3 | 6,706 | 0.9587 | 0.8061 | 0.8758 | 0.9728 | Periodic botnet beaconing & telemetry |
 | **`Malware_Download`** | 4 | 0 | 0.0000 | 0.0000 | 0.0000 | N/A (0 Support) | Payload staging & binary fetches (Absent in 34-1) |
 
 ---
@@ -64,10 +64,10 @@ Total Held-Out Flows: 23,145 (Scenario: CTU-IoT-Malware-Capture-34-1)
 
 True \ Pred         Benign    DDoS_DoS    PortScan         CnC    Malware_Download    Total
 ------------------------------------------------------------------------------------------
-Benign               1814           0           5          93                  11     1923
-DDoS_DoS               18       14243           2         131                   0    14394
-PortScan                0           1         109          12                   0      122
-CnC                  1637           0          38        5031                   0     6706
+Benign               1815           0           4          94                  10     1923
+DDoS_DoS               20       14241           2         131                   0    14394
+PortScan                1           0         113           8                   0      122
+CnC                  1274           0          26        5406                   0     6706
 Malware_Download        0           0           0           0                   0        0
 ------------------------------------------------------------------------------------------
 
@@ -79,8 +79,8 @@ Confusion matrix visualization saved to: `reports/experiments/confusion_matrix_h
 
 ## 5. Level 1 (grouped CV) compared with Level 2 (held-out scenario)
 
-- Level 1 out-of-fold macro-F1 (22 training scenarios): `0.7084`.
-- Level 2 macro-F1 on `CTU-IoT-Malware-Capture-34-1`: `0.6596`.
+- Level 1 out-of-fold macro-F1 (22 training scenarios): `0.7097`.
+- Level 2 macro-F1 on `CTU-IoT-Malware-Capture-34-1`: `0.6876`.
 - One held-out scenario is a small test. A score on one scenario does not show how the model works on other scenarios or on camera traffic.
 
 ---

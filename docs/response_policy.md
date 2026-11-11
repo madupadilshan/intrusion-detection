@@ -22,7 +22,7 @@ A wrong alert only wastes time. A wrong block can cut off the administrator or s
    - at or above the alert threshold → **alert** (saved in MongoDB, shown on the dashboard);
    - at or above the **block threshold** → **block candidate** → goes to the response policy (Section 4).
 4. A class whose block threshold is `none` is **never blocked automatically**. It only raises alerts.
-5. **How the block thresholds are chosen (D-046, proposal 3.4).** Step 17 replays this whole rule (confidence threshold, then `min_repeats` candidates for the same target inside `repeat_window_seconds`, one block per target per `max_rule_minutes`) on the grouped out-of-fold training flows. The block threshold is the lowest value where at least 10 blocks happen, at least 95% of them are fired by a truly malicious flow, and at most 1% of the benign targets are blocked. Current values (10 Nov 2026, model v3.0.0, D-052): CnC 0.30, PortScan 0.91; DDoS_DoS and Malware_Download are alert only. Program downloads seen in Zeek's files.log raise an alert (`RULE_EXECUTABLE_DOWNLOAD`), never a block. Values of model v2.0.0 (D-051): CnC 0.30, PortScan 0.95; DDoS_DoS and Malware_Download are alert only (fewer than 10 replayed blocks). Earlier values (model v1, 9 Nov 2026): PortScan 0.30, CnC 0.39. See `reports/experiments/operational_thresholds.json`.
+5. **How the block thresholds are chosen (D-046, proposal 3.4).** Step 17 replays this whole rule (confidence threshold, then `min_repeats` candidates for the same target inside `repeat_window_seconds`, one block per target per `max_rule_minutes`) on the grouped out-of-fold training flows. The block threshold is the lowest value where at least 10 blocks happen, at least 95% of them are fired by a truly malicious flow, and at most 1% of the benign targets are blocked. Current values (11 Nov 2026, model v3.1.0, D-054): block CnC 0.30, PortScan 0.88; DDoS_DoS **rate-limit** 0.30 (D-055: no block threshold was found, so the outside flood source is rate-limited from its alert threshold); Malware_Download alert only. Values of model v3.0.0 (D-052): CnC 0.30, PortScan 0.91; DDoS_DoS and Malware_Download alert only. Program downloads seen in Zeek's files.log raise an alert (`RULE_EXECUTABLE_DOWNLOAD`), never a block. Values of model v2.0.0 (D-051): CnC 0.30, PortScan 0.95; DDoS_DoS and Malware_Download are alert only (fewer than 10 replayed blocks). Earlier values (model v1, 9 Nov 2026): PortScan 0.30, CnC 0.39. See `reports/experiments/operational_thresholds.json`.
 5. Benign flows go only to the traffic summary (FR-03). They are never blocked.
 
 ## 3. What is blocked, by class and direction (proposal Table 5)
@@ -33,13 +33,13 @@ A wrong alert only wastes time. A wrong block can cut off the administrator or s
 | --- | --- | --- | --- | --- |
 | Benign | any | never blocked | — | `SKIP_BENIGN` |
 | PortScan | outside → camera | the scanner (source IP), only after repeats | 30 min | `AUTO_PORTSCAN_REPEATED` |
-| DDoS_DoS | outside → camera | the flood source (source IP) | up to `max_rule_minutes` | `AUTO_DDOS_BLOCK` |
+| DDoS_DoS | outside → camera | the flood source (source IP): **rate-limit** (packets over 200/s dropped, set `limit_src`) when Step 17 has no block threshold (D-055); block when it has one | up to `max_rule_minutes` | `AUTO_DDOS_RATELIMIT` / `AUTO_DDOS_BLOCK` |
 | CnC | local device → outside | the outside destination (C&C server) | up to `max_rule_minutes` | `AUTO_CNC_DEST_BLOCK` |
 | Malware_Download | outside ↔ local | the outside host | up to `max_rule_minutes` | `AUTO_MALWARE_BLOCK` |
 
 Notes:
 - Isolating a local device (Table 5: "isolate the device") is allowed only when `response.allow_device_isolation: true`. It is `false` by default, so a local camera is never blocked automatically.
-- Rate limiting (Table 5: "rate-limit or block") exists in the firewall adapters (`rate_limit()`), but the automatic policy uses block. Rate limiting can be used by hand.
+- Rate limiting (Table 5: "rate-limit or block") is used automatically for DDoS_DoS since D-055 (11 Nov 2026). `response.ddos_rate_limit: false` turns it off (DDoS is then alert only). A local device is never rate-limited. A stored rule records its action, so a restart restores a rate-limit as a rate-limit.
 
 ## 4. The safety rules (all must pass)
 
@@ -82,7 +82,7 @@ While a block on an IP is active, new flows from the same attack do not create n
 | --- | --- |
 | `AUTO_PORTSCAN_REPEATED` | Outside scanner blocked after repeated scans |
 | `AUTO_DDOS_BLOCK` | Flood source blocked |
-| `AUTO_DDOS_RATELIMIT` | Flood source rate-limited (manual use) |
+| `AUTO_DDOS_RATELIMIT` | Flood source rate-limited automatically (D-055) |
 | `AUTO_CNC_DEST_BLOCK` | Outside C&C destination blocked |
 | `AUTO_MALWARE_BLOCK` | Outside download/staging host blocked |
 | `ADMIN_MANUAL_ENFORCEMENT` / `ADMIN_MANUAL_UNBLOCK` | Administrator block / unblock from the dashboard |

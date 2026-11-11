@@ -274,7 +274,7 @@ const AttackHistory = () => {
                 <div className="p-2.5 bg-gray-900/60 rounded border border-gray-800">
                   <div className="text-gray-500">Model Version</div>
                   <div className="text-gray-200 mt-0.5">
-                    {selectedEvent.model_version || "ids_bundle_v1.0.0"}
+                    {selectedEvent.model_version || "unknown"}
                   </div>
                 </div>
               </div>

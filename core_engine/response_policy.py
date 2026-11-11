@@ -12,7 +12,8 @@ Key Capabilities:
 1. Direction-aware mitigation logic:
    - Benign: never block.
    - Port scan: block external scanner source IP only after repeated probe sweeps.
-   - DDoS: rate-limit or block external flood source IP after threshold exceedance.
+   - DDoS: rate-limit or block external flood source IP after threshold exceedance
+     (rate-limit when the class is in `rate_limit_classes`, decision D-055).
    - C&C: block external destination server IP or isolate device.
    - Malware / download: quarantine or block based on direction and confidence.
    - Low confidence: alert only.
@@ -96,7 +97,7 @@ class PolicyDecision:
     """Standardized mitigation decision evaluated against safety guardrails."""
 
     should_act: bool = False
-    action_type: str = "none"  # block | rate-limit | isolate | none
+    action_type: str = "none"  # block | rate_limit | isolate | none
     target_ip: str = ""
     direction: str = "inbound"  # inbound | outbound
     duration_minutes: int = 0
@@ -139,6 +140,7 @@ class ResponsePolicy:
         auto_response: bool = False,
         allow_device_isolation: bool = False,
         local_networks: Optional[List[str]] = None,
+        rate_limit_classes: Optional[List[str]] = None,
     ) -> None:
         """
         Initialize the response policy engine.
@@ -157,6 +159,9 @@ class ResponsePolicy:
                 If not given, all RFC 1918 private ranges are treated as local.
                 (In our lab the "outside" attack network 10.10.10.0/24 is private but
                 NOT local, so `lab.local_networks` must be passed in real use.)
+            rate_limit_classes: Classes whose automatic action is a rate-limit of the
+                outside source instead of a block (D-055: DDoS_DoS when Step 17 found no
+                block threshold). The same safety checks apply.
         """
         self.allowlist: set[str] = set(
             ip.strip() for ip in (allowlist if allowlist is not None else DEFAULT_ALLOWLIST)
@@ -178,6 +183,7 @@ class ResponsePolicy:
         self.max_rule_minutes: int = max(1, max_rule_minutes)
         self.auto_response: bool = auto_response
         self.allow_device_isolation: bool = allow_device_isolation
+        self.rate_limit_classes: set[str] = set(rate_limit_classes or [])
 
         # State tracking: (target_ip, class_name) -> deque of timestamps
         self._history: Dict[Tuple[str, str], deque] = defaultdict(deque)
@@ -315,6 +321,10 @@ class ResponsePolicy:
             action_direction = "inbound"
             default_reason = REASON_AUTO_DDOS_BLOCK
             requested_duration = 60
+            if p_class in self.rate_limit_classes:
+                # D-055 / Table 5: "Rate-limit or block the outside source if the policy allows it"
+                action_type = "rate_limit"
+                default_reason = REASON_AUTO_DDOS_RATELIMIT
         elif p_class == "CnC":
             # Table 5: a local device talking to the outside -> block the outside destination
             target_ip = dst_ip if self.is_local(src_ip) else src_ip

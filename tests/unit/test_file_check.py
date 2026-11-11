@@ -88,3 +88,29 @@ def test_follower_reads_complete_lines_and_restarts_after_truncation(tmp_path):
     assert fol.poll_once() == 1
     log.write_text(json.dumps(zeek6("text/x-shellscript")) + "\n", encoding="utf-8")  # file replaced
     assert fol.poll_once() == 1 and len(db.events) == 2
+
+
+def test_follower_does_not_alert_again_after_a_restart(tmp_path):
+    """The reading place is saved, so a backend restart does not re-raise old download alerts (D-056)."""
+    from core_engine.file_check import FilesLogFollower
+
+    class _Count:
+        def __init__(self):
+            self.lines = []
+
+        def handle_line(self, line):
+            self.lines.append(line)
+
+    log, state = tmp_path / "files.log", tmp_path / "state.json"
+    log.write_text('{"a":1}\n{"a":2}\n', encoding="utf-8")
+    c1 = _Count()
+    assert FilesLogFollower(log, c1, state_path=state).poll_once() == 2
+    with log.open("a", encoding="utf-8") as f:
+        f.write('{"a":3}\n')
+    c2 = _Count()                                   # "restart": a new follower with the saved place
+    assert FilesLogFollower(log, c2, state_path=state).poll_once() == 1
+    assert c2.lines == ['{"a":3}']
+    log.unlink()
+    log.write_text('{"b":1}\n', encoding="utf-8")   # Zeek started a new, shorter file
+    c3 = _Count()
+    assert FilesLogFollower(log, c3, state_path=state).poll_once() == 1

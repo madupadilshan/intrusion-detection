@@ -21,6 +21,7 @@ from __future__ import annotations
 import ipaddress
 import json
 import logging
+import os
 import threading
 import time
 from pathlib import Path
@@ -181,16 +182,52 @@ class FileCheck:
 class FilesLogFollower:
     """Follows files.log (JSON lines) in a background thread and passes each line to FileCheck.
 
-    Starts at the beginning of the file. If the file becomes shorter (Zeek restarted or the file
-    was replaced), it starts again from the beginning."""
+    The reading place is saved in `state_path` (with the file's inode), so a restart of the backend
+    continues where it stopped and does not raise the old alerts again (found 11 Nov 2026, D-056).
+    Without a saved place it starts at the beginning. If the file becomes shorter or is a new file
+    (Zeek restarted), it starts again from the beginning."""
 
-    def __init__(self, path: Path, check: FileCheck, poll_seconds: float = 0.5) -> None:
+    def __init__(self, path: Path, check: FileCheck, poll_seconds: float = 0.5,
+                 state_path: Optional[Path] = None) -> None:
         self.path = Path(path)
         self.check = check
         self.poll_seconds = poll_seconds
+        self.state_path = Path(state_path) if state_path else None
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._offset = 0
+        self._load_state()
+
+    def _inode(self) -> int:
+        try:
+            return int(getattr(self.path.stat(), "st_ino", 0) or 0)
+        except OSError:
+            return 0
+
+    def _load_state(self) -> None:
+        if not self.state_path or not self.state_path.exists():
+            return
+        try:
+            st = json.loads(self.state_path.read_text(encoding="utf-8"))
+            size = self.path.stat().st_size if self.path.exists() else 0
+            same = st.get("path") == str(self.path) and (not st.get("inode") or st.get("inode") == self._inode())
+            if same and 0 <= int(st.get("offset", 0)) <= size:
+                self._offset = int(st["offset"])
+                logger.info("files.log: resuming at byte %d", self._offset)
+        except (OSError, ValueError, TypeError) as exc:
+            logger.warning("files.log state not used: %s", exc)
+
+    def _save_state(self) -> None:
+        if not self.state_path:
+            return
+        try:
+            self.state_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.state_path.with_suffix(".tmp")
+            tmp.write_text(json.dumps({"path": str(self.path), "inode": self._inode(), "offset": self._offset}),
+                           encoding="utf-8")
+            os.replace(tmp, self.state_path)
+        except OSError as exc:
+            logger.warning("Could not save the files.log place: %s", exc)
 
     def start(self) -> None:
         if self._thread and self._thread.is_alive():
@@ -229,6 +266,7 @@ class FilesLogFollower:
             self.check.handle_line(raw.decode("utf-8", errors="replace"))
             n += 1
         self._offset += end + 1
+        self._save_state()
         return n
 
     def _loop(self) -> None:

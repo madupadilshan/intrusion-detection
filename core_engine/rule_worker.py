@@ -41,12 +41,12 @@ def _dir_code(direction: Any) -> str:
 
 def _rule_dir(rule: Dict[str, Any]) -> str:
     """Direction of an active firewall rule: 'src', 'dst' or 'limit' (from its direction or set name)."""
+    set_name = str(rule.get("set", "")).lower()
+    if "limit" in set_name or str(rule.get("action", "")).lower() == "rate_limit":
+        return "limit"
     d = str(rule.get("direction", "")).lower()
     if d in ("src", "dst"):
         return d
-    set_name = str(rule.get("set", "")).lower()
-    if "limit" in set_name:
-        return "limit"
     return "dst" if "dst" in set_name else "src"
 
 
@@ -254,7 +254,8 @@ def reconcile_on_startup(
         if not ip:
             continue
         direction = block.get("direction", "source")
-        dir_code = _dir_code(direction)
+        is_limit = str(block.get("action", "block")).lower() == "rate_limit"  # D-055
+        dir_code = "limit" if is_limit else _dir_code(direction)
 
         # Never restore a block on an allowlisted host (proposal 3.7); close the database record instead.
         if ip in allowlist:
@@ -294,12 +295,19 @@ def reconcile_on_startup(
             restore_error = "no firewall adapter"
         else:
             try:
-                firewall.block(
-                    ip=ip,
-                    direction=dir_code,
-                    minutes=remaining_mins,
-                    reason=block.get("reason", "Startup recovery restoration"),
-                )
+                if is_limit:  # restore a rate-limit as a rate-limit, never as a full block
+                    firewall.rate_limit(
+                        ip=ip,
+                        minutes=remaining_mins,
+                        reason=block.get("reason", "Startup recovery restoration"),
+                    )
+                else:
+                    firewall.block(
+                        ip=ip,
+                        direction=dir_code,
+                        minutes=remaining_mins,
+                        reason=block.get("reason", "Startup recovery restoration"),
+                    )
                 summary["restored"] += 1
             except Exception as exc:
                 restore_error = str(exc)
@@ -316,6 +324,7 @@ def reconcile_on_startup(
                     details={
                         "ip": ip,
                         "direction": direction,
+                        "action": "rate_limit" if is_limit else "block",
                         "remaining_minutes": remaining_mins,
                         "block_id": block.get("block_id"),
                         "error": restore_error,

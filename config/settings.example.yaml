@@ -22,6 +22,7 @@ response:
   repeat_window_seconds: 60     # the time window for min_repeats
   max_rule_minutes: 30          # every rule expires (maximum rule time)
   allow_device_isolation: false # isolate a local device only if the policy allows
+  ddos_rate_limit: true         # D-055: rate-limit (not block) an outside DDoS source; false = DDoS alert only
 
 firewall:                       # details for the adapter chosen in response.adapter
   table_name: ids               # nftables table name (sensor/ids_router.nft, sensor/ids_inline.nft)

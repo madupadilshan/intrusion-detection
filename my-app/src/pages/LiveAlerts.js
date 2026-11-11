@@ -51,7 +51,13 @@ const LiveAlerts = () => {
     if (socket) {
       const handleNewEvent = (event) => {
         if (!isMounted || isPaused) return;
-        setAlerts((prev) => [withEventId(event), ...prev.slice(0, 99)]);
+        const item = withEventId(event);
+        setAlerts((prev) => {
+          if (item.id && prev.some((e) => e.id === item.id)) {
+            return prev.map((e) => (e.id === item.id ? { ...e, ...item } : e));
+          }
+          return [item, ...prev.slice(0, 99)];
+        });
       };
 
       const handleEventUpdate = (updatedEvent) => {

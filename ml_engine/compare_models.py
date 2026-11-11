@@ -32,6 +32,7 @@ Key Objectives:
 
 import sys
 import os
+import json
 import time
 import argparse
 import logging
@@ -64,7 +65,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from ml_engine.training_rows import load_training_frame
+from ml_engine.training_rows import VARIANT_FILE, load_training_frame
 from ml_engine.features import (
     FEATURE_COLUMNS,
     CATEGORICAL_FEATURES,
@@ -305,6 +306,9 @@ def export_model_comparison_report(
     csv_path: Path,
     results: List[Dict[str, Any]],
     elapsed_total_sec: float,
+    n_rows: int = 0,
+    n_scenarios: int = 0,
+    variant: str = "",
 ):
     """Generate Markdown and CSV comparison deliverables."""
     df_results = pd.DataFrame(results)
@@ -317,7 +321,7 @@ def export_model_comparison_report(
 **Generated:** {time.strftime('%Y-%m-%d %H:%M:%S')}  
 **Execution Runtime:** {elapsed_total_sec:.2f} seconds ({elapsed_total_sec / 60.0:.2f} minutes)  
 **Governing Standard:** Group 03 Research Proposal (Sections 1.3, 2.4, Table 9)  
-**Evaluated Data:** `data/processed/train_features.parquet` (1,384,070 flows across 22 scenarios)  
+**Evaluated Data:** `data/processed/train_features.parquet` ({n_rows:,} flows across {n_scenarios} scenarios; training variant {variant})  
 **Cross-Validation:** 5-Fold `StratifiedGroupKFold(random_state=42, groups=scenario_id)`  
 
 ---
@@ -352,7 +356,7 @@ This report presents the empirical comparison of three distinct machine learning
 | **Benign FPR (IoT-23)** | {df_results.loc[df_results['model_name']=='Random Forest', 'benign_fpr'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='Logistic Regression', 'benign_fpr'].values[0]*100:.2f}% | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'benign_fpr'].values[0]*100:.2f}% | IoT-23 benign; H1 uses local camera traffic |
 | **Inference Latency** | **{df_results.loc[df_results['model_name']=='Random Forest', 'latency_us'].values[0]:.2f} µs/flow** | {df_results.loc[df_results['model_name']=='Logistic Regression', 'latency_us'].values[0]:.2f} µs/flow | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'latency_us'].values[0]:.2f} µs/flow | model step only (end-to-end target: Table 9) |
 | **Inference Throughput** | **{df_results.loc[df_results['model_name']=='Random Forest', 'throughput_fps'].values[0]:,.0f} flows/s** | {df_results.loc[df_results['model_name']=='Logistic Regression', 'throughput_fps'].values[0]:,.0f} flows/s | {df_results.loc[df_results['model_name']=='HistGradientBoosting', 'throughput_fps'].values[0]:,.0f} flows/s | Higher is better |
-| **Final Fit Time (1.38M)** | {df_results.loc[df_results['model_name']=='Random Forest', 'fit_time_sec'].values[0]:.1f} s | {df_results.loc[df_results['model_name']=='Logistic Regression', 'fit_time_sec'].values[0]:.1f} s | **{df_results.loc[df_results['model_name']=='HistGradientBoosting', 'fit_time_sec'].values[0]:.1f} s** | Computational footprint |
+| **Final Fit Time (all rows)** | {df_results.loc[df_results['model_name']=='Random Forest', 'fit_time_sec'].values[0]:.1f} s | {df_results.loc[df_results['model_name']=='Logistic Regression', 'fit_time_sec'].values[0]:.1f} s | **{df_results.loc[df_results['model_name']=='HistGradientBoosting', 'fit_time_sec'].values[0]:.1f} s** | Computational footprint |
 | **5-Fold CV Time** | {df_results.loc[df_results['model_name']=='Random Forest', 'total_cv_time_sec'].values[0]:.1f} s | {df_results.loc[df_results['model_name']=='Logistic Regression', 'total_cv_time_sec'].values[0]:.1f} s | **{df_results.loc[df_results['model_name']=='HistGradientBoosting', 'total_cv_time_sec'].values[0]:.1f} s** | Evaluation efficiency |
 | **Model Size on Disk** | {df_results.loc[df_results['model_name']=='Random Forest', 'model_size_mb'].values[0]:.2f} MB | **{df_results.loc[df_results['model_name']=='Logistic Regression', 'model_size_mb'].values[0]:.2f} MB** | **{df_results.loc[df_results['model_name']=='HistGradientBoosting', 'model_size_mb'].values[0]:.2f} MB** | Embedded edge storage |
 | **Interpretability / Audit** | Trees and decision paths can be inspected | Linear weights | Many boosted trees; harder to inspect | Proposal 2.4 |
@@ -432,29 +436,43 @@ def main():
             df_rf_cv = pd.read_csv(rf_cv_csv)
             rf_total_cv_time = df_rf_cv["elapsed_seconds"].sum()
         else:
-            rf_total_cv_time = 417.6
+            rf_total_cv_time = float("nan")  # not recorded
 
+        # Random Forest numbers come from its own grouped out-of-fold predictions (Step 14,
+        # data/processed/rf_oof_predictions.npz), on exactly these rows. (Until 11 Nov 2026 the
+        # accuracy, weighted F1, recalls and benign counts here were fixed numbers typed in from
+        # an old run; they were not measured. Found in the requirement check of 11 Nov 2026.)
+        oof_file = PROJECT_ROOT / "data" / "processed" / "rf_oof_predictions.npz"
+        z = np.load(oof_file, allow_pickle=False)
+        if len(z["y"]) != len(y) or not np.array_equal(z["y"].astype(np.int8), y):
+            logger.error("rf_oof_predictions.npz does not line up with these rows; re-run Step 14 / select_variant.")
+            sys.exit(1)
+        rf_pred = z["oof_probs"].argmax(axis=1)
+        rf_rec = recall_score(y, rf_pred, labels=CLASS_INDICES, average=None, zero_division=0)
+        rf_prec = precision_score(y, rf_pred, labels=CLASS_INDICES, average=None, zero_division=0)
+        rf_f1s = f1_score(y, rf_pred, labels=CLASS_INDICES, average=None, zero_division=0)
+        benign_total = int((y == 0).sum())
+        benign_fp = int(((y == 0) & (rf_pred != 0)).sum())
         rf_metrics = {
             "model_name": "Random Forest",
-            "overall_macro_f1": rf_bundle["overall_macro_f1"],
+            "overall_macro_f1": float(f1_score(y, rf_pred, labels=CLASS_INDICES, average="macro", zero_division=0)),
             "mean_fold_macro_f1": rf_bundle["mean_fold_macro_f1"],
             "std_fold_macro_f1": rf_bundle["std_fold_macro_f1"],
-            "overall_weighted_f1": 0.4255,
-            "overall_accuracy": 0.4500,
-            "benign_fpr": rf_bundle["benign_fpr"],
-            "benign_fp": 161413,
-            "benign_total": 345424,
+            "overall_weighted_f1": float(f1_score(y, rf_pred, average="weighted", zero_division=0)),
+            "overall_accuracy": float(accuracy_score(y, rf_pred)),
+            "benign_fpr": benign_fp / benign_total if benign_total else 0.0,
+            "benign_fp": benign_fp,
+            "benign_total": benign_total,
             "total_cv_time_sec": rf_total_cv_time,
-            "fit_time_sec": 115.31,
+            "fit_time_sec": rf_bundle.get("fit_time_sec") or float("nan"),
             "latency_us": rf_latency_us,
             "throughput_fps": rf_throughput_fps,
             "model_size_mb": rf_model_size_mb,
-            "recall_Benign": 0.5327,
-            "recall_DDoS_DoS": 0.0012,
-            "recall_PortScan": 0.4332,
-            "recall_CnC": 0.4489,
-            "recall_Malware_Download": 0.7997,
         }
+        for idx, cname in enumerate(CLASS_NAMES):
+            rf_metrics[f"recall_{cname}"] = float(rf_rec[idx])
+            rf_metrics[f"precision_{cname}"] = float(rf_prec[idx])
+            rf_metrics[f"f1_{cname}"] = float(rf_f1s[idx])
         results.append(rf_metrics)
     else:
         logger.error(f"Random Forest model not found at {RF_MODEL_PATH}! Please complete Step 14 first.")
@@ -474,7 +492,7 @@ def main():
     )
 
     # Fit final Linear pipeline on all 1.38M flows
-    logger.info("Fitting final Logistic Regression pipeline on all 1,384,070 flows...")
+    logger.info(f"Fitting final Logistic Regression pipeline on all {len(y):,} flows...")
     t0_lr_fit = time.time()
     final_lr_pipeline = build_linear_pipeline(random_seed=random_seed, max_iter=200, n_jobs=args.rf_n_jobs)
     final_lr_pipeline.fit(X, y)
@@ -504,7 +522,7 @@ def main():
     )
 
     # Fit final HGB pipeline on all 1.38M flows
-    logger.info("Fitting final HistGradientBoosting pipeline on all 1,384,070 flows...")
+    logger.info(f"Fitting final HistGradientBoosting pipeline on all {len(y):,} flows...")
     t0_hgb_fit = time.time()
     final_hgb_pipeline = build_hgb_pipeline(random_seed=random_seed, max_iter=100)
     final_hgb_pipeline.fit(X, y)
@@ -529,6 +547,9 @@ def main():
         csv_path=csv_report_path,
         results=results,
         elapsed_total_sec=elapsed_total,
+        n_rows=len(y),
+        n_scenarios=len(set(groups)),
+        variant=(json.loads(VARIANT_FILE.read_text(encoding="utf-8")).get("chosen", "") if VARIANT_FILE.exists() else ""),
     )
 
     logger.info("=" * 70)

@@ -10,6 +10,7 @@ via SSH or remote execution.
 Proposal Sections 1.2, 2.5, 3.7; Figure 5; Table 7 (FR-06); Step 33.
 """
 
+import json
 import logging
 import os
 import subprocess
@@ -289,15 +290,47 @@ class RouterAdapter(BaseFirewallAdapter):
                 })
             return active
 
-        # In real SSH mode, query remote nft
+        # In real SSH mode, read the router's sets (nft JSON). Until 11 Nov 2026 the answer was not
+        # read and this always returned [], so startup recovery could not see the router's rules
+        # (orphan and allowlist clean-up never happened) (D-056).
         remote_cmd = f"nft -j list table {self.table_family} {self.table_name}"
         try:
             res = self._execute_remote(remote_cmd)
-            if res.returncode == 0:
-                # Can parse elements from remote router output
-                pass
+            if res.returncode == 0 and (res.stdout or "").strip():
+                active = self.parse_nft_table(json.loads(res.stdout), set_name)
+            else:
+                logger.warning("Router rule list failed on %s: %s", self.router_host, (res.stderr or res.stdout or "").strip())
         except Exception as exc:
-            logger.debug("Remote list table failed: %s", exc)
+            logger.warning("Remote list table failed: %s", exc)
 
         return active
+
+    @staticmethod
+    def parse_nft_table(data: Dict[str, Any], set_name: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Rules from `nft -j list table ...`: one entry per element of block_src, block_dst, limit_src."""
+        rules: List[Dict[str, Any]] = []
+        for item in data.get("nftables", []):
+            s = item.get("set")
+            if not s or s.get("name") not in ("block_src", "block_dst", "limit_src"):
+                continue
+            if set_name and s.get("name") != set_name:
+                continue
+            for elem in s.get("elem", []) or []:
+                if isinstance(elem, dict) and "elem" in elem:
+                    ip, expires = elem["elem"].get("val"), int(elem["elem"].get("expires", 0) or 0)
+                else:
+                    ip, expires = elem, 0
+                if not ip:
+                    continue
+                rules.append({
+                    "ip": str(ip),
+                    "set": s["name"],
+                    "direction": "dst" if s["name"] == "block_dst" else "src",
+                    "action": "rate_limit" if s["name"] == "limit_src" else "block",
+                    "remaining_seconds": expires,
+                    "remaining_minutes": round(expires / 60.0, 1),
+                    "reason": "ROUTER_SET",
+                    "simulated": False,
+                })
+        return rules
 

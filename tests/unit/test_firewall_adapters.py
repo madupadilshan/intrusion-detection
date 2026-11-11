@@ -247,3 +247,19 @@ def test_decision_engine_execute_response_skipped():
     action_arg = mock_db.log_response_action.call_args[0][0]
     assert action_arg["status"] == "skipped"
     assert action_arg["reason"] == "SKIP_ALLOWLIST"
+
+
+def test_router_adapter_reads_the_real_router_sets():
+    """Real SSH mode must read the router's nft JSON (it returned [] before 11 Nov 2026, D-056)."""
+    from core_engine.firewall.router_adapter import RouterAdapter
+    data = {"nftables": [
+        {"set": {"name": "allow", "elem": ["192.168.50.1"]}},
+        {"set": {"name": "block_dst", "elem": [{"elem": {"val": "10.10.10.50", "timeout": 1800, "expires": 1500}}]}},
+        {"set": {"name": "limit_src", "elem": [{"elem": {"val": "10.10.10.60", "expires": 120}}]}},
+        {"set": {"name": "block_src"}},
+    ]}
+    rules = RouterAdapter.parse_nft_table(data)
+    assert [(r["ip"], r["set"], r["direction"], r["action"]) for r in rules] == [
+        ("10.10.10.50", "block_dst", "dst", "block"), ("10.10.10.60", "limit_src", "src", "rate_limit")]
+    assert rules[0]["remaining_seconds"] == 1500
+    assert RouterAdapter.parse_nft_table(data, "limit_src")[0]["ip"] == "10.10.10.60"

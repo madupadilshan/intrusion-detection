@@ -93,6 +93,10 @@ CLASS_TO_NAME = dict(zip(TARGET_CLASSES, CLASS_NAMES))
 # Threshold rules (fixed BEFORE looking at any result; applied to calibrated OOF data).
 THRESHOLD_GRID = [round(x, 2) for x in np.arange(0.30, 0.991, 0.01)]
 ALERT_MIN_PRECISION = 0.50       # an alert should be right at least half of the time
+# D-055: a class with no block threshold may get an automatic RATE-LIMIT of the outside source,
+# with the rate-limit threshold = its alert threshold (proposal Table 5: "Rate-limit or block the
+# outside source if the policy allows it"). Only DDoS_DoS has a rate-limit action.
+RATE_LIMIT_CLASSES = ("DDoS_DoS",)
 BLOCK_MIN_PRECISION = 0.95       # an automatic block must be right at least 95% of the time
 BLOCK_MAX_BENIGN_TRIGGER = 0.01  # at most 1% of benign flows may reach the block threshold
 MIN_RECALL_FOR_THRESHOLD = 0.01  # a threshold that catches < 1% of the class is not useful
@@ -299,12 +303,15 @@ def heldout_check(cal: np.ndarray, y: np.ndarray, thresholds: Dict[str, Any]) ->
     benign = y == 0
     alert_any = np.zeros(len(y), dtype=bool)
     block_any = np.zeros(len(y), dtype=bool)
+    limit_any = np.zeros(len(y), dtype=bool)
     for k in TARGET_CLASSES[1:]:
         cfg = thresholds.get(CLASS_TO_NAME[k], {})
         if cfg.get("passive_alert_threshold") is not None:
             alert_any |= (pred == k) & (conf >= cfg["passive_alert_threshold"])
         if cfg.get("active_response_threshold") is not None:
             block_any |= (pred == k) & (conf >= cfg["active_response_threshold"])
+        if cfg.get("rate_limit_threshold") is not None:
+            limit_any |= (pred == k) & (conf >= cfg["rate_limit_threshold"])
 
     return {
         "flows": int(len(y)),
@@ -315,6 +322,7 @@ def heldout_check(cal: np.ndarray, y: np.ndarray, thresholds: Dict[str, Any]) ->
         "benign_fpr_argmax": round(float((benign & (pred != 0)).sum() / max(1, benign.sum())), 5),
         "benign_alert_rate": round(float((benign & alert_any).sum() / max(1, benign.sum())), 5),
         "benign_block_candidate_rate": round(float((benign & block_any).sum() / max(1, benign.sum())), 5),
+        "benign_rate_limit_candidate_rate": round(float((benign & limit_any).sum() / max(1, benign.sum())), 5),
         "per_class": per_class,
         "confusion_matrix": confusion_matrix(y, pred, labels=TARGET_CLASSES).tolist(),
     }
@@ -455,6 +463,20 @@ def apply_block_rule(thresholds: Dict[str, Any], cal: np.ndarray, y: np.ndarray,
         for key in ("oof_block_precision", "oof_block_recall", "oof_block_benign_trigger_rate"):
             entry.pop(key, None)
         c = res["chosen"]
+        entry.pop("rate_limit_threshold", None)
+        if c is None and name in RATE_LIMIT_CLASSES:
+            rt = float(entry["passive_alert_threshold"])
+            pred, conf = cal.argmax(axis=1), cal.max(axis=1)
+            r = replay_blocks(pred, conf, y, sc, ts, src, dst, k, rt, rs["min_repeats"],
+                              rs["repeat_window_seconds"], rs["max_rule_minutes"])
+            entry["rate_limit_threshold"] = rt
+            entry["oof_replay_rate_limits"] = r["blocks"]
+            entry["oof_replay_rate_limit_safe_share"] = r["safe_share"]
+            entry["oof_replay_rate_limit_benign_target_rate"] = r["benign_target_rate"]
+            entry["rate_limit_rule"] = (
+                "D-055: no block threshold, so the outside source is rate-limited (not blocked) from the alert "
+                "threshold, with the same repeat rule and safety checks. The replay numbers are for information only."
+            )
         if c is None:
             entry["active_response_threshold"] = None
             entry["block_rule"] = (
@@ -490,6 +512,9 @@ def heldout_replay(thresholds: Dict[str, Any], cal: np.ndarray, y: np.ndarray, d
     for k in TARGET_CLASSES[1:]:
         name = CLASS_TO_NAME[k]
         thr = thresholds[name].get("active_response_threshold")
+        if thr is None and thresholds[name].get("rate_limit_threshold") is not None:
+            thr = thresholds[name]["rate_limit_threshold"]
+            name = f"{name} (rate-limit)"
         if thr is not None:
             out[name] = replay_blocks(pred, conf, y, sc, ts, src, dst, k, thr, rs["min_repeats"],
                                       rs["repeat_window_seconds"], rs["max_rule_minutes"])
@@ -552,21 +577,32 @@ def write_report(path: Path, meta: Dict[str, Any], cal_oof: Dict, cal_ho: Dict, 
         f"lowest value where at least {BLOCK_MIN_EVENTS} blocks happen, at least {BLOCK_MIN_SAFE_SHARE:.0%} of them are fired by a "
         f"truly malicious flow, and at most {BLOCK_MAX_BENIGN_TARGETS:.0%} of the benign targets are blocked. Otherwise the class "
         "is alert only.",
+        "- **Rate-limit threshold (D-055):** a class with no block threshold whose Table 5 action allows a rate-limit "
+        "(DDoS_DoS) gets an automatic rate-limit of the outside source from its alert threshold, with the same repeat rule and "
+        "safety checks. Packets above 200 per second from that source are dropped until the rule ends.",
         "- A flow is flagged for class *k* when the model's top class is *k* and its calibrated probability is at least the threshold "
         "(the same rule the decision engine uses).",
         "- An automatic block also needs the other safety rules (repeats in the time window, allowlist, local-network "
         "protection, maximum rule time, master switch) — see `docs/response_policy.md`.",
         "",
-        "| Class | Alert threshold | OOF alert precision | OOF alert recall | Block threshold | OOF replay: blocks | fired by malicious flows | benign targets blocked |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Class | Alert threshold | OOF alert precision | OOF alert recall | Block threshold | OOF replay: blocks | fired by malicious flows | benign targets blocked | Rate-limit threshold (D-055) |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for n in CLASS_NAMES[1:]:
         c = thresholds[n]
-        bt = "none (alert only)" if c["active_response_threshold"] is None else f"{c['active_response_threshold']:.2f}"
+        rt = c.get("rate_limit_threshold")
+        bt = "none" if c["active_response_threshold"] is None else f"{c['active_response_threshold']:.2f}"
+        if c["active_response_threshold"] is None and rt is None:
+            bt = "none (alert only)"
+        if rt is not None:
+            blocks = f"{c.get('oof_replay_rate_limits', '—')} rate-limits"
+            safe, ben = c.get("oof_replay_rate_limit_safe_share"), c.get("oof_replay_rate_limit_benign_target_rate")
+        else:
+            blocks = c.get("oof_replay_blocks", "—")
+            safe, ben = c.get("oof_replay_safe_share"), c.get("oof_replay_benign_target_rate")
         L.append(
             f"| {n} | {c['passive_alert_threshold']:.2f} | {_pct(c['oof_alert_precision'])} | {_pct(c['oof_alert_recall'])} | "
-            f"{bt} | {c.get('oof_replay_blocks', '—')} | {_pct(c.get('oof_replay_safe_share'))} | "
-            f"{_pct(c.get('oof_replay_benign_target_rate'), 3)} |"
+            f"{bt} | {blocks} | {_pct(safe)} | {_pct(ben, 3)} | {'—' if rt is None else f'{rt:.2f}'} |"
         )
     if replays:
         L += ["", "Replay of the repeat rule on the OOF data at each threshold (until no block happens):", ""]
@@ -592,7 +628,8 @@ def write_report(path: Path, meta: Dict[str, Any], cal_oof: Dict, cal_ho: Dict, 
         f"- Macro-F1 over the classes present in 34-1: **{ho['macro_f1_present_classes']:.4f}** (34-1 has no Malware_Download flows)",
         f"- Weighted F1: {ho['weighted_f1']:.4f}",
         f"- IoT-23 benign flows predicted as an attack (top class): {_pct(ho['benign_fpr_argmax'], 3)}; "
-        f"raising an alert: {_pct(ho['benign_alert_rate'], 3)}; reaching a block threshold: {_pct(ho['benign_block_candidate_rate'], 3)}. "
+        f"raising an alert: {_pct(ho['benign_alert_rate'], 3)}; reaching a block threshold: {_pct(ho['benign_block_candidate_rate'], 3)}; "
+        f"reaching a rate-limit threshold: {_pct(ho.get('benign_rate_limit_candidate_rate'), 3)}. "
         "These are IoT-23 benign flows, **not** the local camera traffic named in Hypothesis H1.",
         "",
         "| Class | Support | Precision | Recall | F1 | PR-AUC | Alert precision | Alert recall | Block precision | Block recall |",

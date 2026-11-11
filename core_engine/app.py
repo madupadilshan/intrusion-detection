@@ -13,11 +13,13 @@ import csv
 import io
 import json
 import logging
+import threading
+import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple, Union
 
-from flask import Flask, request, jsonify, g, make_response
+from flask import Flask, request, jsonify, g, make_response, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, disconnect
 from dotenv import load_dotenv
@@ -91,7 +93,7 @@ def create_app(
     Application factory for the IoT IDS Flask + Socket.IO server.
     Consolidates the 5 legacy backend ports into one unified, authenticated service.
     """
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder=None)  # /static/ belongs to the React build (my-app/build)
     app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "ids_flask_secret_key_default_2026")
     app.config["JSON_SORT_KEYS"] = False
 
@@ -100,7 +102,14 @@ def create_app(
 
     # CORS Configuration
     env_origins = os.getenv("CORS_ORIGINS", "")
-    allowed_origins = [o.strip() for o in env_origins.split(",") if o.strip()] or DEFAULT_CORS_ORIGINS
+    # Pages that may call the API: CORS_ORIGINS (environment), settings server.cors_origins
+    # (for example the sensor's own address in the hardware lab), and the local defaults.
+    _early_settings = _load_settings()
+    allowed_origins = list(dict.fromkeys(
+        [o.strip() for o in env_origins.split(",") if o.strip()]
+        + [str(o).strip() for o in ((_early_settings.get("server", {}) or {}).get("cors_origins") or []) if str(o).strip()]
+        + DEFAULT_CORS_ORIGINS
+    ))
     CORS(app, origins=allowed_origins, supports_credentials=True)
 
     # SocketIO Initialization
@@ -299,31 +308,56 @@ def create_app(
         - Active firewall blocking rules count
         - Recent 24-hour traffic volumes
         """
+        return jsonify(build_summary()), 200
+
+    def build_summary() -> Dict[str, Any]:
+        """Overview numbers, all measured (the dashboard shows no fixed or invented values)."""
         attack_stats = db.get_attack_stats()
         devices = db.get_devices(limit=500)
-        camera_count = sum(1 for d in devices if d.get("possible_camera"))
-        blocked_ips = db.get_blocked_ips(active_only=True)
-
-        # 24-hour traffic summary
+        camera_count = sum(1 for d in devices if d.get("possible_camera") or d.get("confirmed_camera"))
+        blocked = db.get_blocked_ips(active_only=True)
         since = datetime.now(timezone.utc) - timedelta(hours=24)
-        traffic_recent = db.get_traffic_summaries(start_time=since, limit=288)
+        benign_24h = db.sum_traffic_flows(start_time=since, class_name="Benign") if hasattr(db, "sum_traffic_flows") else 0
 
-        total_benign_flows = sum(t.get("flow_count", 0) for t in traffic_recent if t.get("class_name") == "Benign")
-
-        return jsonify({
+        runner_obj = app.config.get("runner")
+        engine_obj = app.config.get("decision_engine")
+        det = app.config.get("detector")
+        fw = app.config.get("firewall")
+        pipe = runner_obj.get_status() if runner_obj is not None else {}
+        pm = pipe.get("metrics", {}) or {}
+        policy = getattr(engine_obj, "policy", None)
+        return {
             "status": "success",
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "metrics": {
                 "total_attack_flows": attack_stats.get("total_flows", 0),
                 "total_incidents": attack_stats.get("total_incidents", 0),
-                "active_blocks": len(blocked_ips),
+                "active_blocks": sum(1 for b in blocked if str(b.get("action", "block")) != "rate_limit"),
+                "active_rate_limits": sum(1 for b in blocked if str(b.get("action", "")) == "rate_limit"),
                 "total_devices": len(devices),
                 "camera_devices": camera_count,
-                "benign_flows_24h": total_benign_flows,
+                "benign_flows_24h": benign_24h,
             },
             "class_distribution": attack_stats.get("classes", {}),
             "incidents_by_class": attack_stats.get("incidents_by_class", {}),
-        }), 200
+            "system": {
+                "pipeline_status": pipe.get("status", "unknown"),
+                "flows_processed": pm.get("flows_processed", 0),
+                "flows_per_second_60s": pm.get("flows_per_second_60s"),
+                "latency_ms_p50": pm.get("latency_ms_p50"),
+                "latency_ms_p95": pm.get("latency_ms_p95"),
+                "latency_samples": pm.get("latency_samples", 0),
+                "last_active": pm.get("last_active"),
+                "auto_response": bool(getattr(policy, "auto_response", False)),
+                "allowlist_size": len(getattr(policy, "allowlist", []) or []),
+                "local_networks": [str(n) for n in getattr(policy, "local_networks", []) or []],
+                "firewall": getattr(fw, "name", "unknown"),
+                "firewall_simulated": bool(getattr(fw, "is_simulated", True)),
+                "model_version": getattr(det, "model_version", None) or "unknown",
+            },
+        }
+
+    app.config["build_summary"] = build_summary
 
     # =========================================================================
     # 3. Attack Events & Forensic Evidence (FR-01, FR-02, FR-04, Table 8)
@@ -414,6 +448,16 @@ def create_app(
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         socketio.emit("event_update", broadcast_payload)
+        try:  # every admin action is traceable (proposal Table 9, FR-07)
+            db.log_system_event(
+                actor=broadcast_payload["updated_by"],
+                event="INCIDENT_STATUS_CHANGED",
+                outcome="SUCCESS",
+                details={"event_id": event_id, "status": new_status, "response_status": new_resp_status,
+                         "reason": data.get("reason")},
+            )
+        except Exception as exc:
+            logger.warning("Could not write the audit record for event %s: %s", event_id, exc)
 
         return jsonify({"status": "success", "message": "Incident status updated.", "update": broadcast_payload}), 200
 
@@ -821,6 +865,11 @@ def create_app(
 
         actor = getattr(g, "current_user", {}).get("sub", "admin")
         success = db.set_setting(key=key, value=value, updated_by=actor, reason=reason)
+        try:  # the settings history keeps the old and new value; the audit log keeps the action
+            db.log_system_event(actor=actor, event="SETTING_CHANGED", outcome="SUCCESS" if success else "FAILURE",
+                                details={"key": key, "value": value, "reason": reason})
+        except Exception as exc:
+            logger.warning("Could not write the audit record for setting %s: %s", key, exc)
         if not success:
             return jsonify({"error": "Failed to update setting."}), 500
 
@@ -922,6 +971,14 @@ def create_app(
             )
         except ValueError as e:
             return jsonify({"error": "Bad Request", "message": str(e)}), 400
+
+        try:
+            socketio.emit("log_export", {
+                "type": log_type, "format": export_fmt, "rows": row_count, "actor": actor,
+                "filename": filename, "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+        except Exception as exc:
+            logger.debug("Could not emit log_export: %s", exc)
 
         output = make_response(content)
         output.headers["Content-Disposition"] = f"attachment; filename={filename}"
@@ -1128,7 +1185,46 @@ def create_app(
         """Handle WebSocket client disconnection."""
         logger.debug("Socket.IO client disconnected.")
 
+    # =========================================================================
+    # Dashboard pages: the built React app (my-app/build) is served by this server when it
+    # exists, so the sensor needs only one service and the page and the API share one address.
+    # =========================================================================
+    build_dir = Path(os.getenv("DASHBOARD_BUILD_DIR") or PROJECT_ROOT / "my-app" / "build")
+
+    @app.route("/", defaults={"page": ""})
+    @app.route("/<path:page>")
+    def dashboard_page(page):
+        if page.startswith("api/") or not (build_dir / "index.html").is_file():
+            return jsonify({"error": "Not Found", "message": "The requested API endpoint was not found."}), 404
+        target = (build_dir / page).resolve()
+        if page and target.is_file() and build_dir.resolve() in target.parents:
+            return send_from_directory(str(build_dir), page)
+        return send_from_directory(str(build_dir), "index.html")
+
     return app, socketio
+
+
+def start_summary_push(app: Flask, socketio: SocketIO, every_seconds: float = 5.0) -> threading.Thread:
+    """Push the Overview numbers to the dashboard every few seconds (FR-04: no refresh needed)."""
+    build = app.config.get("build_summary")
+
+    def loop():
+        last = None
+        while True:
+            try:
+                data = build() if build else None
+                if data is not None:
+                    key = json.dumps({k: v for k, v in data.items() if k != "timestamp"}, sort_keys=True, default=str)
+                    if key != last:
+                        socketio.emit("summary_update", data)
+                        last = key
+            except Exception as exc:
+                logger.debug("summary push failed: %s", exc)
+            time.sleep(every_seconds)
+
+    t = threading.Thread(target=loop, name="SummaryPush", daemon=True)
+    t.start()
+    return t
 
 
 # Module-level instance for direct WSGI execution (e.g. gunicorn or python core_engine/app.py)
@@ -1151,5 +1247,10 @@ if __name__ == "__main__":
         print(f"Auto-starting RuleExpiryWorker (every {worker_obj.interval_seconds} s)")
         worker_obj.start()
 
-    socketio.run(app, host=host, port=port, debug=False)
+    start_summary_push(app, socketio)
+
+    # Flask-SocketIO refuses its built-in (Werkzeug) server when it is not started from a terminal,
+    # for example by systemd on the sensor (found 11 Nov 2026, D-056). This is a lab prototype on a
+    # separated network (proposal 1.2), so the built-in server is allowed on purpose.
+    socketio.run(app, host=host, port=port, debug=False, allow_unsafe_werkzeug=True)
 

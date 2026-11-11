@@ -26,13 +26,14 @@ const CLASS_COLORS = {
 
 const Overview = () => {
   const [summary, setSummary] = useState({
-    total_events: 0,
-    attacks_detected: 0,
-    blocked_ips: 0,
-    active_devices: 0,
+    metrics: {},
+    system: {},
     class_distribution: {},
-    traffic_volume_24h: [],
   });
+  const m = summary.metrics || {};
+  const sys = summary.system || {};
+  const fmtMs = (v) => (v === null || v === undefined ? "not measured yet" : `${Number(v).toFixed(1)} ms`);
+  const pipelineOk = sys.pipeline_status === "running";
   const [recentAlerts, setRecentAlerts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -68,7 +69,12 @@ const Overview = () => {
 
       const handleNewEvent = (event) => {
         if (!isMounted) return;
-        setRecentAlerts((prev) => [withEventId(event), ...prev.slice(0, 5)]);
+        const item = withEventId(event);
+        setRecentAlerts((prev) =>
+          item.id && prev.some((e) => e.id === item.id)
+            ? prev.map((e) => (e.id === item.id ? { ...e, ...item } : e))
+            : [item, ...prev.slice(0, 5)]
+        );
       };
 
       socket.on("summary_update", handleSummaryUpdate);
@@ -108,8 +114,14 @@ const Overview = () => {
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs">
-            <span className="px-2.5 py-1 bg-emerald-950/60 border border-emerald-800 text-emerald-300 rounded flex items-center gap-1.5">
-              <CheckCircle2 size={13} /> SENSOR & PIPELINE ACTIVE
+            <span
+              className={`px-2.5 py-1 rounded flex items-center gap-1.5 border ${
+                pipelineOk
+                  ? "bg-emerald-950/60 border-emerald-800 text-emerald-300"
+                  : "bg-red-950/60 border-red-800 text-red-300"
+              }`}
+            >
+              <CheckCircle2 size={13} /> PIPELINE: {(sys.pipeline_status || "unknown").toUpperCase()}
             </span>
           </div>
         </div>
@@ -122,9 +134,11 @@ const Overview = () => {
               <Activity size={16} className="text-emerald-400" />
             </div>
             <div className="text-2xl md:text-3xl font-bold text-emerald-400">
-              {summary.total_events?.toLocaleString() || 0}
+              {(sys.flows_processed || 0).toLocaleString()}
             </div>
-            <div className="text-[11px] text-gray-500 mt-1">Total connection telemetry</div>
+            <div className="text-[11px] text-gray-500 mt-1">
+              Since the pipeline started · benign in 24 h: {(m.benign_flows_24h || 0).toLocaleString()}
+            </div>
           </div>
 
           <div className="p-4 bg-gray-900/60 border border-red-900/80 rounded-lg">
@@ -133,9 +147,11 @@ const Overview = () => {
               <AlertTriangle size={16} className="text-red-400" />
             </div>
             <div className="text-2xl md:text-3xl font-bold text-red-400">
-              {summary.attacks_detected?.toLocaleString() || 0}
+              {(m.total_incidents || 0).toLocaleString()}
             </div>
-            <div className="text-[11px] text-gray-500 mt-1">Classified intrusion events</div>
+            <div className="text-[11px] text-gray-500 mt-1">
+              Alert events ({(m.total_attack_flows || 0).toLocaleString()} flows)
+            </div>
           </div>
 
           <div className="p-4 bg-gray-900/60 border border-amber-900/80 rounded-lg">
@@ -144,9 +160,11 @@ const Overview = () => {
               <Shield size={16} className="text-amber-400" />
             </div>
             <div className="text-2xl md:text-3xl font-bold text-amber-400">
-              {summary.blocked_ips || 0}
+              {m.active_blocks || 0}
             </div>
-            <div className="text-[11px] text-gray-500 mt-1">nftables firewall drop rules</div>
+            <div className="text-[11px] text-gray-500 mt-1">
+              Blocks · rate-limits: {m.active_rate_limits || 0}
+            </div>
           </div>
 
           <div className="p-4 bg-gray-900/60 border border-cyan-900/80 rounded-lg">
@@ -155,9 +173,11 @@ const Overview = () => {
               <Camera size={16} className="text-cyan-400" />
             </div>
             <div className="text-2xl md:text-3xl font-bold text-cyan-400">
-              {summary.active_devices || 0}
+              {m.total_devices || 0}
             </div>
-            <div className="text-[11px] text-gray-500 mt-1">Discovered IP cameras & nodes</div>
+            <div className="text-[11px] text-gray-500 mt-1">
+              Found by scans · possible cameras: {m.camera_devices || 0}
+            </div>
           </div>
         </div>
 
@@ -207,25 +227,36 @@ const Overview = () => {
           <div className="p-4 bg-gray-900/40 border border-gray-800 rounded-lg flex flex-col justify-between">
             <div>
               <h3 className="text-sm font-semibold text-gray-200 mb-3 flex items-center justify-between">
-                <span>LAB INFRASTRUCTURE & SAFETY</span>
-                <span className="text-[11px] text-emerald-400">Subnet: 192.168.50.0/24</span>
+                <span>SYSTEM STATUS (MEASURED)</span>
+                <span className="text-[11px] text-emerald-400">
+                  Local network: {(sys.local_networks || []).join(", ") || "not set"}
+                </span>
               </h3>
               <div className="space-y-2 text-xs">
                 <div className="flex items-center justify-between p-2.5 bg-gray-950/60 border border-gray-800 rounded">
-                  <span className="text-gray-400">Autonomous Mitigation</span>
-                  <span className="text-emerald-400 font-semibold">Direction-Aware Policy</span>
+                  <span className="text-gray-400">Automatic response</span>
+                  <span className={`font-semibold ${sys.auto_response ? "text-amber-300" : "text-gray-300"}`}>
+                    {sys.auto_response ? "ON (lab test)" : "OFF (alerts only)"} · firewall: {sys.firewall || "unknown"}
+                    {sys.firewall_simulated ? " (simulated)" : ""}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-gray-950/60 border border-gray-800 rounded">
-                  <span className="text-gray-400">Allowlist Protection</span>
-                  <span className="text-emerald-400 font-semibold">Active (4 nodes immune)</span>
+                  <span className="text-gray-400">Allowlist (never blocked)</span>
+                  <span className="text-emerald-400 font-semibold">{sys.allowlist_size || 0} addresses</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-gray-950/60 border border-gray-800 rounded">
-                  <span className="text-gray-400">Zeek Ingestion Throughput</span>
-                  <span className="text-cyan-400 font-semibold">23,108 fps (Adapter locked)</span>
+                  <span className="text-gray-400">Flows per second (last 60 s)</span>
+                  <span className="text-cyan-400 font-semibold">{sys.flows_per_second_60s ?? 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-gray-950/60 border border-gray-800 rounded">
-                  <span className="text-gray-400">ML Model Latency</span>
-                  <span className="text-purple-400 font-semibold">6.46 µs / inference</span>
+                  <span className="text-gray-400">Time per flow, Zeek line to dashboard (median / 95%)</span>
+                  <span className="text-purple-400 font-semibold">
+                    {fmtMs(sys.latency_ms_p50)} / {fmtMs(sys.latency_ms_p95)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 bg-gray-950/60 border border-gray-800 rounded">
+                  <span className="text-gray-400">Model</span>
+                  <span className="text-gray-300 font-semibold">{sys.model_version || "unknown"}</span>
                 </div>
               </div>
             </div>

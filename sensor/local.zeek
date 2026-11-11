@@ -38,3 +38,11 @@ redef ignore_checksums = T;
 #    downloads a program or script from outside (rule, alert only).
 @load base/frameworks/files
 @load base/protocols/ftp
+
+# 5. Measurement logs for guide Step 37 (proposal Table 9: "how many events are dropped").
+#    capture_loss.log: share of packets Zeek missed; stats.log: packets seen and dropped.
+#    They do not change conn.log, so the model input stays the same.
+@load policy/misc/capture-loss
+@load policy/misc/stats
+redef CaptureLoss::watch_interval = 1 min;
+redef Stats::report_interval = 1 min;

@@ -70,3 +70,9 @@ lab_virtual/keys/*
 lab_virtual/zeek_logs/*
 !lab_virtual/zeek_logs/.gitignore
 lab_virtual/ids_backend.log
+
+# Hardware lab (lab_hardware/): SSH keys, dashboard login, run files and the per-run settings copy
+lab_hardware/keys/
+lab_hardware/run/
+lab_hardware/runtime_settings.yaml
+/dist/

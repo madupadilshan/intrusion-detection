@@ -11,7 +11,7 @@ Faculty of Technology, University of Sri Jayewardenepura
 This repository contains the prototype implementation of a real-time network intrusion detection and automated response system (NIDS/IPS) tailored for small IP-camera IoT networks.
 
 * **Traffic Analytics:** Zeek (`conn.log`) connection flow processing.
-* **Classifier:** Random Forest model trained on the IoT-23 benchmark dataset, with 19 one-flow features and 8 window features (what the same source did in the last 60 s, and failed tries to the same destination in the last hour; decisions D-051, D-052). Model v3.0.0: held-out macro-F1 0.66 (5 classes) / 0.82 (classes present); the proposal target 0.85 is not met. Program downloads are checked by a separate rule on Zeek's files.log (D-052). A virtual lab (`lab_virtual/`, D-053) runs the whole system on real packets with Docker.
+* **Classifier:** Random Forest model trained on the IoT-23 benchmark dataset, with 19 one-flow features and 8 window features (what the same source did in the last 60 s, and failed tries to the same destination in the last hour; decisions D-051, D-052). Model v3.1.0 (variant WCD, D-054): held-out 34-1 macro-F1 0.86 over the classes present (the H1 number, D-054) / 0.69 over 5 classes; 34-1 was seen before, so this is not a clean test, and H1 part 2 (camera traffic) is not measured yet. An outside DDoS source is rate-limited (D-055). Program downloads are checked by a separate rule on Zeek's files.log (D-052). A virtual lab (`lab_virtual/`, D-053) runs the whole system on real packets with Docker.
 * **Target Classes (5):** Benign, DDoS/DoS, Port Scan, Command & Control (C&C), Malware/Download.
 * **Active Response:** `nftables` rules on the lab router (passive mode) or on the sensor (inline mode), only when the safety rules pass (`docs/response_policy.md`); every rule expires and the admin can unblock by hand. Automatic response is off by default.
 * **Management & Visualization:** Unified Flask & Socket.IO backend with a real-time React dashboard and MongoDB audit store.
@@ -39,7 +39,7 @@ not a lab result (decision D-050).
 * [`PROJECT_PROGRESS_AND_CHALLENGES.md`](PROJECT_PROGRESS_AND_CHALLENGES.md): dated work log, open issues and next steps.
 * [`docs/decision_log.md`](docs/decision_log.md): every project decision (D-001 onward).
 
-**Status (8 Nov 2026):** the software is built and tested on the development PC. The lab parts are not done yet: Zeek on the Linux sensor, our own benign camera traffic (Level 3), and the 6 test scenarios of proposal Table 10. The only camera traffic file so far is synthetic test data and is not a result.
+**Status (11 Nov 2026):** the software is built and tested on the development PC, and the whole system runs in the virtual lab. The hardware-lab parts are ready but not done yet: Zeek on the Linux sensor, our own benign camera traffic (Level 3), and the 6 test scenarios of proposal Table 10 with the real camera.
 
 ---
 
@@ -81,10 +81,15 @@ copy config\settings.example.yaml config\settings.yaml
 
 ### 3. Run the system (development PC)
 ```powershell
-python core_engine/app.py           # backend + live pipeline on port 5000
-cd my-app; npm start                # dashboard on port 3000
+python -m core_engine.app           # backend + live pipeline + built dashboard on http://localhost:5000
+cd my-app; npm start                # only for dashboard development (port 3000)
 ```
-On the Linux sensor, Zeek must write `conn.log` to the path in `zeek.conn_log_path` (`sensor/run_zeek.sh`). Copy `ml_engine/models/ids_bundle_v3.joblib` to the sensor (it is not in Git).
+Build the dashboard once with `cd my-app && npm run build`; the backend then serves it on port 5000.
+
+### 3b. Hardware lab (real camera) and virtual lab
+* [`lab_hardware/README.md`](lab_hardware/README.md): set up the router, the switch mirror port and the Linux sensor, then run the proposal's tests with `lab_hardware/hwlab.py` (Steps 3b, 5, 19, 20, 22, 35-39). `lab_hardware/pack_for_sensor.py` packs the files that are not in Git (model, training features, built dashboard).
+* [`lab_virtual/README.md`](lab_virtual/README.md): the same system in Docker on this PC (D-053).
+* Test tools: `tools/fr_tests.py` (Step 36), `tools/measure_latency.py` (Step 37).
 
 ### 4. Follow the Step-by-Step Guide
 Refer to [`STEP_BY_STEP_GUIDE.md`](STEP_BY_STEP_GUIDE.md) to proceed through each milestone systematically.
