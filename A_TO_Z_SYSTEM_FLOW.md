@@ -587,7 +587,7 @@ Docker Containers තුළ නිකන්ම හිස් OS එකක් න�
    - Windows එකේ දුවන Python `runner.py` එක මෙම ගොනුව තත්‍ය කාලීනව (line-by-line file tailing) කියවයි.
 2. **පාලම 2: Firewall එක පාලනය කිරීම (Mitigation Control - SSH Port 2222):**
    - Router container එකේ Port 22 (SSH) අපේ Windows Host එකේ `127.0.0.1:2222` වෙත map කර ඇත.
-   - Windows Python එකේ ඇති `router_adapter.py` මඟින් SSH key එක (`lab_virtual/keys/id_ed25519`) භාවිතයෙන් Router එකට රහසිගතව සම්බන්ධ වී Linux command එකක් ධාවනය කරයි:
+   - Windows Python එකේ ඇති `router_adapter.py` මඟින් SSH key එක (`lab_virtual/keys/router_admin`) භාවිතයෙන් Router එකට රහසිගතව සම්බන්ධ වී Linux command එකක් ධාවනය කරයි:
      `nft add element inet ids block_dst { 10.10.10.50 timeout 1800s }`
 3. **පාලම 3: පරිශීලකයාට පෙන්වීම (SOC Dashboard - HTTP & WebSockets Port 5000):**
    - Windows Host එකේ Port 5000 මත Unified Flask + Socket.IO Server එක ධාවනය වේ.
@@ -657,7 +657,37 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 > - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පරිගණකය Shutdown කර ඇති හෝ කිසිවක් ධාවනය නොවී ඇති මුල් අවස්ථාවක සිට (Cold Start), කිසිදු අතින් කරන අමතර සැකසුමකින් තොරව ස්ක්‍රිප්ට් මඟින් සම්පූර්ණ පද්ධතියම (Bridges, Containers 10, AI Pipeline, Dashboard) එකවර නිරවුල්ව පණගන්වා ගත හැකි බව පෙන්වීමටයි.
 > - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O4 and Table 9 Reliability. From a complete cold start, our orchestration commands provision SSH credentials, instantiate the dual-bridge Docker network, launch all 10 containers, and bind the real-time Python IDS engine with verified pipeline health."*
 
-ඔබ පරිගණකය On කර, කිසිවක් ධාවනය නොවී ඇති මුල් අවස්ථාවේ සිට (Cold Start) Supervisor ඉදිරියේ මුල සිටම පද්ධතිය පණගන්වා පෙන්වීමට පහත පියවර 4 අනුගමනය කරන්න:
+### 💡 `lab_virtual/lab.py` යනු කුමක්ද? එය අප විසින් සාදාගත්තේ ඇයි? (What is `lab.py` & Why Did We Build It?)
+
+> ❓ **"මේ `lab.py` කියන්නේ මොකක්ද? මේක අපි හදාගත්ත එකක්ද? කොහොමද මෙහෙම එකක් මෙතනට ආවේ?"**
+>
+> **පිළිතුර: ඔව්! මෙය පිටතින් ගත් කිසිදු තෙවන පාර්ශවීය මෘදුකාංගයක් නොවේ. මෙය අපගේ පර්යේෂණ ව්‍යාපෘතිය සඳහා අප විසින්ම සම්පූර්ණයෙන්ම Python කේතයෙන් ලියන ලද ප්‍රධාන Virtual Lab Orchestrator & Test Controller ස්ක්‍රිප්ට් එකයි ([`lab_virtual/lab.py`](lab_virtual/lab.py)).**
+
+#### 1. මෙය අප විසින් නිර්මාණය කළේ ඇයි? (The Core Rationale Behind `lab.py`):
+1. **Docker Containers 10 සහ Dual Bridges ස්වයංක්‍රීයව පාලනය කිරීම:**
+   - අපගේ Virtual Lab එක තුළ Router, Camera, NVR, Admin PC, Sensor, Attacker ආදී Containers 10 ක් සහ `camlan` (192.168.50.0/24), `outside` (10.10.10.0/24) යන අතථ්‍ය ජාල 2 ක් ඇත.
+   - සාමාන්‍යයෙන් මේවා එකින් එක terminal commands වලින් open කරමින් සිටීම අතිශය වෙහෙසකර බැවින්, ඒ සියල්ල තනි විධානයකින් එකවර build කර up/down කිරීමට `lab.py` නිර්මාණය කළෙමු.
+2. **රහස්‍ය SSH Keys ස්වයංක්‍රීයව සැකසීම (Automated Ed25519 Key Provisioning):**
+   - අපගේ Python IDS Engine එකට Router Firewall එකේ (`nftables`) drop rules ඇතුළත් කිරීමට නම් Router එක වෙත Password නැතිව SSH මඟින් රහසිගතව Login වීමට අවශ්‍ය වේ.
+   - ඒ සඳහා අවශ්‍ය Cryptographic Ed25519 SSH Keys (`lab_virtual/keys/router_admin`) සහ Dashboard Login Password (`dashboard_login.txt`) ස්වයංක්‍රීයව ජනනය කිරීම `lab.py setup` මඟින් සිදු වේ.
+3. **Proposal Table 10 ප්‍රහාරක අවස්ථා 6 ස්වයංක්‍රීයව ධාවනය කිරීම (Automated Evaluation Scenarios):**
+   - Supervisor ඉදිරියේ Proposal Table 10 හි සඳහන් Scenarios 1 සිට 6 දක්වා (Normal video, PortScan, DDoS Flood, C&C Botnet Beacons, Malware Download, Manual Block) අතින් commands දහස් ගණනක් ගසා පෙන්වීම වෙනුවට, එකම command එකකින් (`python lab.py scenario 4` ආදී වශයෙන්) සජීවීව ධාවනය කර Markdown Reports ජනනය කිරීමට මෙම controller script එක අප විසින් ගොඩනැගුවෙමු.
+
+#### 2. `lab.py` සතු ප්‍රධාන විධාන 8 (The 8 Controller Subcommands Summary):
+| විධානය (Command) | කරනු ලබන කාර්යය (What it Does) | කවදාද භාවිතා කරන්නේ? |
+| :--- | :--- | :--- |
+| **`python lab.py setup`** | Router SSH Keys (`router_admin`) සහ Dashboard Password (`dashboard_login.txt`) සාදයි. | පළමු වතාවේ පමණි (One-time). |
+| **`python lab.py up`** | Docker Containers 10 සහ Virtual Switches/Bridges සියල්ල එකවර Boot up කරයි. | Lab එක පටන් ගන්නා විට. |
+| **`python lab.py ids-start`** | Port 5000 න් Python IDS Engine එක, Zeek Adapter එක, සහ Web Dashboard එක Background එකේ ධාවනය කරයි. | Lab එක On කළ පසු. |
+| **`python lab.py status`** | Containers 10, nftables Firewall Rules, Zeek `conn.log`, සහ AI Pipeline Latency තත්ත්වය එකවර පෙන්වයි. | පද්ධතිය පරීක්ෂා කිරීමට. |
+| **`python lab.py scenario N`** | Proposal Table 10 හි Scenarios 1–6 ස්වයංක්‍රීයව ධාවනය කර වාර්තා සාදයි (උදා: `scenario 4` = C&C). | Supervisor ට පරීක්ෂණ පෙන්වීමට. |
+| **`python lab.py reset`** | Router Firewall එකේ සියලුම Blocks ඉවත් කර පද්ධතිය පිරිසිදු (Fresh state) තත්ත්වයට පත් කරයි. | ප්‍රහාරයක් අවසන් වූ පසු. |
+| **`python lab.py ids-stop`** | Background එකේ ධාවනය වන Python IDS Backend Server එක නවත්වයි. | වැඩ අවසන් වූ පසු. |
+| **`python lab.py down`** | Docker Containers 10 ම නවතා Memory සහ CPU නිදහස් කරයි. | සම්පූර්ණයෙන්ම Lab එක වසා දැමීමට. |
+
+---
+
+ඔබ පරිගණකය On කර, කිසිවක් ධාවනය නොවී ඇති මුල් අවස්ථාවේ සිට (Cold Start) Supervisor ඉදිරියේ මුල සිටම පද්ධතිය පණගන්වා පෙන්වීමට පහත පියවර 5 අනුගමනය කරන්න:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -666,7 +696,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 │  [1. Docker Desktop Open]                                              │
 │            │                                                           │
 │            ▼                                                           │
-│  [2. lab.py setup]       ──► SSH Keys & Login File Created             │
+│  [2. lab.py setup]       ──► SSH Keys & Login File Created (One-Time)  │
 │            │                                                           │
 │            ▼                                                           │
 │  [3. lab.py up]          ──► 10 Containers & Virtual Bridges Spawned   │
@@ -691,7 +721,11 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
    >
-   > - **`lab_virtual\lab.py setup`:** Router එක SSH මඟින් පාලනය කිරීමට අවශ්‍ය Ed25519 Cryptographic SSH Key යුගලය (`lab_virtual/keys/id_ed25519`) සාදයි, සහ Dashboard එකට Login වීමට අවශ්‍ය අහඹු මුරපදය (`lab_virtual/keys/dashboard_login.txt`) ස්වයංක්‍රීයව ජනනය කරයි.
+   > - **`lab_virtual\lab.py setup`:** අප විසින් ලියන ලද `lab.py` Controller ස්ක්‍රිප්ට් එකේ `setup` විධානය ක්‍රියාත්මක කරයි.
+   > - **පසුබිමින් සිදුවන දේ:**
+   >   1. **Router SSH Keys සාදයි:** අපගේ IDS Engine එකට Router Firewall එක (`ids-lab-router`) ස්වයංක්‍රීයව පාලනය කර block rules දැමීමට අවශ්‍ය `router_admin` (Ed25519 Cryptographic SSH Key යුගලය) සහ `known_hosts` ගොනුව `lab_virtual/keys/` තුළ ස්වයංක්‍රීයව සාදයි (Windows OpenSSH permissions ද ආරක්ෂිතව සකස් කරයි).
+   >   2. **Dashboard මුරපදය සාදයි:** ආරක්ෂිතව React Dashboard එකට Login වීම සඳහා අහඹු මුරපදයක් ජනනය කර `lab_virtual/keys/dashboard_login.txt` තුළ සුරකියි (Username: `labadmin`).
+   >   *(මෙම පියවර ක්‍රියාත්මක කරන්නේ පද්ධතිය මුලින්ම සකසන පළමු වතාවේ පමණි).*
    >
 3. **තුන්වන පියවර: Virtual Lab උපාංග (Containers 10) ධාවනය කිරීම:**
 
@@ -701,7 +735,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
    >
-   > - **`lab_virtual\lab.py up`:** `docker-compose.yml` ක්‍රියාත්මක කර `camlan` (192.168.50.0/24) සහ `outside` (10.10.10.0/24) Virtual Bridges සාදමින්, Router, Camera, NVR, Admin PC, Cloud, Attacker, සහ Zeek Sensor යන Containers 10 ම එකවර ධාවනය (boot up) කරයි.
+   > - **`lab_virtual\lab.py up`:** අපගේ controller script එක මඟින් `docker-compose.yml` ක්‍රියාත්මක කර `camlan` (192.168.50.0/24) සහ `outside` (10.10.10.0/24) Virtual Bridges සාදමින්, Router, Camera, NVR, Admin PC, Cloud, Attacker, සහ Zeek Sensor යන Containers 10 ම එකවර ධාවනය (boot up) කරයි. Router එක SSH හරහා පිළිතුරු දෙන තෙක් බලා සිට status පෙන්වයි.
    >
 4. **හතරවන පියවර: Python IDS Backend එක සහ Dashboard Server එක Start කිරීම:**
 
@@ -711,7 +745,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
    >
-   > - **`lab_virtual\lab.py ids-start`:** Windows Host එක මත Port 5000 න් Unified Server එක (`core_engine/app.py`), Zeek log කියවන Live Pipeline Runner එක, සහ Auto-Expiry Worker එක Background එකේ ධාවනය වීම ආරම්භ කරයි.
+   > - **`lab_virtual\lab.py ids-start`:** අපගේ controller script එක මඟින් Windows Host එක මත Port 5000 න් Unified Server එක (`core_engine/app.py`), Zeek log කියවන Live Pipeline Runner එක, සහ Auto-Expiry Worker එක Background එකේ ධාවනය කරවයි (PID file එකක් මඟින් process එක trace කරයි).
    >
 5. **පස්වන පියවර: පද්ධතියේ සජීවී තත්ත්වය එකවර පරීක්ෂා කිරීම (Status Check):**
 
@@ -721,7 +755,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
    >
-   > - **`lab_virtual\lab.py status`:** Containers 10 ම ධාවනය වේද, Router එකේ Blocks තිබේද, Zeek එක `conn.log` ලියයිද, සහ Python IDS Pipeline එක ක්‍රියාත්මකද යන්න එකම screen එකක සාරාංශයක් ලෙස පෙන්වයි.
+   > - **`lab_virtual\lab.py status`:** අපගේ controller script එක මඟින් Containers 10 ම ධාවනය වේද, Router එකේ Blocks තිබේද, Zeek එක `conn.log` ලියයිද, සහ Python IDS Pipeline එක ක්‍රියාත්මකද යන්න එකම screen එකක සාරාංශයක් ලෙස පෙන්වයි.
    >
 
    - **ලැබෙන පිළිතුර (Verified Output):**
@@ -751,7 +785,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
   .venv\Scripts\python.exe lab_virtual\lab.py reset
   ```
 
-  > **කේතයෙන් සිදුවන දේ සරලව:** Router එකේ ඇති සියලුම `block_dst`, `block_src`, සහ `limit_src` නීති මකා දමා පද්ධතිය මුල් පිරිසිදු තත්ත්වයට පත් කරයි.
+  > **කේතයෙන් සිදුවන දේ සරලව:** අපගේ controller script එක මඟින් Router එකේ ඇති සියලුම `block_dst`, `block_src`, සහ `limit_src` නීති මකා දමා MongoDB blocklist reset කර පද්ධතිය මුල් පිරිසිදු තත්ත්වයට පත් කරයි.
   >
 - **පරීක්ෂණ අවසානයේ සියල්ල සම්පූර්ණයෙන්ම Stop කිරීමට:**
 
@@ -1089,7 +1123,7 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
   >
   > - **`docker exec ids-lab-attacker`:** පිටත ජාලයේ සිටින Attacker Laptop Container එක ඇතුළට යන්න.
   > - **`-p 80,554 192.168.50.30`:** මුළු ports 65,535 ම scan නොකර, කැමරාවේ සැබවින්ම දුවන Web (80) සහ Video (554) ports දෙක පමණක් තත්පර 0.79 කින් ක්ෂණිකව තහවුරු කරගන්න.
-  > - **`lab.py scenario 2`:** Proposal Table 10 Scenario 2 අනුව මුළු Subnet එකම (`192.168.50.0/24`) හරහා Ports 23, 80, 554 horizontal sweep එකක් දියත් කර IDS එකෙහි multi-flow PortScan අනාවරණය ක්‍රියාත්මක කරන්න.
+  > - **`lab.py scenario 2`:** අප විසින් ලියන ලද `lab_virtual/lab.py` පාලක ස්ක්‍රිප්ටුව මඟින් Proposal Table 10 Scenario 2 ස්වයංක්‍රීයව මෙහෙයවයි. Attacker Container එක ලවා මුළු Subnet එකම (`192.168.50.0/24`) හරහා Ports 23, 80, 554 horizontal sweep එකක් දියත් කර IDS එකෙහි multi-flow PortScan අනාවරණය ක්‍රියාත්මක කර වාර්තාවක් ලියයි.
   >
 - **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
 
