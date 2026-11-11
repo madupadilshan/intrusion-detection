@@ -51,7 +51,8 @@ PID_FILE = HERE / "keys" / "ids_backend.pid"
 BACKEND_LOG = HERE / "ids_backend.log"
 LOGIN_FILE = KEYS / "dashboard_login.txt"
 REPORTS = ROOT / "reports" / "lab_tests" / "virtual"
-PY = sys.executable
+_venv_py = ROOT / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+PY = str(_venv_py) if _venv_py.exists() else sys.executable
 
 CAMERA, ATTACKER, CLOUD = "192.168.50.30", "10.10.10.50", "10.10.10.123"
 ADMIN, NVR = "192.168.50.10", "192.168.50.20"
@@ -148,7 +149,7 @@ def cmd_ids_start(_):
         LOGIN_FILE.write_text(f"labadmin {pw}\n")
     env = dict(os.environ, IDS_SETTINGS_FILE=str(SETTINGS), DB_NAME=DB_NAME, PORT="5000", HOST="127.0.0.1")
     log = open(BACKEND_LOG, "a", encoding="utf-8")
-    flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
+    flags = (subprocess.CREATE_NEW_PROCESS_GROUP | 0x00000008) if os.name == "nt" else 0
     p = subprocess.Popen([PY, "-m", "core_engine.app"], cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,
                          creationflags=flags)
     PID_FILE.write_text(str(p.pid))
