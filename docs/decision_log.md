@@ -1064,3 +1064,23 @@ Every important project decision is written here: the date, the decision, the re
 - **Other:** the 24-hour benign count stopped counting after 288 summary rows (about 5 hours); it is now a database sum. Zeek now also writes `capture_loss.log` and `stats.log` (Step 37 "events dropped"). These logs do not change `conn.log`.
 - **Who agreed:** project owner (11 Nov 2026, asked for the check).
 - **Proposal link:** Sections 3.6, 6; Table 7 (FR-04, FR-07); Table 9; guide Part E.
+
+## D-057 — 2026-11-11 — Real device discovery in the virtual lab; no silent simulated scan; camera evidence rule
+- **Why:** a check of the presentation guide (`A_TO_Z_SYSTEM_FLOW.md`, progress entry 3.77) found that the Devices page showed 5 **invented** devices. Their vendors, MAC addresses and ports are written in `scanner_service.py`. They appear because Nmap is not installed on the PC, and the scanner then fell back to its simulation without saying so. Guide Part E forbids made-up data on the dashboard.
+- **Decisions:**
+  1. **Real Nmap in the virtual lab:**
+     - A new lab machine `ids-lab-scanner` sits at **192.168.50.5**, the sensor's management address of the lab plan. It uses the lab's Nmap image, which now includes `nmap-scripts`, needed for `-sV`.
+     - The IDS runs Nmap there, through the setting `scanner.nmap_command: ["docker", "exec", "ids-lab-scanner", "nmap"]` in `lab_virtual/settings.lab.yaml`. The Windows PC cannot reach the Docker networks itself.
+     - In the hardware lab, the sensor runs Nmap itself (no setting needed).
+  2. **The simulated scan is off everywhere** (`scanner.allow_simulation: false`). Without Nmap, a scan now **fails** with a clear message. The simulation is only for software tests. Its devices and scan records are always stored with `simulated: true`, and the Devices page labels them "SIMULATED - NOT A REAL DEVICE". The invented test camera is back at 192.168.50.60, so it can never be mistaken for the lab camera (.30).
+  3. **Camera evidence (proposal 3.7: "We will not use one port number as proof that a device is a camera"):**
+     - A device is a "possible camera" only with **at least two** different pieces of evidence (before: one).
+     - The host-name evidence uses the device's own name only, word by word. Before, the Docker DNS suffix `...camlan` made every lab device a camera.
+  4. **Camera simulator (`tests/lab_scenarios/camera_sim.py`):** port 554 now answers RTSP `OPTIONS` / `DESCRIBE` / `SETUP` with a short RTSP reply, and streams video only after `PLAY`, as a real camera does. Before, any first message started the endless stream, and Nmap's version check hung for minutes. The NVR's stream is unchanged.
+- **Result (virtual lab, 11 Nov 2026):**
+  - The scan through the dashboard API took 28 s, with `simulated: false` and backend `docker exec ids-lab-scanner nmap`.
+  - It found 6 addresses: router .1 (SSH 22, OpenSSH 10.3), scanner .5, admin .10, NVR .20, camera .30 (HTTP 80 and RTSP 554, 4 pieces of evidence, "possible camera") and the virtual switch's own address .254. Only the camera is a possible camera.
+  - The scanner's own probes appear as alerts from the allowlisted 192.168.50.5 (marked allowlist-protected; never blocked).
+- **Also fixed here:** the Devices page now shows the stored services (it read a field name that does not exist). `ml_engine/evaluate.py` now judges H1 with the classes-present number of D-054, and still reports both.
+- **Who agreed:** project owner (11 Nov 2026, asked for all problems of the check to be fixed).
+- **Proposal link:** Section 3.7 (Nmap only on the approved subnet; evidence, not one port), Table 7 FR-05, guide Part E.

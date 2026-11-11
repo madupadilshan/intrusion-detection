@@ -1337,6 +1337,29 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 - **Templates:** `docs/lab_network.md` (Step 5) and `docs/usability_tasks.md` (Step 39).
 - **Not done yet:** nothing has been run on real devices (issue 51).
 
+**3.77 Check of `A_TO_Z_SYSTEM_FLOW.md` against the running virtual lab (11 November 2026)**
+
+- **What was done:** every command in the presentation guide was run on the virtual lab, and its real output was compared with the guide.
+- **Correct (matches the guide):**
+  - camera and NVR logs;
+  - the camera web page (5,478 bytes);
+  - the live Zeek record (`ShADadfF`, 6+6 packets) and `stats.log` (0 dropped);
+  - the router `nftables` table;
+  - Nmap `-p 80,554` (0.77 s);
+  - the bundle metadata and the two model tests of section 4.2.12.
+- **Bug found and fixed:** `lab_virtual/lab.py scenario 4` worked only once. A C&C server left from an earlier run kept port 6667 open, so the camera never failed first, and the second run gave **no block** (CnC 0.46). The scenario now stops old servers and bots before it starts, and cleans up afterwards. Re-run: CnC 0.91, 32 flows, `10.10.10.50` in the router `block_dst`.
+- **Problems in the guide (not yet corrected in the guide):**
+  - The Devices list of section 4.2.10 comes from the scanner's **simulation** (hard-coded vendors, MAC addresses and ports), because Nmap is not installed on this PC. It is not a scan of the containers.
+  - A 2-port scan of one host makes **no** PortScan alert.
+  - The "166 ms network round-trip" is the start-up time of `docker exec`; the real HTTP time is 2.2 ms.
+  - The latency just after a start is 650/1,763 ms, not 112/141 ms.
+  - Wrong page addresses: `/blocklist` and `/logs` do not exist (they are `/mitigations` and `/export`). There is no "System Logs" page and no ticking countdown.
+  - "Mark Camera" does not add to the allowlist. The camera is protected by `lab.local_networks`, not by the allowlist.
+  - Threshold "P ≥ 0.85" is wrong (CnC 0.30, PortScan 0.88). The class list names "Okiru" instead of Malware_Download.
+  - Scenario 4 is described in places as the attacker sending to the camera. In fact the camera connects out.
+  - The claims "proves H1 / FPR 0.00% / 100% complete" are not supported: H1 part 2 needs a real camera. 34-1 is not a clean test (D-054).
+- **Also seen:** the lab database had been emptied, and `conn.log` was cleared while Zeek was running. This left 8.4 MB of zero bytes at the start of the file. Restart the sensor container instead of clearing the file.
+
 **3.77 End-to-end presentation manual and live lab proof guide (11 November 2026)**
 
 - **What was done:** Created `A_TO_Z_SYSTEM_FLOW.md` as the comprehensive presentation and operational manual for team members and academic supervisors (Dr. A.A.M. Matheeh & Dr. Senaka Amarakeerthi).

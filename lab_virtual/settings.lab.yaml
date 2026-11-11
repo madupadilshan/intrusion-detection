@@ -35,6 +35,12 @@ firewall:
   simulate: false               # 127.0.0.1 would otherwise mean "simulation"
   use_sudo: false
 
+scanner:                        # device discovery (FR-05, proposal 3.7)
+  # Nmap on Windows cannot reach the Docker lab networks, so the IDS runs the real Nmap on the lab
+  # machine at 192.168.50.5 (the sensor's management port, container ids-lab-scanner).
+  nmap_command: ["docker", "exec", "ids-lab-scanner", "nmap"]
+  allow_simulation: false       # never show invented devices as a scan result
+
 zeek:
   conn_log_path: lab_virtual/zeek_logs/conn.log
   files_log_path: lab_virtual/zeek_logs/files.log

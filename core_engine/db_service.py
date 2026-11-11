@@ -347,6 +347,8 @@ class DatabaseService:
                 "hostname": device_data.get("hostname") or "",
                 "status": device_data.get("status") or "online",
                 "last_seen": now,
+                # True only for the scanner's invented test devices (never a real scan result)
+                "simulated": bool(device_data.get("simulated", False)),
             },
             "$setOnInsert": {
                 "created_at": now,

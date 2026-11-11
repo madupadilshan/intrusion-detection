@@ -1,6 +1,6 @@
 # Level 2 Held-Out Scenario Evaluation Report (Step 16)
 
-**Generated:** 2026-11-11 18:11:45  
+**Generated:** 2026-11-11 22:08:04  
 **Governing Standards:** Group 03 Research Proposal (Sections 1.3, 2.4, 3.4; Table 9; Hypothesis H1; RQ1, RQ2)  
 **Evaluated Dataset:** `data/processed/heldout/held_out_test.parquet`  
 **Held-out scenario:** `CTU-IoT-Malware-Capture-34-1` (Mirai, 23,145 flows)  
@@ -14,10 +14,10 @@
 
 | H1 part | Target | Measured (Random Forest) | Result |
 | :--- | :---: | :---: | :--- |
-| Macro-F1 on the held-out scenario (5 classes) | >= 0.85 | **0.6876** (classes present: 0.8595) | **not met** |
+| Macro-F1 on the held-out scenario, classes present (the H1 number, D-054) | >= 0.85 | **0.8595** (5 classes: 0.6876) | **met** on 34-1, which was seen and studied before, so it is not a clean test; the lab must confirm it |
 | Benign FPR on **local IP-camera traffic** | <= 5% | not measured in this step | measured in the lab (Steps 20 and 35) |
 
-For information only (not part of H1): IoT-23 benign flows in 34-1 predicted as an attack = **5.616%** (108 / 1,923). The model inference time is 3.91 µs per flow on the development PC; this is not the end-to-end latency in Table 9 (median < 2 s, p95 < 5 s), which is measured in Step 37.
+For information only (not part of H1): IoT-23 benign flows in 34-1 predicted as an attack = **5.616%** (108 / 1,923). The model inference time is 3.83 µs per flow on the development PC; this is not the end-to-end latency in Table 9 (median < 2 s, p95 < 5 s), which is measured in Step 37.
 
 ### Why the macro-F1 is below the target
 1. 34-1 has **no Malware_Download flows**. Any Malware_Download prediction is then a false positive, so this class gets F1 = 0 and the 5-class macro-F1 cannot be higher than 0.80. The score over the classes that are present is also reported.
@@ -38,8 +38,8 @@ For information only (not part of H1): IoT-23 benign flows in 34-1 predicted as 
 | **Macro Precision** | 0.6643 | 0.5269 | 0.6771 | Benchmark |
 | **Macro Recall** | 0.7331 | 0.7239 | 0.7300 | Benchmark |
 | **Benign FPR (Capture-34-1)** | 5.616% | 6.500% | 5.720% | Benchmark |
-| **Inference Latency per Flow** | 3.91 µs | 3.83 µs | 12.98 µs | Benchmark |
-| **Inference Throughput** | 255,696 flows/s | 261,198 flows/s | 77,039 flows/s | Benchmark |
+| **Inference Latency per Flow** | 3.83 µs | 4.30 µs | 14.24 µs | Benchmark |
+| **Inference Throughput** | 261,327 flows/s | 232,638 flows/s | 70,223 flows/s | Benchmark |
 | **Level 1 Grouped CV Macro-F1** | 0.7097 | N/A | N/A | Benchmark |
 | **Generalisation Gap (L2 - L1)** | -0.0220 | N/A | N/A | Benchmark |
 

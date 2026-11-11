@@ -130,7 +130,22 @@ class Stream(socketserver.BaseRequestHandler):
     def handle(self):
         self.request.settimeout(5)
         try:
-            self.request.recv(1024)  # the client's "PLAY" line
+            first = self.request.recv(1024)  # the client's request line
+            if not first.startswith(b"PLAY"):
+                # Like a real camera: answer other RTSP requests (an NVR's or Nmap's OPTIONS) with a
+                # short RTSP reply, and stream video only after PLAY. Before 11 Nov 2026 any first
+                # message started the endless stream, so Nmap version detection hung on port 554.
+                cseq = b"1"
+                for line in first.split(b"\r\n"):
+                    if line.lower().startswith(b"cseq:"):
+                        cseq = line.split(b":", 1)[1].strip() or b"1"
+                if first.startswith((b"OPTIONS", b"DESCRIBE", b"SETUP")):
+                    reply = (b"RTSP/1.0 200 OK\r\nCSeq: " + cseq + b"\r\nServer: Lab IP camera RTSP\r\n"
+                             b"Public: OPTIONS, DESCRIBE, SETUP, PLAY, TEARDOWN\r\n\r\n")
+                else:
+                    reply = b"RTSP/1.0 400 Bad Request\r\nCSeq: " + cseq + b"\r\nServer: Lab IP camera RTSP\r\n\r\n"
+                self.request.sendall(reply)
+                return
             frame = bytes(random.getrandbits(8) for _ in range(1400)) * 14  # ~20 KB "frame"
             while True:
                 self.request.sendall(frame)

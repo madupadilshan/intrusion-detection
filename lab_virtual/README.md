@@ -32,6 +32,7 @@ It does **not** replace the hardware lab. A real camera, a real switch mirror po
 | nvr, admin | Record the video stream, and open the camera page now and then (normal traffic). |
 | cloud | The camera's normal cloud (`lab_server.py --role cloud`). |
 | attacker, attack-server | The attack laptop: Nmap, the SYN flood script, a harmless web server and the lab C&C server. |
+| scanner | 192.168.50.5, the sensor's management address. The IDS runs its approved Nmap device scans here (`docker exec ids-lab-scanner nmap`, D-057), because Windows cannot reach the Docker networks. |
 
 ## Use it (PowerShell, in the project folder)
 
@@ -69,6 +70,10 @@ To stop everything:
 .venv\Scripts\python.exe lab_virtual\lab.py ids-stop
 .venv\Scripts\python.exe lab_virtual\lab.py down
 ```
+
+## Device scan (FR-05)
+
+On the dashboard Devices page, press the scan button (or `POST /api/scans`). The scan runs the real Nmap on `ids-lab-scanner` and takes about 30 s. It finds the router, the admin PC, the NVR, the camera, the scanner itself and `.254` (the virtual switch's own address). Only the camera is marked "possible camera". The scanner's probes also appear as alerts from 192.168.50.5. They are marked allowlist-protected and are never blocked. The simulated scan is switched off (D-057).
 
 ## Safety
 

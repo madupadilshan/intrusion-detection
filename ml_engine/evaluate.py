@@ -357,7 +357,9 @@ def generate_evaluation_markdown(
     h1_target = 0.85
     h1_actual = rf_res["macro_f1_5class"]
     h1_actual_present = rf_res["macro_f1_present"]
-    h1_passed = bool(h1_actual >= h1_target)
+    # D-054: H1 uses the macro-F1 over the classes present in the held-out scenario (34-1 has no
+    # Malware_Download flows, so the 5-class number is at most 0.80). Both are reported.
+    h1_passed = bool(h1_actual_present >= h1_target)
 
     md_lines = [
         "# Level 2 Held-Out Scenario Evaluation Report (Step 16)",
@@ -376,7 +378,7 @@ def generate_evaluation_markdown(
         "",
         "| H1 part | Target | Measured (Random Forest) | Result |",
         "| :--- | :---: | :---: | :--- |",
-        f"| Macro-F1 on the held-out scenario (5 classes) | >= 0.85 | **{rf_res['macro_f1_5class']:.4f}** (classes present: {rf_res['macro_f1_present']:.4f}) | **{'met' if h1_passed else 'not met'}** |",
+        f"| Macro-F1 on the held-out scenario, classes present (the H1 number, D-054) | >= 0.85 | **{rf_res['macro_f1_present']:.4f}** (5 classes: {rf_res['macro_f1_5class']:.4f}) | **{'met' if h1_passed else 'not met'}** on 34-1, which was seen and studied before, so it is not a clean test; the lab must confirm it |",
         "| Benign FPR on **local IP-camera traffic** | <= 5% | not measured in this step | measured in the lab (Steps 20 and 35) |",
         "",
         f"For information only (not part of H1): IoT-23 benign flows in 34-1 predicted as an attack = **{rf_res['benign_fpr']*100:.3f}%** ({rf_res['benign_false_alarms']:,} / {rf_res['benign_total']:,}). The model inference time is {rf_res['latency_us_flow']} µs per flow on the development PC; this is not the end-to-end latency in Table 9 (median < 2 s, p95 < 5 s), which is measured in Step 37.",

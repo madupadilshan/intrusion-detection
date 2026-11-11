@@ -202,21 +202,29 @@ const Devices = () => {
                     const isCamera = dev.possible_camera;
                     const isConfirmed = dev.confirmed_camera;
                     const ports = dev.open_ports || dev.ports || [];
-                    const services = dev.services || [];
+                    const services = dev.possible_services || dev.services || [];
 
                     return (
                       <tr key={dev.ip || idx} className="hover:bg-gray-900/50 transition">
                         <td className="py-2.5 px-3 font-mono text-gray-200 font-semibold">
                           {dev.ip}
+                          {dev.simulated && (
+                            <div
+                              className="mt-1 inline-block px-1.5 py-0.5 rounded text-[9px] font-sans font-bold bg-red-950 text-red-300 border border-red-700"
+                              title="Invented test device from the scanner's simulation, not found on any network"
+                            >
+                              SIMULATED - NOT A REAL DEVICE
+                            </div>
+                          )}
                         </td>
                         <td className="py-2.5 px-3 font-mono text-gray-400">
-                          {dev.mac || "Unknown"}
+                          {dev.mac || "unknown"}
                           <div className="text-[10px] text-gray-500 font-sans">
-                            {dev.vendor || "Generic Device"}
+                            {dev.vendor && dev.vendor !== "unknown" ? dev.vendor : "vendor unknown"}
                           </div>
                         </td>
                         <td className="py-2.5 px-3 text-gray-300 font-mono">
-                          {ports.length > 0 ? ports.slice(0, 4).join(", ") : "None"}
+                          {ports.length > 0 ? ports.slice(0, 6).join(", ") : "None"}
                         </td>
                         <td className="py-2.5 px-3 text-gray-400">
                           {services.length > 0 ? services.slice(0, 3).join(", ") : "—"}

@@ -144,6 +144,19 @@ services:
         ipv4_address: 10.10.10.50
     command: ["sh", "-c", "ip route add 192.168.50.0/24 via 10.10.10.1 && exec sleep infinity"]
     restart: unless-stopped
+  scanner:         # the sensor's management port 192.168.50.5 (guide Step 5): the IDS runs its approved
+                   # Nmap inventory scans (FR-05, proposal 3.7) from here, through
+                   # settings.lab.yaml scanner.nmap_command ("docker exec ids-lab-scanner nmap ...")
+    image: ids-lab-attacker
+    container_name: ids-lab-scanner
+    hostname: ids-sensor
+    cap_add: [NET_ADMIN, NET_RAW]
+    networks:
+      camlan:
+        ipv4_address: 192.168.50.5
+    command: ["sleep", "infinity"]
+    restart: unless-stopped
+    depends_on: [attacker]
   attack-server:   # the attack computer's lab web server (harmless test program); same address
     <<: *python
     container_name: ids-lab-attack-server

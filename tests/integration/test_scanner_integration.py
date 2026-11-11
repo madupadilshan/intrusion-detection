@@ -56,7 +56,10 @@ def test_setup():
         db_service=db,
         socketio=mock_socketio,
         approved_subnets=["192.168.50.0/24"],
+        allow_simulation=True,  # these tests use the scanner's invented devices on purpose
+        nmap_command=None,
     )
+    scanner.is_nmap_available, scanner.nm = False, None  # never scan a real network in tests
 
     app, socketio = create_app(
         db_service=db,
@@ -126,6 +129,7 @@ def test_scanner_sync_scan_persistence(test_setup):
     assert 554 in camera_doc["open_ports"]
     assert 37777 in camera_doc["open_ports"]
     assert len(camera_doc["camera_evidence"]) >= 3
+    assert camera_doc["simulated"] is True  # invented device: always marked (D-056)
 
     # Verify router device has possible_camera = False
     router_doc = db.devices.find_one({"ip": "192.168.50.1"})

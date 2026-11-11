@@ -27,6 +27,7 @@ import os
 
 import ipaddress
 import logging
+import subprocess
 import threading
 import time
 from datetime import datetime, timezone
@@ -144,8 +145,13 @@ def analyze_camera_evidence(
         if "live555" in svc:
             evidence.append("RTSP media streaming library 'live555' detected in banner")
 
-    # 5. Hostname Indicator Evidence
-    if any(k in hostname_lower for k in ("cam", "dahua", "hik", "axis", "ipc", "tapo")):
+    # 5. Hostname Indicator Evidence: only the device's own name (before the first dot), word by word.
+    #    (Matching the whole DNS name made every lab device a camera because the network is called
+    #    "...camlan"; found 11 Nov 2026 with the real Nmap scan of the virtual lab.)
+    host_part = hostname_lower.split(".", 1)[0]
+    words = [w for w in host_part.replace("_", "-").split("-") if w]
+    if any(w in ("cam", "camera", "ipcam", "ipc", "nvr-cam") or w.startswith(("dahua", "hik", "axis", "tapo", "ipcam"))
+           for w in words):
         evidence.append(f"Device hostname suggests camera role: '{hostname}'")
 
     # 6. Combined HTTP/HTTPS with RTSP/ONVIF
@@ -154,7 +160,9 @@ def analyze_camera_evidence(
     if has_web and has_stream and not any("Combined" in e for e in evidence):
         evidence.append("Web management interface paired with video streaming ports")
 
-    possible_camera = len(evidence) > 0
+    # Proposal 3.7: "We will not use one port number as proof that a device is a camera."
+    # So at least two different pieces of evidence are needed; the admin then confirms the role.
+    possible_camera = len(evidence) >= 2
     return possible_camera, evidence
 
 
@@ -189,6 +197,51 @@ def classify_device_type(
     return "iot_device"
 
 
+class SimulationNotAllowedError(RuntimeError):
+    """Nmap is not available and the settings do not allow the simulated scan."""
+
+
+class CommandNmapScanner:
+    """Runs the real Nmap through a command (for example `docker exec ids-lab-scanner nmap` in the
+    virtual lab) and reads its XML with python-nmap's own parser.
+
+    It offers the part of python-nmap's PortScanner that the scanner uses: scan(), all_hosts()
+    and [host]. Added 11 Nov 2026: on the Windows PC, Nmap cannot reach the Docker lab networks,
+    so the scan runs on a machine that is on the camera network (192.168.50.5).
+    """
+
+    def __init__(self, command: List[str], timeout: float = 600.0) -> None:
+        import nmap  # python-nmap (pinned in requirements.txt)
+
+        self.command = [str(c) for c in command]
+        self.timeout = timeout
+        self._nmap = nmap
+        self._ps = None
+        r = subprocess.run(self.command + ["-V"], capture_output=True, text=True, timeout=60)
+        if r.returncode != 0 or "Nmap version" not in (r.stdout or ""):
+            raise RuntimeError(f"Nmap command {self.command} did not answer: {(r.stderr or r.stdout).strip()[:200]}")
+        self.version = r.stdout.strip().splitlines()[0]
+
+    def scan(self, hosts: str, arguments: str = "") -> Dict[str, Any]:
+        cmd = self.command + arguments.split() + ["-oX", "-", hosts]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=self.timeout)
+        if r.returncode != 0 or "<nmaprun" not in (r.stdout or ""):
+            raise RuntimeError(f"Nmap failed ({r.returncode}): {(r.stderr or r.stdout).strip()[:300]}")
+        ps = self._nmap.PortScanner.__new__(self._nmap.PortScanner)
+        ps._scan_result = {}
+        ps._nmap_last_output = r.stdout
+        ps._nmap_path = self.command[-1]
+        result = ps.analyse_nmap_xml_scan(nmap_xml_output=r.stdout, nmap_err=r.stderr or "")
+        self._ps = ps
+        return result
+
+    def all_hosts(self) -> List[str]:
+        return self._ps.all_hosts() if self._ps is not None else []
+
+    def __getitem__(self, host: str) -> Any:
+        return self._ps[host]
+
+
 class ScannerService:
     """
     Authorized Nmap Device Discovery Service.
@@ -204,6 +257,8 @@ class ScannerService:
         approved_subnets: Optional[List[str]] = None,
         settings_path: Optional[Union[str, Path]] = None,
         nmap_scanner: Optional[Any] = None,
+        allow_simulation: Optional[bool] = None,
+        nmap_command: Optional[List[str]] = None,
     ) -> None:
         """
         Initialize the Scanner Service.
@@ -214,6 +269,11 @@ class ScannerService:
             approved_subnets: List of approved CIDR subnets. If None, loads from settings.
             settings_path: Path to settings.yaml.
             nmap_scanner: Optional injected PortScanner instance (for mocking in tests).
+            allow_simulation: Use the built-in invented devices when Nmap is not available.
+                Default: settings `scanner.allow_simulation` (false). A simulated result is
+                always stored and shown as SIMULATED; it is not a scan of any network (D-056).
+            nmap_command: Run Nmap through this command, for example
+                ["docker", "exec", "ids-lab-scanner", "nmap"] (settings `scanner.nmap_command`).
         """
         self.db = db_service
         self.socketio = socketio
@@ -226,6 +286,12 @@ class ScannerService:
             or DEFAULT_APPROVED_SUBNETS
         )
         self.allowlist: List[str] = settings.get("allowlist", [])
+        scanner_cfg = settings.get("scanner", {}) or {}
+        self.allow_simulation: bool = bool(
+            scanner_cfg.get("allow_simulation", False) if allow_simulation is None else allow_simulation
+        )
+        self.nmap_command: Optional[List[str]] = nmap_command or scanner_cfg.get("nmap_command") or None
+        self.backend: str = "none"
 
         # Active scan execution tracking
         self.active_scans: Dict[str, Dict[str, Any]] = {}
@@ -235,20 +301,35 @@ class ScannerService:
         if nmap_scanner is not None:
             self.nm = nmap_scanner
             self.is_nmap_available = True
+            self.backend = "injected"
         else:
             self._init_nmap_backend()
 
     def _init_nmap_backend(self) -> None:
-        """Attempt to instantiate python-nmap PortScanner."""
+        """Use Nmap through `nmap_command` if it is set, else the local Nmap (python-nmap)."""
+        if self.nmap_command:
+            try:
+                self.nm = CommandNmapScanner(self.nmap_command)
+                self.is_nmap_available = True
+                self.backend = "command: " + " ".join(self.nmap_command)
+                logger.info("Nmap through %s (%s).", " ".join(self.nmap_command), self.nm.version)
+                return
+            except Exception as e:
+                logger.warning("Nmap command %s not usable: %s", self.nmap_command, e)
+                self.nm = None
+                self.is_nmap_available = False
+                return
         try:
             import nmap
             self.nm = nmap.PortScanner()
             self.is_nmap_available = True
+            self.backend = "local nmap"
             logger.info("python-nmap initialized successfully with system Nmap.")
         except Exception as e:
             logger.warning(
-                "Nmap program not found in system PATH (%s). Operating in simulated lab scanner mode.",
-                e,
+                "Nmap program not found in system PATH (%s). Scans %s.", e,
+                "use SIMULATED devices (scanner.allow_simulation is true)" if self.allow_simulation
+                else "will fail until Nmap is installed or scanner.nmap_command is set",
             )
             self.nm = None
             self.is_nmap_available = False
@@ -347,10 +428,17 @@ class ScannerService:
         discovered_devices: List[Dict[str, Any]] = []
 
         try:
+            simulated = False
             if self.is_nmap_available and self.nm is not None:
                 discovered_devices = self._run_nmap_scan(subnet, scan_id, started_by)
-            else:
+            elif self.allow_simulation:
+                simulated = True
                 discovered_devices = self._run_simulated_scan(subnet, scan_id, started_by)
+            else:
+                raise SimulationNotAllowedError(
+                    "Nmap is not available on this computer, and simulated scans are switched off "
+                    "(settings scanner.allow_simulation). Install Nmap, or set scanner.nmap_command."
+                )
 
             self._emit_progress(scan_id, subnet, started_by, "running", 90, "Saving discovered devices...")
 
@@ -377,6 +465,8 @@ class ScannerService:
 
             # Record scan completion in database
             summary = {
+                "simulated": simulated,
+                "backend": "simulation (invented devices)" if simulated else self.backend,
                 "total_hosts": len(discovered_devices),
                 "cameras_found": camera_count,
                 "scan_duration_seconds": (datetime.now(timezone.utc) - start_time).total_seconds(),
@@ -407,6 +497,7 @@ class ScannerService:
                 "status": "completed",
                 "devices_found": len(discovered_devices),
                 "cameras_found": camera_count,
+                "simulated": simulated,
                 "devices": discovered_devices,
                 "summary": summary,
             }
@@ -493,6 +584,7 @@ class ScannerService:
                 "possible_services": services,
                 "status": "online",
                 "last_scan_time": datetime.now(timezone.utc).isoformat(),
+                "simulated": False,
             }
             discovered.append(dev_doc)
 
@@ -508,7 +600,8 @@ class ScannerService:
         self._emit_progress(scan_id, subnet, started_by, "running", 40, "Scanning lab devices...")
         time.sleep(0.2)  # Realistic discovery cadence
 
-        # Realistic simulated devices on approved lab network (192.168.50.0/24)
+        # Invented TEST devices (software tests only; switched off in every lab, D-056). They are not
+        # the virtual-lab containers and must never be shown as a scan result without the SIMULATED mark.
         simulated_hosts = [
             {
                 "ip": "192.168.50.1",
@@ -543,7 +636,7 @@ class ScannerService:
                 "services": ["http Hikvision-Web", "rtsp", "hikvision-mgmt", "http-proxy"],
             },
             {
-                "ip": "192.168.50.30",
+                "ip": "192.168.50.60",
                 "mac": "3C:EF:8C:11:22:33",
                 "vendor": "Dahua Technology",
                 "hostname": "ipc-hfw1230",
@@ -585,6 +678,7 @@ class ScannerService:
                 "possible_services": sh["services"],
                 "status": "online",
                 "last_scan_time": datetime.now(timezone.utc).isoformat(),
+                "simulated": True,  # invented test device, not found on any network
             }
             discovered.append(doc)
 

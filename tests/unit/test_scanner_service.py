@@ -333,3 +333,70 @@ def test_scanner_state_tracking():
     service.active_scans["test_scan"] = {"status": "completed"}
     assert service.is_scanning() is False
 
+
+
+# ---------------------------------------------------------------- D-056: no silent simulation
+NMAP_XML = """<?xml version="1.0"?>
+<nmaprun scanner="nmap" args="nmap -oX - 192.168.50.0/24" start="1" version="7.95">
+<host><status state="up" reason="arp-response"/>
+<address addr="192.168.50.30" addrtype="ipv4"/><address addr="02:42:C0:A8:32:1E" addrtype="mac"/>
+<hostnames></hostnames>
+<ports>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack"/><service name="http" product="BaseHTTPServer"/></port>
+<port protocol="tcp" portid="554"><state state="open" reason="syn-ack"/><service name="rtsp"/></port>
+<port protocol="tcp" portid="22"><state state="closed" reason="reset"/><service name="ssh"/></port>
+</ports></host>
+<runstats><finished time="2" elapsed="1.5"/><hosts up="1" down="255" total="256"/></runstats>
+</nmaprun>"""
+
+
+def _fake_nmap(tmp_path):
+    """A tiny program that answers like Nmap: '-V' gives the version, a scan gives NMAP_XML."""
+    import sys
+    script = tmp_path / "fake_nmap.py"
+    script.write_text(
+        "import sys\n"
+        "if '-V' in sys.argv: print('Nmap version 7.95 ( https://nmap.org )'); sys.exit(0)\n"
+        f"print({NMAP_XML!r})\n",
+        encoding="utf-8",
+    )
+    return [sys.executable, str(script)]
+
+
+def test_scan_fails_clearly_when_nmap_missing_and_simulation_off():
+    from core_engine.scanner_service import SimulationNotAllowedError
+    service = ScannerService(approved_subnets=["192.168.50.0/24"], allow_simulation=False)
+    service.is_nmap_available, service.nm = False, None
+    with pytest.raises(SimulationNotAllowedError):
+        service.scan_network("192.168.50.0/24")
+
+
+def test_simulated_scan_is_always_marked():
+    service = ScannerService(approved_subnets=["192.168.50.0/24"], allow_simulation=True)
+    service.is_nmap_available, service.nm = False, None
+    res = service.scan_network("192.168.50.0/24")
+    assert res["simulated"] is True and res["summary"]["simulated"] is True
+    assert all(d["simulated"] is True for d in res["devices"])
+
+
+def test_command_nmap_backend_reads_real_nmap_xml(tmp_path):
+    service = ScannerService(approved_subnets=["192.168.50.0/24"], nmap_command=_fake_nmap(tmp_path))
+    assert service.is_nmap_available and service.backend.startswith("command:")
+    res = service.scan_network("192.168.50.0/24")
+    assert res["simulated"] is False and res["devices_found"] == 1
+    dev = res["devices"][0]
+    assert dev["ip"] == "192.168.50.30" and dev["mac"] == "02:42:C0:A8:32:1E"
+    assert sorted(dev["open_ports"]) == [80, 554] and dev["simulated"] is False
+    assert dev["vendor"] == "unknown"        # nothing is invented
+
+
+def test_camera_needs_two_pieces_of_evidence_and_own_hostname_only():
+    """Proposal 3.7: one port is not proof; the network's DNS suffix is not the device's name."""
+    from core_engine.scanner_service import analyze_camera_evidence
+    nvr_like, _ = analyze_camera_evidence("192.168.50.20", hostname="ids-lab-nvr.ids-lab_camlan", open_ports=[])
+    only_554, ev = analyze_camera_evidence("192.168.50.40", open_ports=[554])
+    real_cam, ev2 = analyze_camera_evidence("192.168.50.30", hostname="ids-lab-camera-net.ids-lab_camlan",
+                                            open_ports=[80, 554], services=["http BaseHTTPServer", "rtsp"])
+    assert nvr_like is False                     # "camlan" in the domain is no evidence
+    assert only_554 is False and len(ev) == 1    # a single open port is not enough
+    assert real_cam is True and len(ev2) >= 3
