@@ -10,7 +10,7 @@
 ## පටුන (Table of Contents)
 
 1. [පද්ධතියේ සිටින චරිත 5 (The 5 Network Entities)](#1-පද්ධතියේ-සිටින-චරිත-5-the-5-network-entities)
-2. [A සිට Z දක්වා දත්ත ගලායන සම්පූර්ණ දාමය (The Step-by-Step Data Chain)](#2-a-සිට-z-දක්වා-දත්ත-ගලායන-සම්පූර්ණ-දාමය-the-step-by-step-data-chain)
+2. [A සිට Z දක්වා දත්ත ගලායන සම්පූර්ණ දාමය සහ සැබෑ පද්ධති ගෘහ නිර්මාණ සටහන (The End-to-End Operational Architecture & Data Chain)](#2-a-සිට-z-දක්වා-දත්ත-ගලායන-සම්පූර්ණ-දාමය-සහ-සැබෑ-පද්ධති-ගෘහ-නිර්මාණ-සටහන-the-end-to-end-operational-architecture--data-chain)
 3. [Dashboard එක පද්ධතියට සම්බන්ධ වන ආකාරය සහ එහි පිටු 7 (The Dashboard Architecture)](#3-dashboard-එක-පද්ධතියට-සම්බන්ධ-වන-ආකාරය-සහ-එහි-පිටු-7-the-dashboard-architecture)
 4. [Virtual Lab එක Docker මඟින් නිර්මාණය කර ඇති ආකාරය සහ එහි සාක්ෂි (Virtual Lab Architecture & Proofs)](#4-virtual-lab-එක-docker-මඟින්-නිර්මාණය-කර-ඇති-ආකාරය-සහ-එහි-සාක්ෂි-virtual-lab-architecture--proofs)
    - 4.1 [Virtual Lab එක සකස් කර ඇති ආකාරය සහ එය ක්‍රියාත්මක වන සම්පූර්ණ යාන්ත්‍රණය (How it is Built & Operates)](#41-virtual-lab-එක-සකස්-කර-ඇති-ආකාරය-සහ-එය-ක්‍රියාත්මක-වන-සම්පූර්ණ-යාන්ත්‍රණය-how-it-is-built--operates)
@@ -67,45 +67,195 @@ Cloud Server (10.10.10.123)    ───┘         │
 
 ---
 
-# 2. A සිට Z දක්වා දත්ත ගලායන සම්පූර්ණ දාමය (The Step-by-Step Data Chain)
+# 2. A සිට Z දක්වා දත්ත ගලායන සම්පූර්ණ දාමය සහ සැබෑ පද්ධති ගෘහ නිර්මාණ සටහන (The End-to-End Operational Architecture & Data Chain)
 
-මෙහිදී එක් එක් කොටසින් එළියට එන්නේ මොනවාද (Output), ඊළඟ කොටස එය අරගෙන කරන්නේ කුමක්ද (Input & Processing) යන්න මෙන්න:
+මෙම පද්ධතිය තුළ **ජාල ස්ථරය (Network Layer)**, **සංවේදක ස්ථරය (Sensor Layer)**, **කෘත්‍රිම බුද්ධි එන්ජිම (AI Engine)**, **ස්වයංක්‍රීය Firewall පාලනය (Firewall Mitigation)**, සහ **සජීවී Dashboard අතුරුමුහුණත (Web Dashboard)** එකිනෙක සම්බන්ධ වී ක්‍රියාත්මක වන ආකාරය බැලූ බැල්මට තේරුම් ගත හැකි සැබෑ පද්ධති ආකෘතිය (Real Architecture Diagram) මෙන්න:
 
+---
+
+### 🗺️ පද්ධතියේ සැබෑ ගෘහ නිර්මාණ සටහන (Interactive Mermaid Architecture Diagram)
+
+```mermaid
+flowchart TD
+    subgraph WAN ["🌐 Outside WAN Network (10.10.10.0/24)"]
+        ATTACKER["Attacker Laptop (10.10.10.50)\n• Port Scanning (Scenario 2)\n• C&C Botnet Beacons (Scenario 4)"]
+        CLOUD["Cloud Simulation Server (10.10.10.123)\n• Legitimate External Services"]
+    end
+
+    subgraph ROUTER_BOX ["🛡️ Perimeter Gateway & Firewall (ids-lab-router)"]
+        ROUTER["Linux nftables Router (10.10.10.1 / 192.168.50.1)\n• Linux Kernel IP Forwarding (No NAT)\n• Dynamic Sets: block_dst, block_src\n• Auto-expiry Timers (timeout 1800s)"]
+    end
+
+    subgraph LAN ["📹 Surveillance Camera LAN (192.168.50.0/24 - br-ids-lan)"]
+        CAM["IP Camera (192.168.50.30)\n• RTSP Video (Port 554)\n• Web Management (Port 80)"]
+        NVR["NVR Video Recorder (192.168.50.20)\n• Continuous Video Ingestion"]
+        ADMIN["Admin Workstation (192.168.50.10)\n• Management Plane"]
+    end
+
+    subgraph SNIFFER ["👁️ Passive Sensor Plane"]
+        ZEEK["Zeek Sensor Container (ids-lab-sensor)\n• Promiscuous Sniffing on br-ids-lan\n• Zero Network Delay / Non-invasive\n• Streams Real-Time JSON: conn.log"]
+    end
+
+    subgraph AI_PIPELINE ["🧠 Real-Time Python AI Pipeline (core_engine/runner.py)"]
+        ADAPTER["Zeek Adapter (zeek_adapter.py)\n• Tail Reader on conn.log\n• Extracts 27 Behavioral Features\n• Sliding Windows (60s & 1h)"]
+        MODEL["Random Forest ML Model (v3.1.0)\n• 100 Calibrated Trees (ids_bundle_v3.joblib)\n• 5 Target Classes Multi-Classification\n• Ultra-Fast Latency: ~7.96 µs/flow"]
+        DECISION["Decision Engine (decision_engine.py)\n• Allowlist Protection (Camera .30 Protected)\n• Repeat Rules Check (3 events in 60s)\n• Directional Mitigation Selector"]
+    end
+
+    subgraph MITIGATION ["⚡ Autonomous Mitigation Plane"]
+        SSH["Router SSH Adapter (router_adapter.py)\n• Automated SSH (Port 2222) to Router\n• Injects: nft add element inet ids block_dst"]
+    end
+
+    subgraph STORAGE_UI ["📊 Data, API & Operational Dashboard (Port 5000)"]
+        DB[("MongoDB Database (iot_ids_lab)\n• attack_events collection\n• blocklist collection\n• system_logs audit trail")]
+        BACKEND["Flask API & Socket.IO Server (app.py)\n• REST Endpoints (/api/overview, /api/blocklist)\n• Real-Time WebSocket Broadcaster"]
+        DASH["React Operational Web Dashboard\n• Live Alerts (Socket.IO Stream)\n• Active Blocks & Countdown Timers\n• Network Assets & Devices Page\n• Forensic Logs Export (CSV / JSON)"]
+    end
+
+    %% Network Packet Flow
+    ATTACKER -->|"1. Malicious Packets (SYN Flood / C&C Beacons)"| ROUTER
+    CLOUD -->|"Legitimate Outside Traffic"| ROUTER
+    ROUTER -->|"2. Forwarded Traffic"| CAM
+    CAM -->|"3. RTSP Video Stream (Port 554)"| NVR
+    ADMIN -->|"HTTP Camera Config (Port 80)"| CAM
+
+    %% Passive Sniffing Flow
+    LAN -.->|"4. Promiscuous Mirror (Zero Disruption)"| ZEEK
+    ZEEK -->|"5. Streaming conn.log (JSON Lines)"| ADAPTER
+
+    %% AI Pipeline Inferences
+    ADAPTER -->|"6. 27-Feature Numerical Vector"| MODEL
+    MODEL -->|"7. Class Inferences & Calibrated Probabilities"| DECISION
+
+    %% Autonomous Response Loop
+    DECISION -->|"8. Autonomous Block Decision"| SSH
+    SSH -->|"9. Invalidate Attacker via SSH"| ROUTER
+
+    %% Storage & UI Event Push
+    DECISION -->|"10. Store Incident Record"| DB
+    DECISION -->|"11. Emit Socket.IO Event"| BACKEND
+    BACKEND -->|"12. Real-Time Push (< 112.3 ms)"| DASH
+    DASH -.->|"Manual Block / Unblock Override"| BACKEND
 ```
-┌────────────────────────┐
-│  1. IP Camera / Wire   │ ──► [Raw Network Packets]
-└────────────────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│    2. Zeek Sensor      │ ──► [conn.log - JSON String]
-└────────────────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│   3. Zeek Adapter      │ ──► [Feature Vector - 27 Numbers]
-└────────────────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│ 4. Machine Learning    │ ──► [Prediction: "CnC", Confidence: 0.93]
-└────────────────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│  5. Decision Engine    │ ──► [Decision: "BLOCK 10.10.10.50 for 30m"]
-└────────────────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│ 6. Router Firewall SSH │ ──► [nftables Drop Rule Applied]
-└────────────────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│ 7. MongoDB & Dashboard │ ──► [Screen Updates Live / Incident Saved]
-└────────────────────────┘
+
+---
+
+### 📐 පූර්ණ තාක්ෂණික සැලැස්ම (High-Resolution Architectural Schematic)
+
+```text
+========================================================================================================================
+                                 REAL-TIME INTRUSION DETECTION & AUTONOMOUS RESPONSE
+                                      END-TO-END SYSTEM OPERATIONAL ARCHITECTURE
+========================================================================================================================
+
+  [ OUTSIDE WAN NETWORK : 10.10.10.0/24 ]
+  ┌─────────────────────────────────────┐
+  │  Attacker Laptop (10.10.10.50)      │
+  │  - Port Scanning (Scenario 2)       │
+  │  - C&C Botnet Beacons (Scenario 4)  │
+  └──────────────────┬──────────────────┘
+                     │ (1) Inbound Malicious Traffic
+                     ▼
+  ┌───────────────────────────────────────────────────────────────────────────────────┐
+  │  ROUTER & PERIMETER FIREWALL (ids-lab-router : 10.10.10.1 / 192.168.50.1)         │
+  │  - Linux Kernel IP Forwarding (No NAT)                                            │
+  │  - nftables Dynamic Sets: block_dst { 10.10.10.50 timeout 1800s }, block_src       │
+  └──────────────────┬────────────────────────────────────────────────────────────────┘
+                     │ (2) Forwarded Traffic into LAN
+                     ▼
+  ═══════════════════╪═════════════════════════════════════════════════════════════════════════════════════════════════
+  [ CAMERA SURVEILLANCE LAN : 192.168.50.0/24 (Docker Bridge: br-ids-lan) ]
+  ───────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────
+                     │
+     ┌───────────────┴─────────────────┐            (3) Legitimate Video (Port 554)
+     │  IP Camera (192.168.50.30)      ├──────────────────────────────────────────► ┌────────────────────────────────┐
+     │  - RTSP Server (Port 554)       │                                            │  NVR Recorder (192.168.50.20)  │
+     │  - Web GUI (Port 80)            │ ◄───────────────────────────────────────── │  - Video Storage & Playback    │
+     └───────────────┬─────────────────┘            (HTTP Camera Management)        └────────────────────────────────┘
+                     │                                                                              ▲
+                     │ (4) All LAN Packets Mirrored (Promiscuous Mode Tap)                          │ (Uninterrupted)
+                     ▼                                                                              │
+  ┌─────────────────────────────────────────────────────────────────────────────────────────────────┴────────────────┐
+  │  ZEEK NETWORK SENSOR CONTAINER (ids-lab-sensor : Host Promiscuous Tap on br-ids-lan)                             │
+  │  - Zero network latency / Non-invasive passive packet capture                                                    │
+  │  - Real-time flow state tracking -> Streams conn.log (JSON Lines)                                                │
+  └──────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────┘
+                     │ (5) conn.log Event Stream
+                     ▼
+  ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │  PYTHON REAL-TIME AI INTRUSION DETECTION PIPELINE (core_engine/runner.py)                                        │
+  │                                                                                                                  │
+  │  ┌─────────────────────────────┐        ┌──────────────────────────────┐        ┌─────────────────────────────┐  │
+  │  │  1. Zeek Adapter            │ (6)    │  2. Random Forest Model      │ (7)    │  3. Decision Engine         │  │
+  │  │  - Tail reads conn.log      ├───────►│  - Version v3.1.0            ├───────►│  - Allowlist Verification   │  │
+  │  │  - Extracts 27 Features     │ Feature│  - 100 Calibrated Trees      │ Class &│  - Repeat Thresholds (3/60s)│  │
+  │  │  - Sliding Windows (60s/1h) │ Vector │  - Latency: ~7.96 µs/flow    │ Probs  │  - Action Selector          │  │
+  │  └─────────────────────────────┘        └──────────────────────────────┘        └──────────────┬──────────────┘  │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┘
+                                                                                                   │
+                     ┌─────────────────────────────────────────────────────────────────────────────┴──────────┐
+                     │ (8) Autonomous Block Decision: "DROP 10.10.10.50 (Timeout 1800s)"                      │
+                     ▼                                                                                        ▼
+  ┌─────────────────────────────────────────────────────┐            ┌────────────────────────────────────────────────┐
+  │  FIREWALL MITIGATION CONTROLLER                     │            │  PERSISTENCE & DASHBOARD SERVER (Port 5000)    │
+  │  (core_engine/firewall/router_adapter.py)           │            │  (core_engine/app.py - Flask + Socket.IO)      │
+  │  - Secure SSH connection (Port 2222) to Router      │            │  - Saves to MongoDB (iot_ids_lab database)     │
+  │  - Injects: nft add element inet ids block_dst      │            │  - WebSocket pushes live incident alert        │
+  │  - Hardware-level drop in < 112.3 ms                │            │  - Sub-second UI updates without page refresh  │
+  └──────────────────┬──────────────────────────────────┘            └────────────────────────┬───────────────────────┘
+                     │                                                                        │
+                     │ (9) Enforce nftables Drop Rule                                         │ (10) WebSocket Live Push
+                     ▼                                                                        ▼
+  ┌─────────────────────────────────────────────────────┐            ┌────────────────────────────────────────────────┐
+  │  ids-lab-router FIREWALL KERNEL                     │            │  REACT DARK-THEME OPERATIONAL DASHBOARD        │
+  │  - 10.10.10.50 instantly blocked                    │            │  - Live Alerts Page: Red High-Severity Alert   │
+  │  - Camera .30 remains online & video flows          │            │  - Blocklist Page: 30-min Countdown Timer      │
+  │  - 1800s countdown timer auto-expires               │            │  - Overview Page: Attack Class Bar Chart       │
+  └─────────────────────────────────────────────────────┘            └────────────────────────────────────────────────┘
+========================================================================================================================
 ```
+
+---
+
+### 🧱 පද්ධතියේ ප්‍රධාන තල 5 ක ක්‍රියාකාරීත්වය (The 5 Operational Architecture Planes)
+
+1. **ජාල දත්ත තලය (Network Data Plane):**
+   - පරිගණක ජාල දෙකක් (`10.10.10.0/24` WAN සහ `192.168.50.0/24` Surveillance LAN) `ids-lab-router` මඟින් වෙන් කර ඇත.
+   - කැමරාව (`.30`) තත්පරයට 25 frames වේගයෙන් NVR එකට (`.20`) වීඩියෝ දත්ත Port 554 න් නොකඩවා යවයි.
+2. **අක්‍රීය සංවේදක තලය (Passive Sensor Plane - Zero Disruption):**
+   - Zeek Sensor එක switch mirror port (Docker bridge `br-ids-lan`) හරහා promiscuous mode එකෙන් සියලුම network packets වල පිටපත් ලබාගනී.
+   - මෙය ජාලයේ කිසිදු packet එකකට ප්‍රමාදයක් (delay) ඇති නොකරන අතර, connection එකක් අවසන් වූ සැණින් සම්මත JSON ආකෘතියෙන් `conn.log` හි සටහන් කරයි.
+3. **තත්‍ය කාලීන AI හඳුනාගැනීමේ සහ තීරණ ගැනීමේ තලය (Real-Time AI & Decision Plane):**
+   - Python Adapter එක `conn.log` ගොනුවේ අලුත් පේළි කියවා Proposal Table 6 ට අනුකූලව **Behavioral Features 27** ක් සාදයි.
+   - **Random Forest Model v3.1.0** (Decision Trees 100 ක එකතුව) මඟින් එක් flow එකක් වර්ගීකරණය කිරීමට ගතවන්නේ **7.96 µs (microseconds)** ක් පමණි.
+   - Decision Engine එක මඟින් Allowlist එක (`.30`, `.20`, `.10` කිසිවිටෙකත් block නොවේ) සහ repeat rules (තත්පර 60 තුළ 3 වරක්) පරීක්ෂා කර ක්‍රියාත්මක විය යුතු ආරක්ෂක පියවර තීරණය කරයි.
+4. **ස්වයංක්‍රීය Firewall පාලන තලය (Autonomous Mitigation Plane):**
+   - ප්‍රහාරයක් තහවුරු වූ සැණින් Router Adapter එක මඟින් කළමනාකරණ SSH සම්බන්ධතාවය (Port 2222) හරහා Router එකේ Linux `nftables` firewall එකට drop rule එක ඇතුළත් කරයි.
+   - ප්‍රහාරකයාගේ IP ලිපිනය `timeout 1800s` (මිනිත්තු 30) ක Countdown Timer එකක් සමඟ block වන අතර, නියමිත කාලය අවසන් වූ විට kernel එක මඟින් ඉබේම ඉවත් වේ.
+5. **දත්ත ගබඩා, API සහ සජීවී Dashboard තලය (Persistence, API & Dashboard Plane):**
+   - සෑම ප්‍රහාරයක්ම සහ අවහිරයක්ම MongoDB හි `attack_events`, `blocklist`, සහ `system_logs` වල සුරක්ෂිත වේ.
+   - Flask API එක WebSocket (Socket.IO) මඟින් තත්පර 0.112 ක් (112.3 ms) ඇතුළත React Web Dashboard වෙත push notification යවයි.
+
+---
+
+### 📋 බැලූ බැල්මට පද්ධතියේ සංරචක සාරාංශ වගුව (At-a-Glance Component Matrix)
+
+| සංරචකය (Component) | පරිගණක නාමය / ගොනුව | IP / Port | ප්‍රධාන කාර්යභාරය (Core Function) | ආදානය (Input) | ප්‍රතිදානය (Output) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **IP Camera** | `ids-lab-camera` | `192.168.50.30:554,80` | සජීවී වීඩියෝ විකාශනය සහ වෙබ් කළමනාකරණය | RTSP / HTTP Requests | H.264 Video Stream & Web GUI |
+| **NVR Recorder** | `ids-lab-nvr` | `192.168.50.20` | කැමරා වීඩියෝ නොකඩවා පටිගත කිරීම | RTSP Stream from .30 | MP4 Video Chunks |
+| **Admin PC** | `ids-lab-admin` | `192.168.50.10` | කැමරා සැකසුම් පාලනය සහ පරිපාලන කටයුතු | Admin Commands | HTTP Configuration Traffic |
+| **Router & Firewall** | `ids-lab-router` | `192.168.50.1` / `10.10.10.1` | Linux Forwarding සහ nftables Firewall | Routed Packets | Drop Malicious / Forward Legitimate |
+| **Attacker Laptop** | `ids-lab-attacker` | `10.10.10.50` | Port Scanning සහ C&C Botnet ප්‍රහාර එල්ල කිරීම | Lab Scenario Commands | SYN Scans, Botnet Beacons |
+| **Zeek Sensor** | `ids-lab-sensor` | Host Promiscuous (`br-ids-lan`) | ජාලයට බාධා නොකර packets කියවීම | Mirrored Raw Ethernet Frames | `conn.log`, `files.log` (JSON Lines) |
+| **Zeek Adapter** | `core_engine/zeek_adapter.py` | Local Engine Thread | Behavior Features 27 ක් ගණනය කිරීම | JSON lines from `conn.log` | NumPy Feature Vector (27 floats) |
+| **AI Classifier** | `core_engine/detector.py` | `ids_bundle_v3.joblib` | ප්‍රහාරක පන්තිය සහ සම්භාවිතාව ගණනය | 27 Features Vector | Predicted Class & Confidence ($P$) |
+| **Decision Engine** | `core_engine/decision_engine.py`| Local Engine Thread | Allowlist සහ Repeat rules පරීක්ෂාව | Predictions & Context | Policy Decision (BLOCK/RATE_LIMIT) |
+| **Router SSH Adapter**| `core_engine/firewall/` | SSH Port 2222 to Router | Linux nftables වෙත Drop Rule යැවීම | Block Instruction | Dynamic nftables drop entry |
+| **Unified API Server**| `core_engine/app.py` | `http://localhost:5000` | REST API සහ Socket.IO Push Engine | Client Requests & Engine Events| JSON REST Responses & WebSocket Push |
+| **React Dashboard** | `my-app` Frontend | Web Browser UI | සජීවී අධීක්ෂණය සහ පරිපාලක පාලනය | Socket.IO Events & User Clicks | Visual Alerts, Blocklist Timers, Graphs |
+
+---
 
 ---
 
