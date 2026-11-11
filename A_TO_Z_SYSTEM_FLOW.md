@@ -929,15 +929,14 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
   554/tcp open  rtsp
   Nmap done: 1 IP address (1 host up) scanned in 0.79 seconds
   ```
-
 - **🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/alerts` - Live Alerts):**
+
   - Attacker විසින් Port Scan ප්‍රහාරය එල්ල කළ සැණින්, Zeek sensor එකෙන් flow එක ග්‍රහණය කර Random Forest AI Model එක වෙත යවයි.
   - Dashboard එකේ **Live Alerts** පිටුවෙහි තැඹිලි පැහැති අනතුරු ඇඟවීමේ Badge එකක් සජීවීව වැටේ:
     - **Classification:** `PortScan (Reconnaissance)`
     - **Attacker IP:** `10.10.10.50`
     - **Target IP:** `192.168.50.30` (Ports: `80, 554`)
     - **Action:** `Reconnaissance Observed` (පද්ධතිය මඟින් ප්‍රහාරකයාගේ මුල් පියවර නිරීක්ෂණය කරන ලදී).
-
 - **මෙයින් ඔප්පු වන කරුණ:** පිටත ජාලයේ සිට Router එක හරහා කැමරා subnet එක වෙත පැමිණෙන scans සාර්ථකව ගමන් කරයි. Router එක මඟින් packets forward කරයි.
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
@@ -1124,15 +1123,14 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
   | :------------------------------------------ | :-------------------------------------- | :---------------------------------------------------- | :------------------------------ |
   | **Median Decision Latency ($p50$)** | $< 2.0\text{ s}$ ($2000\text{ ms}$) | **$112.24\text{ ms}$ ($0.11\text{ s}$)**    | ✅ **PASS (18x Faster!)** |
   | **95th Percentile Latency ($p95$)** | $< 5.0\text{ s}$ ($5000\text{ ms}$) | **$141.10\text{ ms}$ ($0.14\text{ s}$)**    | ✅ **PASS (35x Faster!)** |
-
 - **🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/overview` - System Overview):**
+
   - **`MONITORED FLOWS`:** කැමරාව සහ NVR අතර ගලායන packets ගණන තත්පරයෙන් තත්පරය Live update වේ.
   - **`PIPELINE: RUNNING`:** Zeek adapter සහ Machine Learning background worker එක සක්‍රිය බව දක්වන කොළ පැහැති Badge එක.
   - **`SYSTEM STATUS (MEASURED)`:**
     - `Time per flow (median / 95%)`: **`112.2 ms / 141.1 ms`** සජීවීව ප්‍රදර්ශනය වේ.
     - `Model`: **`v3.1.0`**.
     - `Automatic response`: **`ON (lab test) · firewall: router_ssh`**.
-
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
   > *"Sir, as demonstrated by our live packet injection test and telemetry metrics, our system achieves an empirical median decision latency of only 112.24 ms and a 95th percentile latency of 141.10 ms across 2,294 real processed flows. This satisfies Proposal Objectives O2 & O6, Table 7 FR-02 & FR-03, and crushes our Proposal Table 9 benchmark (< 2.0 s) by running 18 times faster than required."*
@@ -1236,7 +1234,6 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
      - Active Firewall Blocks වගුව තුළ `10.10.10.50` ලිපිනය දිස්වේ.
      - එහි **Remaining Time** තීරුව තුළ `1800s`, `1799s`, `1798s`... ලෙස තත්පරයෙන් තත්පරය අඩුවන සජීවී **Countdown Timer** එකක් ක්‍රියාත්මක වේ.
      - පරිපාලකයාට අවශ්‍ය නම් පසෙකින් ඇති `[Unblock]` බොත්තම ක්ලික් කර එම block එක අතින් ඉවත් කිරීමටද (Manual Rollback - FR-06) හැකියාව ඇත.
-
 - **මෙයින් ඔප්පු වන කරුණ:**
 
   - AI Model එක මඟින් C&C ප්‍රහාරය හඳුනාගැනීමෙන් පසු SSH මඟින් Router kernel එකට Drop rule එක ඇතුළත් කර ඇත.
@@ -1295,7 +1292,7 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
 
 #### 1. මෙම උපාංග 5 ජාලය තුළට පැමිණියේ කොහෙන්ද? (Where Did These 5 Devices Come From?)
 
-Dashboard එකේ දැක්වෙන උපාංග 5 යනු අහඹු නම් හෝ නිකරුණේ ලියූ දත්ත නොවේ. **මේවා අපගේ Virtual Lab එක තුළ Docker Containers මඟින් සැබවින්ම ක්‍රියාත්මක වන අතථ්‍ය පරිගණක සහ උපාංග 5 කි ([`lab_virtual/docker-compose.yml`](file:///d:/intrusion%20detection/lab_virtual/docker-compose.yml)):**
+Dashboard එකේ දැක්වෙන උපාංග 5 යනු අහඹු නම් හෝ නිකරුණේ ලියූ දත්ත නොවේ. **මේවා අපගේ Virtual Lab එක තුළ Docker Containers මඟින් සැබවින්ම ක්‍රියාත්මක වන අතථ්‍ය පරිගණක සහ උපාංග 5 කි ([`lab_virtual/docker-compose.yml`](<file:///d:/intrusion%20detection/lab_virtual/docker-compose.yml>)):**
 
 1. **`ids-lab-router` (IP: `192.168.50.1`):** මුළු ජාලයම පාලනය කරන අපේ Gateway / Router එක (Cisco Systems).
 2. **`ids-lab-sensor` (IP: `192.168.50.5`):** Zeek Sniffer එක ක්‍රියාත්මක වන Security Sensor පරිගණකය (Intel Corporation).
@@ -1388,6 +1385,7 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 >    - ජාලයට අලුත් උපාංගයක් සම්බන්ධ කළ විට, Admin හට පිටුවෙන් පිට නොවී මෙම බොත්තම ක්ලික් කිරීමෙන් Subnet එක නැවත Scan කර නව උපාංග live update කරගත හැක.
 
 - **මෙයින් ඔප්පු වන කරුණ:**
+
   - Proposal FR-05 සහ Section 3.7 100% ක් සම්පූර්ණයි. ආරක්ෂිත කැමරා ජාලය තුළ ඇති උපාංග 5 සහ ඒවායේ open ports (80, 554) හඳුනාගෙන Dashboard එකේ **Devices & Scans** පිටුවේ සජීවීව ප්‍රදර්ශනය වේ.
   - පරිපාලකයාට කැමරා භූමිකාව තහවුරු කර (Camera Role Confirmation) ආරක්ෂිත Allowlist එකට එක් කිරීමට පූර්ණ හැකියාව ලැබේ.
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
@@ -1446,7 +1444,6 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
   CSV Export Status: 200
   CSV Headers: event_id,timestamp,direction,src_ip,src_port,dst_ip,dst_port,proto,service...
   ```
-
 - **🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (What Appears on the Dashboard UI):**
 
   1. **Blocklist & Mitigations පිටුව (`http://localhost:5000/blocklist`):**
@@ -1456,7 +1453,6 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
      - Proposal FR-08 Forensic Export කොටස:
        - **Filter Options:** Date Range (ආරම්භක සහ අවසාන දිනය), Attack Class (DDoS, CnC, PortScan ආදිය), IP Address, සහ Severity අනුව පෙරහන් කළ හැක.
        - **One-Click Export බොත්තම්:** **`[Download CSV]`** හෝ **`[Download JSON]`** ක්ලික් කළ සැණින් සම්මත RFC 4180 ගොනුවක් Browser එක හරහා ක්ෂණිකව පරිගණකයට බාගත (Download) වේ.
-
 - **මෙයින් ඔප්පු වන කරුණ:** Proposal Table 10 Scenario 6 (Manual Block & Unblock) සහ Table 7 FR-08 (Filtered Log Export) 100% ක් සම්පූර්ණ බව තහවුරු වේ. පරිපාලකයාට පද්ධතිය පාලනය කිරීමේ සම්පූර්ණ බලය පවතින අතර සෑම ක්‍රියාවක්ම audit log එකක සටහන් වේ.
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
