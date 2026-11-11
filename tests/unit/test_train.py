@@ -123,7 +123,9 @@ def test_saved_model_bundle_integrity():
     assert bundle["classes"] == CLASS_INDICES
     assert bundle["class_names"] == CLASS_NAMES
     assert bundle["feature_columns"] == FEATURE_COLUMNS
-    assert bundle["training_samples_count"] == 1384070
+    # 1,384,070 sampled rows; variant WC (D-051) leaves out the label_trusted=False rows
+    expected = {"W": 1384070, "WC": 1184004}[bundle.get("training_variant", "W")]
+    assert bundle["training_samples_count"] == expected
     assert 0.0 < bundle["overall_macro_f1"] <= 1.0, f"Invalid Macro-F1: {bundle['overall_macro_f1']}"
     assert 0.0 <= bundle["benign_fpr"] <= 1.0, f"Invalid Benign FPR: {bundle['benign_fpr']}"
 

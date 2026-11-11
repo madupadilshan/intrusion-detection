@@ -23,7 +23,8 @@ from pymongo.errors import PyMongoError, ConnectionFailure
 logger = logging.getLogger("db_service")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_SETTINGS_PATH = PROJECT_ROOT / "config" / "settings.yaml"
+# IDS_SETTINGS_FILE lets a test setup (e.g. lab_virtual/) use its own settings file.
+DEFAULT_SETTINGS_PATH = Path(os.getenv("IDS_SETTINGS_FILE") or PROJECT_ROOT / "config" / "settings.yaml")
 
 # Standard retention periods per Proposal Decision D-011
 DEFAULT_RETENTION_DAYS = {

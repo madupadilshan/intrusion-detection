@@ -14,7 +14,7 @@ Test Coverage:
 6. File offset persistence and crash recovery (Step 38).
 7. Cross-platform log rotation and truncation detection.
 8. Malformed/corrupted JSON fault tolerance.
-9. Feature matrix extraction compatibility with 19 locked features and 0 NaNs.
+9. Feature matrix extraction compatibility with the locked features (26, D-051) and 0 NaNs.
 """
 
 from __future__ import annotations
@@ -180,7 +180,7 @@ def test_parse_and_enrich(sample_flow_dict):
 
 
 def test_static_read_and_feature_extraction(tmp_path, sample_flow_dict):
-    """Verify reading static conn.log files and extracting standard 19 features."""
+    """Verify reading static conn.log files and extracting the standard features."""
     log_file = tmp_path / "conn.log"
     # Write 5 test lines
     records = []
@@ -201,7 +201,7 @@ def test_static_read_and_feature_extraction(tmp_path, sample_flow_dict):
     # Feature extraction
     feat_df = adapter.to_feature_dataframe(flows)
     assert isinstance(feat_df, pd.DataFrame)
-    assert feat_df.shape == (5, 19)
+    assert feat_df.shape == (5, len(FEATURE_COLUMNS))
     assert list(feat_df.columns) == FEATURE_COLUMNS
     assert feat_df.isna().sum().sum() == 0
 

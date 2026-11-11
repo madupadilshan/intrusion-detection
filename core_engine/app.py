@@ -27,6 +27,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from core_engine.db_service import DatabaseService, _load_settings
+from core_engine.file_check import FileCheck
 from core_engine.auth import (
     AuthManager,
     AuthError,
@@ -63,6 +64,14 @@ DEFAULT_CORS_ORIGINS = [
     "http://localhost:5000",
     "http://127.0.0.1:5000",
 ]
+
+
+def _project_path(value):
+    """A settings path; a relative path starts at the project folder. None stays None."""
+    if not value:
+        return None
+    p = Path(value)
+    return p if p.is_absolute() else PROJECT_ROOT / p
 
 
 def create_app(
@@ -138,8 +147,13 @@ def create_app(
     app.config["firewall"] = firewall
 
     # Machine Learning Detector & Decision Engine (Step 26)
-    settings_file = PROJECT_ROOT / "config" / "settings.yaml"
-    detector_inst = detector or Detector()
+    settings_file = Path(os.getenv("IDS_SETTINGS_FILE") or PROJECT_ROOT / "config" / "settings.yaml")
+    # settings.yaml model.bundle_path decides the model (relative paths start at the project folder)
+    bundle_cfg = (settings_cfg.get("model", {}) or {}).get("bundle_path")
+    bundle_file = None
+    if bundle_cfg:
+        bundle_file = Path(bundle_cfg) if Path(bundle_cfg).is_absolute() else PROJECT_ROOT / bundle_cfg
+    detector_inst = detector or Detector(bundle_path=bundle_file)
     app.config["detector"] = detector_inst
 
     decision_inst = decision_engine or DecisionEngine(
@@ -163,10 +177,20 @@ def create_app(
     zeek_inst = zeek_adapter or ZeekAdapter(
         settings_path=settings_file if settings_file.exists() else None
     )
+    resp_cfg = settings_cfg.get("response", {}) or {}
+    file_check_inst = FileCheck(
+        local_networks=settings_cfg.get("lab", {}).get("local_networks", ["192.168.50.0/24"]),
+        allowlist=management_allowlist,
+        db=db,
+        socketio=socketio,
+        repeat_window_seconds=int(resp_cfg.get("repeat_window_seconds", 60)),
+    )
     runner_inst = pipeline_runner or LivePipelineRunner(
         zeek_adapter=zeek_inst,
         decision_engine=decision_inst,
         socketio=socketio,
+        file_check=file_check_inst,
+        files_log_path=_project_path((settings_cfg.get("zeek", {}) or {}).get("files_log_path")),
     )
     app.config["zeek_adapter"] = zeek_inst
     app.config["runner"] = runner_inst
@@ -915,9 +939,11 @@ def create_app(
         Zeek telemetry stream, and response adapters.
         """
         db_alive = db.is_connected()
-        model_path = PROJECT_ROOT / "ml_engine" / "models" / "ids_bundle_v1.joblib"
-        model_ready = model_path.is_file()
-        zeek_log_path = PROJECT_ROOT / "sensor" / "logs" / "conn.log"
+        # Report the model and the Zeek log that are really in use (settings.yaml), not fixed paths.
+        det = app.config.get("detector")
+        model_ready = bool(det is not None and getattr(det, "model", None) is not None)
+        zeek_log_path = Path(app.config["zeek_adapter"].conn_log_path) if app.config.get("zeek_adapter") \
+            else PROJECT_ROOT / "sensor" / "logs" / "conn.log"
         zeek_ready = zeek_log_path.is_file() or (PROJECT_ROOT / "data" / "local" / ".zeek_adapter_state.json").is_file()
 
         is_healthy = db_alive and model_ready

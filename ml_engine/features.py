@@ -19,7 +19,10 @@ Candidate Features (Proposal Table 6):
                orig_ip_bytes, resp_pkts, resp_ip_bytes, is_incomplete_flow
   - Directional Ratios (4): orig_bytes_per_pkt, resp_bytes_per_pkt,
                            byte_ratio, pkt_ratio (zero-division safe)
-  Total: 19 Engineered Features (6 Categorical, 13 Numerical).
+  - Window (7, D-051): src_conn_60s, src_udst_60s, src_uport_60s, src_udst_ratio,
+                       pair_conn_60s, pair_gap, pair_gap_change (ml_engine/window_features.py)
+  Total: 26 features (6 categorical, 20 numerical). The first 19 are the v1 features
+  (BASE_FEATURE_COLUMNS); the model bundle stores the list it was trained with.
 
 Strict Isolation (Golden Rule 5):
   Network identifiers (uid, id.orig_h, id.resp_h, ts, scenario_id) are NEVER
@@ -32,6 +35,9 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+from ml_engine.window_features import DEFAULT_VALUES as WINDOW_DEFAULTS
+from ml_engine.window_features import WINDOW_FEATURES, compute_window_features
+
 # Fixed list of categorical features (Proposal Table 6)
 CATEGORICAL_FEATURES: List[str] = [
     "proto",
@@ -42,8 +48,8 @@ CATEGORICAL_FEATURES: List[str] = [
     "resp_port_cat",
 ]
 
-# Fixed list of numerical features (Proposal Table 6)
-NUMERICAL_FEATURES: List[str] = [
+# Fixed list of numerical one-flow features (Proposal Table 6)
+BASE_NUMERICAL_FEATURES: List[str] = [
     "duration",
     "orig_bytes",
     "resp_bytes",
@@ -59,7 +65,13 @@ NUMERICAL_FEATURES: List[str] = [
     "is_incomplete_flow",
 ]
 
-# Definitive feature columns list in strictly locked order
+# All numerical features: the 13 one-flow features, then the 7 window features (D-051)
+NUMERICAL_FEATURES: List[str] = BASE_NUMERICAL_FEATURES + WINDOW_FEATURES
+
+# The 19 one-flow features of model v1 (kept for comparison and for old bundles)
+BASE_FEATURE_COLUMNS: List[str] = CATEGORICAL_FEATURES + BASE_NUMERICAL_FEATURES
+
+# Definitive feature columns list in strictly locked order (26)
 FEATURE_COLUMNS: List[str] = CATEGORICAL_FEATURES + NUMERICAL_FEATURES
 
 # Required raw input columns (handling dot and underscore naming)
@@ -165,13 +177,17 @@ def make_features(
     data: Union[pd.DataFrame, Dict[str, Any], List[Dict[str, Any]]]
 ) -> pd.DataFrame:
     """
-    Extract the standardized 19 features from network flow records.
+    Extract the standardized 26 features from network flow records.
 
     Input:
       - DataFrame, dictionary, or list of dictionaries containing raw Zeek flow metrics.
+      - If the input already has the 7 window columns (made by `WindowState` in the live
+        Zeek adapter, or on the full scenario stream in training), they are used as they are.
+        Otherwise they are computed here from the given rows, in row order, with a new
+        `WindowState` (correct for one whole conn.log file read from its start).
 
     Output:
-      - DataFrame with exactly the 19 columns in `FEATURE_COLUMNS` order, with
+      - DataFrame with exactly the 26 columns in `FEATURE_COLUMNS` order, with
         zero NaN values and typed appropriately.
     """
     df = normalize_input_dataframe(data)
@@ -239,7 +255,16 @@ def make_features(
 
     out["is_incomplete_flow"] = (is_inc_state | zero_transfer | no_reply).astype(np.int8)
 
-    # 5. Enforce definitive locked column order
+    # 5. Window features (D-051)
+    if all(c in df.columns for c in WINDOW_FEATURES):
+        for c, default in zip(WINDOW_FEATURES, WINDOW_DEFAULTS):
+            out[c] = pd.to_numeric(df[c], errors="coerce").fillna(default).astype(np.float32)
+    else:
+        win = compute_window_features(df)
+        for c in WINDOW_FEATURES:
+            out[c] = win[c].astype(np.float32).values
+
+    # 6. Enforce definitive locked column order
     return out[FEATURE_COLUMNS]
 
 

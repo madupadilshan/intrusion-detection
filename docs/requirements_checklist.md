@@ -19,7 +19,7 @@ Numbers are not copied into this file. They are in the result files named in eac
 | ID | Requirement (proposal) | How the proposal checks it | What exists | Status |
 | --- | --- | --- | --- | --- |
 | FR-01 | Capture mirrored or inline traffic, and make connection flows from it. | Must / schema test | `sensor/local.zeek`, `sensor/run_zeek.sh`, `core_engine/zeek_adapter.py`, `core_engine/runner.py`, `tools/schema_check.py` | **Built.** Not yet run with Zeek on the sensor; schema test on real Zeek output pending (Steps 19, 22). |
-| FR-02 | Put each usable flow into a class; give back the class, the confidence and the model version. | Must / model API test | `core_engine/detector.py`, `ml_engine/models/ids_bundle_v1.joblib` | **Built and tested** (unit tests). |
+| FR-02 | Put each usable flow into a class; give back the class, the confidence and the model version. | Must / model API test | `core_engine/detector.py`, `ml_engine/models/ids_bundle_v3.joblib` | **Built and tested** (unit tests). |
 | FR-03 | Save benign traffic summaries, attacks and response actions. | Must / database test | `core_engine/db_service.py` (TTL retention), `decision_engine.py` | **Built and tested** (integration tests with MongoDB). |
 | FR-04 | Send new events and alerts to the dashboard, which needs a login, without pressing refresh. | Must / Socket.IO latency test | `core_engine/app.py` (Socket.IO with JWT), `my-app/` pages | **Built.** The Socket.IO latency test is Step 37. |
 | FR-05 | Find approved devices and services with controlled Nmap scans. | Should / inventory test | `core_engine/scanner_service.py` (approved subnet only, admin only) | **Built and tested** with a mocked Nmap; real inventory test in the lab pending. |

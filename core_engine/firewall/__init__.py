@@ -13,6 +13,7 @@ import logging
 import os
 import platform
 import shutil
+from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
 from core_engine.firewall.base import (
@@ -66,6 +67,11 @@ def firewall_config_from_settings(settings: Optional[Dict[str, Any]]) -> Dict[st
         )
     chosen = str(response_adapter or fw_type or "auto").lower()
     fw["type"] = chosen
+    # Relative key / known_hosts paths start at the project folder.
+    root = Path(__file__).resolve().parent.parent.parent
+    for key in ("router_key_file", "router_known_hosts_file"):
+        if fw.get(key) and not Path(fw[key]).is_absolute():
+            fw[key] = str(root / fw[key])
     if "table_family" not in fw:
         fw["table_family"] = "inet" if chosen == "router" else "bridge"
     return fw
@@ -111,6 +117,7 @@ def get_firewall_adapter(
             router_port=int(cfg["router_port"]) if cfg.get("router_port") else None,
             router_user=cfg.get("router_user"),
             router_key_file=cfg.get("router_key_file"),
+            known_hosts_file=cfg.get("router_known_hosts_file"),
             table_family=cfg.get("table_family", "inet"),
             table_name=table_name,
             allowlist=allowlist,

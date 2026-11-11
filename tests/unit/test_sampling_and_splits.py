@@ -24,7 +24,7 @@ SAMPLING_REPORT = REPORTS_DIR / "sampling_report.md"
 SAMPLING_CSV = REPORTS_DIR / "sampling_summary.csv"
 
 EXPECTED_METADATA_COLS = ["class_name", "label_idx", "scenario_id"]
-AUDIT_COLS = ["ts", "id.orig_h", "id.resp_h", "id.resp_p", "detailed_label"]  # checking only, never model inputs (D-046)
+AUDIT_COLS = ["ts", "id.orig_h", "id.resp_h", "id.resp_p", "detailed_label", "label_trusted"]  # checking only, never model inputs (D-046, D-051)
 ALL_EXPECTED_COLS = FEATURE_COLUMNS + EXPECTED_METADATA_COLS + AUDIT_COLS
 HELD_OUT_SCENARIO_ID = "CTU-IoT-Malware-Capture-34-1"
 

@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from core_engine.detector import Detector, DetectionResult, DEFAULT_BUNDLE_PATH
+from ml_engine.features import FEATURE_COLUMNS
 
 
 def test_detector_initialization_default():
@@ -15,13 +16,13 @@ def test_detector_initialization_default():
     detector = Detector()
     info = detector.get_model_info()
 
-    assert str(info["model_version"]).startswith("v1.")
+    assert str(info["model_version"]).startswith("v3.")
     assert "Benign" in info["classes"]
     assert "DDoS_DoS" in info["classes"]
     assert "PortScan" in info["classes"]
     assert "CnC" in info["classes"]
     assert "Malware_Download" in info["classes"]
-    assert info["features_count"] == 19
+    assert info["features_count"] == len(FEATURE_COLUMNS)
     assert info["is_calibrated"] is True
 
 
@@ -75,14 +76,14 @@ def test_detector_benign_inference():
     # so the test checks that it is valid and equals the largest probability (not a fixed value).
     assert 0.0 < result.confidence <= 1.0
     assert result.confidence == pytest.approx(max(result.probabilities.values()), abs=1e-6)
-    assert str(result.model_version).startswith("v1.")
+    assert str(result.model_version).startswith("v3.")
 
     # Probabilities must sum to ~1.0
     prob_sum = sum(result.probabilities.values())
     assert pytest.approx(prob_sum, abs=1e-4) == 1.0
 
-    # Features must contain 19 keys
-    assert len(result.features) == 19
+    # Features must contain every feature column
+    assert len(result.features) == len(FEATURE_COLUMNS)
     assert "duration" in result.features
     assert "orig_port_cat" in result.features
     assert "resp_port_cat" in result.features

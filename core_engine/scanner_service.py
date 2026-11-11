@@ -23,6 +23,8 @@ Governing Standards & Requirements:
 
 from __future__ import annotations
 
+import os
+
 import ipaddress
 import logging
 import threading
@@ -36,7 +38,8 @@ import yaml
 logger = logging.getLogger("core_engine.scanner_service")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_SETTINGS_PATH = PROJECT_ROOT / "config" / "settings.yaml"
+# IDS_SETTINGS_FILE lets a test setup (e.g. lab_virtual/) use its own settings file.
+DEFAULT_SETTINGS_PATH = Path(os.getenv("IDS_SETTINGS_FILE") or PROJECT_ROOT / "config" / "settings.yaml")
 
 DEFAULT_APPROVED_SUBNETS = ["192.168.50.0/24"]
 

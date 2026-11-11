@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "generated": "2026-11-10 18:15:03",
+    "rows": 1184004,
+    "scenarios": 22,
+    "folds": 5,
+    "decision": "D-044 (rule), D-045 (final choice)",
+    "data": "grouped out-of-fold probabilities from Step 14; held-out scenario not used",
+    "scoring": "cross-fitted by fold",
+    "min_class_recall_rule": 0.05
+  },
+  "chosen_method": "none",
+  "reason": "D-045: only methods that keep the Random Forest's top class are allowed (none, temperature); 'none' has the lower mean Brier score",
+  "d044_rule_choice": {
+    "chosen_method": "sigmoid_per_class",
+    "reason": "every class has recall >= 0.05 for: none, sigmoid_per_class, temperature, multinomial, multinomial_balanced; 'sigmoid_per_class' has the highest macro-F1 among them"
+  },
+  "results": {
+    "none": {
+      "macro_f1": 0.7009,
+      "recall": {
+        "Benign": 0.9561,
+        "DDoS_DoS": 0.6514,
+        "PortScan": 0.5316,
+        "CnC": 0.9071,
+        "Malware_Download": 0.7367
+      },
+      "precision": {
+        "Benign": 0.6133,
+        "DDoS_DoS": 0.9907,
+        "PortScan": 0.6874,
+        "CnC": 0.6409,
+        "Malware_Download": 0.5358
+      },
+      "f1": {
+        "Benign": 0.7473,
+        "DDoS_DoS": 0.786,
+        "PortScan": 0.5996,
+        "CnC": 0.7511,
+        "Malware_Download": 0.6204
+      },
+      "min_class_recall": 0.5316,
+      "mean_brier": 0.0964,
+      "classes_reaching_block_rule": [
+        "DDoS_DoS",
+        "CnC",
+        "Malware_Download"
+      ]
+    },
+    "sigmoid_per_class": {
+      "macro_f1": 0.716,
+      "recall": {
+        "Benign": 0.7924,
+        "DDoS_DoS": 0.7892,
+        "PortScan": 0.6345,
+        "CnC": 0.8107,
+        "Malware_Download": 0.6036
+      },
+      "precision": {
+        "Benign": 0.7985,
+        "DDoS_DoS": 0.9835,
+        "PortScan": 0.6441,
+        "CnC": 0.6365,
+        "Malware_Download": 0.5158
+      },
+      "f1": {
+        "Benign": 0.7954,
+        "DDoS_DoS": 0.8757,
+        "PortScan": 0.6393,
+        "CnC": 0.7131,
+        "Malware_Download": 0.5563
+      },
+      "min_class_recall": 0.6036,
+      "mean_brier": 0.1026,
+      "classes_reaching_block_rule": [
+        "DDoS_DoS",
+        "CnC",
+        "Malware_Download"
+      ]
+    },
+    "temperature": {
+      "macro_f1": 0.7009,
+      "recall": {
+        "Benign": 0.9561,
+        "DDoS_DoS": 0.6514,
+        "PortScan": 0.5316,
+        "CnC": 0.9071,
+        "Malware_Download": 0.7367
+      },
+      "precision": {
+        "Benign": 0.6133,
+        "DDoS_DoS": 0.9907,
+        "PortScan": 0.6874,
+        "CnC": 0.6409,
+        "Malware_Download": 0.5358
+      },
+      "f1": {
+        "Benign": 0.7473,
+        "DDoS_DoS": 0.786,
+        "PortScan": 0.5996,
+        "CnC": 0.7511,
+        "Malware_Download": 0.6204
+      },
+      "min_class_recall": 0.5316,
+      "mean_brier": 0.1018,
+      "classes_reaching_block_rule": [
+        "DDoS_DoS",
+        "CnC",
+        "Malware_Download"
+      ]
+    },
+    "multinomial": {
+      "macro_f1": 0.6151,
+      "recall": {
+        "Benign": 0.5538,
+        "DDoS_DoS": 0.6674,
+        "PortScan": 0.5332,
+        "CnC": 0.7358,
+        "Malware_Download": 0.5874
+      },
+      "precision": {
+        "Benign": 0.4758,
+        "DDoS_DoS": 0.8458,
+        "PortScan": 0.5532,
+        "CnC": 0.7354,
+        "Malware_Download": 0.4981
+      },
+      "f1": {
+        "Benign": 0.5118,
+        "DDoS_DoS": 0.7461,
+        "PortScan": 0.543,
+        "CnC": 0.7356,
+        "Malware_Download": 0.5391
+      },
+      "min_class_recall": 0.5332,
+      "mean_brier": 0.1329,
+      "classes_reaching_block_rule": [
+        "CnC"
+      ]
+    },
+    "multinomial_balanced": {
+      "macro_f1": 0.5861,
+      "recall": {
+        "Benign": 0.5835,
+        "DDoS_DoS": 0.7182,
+        "PortScan": 0.3778,
+        "CnC": 0.9615,
+        "Malware_Download": 0.6042
+      },
+      "precision": {
+        "Benign": 0.4404,
+        "DDoS_DoS": 0.5924,
+        "PortScan": 0.5531,
+        "CnC": 0.6365,
+        "Malware_Download": 0.5292
+      },
+      "f1": {
+        "Benign": 0.502,
+        "DDoS_DoS": 0.6493,
+        "PortScan": 0.4489,
+        "CnC": 0.766,
+        "Malware_Download": 0.5642
+      },
+      "min_class_recall": 0.3778,
+      "mean_brier": 0.1386,
+      "classes_reaching_block_rule": [
+        "CnC"
+      ]
+    }
+  }
+}

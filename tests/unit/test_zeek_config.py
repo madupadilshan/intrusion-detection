@@ -4,8 +4,8 @@ Validates:
 1. Zeek configuration script (sensor/local.zeek) syntax and required directives.
 2. Sensor execution shell script (sensor/run_zeek.sh) structure and options.
 3. Zeek runner and simulation engine (sensor/zeek_runner.py) flow generation.
-4. Schema compatibility: verifies Zeek JSON records convert to 19 features with 0 NaNs.
-5. End-to-end model inference on simulated Zeek conn.log streams using ids_bundle_v1.joblib.
+4. Schema compatibility: verifies Zeek JSON records convert to the feature columns with 0 NaNs.
+5. End-to-end model inference on simulated Zeek conn.log streams using ids_bundle_v3.joblib.
 """
 
 import json
@@ -25,7 +25,7 @@ from sensor.zeek_runner import (
 SENSOR_DIR = Path("sensor")
 ZEEK_CONFIG_PATH = SENSOR_DIR / "local.zeek"
 ZEEK_SH_PATH = SENSOR_DIR / "run_zeek.sh"
-BUNDLE_PATH = Path("ml_engine/models/ids_bundle_v1.joblib")
+BUNDLE_PATH = Path("ml_engine/models/ids_bundle_v3.joblib")
 
 
 def test_zeek_local_config_file():
@@ -69,7 +69,7 @@ def test_simulated_conn_records_generation(tmp_path):
 
 
 def test_conn_log_schema_verification(tmp_path):
-    """Verify that conn.log records convert to 19 features without NaNs."""
+    """Verify that conn.log records convert to the feature columns without NaNs."""
     test_log = tmp_path / "conn.log"
     generate_simulated_conn_log(test_log, flow_count=50)
 
@@ -82,7 +82,7 @@ def test_conn_log_schema_verification(tmp_path):
 
 def test_live_zeek_records_inference_with_model_bundle(tmp_path):
     """Verify that the production model bundle predicts on live Zeek records."""
-    assert BUNDLE_PATH.exists(), "Model bundle ids_bundle_v1.joblib must exist"
+    assert BUNDLE_PATH.exists(), "Model bundle ids_bundle_v3.joblib must exist"
     bundle = joblib.load(BUNDLE_PATH)
     pipeline = bundle["pipeline"]
     calibrated = bundle["calibrated_model"]

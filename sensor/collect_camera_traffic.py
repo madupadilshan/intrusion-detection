@@ -325,7 +325,7 @@ CLASS_NAMES = ["Benign", "DDoS_DoS", "PortScan", "CnC", "Malware_Download"]
 
 def evaluate_camera_baseline_fpr(
     conn_log_path: Path,
-    bundle_path: Path = Path("ml_engine/models/ids_bundle_v1.joblib"),
+    bundle_path: Path = Path("ml_engine/models/ids_bundle_v3.joblib"),
     report_output_path: Path = Path("reports/experiments/camera_baseline_summary.md"),
     csv_output_path: Path = Path("reports/experiments/camera_baseline_summary.csv"),
     data_source: str = "synthetic",
@@ -470,7 +470,7 @@ def main() -> None:
                         help="Make a synthetic conn.log first (software test only; never a result).")
     parser.add_argument("--output-dir", type=Path, default=Path("data/local/synthetic"))
     parser.add_argument("--count", type=int, default=5000)
-    parser.add_argument("--bundle-path", type=Path, default=Path("ml_engine/models/ids_bundle_v1.joblib"))
+    parser.add_argument("--bundle-path", type=Path, default=Path("ml_engine/models/ids_bundle_v3.joblib"))
     parser.add_argument("--report-path", type=Path, default=Path("reports/experiments/camera_baseline_summary.md"))
     parser.add_argument("--csv-path", type=Path, default=Path("reports/experiments/camera_baseline_summary.csv"))
     args = parser.parse_args()

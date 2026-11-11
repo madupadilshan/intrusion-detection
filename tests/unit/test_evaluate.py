@@ -40,7 +40,7 @@ def test_load_held_out_data_integrity(held_out_path: Path):
 
     assert len(df) == 23145, f"Expected 23,145 flows, found {len(df)}"
     assert (df["scenario_id"] == "CTU-IoT-Malware-Capture-34-1").all()
-    assert X.shape == (23145, 19)
+    assert X.shape == (23145, len(FEATURE_COLUMNS))
     assert len(y) == 23145
     assert set(np.unique(y)).issubset(set(TARGET_CLASSES))
 

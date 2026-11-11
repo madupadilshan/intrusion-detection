@@ -75,6 +75,7 @@ from ml_engine.calibration import (
     fit_calibrator,
 )
 from ml_engine.features import CATEGORICAL_FEATURES, FEATURE_COLUMNS
+from ml_engine.training_rows import load_training_frame
 from ml_engine.response_replay import (
     BLOCK_MAX_BENIGN_TARGETS,
     BLOCK_MIN_EVENTS,
@@ -429,7 +430,7 @@ def load_response_settings() -> Dict[str, float]:
 
 def load_audit(train_parquet: Path, y_oof: np.ndarray, groups: np.ndarray) -> pd.DataFrame:
     """Audit columns of the training flows, in the same row order as the OOF arrays (checked)."""
-    df = pd.read_parquet(train_parquet, columns=AUDIT_COLS)
+    df = load_training_frame(train_parquet, columns=AUDIT_COLS)  # same rows as Step 14 (D-051)
     if len(df) != len(y_oof) or not np.array_equal(df["label_idx"].to_numpy(np.int64), y_oof) \
             or not np.array_equal(df["scenario_id"].astype(str).to_numpy(), np.asarray(groups).astype(str)):
         raise ValueError("train_features.parquet rows do not line up with the OOF predictions; re-run Steps 12 and 14.")

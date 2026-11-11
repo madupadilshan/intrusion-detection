@@ -1,7 +1,7 @@
 # IoT-23 Sampling & Feature Extraction Report (Step 12 & 13)
 
-**Generated:** 2026-11-09 10:54:37  
-**Execution Runtime:** 397.39 seconds (6.62 minutes)  
+**Generated:** 2026-11-10 22:17:46  
+**Execution Runtime:** 4212.08 seconds (70.20 minutes)  
 **Fixed Random Seed:** `42` (`config/settings.yaml`)  
 **Sampling Cap:** $N = 50,000$ flows per (scenario, class)  
 **Primary Engine:** `ml_engine/features.py` (`make_features`)  
@@ -15,9 +15,10 @@ This report documents the execution of **Step 12 (Sampling and class balance)** 
 - **Total Official Raw Flows Audited:** 325,299,706
 - **Final Training Dataset (`data/processed/train_features.parquet`):** 1,384,070 flows across 22 scenarios
 - **Final Held-Out Dataset (`data/processed/heldout/held_out_test.parquet`):** 23,145 flows (100% untouched)
-- **Features Extracted:** Exactly 19 features (6 Categorical, 13 Numerical) matching Proposal Table 6
+- **Features Extracted:** 27 features (6 categorical, 21 numerical): the 19 one-flow features of proposal Table 6 and the 7 window features of D-051 (Table 6: "rate over a time window"), computed on the full scenario stream before sampling
 - **Metadata Columns:** `class_name`, `label_idx`, `scenario_id` (enabling Grouped Cross-Validation without leakage)
-- **Null / NaN Values:** Exactly 0 (0.00%)
+- **Missing values in the feature columns:** 0 (training), 0 (held-out)
+- **Trusted-label flag (D-051):** 200,066 training rows are "Benign" flows that look like scanning from the infected device (`label_trusted = False`); held-out: 921
 
 ---
 
@@ -34,7 +35,7 @@ This report documents the execution of **Step 12 (Sampling and class balance)** 
 | 4 | `Malware_Download` | - | 250,069 | 18.07% | 5.10 : 1 |
 | **Total** | | **325,276,561** | **1,384,070** | **100.00%** | - |
 
-> **Key Finding:** By preserving 100% of all 48,992 `CnC` flows while capping over-represented classes at 50,000 flows per scenario, the class imbalance ratio was reduced from **4,354 : 1** down to **10.2 : 1**. This establishes ideal conditions for tree-based models and gradient boosting without distorting feature manifolds.
+> All `CnC` flows are kept; the other classes are capped at 50,000 flows per scenario. Largest class : smallest class in the sample = **10.2 : 1**.
 
 ### Level 2 Held-Out Scenario (`CTU-IoT-Malware-Capture-34-1`, 100% Untouched)
 
@@ -85,15 +86,14 @@ This report documents the execution of **Step 12 (Sampling and class balance)** 
 
 The generated training feature matrix was verified against all project constraints:
 
-1. **Feature Columns (19):**
+1. **Feature Columns (27):**
    - Categorical (6): `proto, service, conn_state, history, orig_port_cat, resp_port_cat`
-   - Numerical (13): `duration, orig_bytes, resp_bytes, missed_bytes, orig_pkts, orig_ip_bytes, resp_pkts, resp_ip_bytes, orig_bytes_per_pkt, resp_bytes_per_pkt, byte_ratio, pkt_ratio, is_incomplete_flow`
+   - Numerical (21): `duration, orig_bytes, resp_bytes, missed_bytes, orig_pkts, orig_ip_bytes, resp_pkts, resp_ip_bytes, orig_bytes_per_pkt, resp_bytes_per_pkt, byte_ratio, pkt_ratio, is_incomplete_flow, src_conn_60s, src_udst_60s, src_uport_60s, src_udst_ratio, pair_conn_60s, pair_gap, pair_gap_change, pair_fail_1h`
 2. **Metadata Columns (3):**
    - `class_name` (Target string: Benign, DDoS_DoS, PortScan, CnC, Malware_Download)
    - `label_idx` (Target integer: 0 to 4)
    - `scenario_id` (Grouping identifier for `StratifiedGroupKFold`)
 3. **Data Integrity:**
    - Total rows in `train_features.parquet`: `1,384,070`
-   - Total NaN / Null values across all columns: **0**
-   - Memory usage of training dataframe: **~1050.29 MB**
-   - Peak RAM consumed during sampling: **< 180 MB** (strictly within < 1 GB budget)
+   - Missing values in the feature columns: **0**
+   - Memory usage of training dataframe: **~1093.85 MB**

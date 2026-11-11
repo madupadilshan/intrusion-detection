@@ -1,0 +1,14 @@
+# Disputed IoT-23 labels (decision D-052). The labels are NOT changed. Variant WCD leaves these
+# training rows out; every other variant keeps them. To be confirmed with the supervisor.
+# A row matches an entry when its scenario is `scenario_id` and its two addresses are the two
+# `hosts` (either direction).
+disputed:
+  - scenario_id: CTU-IoT-Malware-Capture-42-1
+    hosts: ["192.168.1.197", "185.244.25.183"]
+    iot23_label: Benign
+    flows_in_scenario: 1947
+    evidence: >-
+      928 unanswered tries (S0) from the infected device to 185.244.25.183:4975, then long
+      conversations (S3/RSTR, data both ways) on the same non-standard port. The address is in
+      the same /24 as 185.244.25.235, which IoT-23 labels C&C in scenario 34-1. IoT-23 labels
+      every flow to this server Benign ("-"). Study: progress entry 3.71.

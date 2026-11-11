@@ -12,7 +12,7 @@ Key Objectives:
      - Linear Model (Logistic Regression with One-Hot Encoding & StandardScaler)
      - Gradient Boosting Model (HistGradientBoostingClassifier with OrdinalEncoder)
   2. Strict Scientific Fairness & Zero Leakage:
-     - Evaluated on the exact same 19 candidate features (FEATURE_COLUMNS).
+     - Evaluated on the exact same features (FEATURE_COLUMNS: 26 since D-051) and the same training rows (variant, D-051).
      - Evaluated on the exact same Level 1 5-fold StratifiedGroupKFold
        splits (random_state=42, groups=scenario_id) across all 1,384,070 flows.
      - Held-out scenario CTU-IoT-Malware-Capture-34-1 remains 100% sealed
@@ -64,6 +64,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from ml_engine.training_rows import load_training_frame
 from ml_engine.features import (
     FEATURE_COLUMNS,
     CATEGORICAL_FEATURES,
@@ -403,8 +404,7 @@ def main():
         sys.exit(1)
 
     t0_read = time.time()
-    table = pq.read_table(args.data_path)
-    df = table.to_pandas()
+    df = load_training_frame(args.data_path)  # same rows as Step 14 (variant, D-051)
     t1_read = time.time()
     logger.info(f"Loaded {len(df):,} flows in {t1_read - t0_read:.2f}s.")
 

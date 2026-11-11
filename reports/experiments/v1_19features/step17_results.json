@@ -1,0 +1,1286 @@
+{
+  "meta": {
+    "generated": "2026-11-09 10:56:30",
+    "oof_rows": 1384070,
+    "oof_scenarios": 22,
+    "heldout_scenario": "CTU-IoT-Malware-Capture-34-1",
+    "calibration_method_id": "temperature"
+  },
+  "level_1_oof": {
+    "macro_f1": 0.3422,
+    "accuracy": 0.424
+  },
+  "calibration_oof": {
+    "Benign": {
+      "raw_brier": 0.258,
+      "cal_brier": 0.1814
+    },
+    "DDoS_DoS": {
+      "raw_brier": 0.148,
+      "cal_brier": 0.1283
+    },
+    "PortScan": {
+      "raw_brier": 0.2677,
+      "cal_brier": 0.2319
+    },
+    "CnC": {
+      "raw_brier": 0.0885,
+      "cal_brier": 0.0616
+    },
+    "Malware_Download": {
+      "raw_brier": 0.1175,
+      "cal_brier": 0.1078
+    }
+  },
+  "calibration_heldout": {
+    "Benign": {
+      "raw_brier": 0.152,
+      "cal_brier": 0.1166
+    },
+    "DDoS_DoS": {
+      "raw_brier": 0.0875,
+      "cal_brier": 0.2282
+    },
+    "PortScan": {
+      "raw_brier": 0.0454,
+      "cal_brier": 0.0257
+    },
+    "CnC": {
+      "raw_brier": 0.152,
+      "cal_brier": 0.152
+    },
+    "Malware_Download": {
+      "raw_brier": null,
+      "cal_brier": null
+    }
+  },
+  "heldout_final_check": {
+    "flows": 23145,
+    "accuracy": 0.8063,
+    "macro_f1_5class": 0.453,
+    "macro_f1_present_classes": 0.5662,
+    "weighted_f1": 0.8285,
+    "benign_fpr_argmax": 0.05148,
+    "benign_alert_rate": 0.02496,
+    "benign_block_candidate_rate": 0.02236,
+    "per_class": {
+      "Benign": {
+        "support": 1923,
+        "precision": 0.4997,
+        "recall": 0.9485,
+        "f1": 0.6546,
+        "pr_auc": 0.9479
+      },
+      "DDoS_DoS": {
+        "support": 14394,
+        "precision": 0.9999,
+        "recall": 0.9908,
+        "f1": 0.9953,
+        "pr_auc": 0.9976,
+        "alert_precision": 0.9999,
+        "alert_recall": 0.9908,
+        "alert_benign_trigger_rate": 0.0
+      },
+      "PortScan": {
+        "support": 122,
+        "precision": 0.0424,
+        "recall": 0.9426,
+        "f1": 0.0812,
+        "pr_auc": 0.8601,
+        "alert_precision": 0.0426,
+        "alert_recall": 0.9426,
+        "alert_benign_trigger_rate": 0.02236,
+        "block_precision": 0.0426,
+        "block_recall": 0.9426,
+        "block_benign_trigger_rate": 0.02236
+      },
+      "CnC": {
+        "support": 6706,
+        "precision": 0.9781,
+        "recall": 0.3671,
+        "f1": 0.5339,
+        "pr_auc": 0.9859,
+        "alert_precision": 0.9608,
+        "alert_recall": 0.0073,
+        "alert_benign_trigger_rate": 0.0,
+        "block_precision": 0.9608,
+        "block_recall": 0.0073,
+        "block_benign_trigger_rate": 0.0
+      },
+      "Malware_Download": {
+        "support": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "pr_auc": null,
+        "alert_precision": 0.0,
+        "alert_recall": 0.0,
+        "alert_benign_trigger_rate": 0.0026
+      }
+    },
+    "confusion_matrix": [
+      [
+        1824,
+        0,
+        45,
+        49,
+        5
+      ],
+      [
+        0,
+        14261,
+        133,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        115,
+        6,
+        0
+      ],
+      [
+        1826,
+        0,
+        2418,
+        2462,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  },
+  "block_replay_oof": {
+    "DDoS_DoS": [
+      {
+        "threshold": 0.33,
+        "blocks": 25,
+        "wrong_blocks": 24,
+        "right_class_blocks": 1,
+        "safe_share": 0.04,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.34,
+        "blocks": 24,
+        "wrong_blocks": 23,
+        "right_class_blocks": 1,
+        "safe_share": 0.0417,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.35,
+        "blocks": 22,
+        "wrong_blocks": 22,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.36,
+        "blocks": 20,
+        "wrong_blocks": 20,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.37,
+        "blocks": 20,
+        "wrong_blocks": 20,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.38,
+        "blocks": 20,
+        "wrong_blocks": 20,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.39,
+        "blocks": 20,
+        "wrong_blocks": 20,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.4,
+        "blocks": 20,
+        "wrong_blocks": 20,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.41,
+        "blocks": 17,
+        "wrong_blocks": 17,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.42,
+        "blocks": 16,
+        "wrong_blocks": 16,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.43,
+        "blocks": 16,
+        "wrong_blocks": 16,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.44,
+        "blocks": 16,
+        "wrong_blocks": 16,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.45,
+        "blocks": 16,
+        "wrong_blocks": 16,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.46,
+        "blocks": 16,
+        "wrong_blocks": 16,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.47,
+        "blocks": 8,
+        "wrong_blocks": 8,
+        "right_class_blocks": 0,
+        "safe_share": 0.0,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.48,
+        "blocks": 0,
+        "wrong_blocks": 0,
+        "right_class_blocks": 0,
+        "safe_share": null,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 0
+      }
+    ],
+    "PortScan": [
+      {
+        "threshold": 0.3,
+        "blocks": 413,
+        "wrong_blocks": 14,
+        "right_class_blocks": 349,
+        "safe_share": 0.9661,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.31,
+        "blocks": 395,
+        "wrong_blocks": 12,
+        "right_class_blocks": 336,
+        "safe_share": 0.9696,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 8
+      },
+      {
+        "threshold": 0.32,
+        "blocks": 355,
+        "wrong_blocks": 12,
+        "right_class_blocks": 305,
+        "safe_share": 0.9662,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.33,
+        "blocks": 355,
+        "wrong_blocks": 13,
+        "right_class_blocks": 318,
+        "safe_share": 0.9634,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.34,
+        "blocks": 355,
+        "wrong_blocks": 13,
+        "right_class_blocks": 318,
+        "safe_share": 0.9634,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.35,
+        "blocks": 355,
+        "wrong_blocks": 13,
+        "right_class_blocks": 318,
+        "safe_share": 0.9634,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 7
+      },
+      {
+        "threshold": 0.36,
+        "blocks": 335,
+        "wrong_blocks": 13,
+        "right_class_blocks": 296,
+        "safe_share": 0.9612,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 6
+      },
+      {
+        "threshold": 0.37,
+        "blocks": 335,
+        "wrong_blocks": 13,
+        "right_class_blocks": 296,
+        "safe_share": 0.9612,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 6
+      },
+      {
+        "threshold": 0.38,
+        "blocks": 333,
+        "wrong_blocks": 10,
+        "right_class_blocks": 298,
+        "safe_share": 0.97,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.39,
+        "blocks": 333,
+        "wrong_blocks": 10,
+        "right_class_blocks": 298,
+        "safe_share": 0.97,
+        "benign_targets_blocked": 3,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0001,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.4,
+        "blocks": 332,
+        "wrong_blocks": 5,
+        "right_class_blocks": 302,
+        "safe_share": 0.9849,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.41,
+        "blocks": 332,
+        "wrong_blocks": 4,
+        "right_class_blocks": 295,
+        "safe_share": 0.988,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.42,
+        "blocks": 301,
+        "wrong_blocks": 3,
+        "right_class_blocks": 265,
+        "safe_share": 0.99,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.43,
+        "blocks": 135,
+        "wrong_blocks": 4,
+        "right_class_blocks": 98,
+        "safe_share": 0.9704,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.44,
+        "blocks": 135,
+        "wrong_blocks": 5,
+        "right_class_blocks": 97,
+        "safe_share": 0.963,
+        "benign_targets_blocked": 2,
+        "benign_targets": 28594,
+        "benign_target_rate": 7e-05,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.45,
+        "blocks": 87,
+        "wrong_blocks": 3,
+        "right_class_blocks": 51,
+        "safe_share": 0.9655,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.46,
+        "blocks": 87,
+        "wrong_blocks": 3,
+        "right_class_blocks": 51,
+        "safe_share": 0.9655,
+        "benign_targets_blocked": 1,
+        "benign_targets": 28594,
+        "benign_target_rate": 3e-05,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.47,
+        "blocks": 84,
+        "wrong_blocks": 0,
+        "right_class_blocks": 51,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.48,
+        "blocks": 48,
+        "wrong_blocks": 0,
+        "right_class_blocks": 15,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.49,
+        "blocks": 48,
+        "wrong_blocks": 0,
+        "right_class_blocks": 15,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.5,
+        "blocks": 0,
+        "wrong_blocks": 0,
+        "right_class_blocks": 0,
+        "safe_share": null,
+        "benign_targets_blocked": 0,
+        "benign_targets": 28594,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 0
+      }
+    ],
+    "CnC": [
+      {
+        "threshold": 0.39,
+        "blocks": 142,
+        "wrong_blocks": 0,
+        "right_class_blocks": 72,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.4,
+        "blocks": 142,
+        "wrong_blocks": 0,
+        "right_class_blocks": 72,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.41,
+        "blocks": 142,
+        "wrong_blocks": 0,
+        "right_class_blocks": 72,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.42,
+        "blocks": 115,
+        "wrong_blocks": 0,
+        "right_class_blocks": 45,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.43,
+        "blocks": 76,
+        "wrong_blocks": 0,
+        "right_class_blocks": 45,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.44,
+        "blocks": 52,
+        "wrong_blocks": 0,
+        "right_class_blocks": 21,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.45,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.46,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.47,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.48,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.49,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.5,
+        "blocks": 0,
+        "wrong_blocks": 0,
+        "right_class_blocks": 0,
+        "safe_share": null,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 0
+      }
+    ],
+    "Malware_Download": [
+      {
+        "threshold": 0.3,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.31,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.32,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.33,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.34,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.35,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.36,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.37,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.38,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.39,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.4,
+        "blocks": 5,
+        "wrong_blocks": 0,
+        "right_class_blocks": 5,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 5
+      },
+      {
+        "threshold": 0.41,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.42,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.43,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.44,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.45,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.46,
+        "blocks": 4,
+        "wrong_blocks": 0,
+        "right_class_blocks": 4,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 4
+      },
+      {
+        "threshold": 0.47,
+        "blocks": 3,
+        "wrong_blocks": 0,
+        "right_class_blocks": 3,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.48,
+        "blocks": 3,
+        "wrong_blocks": 0,
+        "right_class_blocks": 3,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.49,
+        "blocks": 3,
+        "wrong_blocks": 0,
+        "right_class_blocks": 3,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.5,
+        "blocks": 3,
+        "wrong_blocks": 0,
+        "right_class_blocks": 3,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.51,
+        "blocks": 3,
+        "wrong_blocks": 0,
+        "right_class_blocks": 3,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 3
+      },
+      {
+        "threshold": 0.52,
+        "blocks": 2,
+        "wrong_blocks": 0,
+        "right_class_blocks": 2,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 2
+      },
+      {
+        "threshold": 0.53,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.54,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.55,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.56,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.57,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.58,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.59,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.6,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.61,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.62,
+        "blocks": 1,
+        "wrong_blocks": 0,
+        "right_class_blocks": 1,
+        "safe_share": 1.0,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 1
+      },
+      {
+        "threshold": 0.63,
+        "blocks": 0,
+        "wrong_blocks": 0,
+        "right_class_blocks": 0,
+        "safe_share": null,
+        "benign_targets_blocked": 0,
+        "benign_targets": 260152,
+        "benign_target_rate": 0.0,
+        "scenarios_with_blocks": 0
+      }
+    ]
+  },
+  "block_replay_heldout": {
+    "PortScan": {
+      "threshold": 0.3,
+      "blocks": 27,
+      "wrong_blocks": 1,
+      "right_class_blocks": 1,
+      "safe_share": 0.963,
+      "benign_targets_blocked": 1,
+      "benign_targets": 2,
+      "benign_target_rate": 0.5,
+      "scenarios_with_blocks": 1
+    },
+    "CnC": {
+      "threshold": 0.39,
+      "blocks": 1,
+      "wrong_blocks": 0,
+      "right_class_blocks": 1,
+      "safe_share": 1.0,
+      "benign_targets_blocked": 0,
+      "benign_targets": 45,
+      "benign_target_rate": 0.0,
+      "scenarios_with_blocks": 1
+    }
+  },
+  "original_labels_oof": [
+    {
+      "label": "Benign (no detailed label)",
+      "group": "Benign",
+      "flows": 345424,
+      "right_group_share": 0.5426,
+      "called_attack_share": 0.4574
+    },
+    {
+      "label": "C&C",
+      "group": "CnC",
+      "flows": 15289,
+      "right_group_share": 0.0627,
+      "called_attack_share": 0.6176
+    },
+    {
+      "label": "C&C-FileDownload",
+      "group": "Malware_Download",
+      "flows": 39,
+      "right_group_share": 0.7949,
+      "called_attack_share": 0.8462
+    },
+    {
+      "label": "C&C-HeartBeat",
+      "group": "CnC",
+      "flows": 33673,
+      "right_group_share": 0.6615,
+      "called_attack_share": 0.8455
+    },
+    {
+      "label": "C&C-Torii",
+      "group": "CnC",
+      "flows": 30,
+      "right_group_share": 0.8,
+      "called_attack_share": 0.8333
+    },
+    {
+      "label": "DDoS",
+      "group": "DDoS_DoS",
+      "flows": 239585,
+      "right_group_share": 0.0016,
+      "called_attack_share": 0.2103
+    },
+    {
+      "label": "Okiru",
+      "group": "Malware_Download",
+      "flows": 250000,
+      "right_group_share": 0.7365,
+      "called_attack_share": 0.9998
+    },
+    {
+      "label": "PartOfAHorizontalPortScan",
+      "group": "PortScan",
+      "flows": 499989,
+      "right_group_share": 0.3831,
+      "called_attack_share": 0.7897
+    }
+  ],
+  "original_labels_heldout": [
+    {
+      "label": "Benign (no detailed label)",
+      "group": "Benign",
+      "flows": 1923,
+      "right_group_share": 0.9485,
+      "called_attack_share": 0.0515
+    },
+    {
+      "label": "C&C",
+      "group": "CnC",
+      "flows": 6706,
+      "right_group_share": 0.3671,
+      "called_attack_share": 0.7277
+    },
+    {
+      "label": "DDoS",
+      "group": "DDoS_DoS",
+      "flows": 14394,
+      "right_group_share": 0.9908,
+      "called_attack_share": 1.0
+    },
+    {
+      "label": "PartOfAHorizontalPortScan",
+      "group": "PortScan",
+      "flows": 122,
+      "right_group_share": 0.9426,
+      "called_attack_share": 1.0
+    }
+  ],
+  "permutation_importance_top5": [
+    {
+      "feature": "conn_state",
+      "perm_importance_mean": 0.2286264325322743
+    },
+    {
+      "feature": "history",
+      "perm_importance_mean": 0.22505984911552437
+    },
+    {
+      "feature": "duration",
+      "perm_importance_mean": 0.09939387730940788
+    },
+    {
+      "feature": "orig_ip_bytes",
+      "perm_importance_mean": 0.05912530868750039
+    },
+    {
+      "feature": "proto",
+      "perm_importance_mean": 0.0511199731252235
+    }
+  ],
+  "example_decision_paths": [
+    {
+      "class_name": "Benign",
+      "calibrated_probability": 0.731,
+      "conditions": [
+        "resp_port_cat = well_known (code 3 > 0.5)",
+        "resp_port_cat = well_known (code 3 > 2.5)",
+        "duration = 0.001496 (<= 3.161)",
+        "pkt_ratio = 0.5 (<= 0.875)",
+        "orig_pkts = 1 (<= 49)",
+        "orig_ip_bytes = 76 (<= 117)",
+        "resp_ip_bytes = 76 (> 42)",
+        "history = Dd (code 3 <= 27.0)"
+      ],
+      "path_length": 9
+    },
+    {
+      "class_name": "DDoS_DoS",
+      "calibrated_probability": 0.4029,
+      "conditions": [
+        "resp_port_cat = well_known (code 3 > 0.5)",
+        "resp_port_cat = well_known (code 3 > 2.5)",
+        "duration = 0 (<= 3.161)",
+        "pkt_ratio = 0 (<= 0.875)",
+        "orig_pkts = 0 (<= 49)",
+        "orig_ip_bytes = 0 (<= 117)",
+        "resp_ip_bytes = 0 (<= 42)",
+        "resp_pkts = 0 (<= 0.5)"
+      ],
+      "path_length": 8
+    },
+    {
+      "class_name": "PortScan",
+      "calibrated_probability": 0.4359,
+      "conditions": [
+        "resp_port_cat = dynamic (code 0 <= 0.5)",
+        "pkt_ratio = 1 (> 0.2432)",
+        "resp_pkts = 0 (<= 0.5)",
+        "orig_ip_bytes = 40 (<= 59)",
+        "proto = tcp (code 1 <= 1.5)"
+      ],
+      "path_length": 5
+    },
+    {
+      "class_name": "CnC",
+      "calibrated_probability": 0.4308,
+      "conditions": [
+        "resp_port_cat = registered (code 2 > 0.5)",
+        "resp_port_cat = registered (code 2 <= 2.5)",
+        "orig_pkts = 3 (<= 20.5)",
+        "history = S (code 8 > 7.5)",
+        "orig_pkts = 3 (> 2.5)",
+        "resp_bytes_per_pkt = 0 (<= 0.4583)",
+        "resp_ip_bytes = 0 (<= 66)",
+        "duration = 3.101 (> 3)"
+      ],
+      "path_length": 15
+    }
+  ],
+  "rf_best_params": {
+    "model__n_estimators": 100,
+    "model__min_samples_split": 5,
+    "model__min_samples_leaf": 4,
+    "model__max_features": "sqrt",
+    "model__max_depth": 18,
+    "model__class_weight": "balanced"
+  },
+  "rf_inference_latency_us": 4.663009999785572,
+  "rf_throughput_fps": 214453.75413005438,
+  "training_samples_count": 1384070
+}

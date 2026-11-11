@@ -4,7 +4,7 @@
 **Team:** Group 03 — University of Sri Jayewardenepura
 **Local folder:** `D:\intrusion detection`
 **GitHub:** https://github.com/madupadilshan/intrusion-detection (branch `main`)
-**Last updated:** 9 November 2026
+**Last updated:** 10 November 2026
 
 > **How this file is kept:** this file is updated **after every piece of work** on the project. Each piece of work gets a dated entry in Section 3 (Work log), and the tables in Sections 1, 2, 5 and 6 are updated at the same time. Use this file to answer "what has been done from the beginning?"
 
@@ -12,7 +12,11 @@
 
 ## 1. Where the project is now (short summary)
 
-*(Updated 9 November 2026, after the full check against the proposal — see work log 3.53 to 3.57 and decisions D-039 to D-045.)*
+*(Updated 10 November 2026 — see work log 3.66 to 3.69 and decisions D-050, D-051.)*
+
+- **Model v3.0.0 and virtual lab (10 Nov 2026, D-052, D-053):** 27 features (new: failed tries to the same destination in the last hour). Held-out 34-1 macro-F1 0.66 (5 classes) / **0.82** (classes present); port-scan precision 0.71. C&C conversations are still missed (issue 45). A rule on Zeek's files.log now alerts on program downloads. The whole system runs on real packets in a Docker lab (`lab_virtual/`): all 6 Table 10 scenarios run, C&C server blocked automatically in the real router firewall, camera never blocked. **H1 (≥ 0.85) is still not met.**
+- **New model v2.0.0 (10 Nov 2026, D-051):** 7 window features added (what the same source did in the last 60 s). Out-of-fold macro-F1 **0.70** (was 0.34); held-out 34-1 macro-F1 **0.63** (5 classes) / **0.79** (classes present) (was 0.45 / 0.57); DDoS now found (out-of-fold F1 0.79, was 0.00); C&C held-out recall **74%** (was 37%); the real C&C server is now blocked automatically in the PC demonstration (but 3 other addresses were also blocked under the C&C reason; entry 3.71). **H1 (≥ 0.85) is still not met.** File downloads cannot be learned from IoT-23 (only about 84 such flows); this is written as a limit.
+- **Older summary (9 Nov 2026), kept for the record:**
 
 - **Built and tested on the development PC:** the dataset pipeline and model (Steps 7–18), the Zeek adapter and live runner (Step 21), MongoDB, login, server, detector and decision engine, Nmap discovery, log export, the dashboard, the response policy, the nftables rules and the adapters (Steps 23–33).
 - **Corrected on 8 Nov 2026:**
@@ -24,9 +28,9 @@
 - **Re-opened (software ready, lab run not done):** Steps 19, 20 and 22.
 - **Model results after the fix (9 Nov 2026, D-043):** out-of-fold macro-F1 0.3422 (Random Forest; HistGradientBoosting 0.4331); deployed model on the held-out scenario 34-1: macro-F1 0.3405 (5 classes) / 0.4256 (4 present).
 - **Calibration and Proposal 3.4 blocking aligned (9 Nov 2026, D-044, D-045, D-046):** `temperature` calibration keeps the model's top class (D-045; held-out macro-F1 **0.4530**; CnC found again). Out-of-fold repeat replay matching Proposal 3.4 (confidence threshold + 3 repeats within 60s window) successfully established automatic block thresholds: **PortScan: 0.30** (96.6% safe/malicious blocks), **CnC: 0.39** (100% safe/malicious blocks), while DDoS and Malware_Download remain alert-only (D-046). Safety floor lowered to 0.30.
-- **Dataset copy verified (D-046):** `archive.zip` (downloaded 2026-10-19 16:49) checked 23/23 first/last rows against CTU servers, confirmed byte-for-byte authentic (Issue 22 & 25 closed). Original detailed labels evaluated in Step 17 (Issue 24 closed).
+- **Dataset copy verified (D-046):** `archive.zip` (downloaded 2026-10-19 16:49) checked 23/23 first/last rows and the label totals against the official CTU files; all 23 file sizes equal the Kaggle file list byte for byte (Issues 22, 25 and 31 closed). Original detailed labels evaluated in Step 17 (Issue 24 closed).
 - **Hypothesis H1 is not confirmed:** the held-out macro-F1 is below 0.85; the camera-traffic FPR is not measured yet.
-- **Next:** confirm the lab type with the supervisor (D-038); then build the lab (real camera, or a camera simulator confirmed with the supervisor), run Zeek, capture real benign traffic, then Steps 34–42.
+- **Next:** confirm the lab type with the supervisor (D-038); then build the lab (real camera, or a camera simulator confirmed with the supervisor), run Zeek, capture real benign traffic, then Steps 35–42. The dashboard styling is now built locally, so it works with no internet (`bce3faa`, entry 3.63).
 
 ---
 
@@ -47,17 +51,17 @@ Labels: ✅ Done · 🔧 Done – needs changes · 🟡 Started · ♻️ Old co
 | 8    | Write and freeze the label mapping         | ✅     | Frozen `config/label_mapping.yaml` to 5 target classes; all 17 labels resolved (D-014); ambiguous excluded (0.0031%). |
 | 9    | Data-quality report                        | ✅     | `reports/data_quality_report.md` complete with Class x Scenario matrix (325.3M flows), missing rates & charts. |
 | 10   | Load and clean the data                    | ✅     | `ml_engine/load_iot23.py` executed; `data/interim/*.parquet` generated with imputed Zeek nulls, 5 classes & scenario IDs. |
-| 11   | Shared feature code                        | ✅     | `ml_engine/features.py` implemented; 19 features (Proposal Table 6); 10 unit tests passed; Decision D-015. |
-| 12   | Sampling and class balance                 | ✅     | `ml_engine/sample_dataset.py`; capped $N=50,000$/class; 100% CnC kept (48,992 flows); 1,384,070 flows in `data/processed/train_features.parquet` (10.81 MB); D-016. |
+| 11   | Shared feature code                        | ✅     | `ml_engine/features.py` unified engine. **Updated 10 Nov 2026 (D-051):** 26 features = 19 one-flow features (6 cat, 13 num) + 7 window features from `ml_engine/window_features.py` (the same `WindowState` code in training and in the live Zeek adapter); tests in `tests/unit/test_features.py` and `tests/unit/test_window_features.py` (14, incl. training = live check) (D-015, D-051). |
+| 12   | Sampling and class balance                 | ✅     | `ml_engine/sample_dataset.py`; capped $N=50,000$/class per scenario; 1,384,070 training flows. **Re-run 10 Nov 2026 (D-051):** window features computed on all 325,299,706 flows in Zeek's order before sampling (35 min); same rows in the same order as before (checked); `label_trusted` audit column (200,066 training rows not trusted) (D-016, D-046, D-051). |
 | 13   | Plan the three test levels                 | ✅     | Three-level plan in `reports/test_split_plan.md`; Level 1 Grouped CV; Level 2 `Capture-34-1` (23,145 flows sealed in `data/processed/heldout/`); D-017. |
-| 14   | Train the Random Forest                    | ✅     | `ml_engine/train.py`; grouped CV by scenario; re-run 8 Nov 2026 after D-039: out-of-fold macro-F1 **0.3422** (fold mean 0.3353 ± 0.1704); best `n_estimators=100, max_depth=18`; 4.30 MB; out-of-fold probabilities saved for Step 17 (D-018, D-040, D-043). |
-| 15   | Compare with other models                  | ✅     | `ml_engine/compare_models.py`; re-run 9 Nov 2026: out-of-fold macro-F1 HGB **0.4331** > RF 0.3422 > LR 0.2722; RF kept as the main model per proposal 2.4 (explainable tree paths); `reports/experiments/model_comparison.md` (D-019, D-043). |
-| 16   | Evaluate on the held-out scenario          | ✅     | `ml_engine/evaluate.py`; re-run 9 Nov 2026 on `Capture-34-1` (23,145 flows): uncalibrated RF macro-F1 0.4530 (5 classes) / 0.5662 (4 present); H1 part 1 **not met** (D-020, D-043). |
-| 17   | Calibration, explanation, thresholds       | ✅     | Redone 8–9 Nov 2026: calibration method compared on out-of-fold data (`select_calibration.py`); the D-044 choice `multinomial` failed on 34-1, so `temperature` is used (keeps the top class, D-045); deployed model on 34-1 macro-F1 **0.4530**; CnC found again (recall 0.367) but few CnC alerts; **no class reaches the block rule (alert only)** — issue 23. |
-| 18   | Model bundle and model card                | ✅     | Re-run 9 Nov 2026: `ml_engine/models/ids_bundle_v1.joblib` v1.2.0 (9.3 MB, not in Git, `temperature` calibration); `reports/experiments/model_card.md` filled from the result files (D-022, D-045). |
+| 14   | Train the Random Forest                    | ✅     | `ml_engine/train.py`; grouped CV by scenario. **Re-run 10 Nov 2026 (D-051):** variant W (all rows) out-of-fold macro-F1 **0.6041**; variant WC (untrusted Benign rows left out) **0.7009** on the trusted rows → WC chosen by the rule written first (`ml_engine/select_variant.py`, `reports/experiments/variant_selection.md`). Old 19-feature model on the same rows: 0.3422 (all) / 0.3730 (trusted). Best `n_estimators=100, max_depth=12, max_features=log2` (D-018, D-043, D-051). |
+| 15   | Compare with other models                  | ✅     | `ml_engine/compare_models.py`; **re-run 10 Nov 2026 (D-051):** out-of-fold macro-F1 RF **0.7009** > HGB 0.6746 > LR 0.6161 (same WC rows). Random Forest is now also the best scoring model (D-019, D-043, D-051). |
+| 16   | Evaluate on the held-out scenario          | ✅     | `ml_engine/evaluate.py`; **re-run 10 Nov 2026 (D-051)** on `Capture-34-1` (23,145 flows, seen once before for v1): RF macro-F1 **0.6337** (5 classes) / **0.7921** (4 present), was 0.4530 / 0.5662; CnC recall 0.37 → 0.74; PortScan precision 0.04 → 0.51. H1 part 1 still **not met** (≥ 0.85) (D-020, D-043, D-051). |
+| 17   | Calibration, explanation, thresholds       | ✅     | **Re-run 10 Nov 2026 (D-051):** Step 17a rule chose `none` (raw probabilities; D-045 rule); thresholds from out-of-fold data with the repeat-rule replay (D-046): block **CnC 0.30**, **PortScan 0.95**, DDoS and Malware_Download alert only (fewer than 10 replayed blocks); held-out final check macro-F1 0.6337. |
+| 18   | Model bundle and model card                | ✅     | **Re-run 10 Nov 2026:** `ml_engine/models/ids_bundle_v2.joblib` **v2.0.0** (5.7 MB, 26 features, variant WC, not in Git); old bundle kept in `ml_engine/models/v1_19features/`; `reports/experiments/model_card.md` filled from the result files (D-022, D-045, D-051). |
 | 19   | Run Zeek on the sensor                     | 🟡     | Re-opened 8 Nov 2026 (D-042): `sensor/local.zeek`, `run_zeek.sh` and tests ready; Zeek not yet run on the Linux sensor. |
 | 20   | Collect our own benign camera traffic      | 🟡     | Re-opened 8 Nov 2026 (D-042): the 31 Oct flows were synthetic (moved to `data/local/synthetic/`); old FPR result withdrawn. Real capture pending; `collect_camera_traffic.py --source real` ready. |
-| 21   | Zeek adapter                               | ✅     | `core_engine/zeek_adapter.py` streaming JSON adapter; offset persistence in `.zeek_adapter_state.json`; micro-batching (`batch_size=100`, `timeout=0.5s`); direction & device enrichment; 9 unit tests passed (D-025). |
+| 21   | Zeek adapter                               | ✅     | `core_engine/zeek_adapter.py` streaming JSON adapter; offset persistence; micro-batching (`batch_size=100`, `timeout=0.5s`); direction & device enrichment; **window features added to every flow by `WindowState` (D-051)**; tests passed (D-025, D-051). |
 | 22   | Offline vs live schema check               | 🟡     | Re-opened 8 Nov 2026 (D-042): tool ready (`--source real|synthetic`); must run on real Zeek output to answer RQ3. |
 | 23   | Set up MongoDB                             | ✅     | `core_engine/db_service.py` 9 collections, full block history compound index, dynamic settings, TTL indexes (D-027). 18 dedicated unit/integration tests passed. |
 | 24   | Login and secrets                          | ✅     | `core_engine/auth.py` bcrypt hashing, 8-hour JWT access tokens, `tools/create_admin.py` CLI provisioning, route decorators, system_logs audit integration (D-028). 21 unit tests passed. |
@@ -1109,6 +1113,164 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
   4. Four long documents still contain old numbers under correction banners: `PROJECT_EXPLANATION_EN.md` (7 lines), `PROJECT_EXPLANATION.md` (6), `COMPLETE_PROJECT_GUIDE_A_TO_Z.md` (6), `docs/execution_record.md` (19). They could confuse readers at the viva.
 - **Checked and correct:** grouped validation and held-out scenario; Random Forest as main model with the 2 comparison models; class weights and unknown-category encoder; IPs and UID never model inputs; pipeline saved with the model; calibration with reliability curve and Brier score; permutation importance on held-out data; label mapping fixed before training; dataset copy traced to its source and checked against the official files; Zeek / Flask / Socket.IO / MongoDB / React / Nmap / nftables stack; allowlist, local-network check, confidence + repeat rule, rule expiry, reason codes, audit log, manual unblock; alert fields (time, direction, source/destination, class, confidence, evidence note, response status); retention (TTL) rules; secrets in `.env` (not in Git).
 
+**3.63 Check of the offline dashboard styling and the PyJWT fix (commit `bce3faa`, 9 November 2026)**
+
+- **What was done:** checked the fixes for issues 32 and 33. No code was changed.
+- **Step by step:**
+  1. `my-app/public/index.html` no longer loads `cdn.tailwindcss.com`. `src/index.css` has the 3 `@tailwind` lines, and `tailwind.config.js` has the `gray-950` colour and the `src/**/*.js` paths.
+  2. Ran `npm run build` again. It works. The built CSS has 261 of the 264 Tailwind class names used on the live pages; the glow shadow is there in escaped form. The only real gap is `py-0.2` in `LiveAlerts.js` line 283. That class name does not exist in Tailwind (it also did nothing with the CDN). The built files fetch nothing from the internet; the web addresses inside them are only text.
+  3. The build uses the Tailwind **3.4.17** that comes inside `react-scripts`. `package.json` lists `tailwindcss ^4.0.3` (4.0.6 installed), but `react-scripts` 5 does not use version 4. That line is unused and misleading (issue 36).
+  4. `requirements.txt` now has `pyjwt==2.15.1` (installed, and on PyPI) in place of `flask-jwt-extended`. `tools/check_env.py` checks `PyJWT`. Full suite: **260 Python tests passed** (99.5 s).
+  5. Old text still names `flask-jwt-extended`: `STEP_BY_STEP_GUIDE.md` line 898 (package list) and the Step 25 example around line 2080 (`from flask_jwt_extended import decode_token`). The real code uses `jwt.decode` (issue 36).
+  6. Not checked yet: the dashboard opened in a browser with no internet. The Jest tests do not check styling.
+- **Result:** issue 33 is closed. Issue 32 is fixed in the code; one browser check with no internet is still to do (Step 35).
+
+**3.64 Clean-up: unused parts removed and old documents archived (9 November 2026, D-049)**
+
+- **Why:** issues 34, 35 and 36 (entries 3.62 and 3.63).
+- **Step by step:**
+  1. Deleted 12 dashboard files that no page uses: 3 old pages (`components/Dashboard.js`, `pages/IOTDetails.js`, `pages/IoTDevicesDashboard.js`), 7 CSS files, `back.jpg` and `logo.svg`. One of the CSS files loaded Google Fonts from the internet.
+  2. Removed 8 unused npm packages: `@headlessui/react`, `chart.js`, `framer-motion`, `lottie-react`, `react-chartjs-2`, `react-hook-form`, `react-icons`, `styled-components`.
+  3. Replaced `tailwindcss ^4.0.3` with `tailwindcss 3.4.17` (the version the build really uses) in `devDependencies`. Added `@babel/plugin-proposal-private-property-in-object 7.21.11`, as `react-scripts` asks.
+  4. Deleted `core_engine/log_exporter.py` (only a second name for `export_service.py`; nothing imported it).
+  5. Moved `PROJECT_EXPLANATION_EN.md`, `PROJECT_EXPLANATION.md`, `COMPLETE_PROJECT_GUIDE_A_TO_Z.md` and `docs/execution_record.md` to `docs/archive/`. Each has an "ARCHIVED, do not use for numbers" notice. `docs/archive/README.md` says what to read instead. Links in README, the guide and this file were updated. `.gitignore` changed from `archive/` to `/archive/`, so only the old top-level folder is ignored and `docs/archive/` is tracked.
+  6. Guide: the package list now says `pyjwt`, and the Step 25 example uses `jwt.decode` (the real code is `handle_socket_connect` in `core_engine/app.py`). `LiveAlerts.js`: `py-0.2` changed to `py-0.5`.
+  7. Kept on purpose: `ml_engine/models/*.joblib` (pipeline outputs), `psutil` and `scapy` (Step 37, proposal 3.5).
+- **Checks:** `npm run build` works; the built CSS has every Tailwind class used on the live pages; 2 dashboard tests passed; 260 Python tests passed.
+- **Result:** issues 14, 15, 34, 35 and 36 are closed.
+
+**3.65 PC demonstration of the whole system, and a bug fix (9 November 2026, D-050)**
+
+- **Why:** the project owner asked to see the system work, from the start to the end.
+- **Step by step:**
+  1. Wrote `tools/demo_pc_replay.py`. It takes real Zeek records from the held-out scenario 34-1, writes them as a Zeek JSON log, and sends them through the real code: Zeek adapter → 19 features → model → decision → safety checks → firewall (simulation) → MongoDB (database `iot_ids_demo`).
+  2. First run: the outside scanner was blocked on the firewall, but MongoDB had **no** block saved. Error: `add_to_blocklist() got an unexpected keyword argument 'event_id'`.
+  3. Fixed `DecisionEngine.execute_response()` (argument name, direction words `source`/`destination`, class and confidence saved, separate error handling). Added a test that uses the real method signatures. Checked all 77 database calls in `core_engine/`: no other mismatch.
+  4. Second run: the block is saved in MongoDB. Results: see D-050.
+- **What the demonstration shows:** the model is good on PortScan, DDoS and Benign records, and weak on CnC (44% in the right class; few CnC flows pass the block threshold). A local camera is never blocked automatically. An outside scanner is blocked at the 3rd repeat within 60 s, for 30 minutes. The allowlisted admin PC is never blocked.
+- **Not shown (needs the lab):** real Zeek on the sensor, a real camera, real attacks, a real firewall rule (Steps 19-22, 35-39).
+- **Tests:** 2 new tests (inbound and outbound block saved with the right arguments).
+
+**3.66 Full read-through and re-run of the tests and the PC demonstration (10 November 2026)**
+
+- **Why:** the project owner asked for a full explanation of the project from the start, and to see it work.
+- **Step by step:**
+  1. Read the whole flow of the code: `core_engine/zeek_adapter.py` → `ml_engine/features.py` → `core_engine/detector.py` → `core_engine/decision_engine.py` → `core_engine/response_policy.py` → `core_engine/firewall/` → `core_engine/db_service.py`, plus `core_engine/app.py`, `core_engine/rule_worker.py` and the dashboard pages.
+  2. Ran all Python tests: **262 passed** (103 s).
+  3. Ran `tools/demo_pc_replay.py` again (uncommitted D-050 fix in place). Same results as 3.65: model correct on Benign 98%, PortScan 92%, DDoS 98%, CnC 44%; the camera was never blocked (62 × `SKIP_PRIVATE_TARGET`); the outside scanner was blocked on the 3rd repeat for 30 min and the block was saved in MongoDB; the allowlisted admin PC was never blocked; median time from reading a flow to the decision 188 ms (95th percentile 285 ms).
+- **No code changed.** The D-050 fix and the demo script are still not committed.
+- **Still not shown:** the lab parts (Steps 19–22, 35–42). H1 is still not met (held-out macro-F1 0.4530 < 0.85).
+
+**3.67 Check against the proposal and correction of document errors (10 November 2026)**
+
+- **Why:** the project owner gave the proposal again and asked what is done, what is next for a real-device demonstration, and to correct errors.
+- **Errors found and fixed:**
+  1. Guide 0.2 count table listed Step 34 as "not started" (the table above it says ✅). Fixed: 30 done, 8 not started.
+  2. Guide 0.3 task B (dataset source) was still open, but issues 22 and 31 closed it. Marked done.
+  3. Section 8 of this file was old: it said Steps 19–22 were "100% COMPLETE" and Step 34 was next, and it kept the withdrawn synthetic Step 20/22 results. Added a correction note and a new, correct order.
+  4. `tools/demo_pc_replay.py` used the attacker IP `172.16.10.66`, but the lab plan uses `10.10.10.50`. Changed; the demo was run again and gives the same result.
+- **Gap between the proposal and the system (written down, not changed):** Table 10 scenario 3 expects the DDoS source to be "blocked or rate-limited", but since D-046 DDoS is alert only. Added a note in guide Step 35 (also for scenarios 4 and 5) so the expected result is written **before** the lab test. The supervisor should decide whether this stays.
+- **Lab note added (guide Step 33):** the router adapter runs `nft` over SSH without sudo, so the router SSH user must be `root` (OpenWrt 22.03+ or a Linux router).
+- **No code logic changed.**
+
+**3.68 Study of why the model is weak, and a feasibility test of "window" features (10 November 2026, exploration only)**
+
+- **Why:** the project owner asked whether the main score, CnC detection and file-download detection can be improved.
+- **What was found (training data only; scenario 34-1 was not used):**
+  1. **Most flows of every class look the same one by one:** one unanswered SYN (`S0`), 0 bytes, 1 packet. The 19 features describe one flow only, so they cannot separate a scan, a C&C attempt and a DDoS packet. What separates them is the **pattern over time**: a scanner contacts many different hosts; C&C contacts the same 1–3 hosts again and again at regular times; DDoS sends very many connections to one host.
+  2. **Out-of-fold, DDoS is almost never found** (0.16% put in the right group, entry 3.58 table). Each DDoS scenario uses different ports, so one-flow features do not carry over.
+  3. **Label noise in "Benign":** in scenarios 35-1 and 43-1, 100% of the sampled "Benign" flows are outbound unanswered SYNs to port 23/2323 from the infected device (the same as telnet scanning); 33-1 98%, 1-1 95%. In IoT-23, "Benign" inside a malware capture means "not labelled as an attack", not "checked as normal".
+  4. **"Malware_Download" is really Okiru exploit traffic:** all Okiru training flows are unanswered SYNs to port 37215. In the whole IoT-23 there are only about **84** real file-download flows (`C&C-FileDownload` 53, `FileDownload` 18, `C&C-HeartBeat-FileDownload` 11, `C&C-Mirai` 2) out of 325 million. A model cannot learn file downloads from 84 examples.
+- **Feasibility test** (`tools/explore_window_features.py`): 18 of the 22 training scenarios (the 4 largest skipped to fit in memory), up to 20,000 flows per class per scenario, the same Random Forest settings, 5-fold grouped CV. 7 new features computed on the **full** scenario stream before sampling, using only past flows (so they can be made live): connections from the source in the current 60 s, distinct destinations, distinct ports, distinct-destination share, connections to the same destination, time since the last connection to the same destination, and the change in that time (regularity).
+
+| Variant | OOF macro-F1 | Benign | DDoS | PortScan | CnC | Malware_Download |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| A. current 19 features | 0.482 | 0.611 | 0.000 | 0.532 | 0.466 | 0.800 |
+| B. + 7 window features | 0.706 | 0.629 | 0.786 | 0.448 | 0.895 | 0.773 |
+| C. 19 features, Benign noise removed | 0.552 | 0.626 | 0.490 | 0.527 | 0.321 | 0.799 |
+| D. + window features, Benign noise removed | 0.770 | 0.747 | 0.940 | 0.715 | 0.657 | 0.790 |
+
+- **Meaning:** window features are the biggest gain (DDoS 0.00 → 0.79–0.94, CnC 0.47 → 0.66–0.90). This is **not** a project result: one seed, a subset of scenarios, and the folds change when the data changes. The deployed model is unchanged.
+- **Before any real change:** write a decision (D-051) first; window features are allowed by proposal Table 6 ("rate over a time window if we use it"), but removing noisy "Benign" rows is a new data decision for the supervisor. 34-1 was already opened in Step 16, so a new score on it must be reported as "after the scenario was seen".
+
+**3.69 Window features and the noisy-label check: model v2.0.0 (10 November 2026, D-051)**
+
+- **Why:** the project owner asked to improve the main score, C&C detection and file-download detection, following the study in 3.68.
+- **Step by step:**
+  1. Wrote decision **D-051 before any change**: the 7 features, the trusted-label rule, the two variants (W, WC) and the rule for choosing between them.
+  2. Backed up the v1 model, data and reports (`ml_engine/models/v1_19features/`, `data/processed/v1_19features/`, `reports/experiments/v1_19features/`).
+  3. New `ml_engine/window_features.py`: one class, `WindowState`, used in training and live. It reads flows in the order Zeek writes them (the IoT-23 files keep that order; checked).
+  4. `ml_engine/features.py` now gives 26 features; `ml_engine/sample_dataset.py` computes the window features on every flow of every scenario before sampling, and adds the `label_trusted` column; `ml_engine/training_rows.py` and `ml_engine/select_variant.py` choose and apply the variant; `train.py`, `compare_models.py` and `calibrate_and_explain.py` use the same rows.
+  5. Live side: `core_engine/zeek_adapter.py` adds the window values to each flow; `core_engine/detector.py` gives the model exactly the columns stored in the bundle (old 19-feature bundles still work).
+  6. **Problem and fix:** the first Step 12 run was stopped. Scenario 43-1 has about 17,000 flows per second from one scanner, and the window memory grew past 11 GB. Size limits were added (3 one-minute periods; 10,000 destinations per source per period; 300,000 pairs), the same in training and live, and written in D-051 before any training result. The new run used about 1.5 GB per worker and took 35 minutes for all 325,299,706 flows.
+  7. Checked that the new sample has the same 1,384,070 rows, in the same order, with the same 19 old features. So the old and new models are compared on exactly the same rows.
+  8. Ran Steps 14 (W and WC), the variant choice, 15, 16, 17a, 17 and 18. **WC was chosen by the rule** (0.7009 vs 0.6465 on the trusted rows).
+  9. Model file renamed to `ml_engine/models/ids_bundle_v2.joblib` (v2.0.0) in the code, settings and tests.
+  10. `tools/schema_check.py` (Step 22): no longer expects exactly 19 columns; uses the bundle's own column list; accepts −1 ("no previous contact") for `pair_gap` and `pair_gap_change`.
+  11. `ml_engine/sample_dataset.py` report: removed three claims that were typed in, not measured ("0 missing values", "peak RAM < 180 MB", "4,354 : 1 → 10.2 : 1"); they are now computed.
+  12. `tools/demo_pc_replay.py`: replays the **whole** held-out stream in Zeek's order, in batches of 100 like the live runner (a thin sample would remove the 60-second pattern). Found that the 122 "PortScan" records of 34-1 go to only 2 targets, so the demo says clearly that a real network-wide scan must be tested in the lab.
+  13. Tests: 14 new (`tests/unit/test_window_features.py`, including a check that training and the live adapter give identical window values); old tests that counted 19 columns now use the shared feature list. **276 tests pass.**
+- **Results:**
+
+| Measure | Old model v1 (19 features) | New model v2.0.0 (26 features, WC) |
+| --- | ---: | ---: |
+| Out-of-fold macro-F1, all rows | 0.3422 | 0.6041 (W) |
+| Out-of-fold macro-F1, trusted rows | 0.3730 | **0.7009** (WC) |
+| Out-of-fold F1 DDoS / CnC (trusted rows) | 0.003 / 0.206 | **0.786 / 0.751** |
+| Held-out macro-F1, 5 classes / classes present | 0.4530 / 0.5662 | **0.6337 / 0.7921** |
+| Held-out CnC recall | 0.367 | **0.744** |
+| Held-out PortScan precision | 0.042 | **0.507** |
+| Held-out IoT-23 benign flows called attack | 5.15% | 5.56% |
+| Held-out benign flows reaching a block threshold | 2.24% | 4.26% |
+| Block thresholds | PortScan 0.30, CnC 0.39 | **CnC 0.30**, PortScan 0.95 |
+| Best of the 3 models (out-of-fold) | HistGradientBoosting | **Random Forest** |
+
+- **PC demonstration (whole 34-1 stream):** CnC 74%, DDoS 99%, PortScan 96%, Benign 94% right (the same as the evaluation, so the live path makes the same features); 4 addresses blocked as C&C destinations, but only 1 of them (185.244.25.235) is the real C&C server; the other 3 are a PortScan target, a DDoS target and an address labelled Benign that the D-051 rule marks as not trusted (correction 10 Nov 2026, entry 3.71); the camera and the admin PC never blocked; median 120 ms from reading a flow to the decision.
+- **Still not solved:** H1 (≥ 0.85) is not met; file downloads (only about 84 in IoT-23) are not learned; DDoS and Malware_Download stay alert only; the lab tests are not done.
+
+**3.70 PC demonstration shown to the project owner, with the dashboard (10 November 2026)**
+
+- Ran `tools/demo_pc_replay.py` (model v2.0.0): 23,145 held-out flows in 38 s; CnC 75%, DDoS 99%, PortScan 96%, Benign 94% right; 4 addresses blocked as C&C destinations, but only 1 of them (185.244.25.235) is the real C&C server; the other 3 are a PortScan target, a DDoS target and an address labelled Benign that the D-051 rule marks as not trusted (correction 10 Nov 2026, entry 3.71) (simulation), camera and admin PC never blocked; median 105 ms from reading a flow to the decision.
+- Started the backend with `DB_NAME=iot_ids_demo` and served `my-app/build` on port 3000, so the dashboard shows the demo results (20 incidents, 5 active blocks). Made a login `demo` in the demo database only (`tools/create_admin.py --db-name iot_ids_demo`); the real database `iot_ids_db` was not touched.
+- Seen again: the outside-host block in scenario B uses the reason `AUTO_CNC_DEST_BLOCK` with direction `source` (issue 40).
+
+**3.71 Study: why C&C flows are missed, the score target, and file downloads (10 November 2026)**
+
+- **Why:** the project owner asked whether the missed C&C flows, the score below 0.85 and the file-download gap can be fixed. Study only; no model or code logic changed (except the demo output below).
+- **Correction of an earlier claim:** the PC demonstration blocked 4 addresses under the C&C reason, but **only 1 is the real C&C server** (185.244.25.235, the only C&C server in 34-1). The others: 66.67.61.168 (121 PortScan flows), 71.61.66.148 (133 DDoS flows), 50.50.50.53 (41 flows labelled Benign, TCP port 53 with no answer; the D-051 rule marks these as not trusted). Fixed in 3.69, 3.70, D-051 and the guide. `tools/demo_pc_replay.py` now prints the true labels of every blocked address.
+- **Finding 1 — what C&C flows are missed:** in 34-1 all 1,639 missed C&C flows are the real C&C conversation (IRC, port 6667, state S3/RSTR, data both ways). The found ones are the unanswered tries (S0). In the out-of-fold data it is the same: the missed C&C flows are completed conversations (SF, IRC). Training has only 920 IRC rows (scenarios 3-1 and 39-1) and none in state S3.
+- **Finding 2 — a likely label error in 42-1:** 1,947 flows from the infected device to 185.244.25.183:4975 are labelled Benign. They look exactly like C&C: 928 unanswered tries, then long S3/RSTR conversations, and the address is in the same /24 as the labelled C&C server of 34-1. The D-051 trusted-label rule does not catch them (they are not S0). So the model was trained that this kind of conversation is Benign. Changing these labels is a team judgement → needs the supervisor (issue 42).
+- **Finding 3 — a signal that separates C&C conversations:** `tools/study_cnc_retries.py` counted, for every real TCP conversation in all 23 scenarios, the failed tries from the same device to the same server in the hour before. C&C: 97.4% had 3 or more (median 101). Honeypot (real benign) captures: 0 of 299. Other Benign: high only in 42-1 (the rows of finding 2) and in a few rows of 34-1 and 9-1. The model has no such feature now (its pair memory is 60 s).
+- **Finding 4 — timing:** in 34-1 the device tried the C&C server for about 10 minutes (S0) before the first conversation. The system can block the server in that time.
+- **Finding 5 — the score target:** 34-1 has no Malware_Download flows, so its 5-class macro-F1 can never be above 0.80; the 0.85 target can only be reached on the "classes present" score (now 0.79). Most of the gap is finding 1: the 1,639 missed C&C flows lower both Benign precision and CnC recall. 34-1 has now been looked at several times, so any new score on it is "after the scenario was seen"; a clean test needs new data (the lab).
+- **Finding 6 — file downloads:** the training sample has 67 real download flows (`FileDownload`, `C&C-FileDownload`, `C&C-HeartBeat-FileDownload`), all HTTP: a ~150-byte request and a 4–210 KB answer. Out-of-fold, 56 of 67 were classed Malware_Download. But there are only 36 Benign flows of the same shape (TCP, completed, > 4 KB received), and 4 of them were also classed Malware_Download. So the model may treat any web download as malware. Too little data to trust either way. Zeek's `files.log` (file type, e.g. a Linux program) would give direct evidence; IoT-23 does not include it, so this can only be tested in the lab.
+- **Finding 7 — Okiru vs PortScan:** the biggest out-of-fold confusion (about 225,000 rows) is between PortScan and Malware_Download, because Malware_Download is 99.97% `Okiru`, which is also a horizontal scan (to port 37215). Proposal Table 5 puts Okiru in this class, so it is not changed.
+- **Proposed next step (not done; needs the owner's go-ahead):** D-052 written before any change: (1) a new window feature, failed tries to the same destination in the last hour; (2) a variant with the 42-1 rows of finding 2 marked not trusted, chosen by a rule written first; (3) a `files.log` check for program files downloaded by IoT devices (alert, lab-tested in Table 10 scenario 5); (4) report 34-1 as seen; the clean test is the lab.
+
+**3.72 D-052 carried out: failed-tries feature, disputed-label variant, file-type rule — model v3.0.0 (10 November 2026)**
+
+- **What was done:** D-052 written first. `pair_fail_1h` added to `ml_engine/window_features.py` (8 window features, 27 in total; same code in training and in `core_engine/zeek_adapter.py`); `config/disputed_labels.yaml` and variant WCD (`ml_engine/training_rows.py`); `ml_engine/select_variant.py` now compares any two variants on the rows both keep; `core_engine/file_check.py` (rule on Zeek `files.log`, started by the live runner; `sensor/local.zeek` loads file analysis). Steps 12, 14 (WC and WCD), 15, 16, 17a, 17, 18 run again. v2 files backed up in `*/v2_26features/`.
+- **Results:** see D-052 "Result". Out-of-fold macro-F1 WC 0.7085 (v2 0.7010); WC chosen (WCD +0.0012 < 0.01). Held-out 34-1 (not a clean test): 0.6596 / **0.8244** (classes present; v2 0.7921); PortScan precision 0.51 → 0.71; CnC recall 0.744 → 0.750. Thresholds: CnC 0.30, PortScan 0.91. Bundle `ids_bundle_v3.joblib` v3.0.0. **288 tests pass** (new: `tests/unit/test_training_rows.py`, `tests/unit/test_file_check.py`, 4 more window tests).
+- **Honest finding:** the C&C conversations are still missed by the chosen model (34-1: 1,637 of 1,641 IRC conversations called Benign). Training data show why: only 2,276 C&C conversations against 1,021 disputed Benign conversations of 42-1 with the same pattern. Out-of-fold, WCD finds 41% of the C&C conversations (WC 3%) with the same Benign error rate; the pre-written rule (overall macro-F1) could not see this. Not switched silently — issue 45.
+- **Bugs found and fixed:** the app ignored `model.bundle_path` in the settings (always loaded the default model); the health check used a fixed model path; relative settings paths depended on the folder the app was started from; the router SSH command broke on a folder name with a space (`D:\intrusion detection`) when a known_hosts file is given.
+
+**3.73 Virtual lab: the real system on real packets (10 November 2026, D-053)**
+
+- **What was done:** `lab_virtual/` (Docker): camera simulator, NVR, admin PC, the camera's cloud, attack laptop (Nmap 7.99), a Linux router with the project's `sensor/ids_router.nft` (no NAT), and Zeek 9.0.1 on the camera LAN bridge. The real IDS backend runs on Windows with `lab_virtual/settings.lab.yaml` (router adapter over SSH as root with its own key and known_hosts; `auto_response` on only there; database `iot_ids_lab`). Table 10 scripts in `tests/lab_scenarios/` (`camera_sim.py`, `lab_server.py`, `syn_flood.py`), for the virtual lab and later the hardware lab. `lab_virtual/lab.py` runs each scenario and writes `reports/lab_tests/virtual/scenario_<n>_<time>.md`.
+- **Results with model v3.0.0 (virtual lab, not hardware lab):**
+
+| Table 10 scenario | What the system did | Safe result |
+| --- | --- | --- |
+| 1 Normal traffic (5 min; also 10 min with v2) | 0 alerts, 0 blocks | ✅ |
+| 2 Nmap `-p 23,80,554 192.168.50.0/24` (29 flows) | 1 PortScan alert (0.79), most scan flows not flagged; no block (threshold 0.91) | ✅ safe; detection weak |
+| 3 SYN flood 1000/s for 20 s | 19,544 flows as DDoS_DoS in 1 grouped alert (0.54); no block (alert only) | ✅ as written before |
+| 4 C&C-like traffic (server closed for 120 s) | C&C alert (43 flows, 0.93); the C&C server **blocked automatically in the router** (block_dst) after 7 rejected tries (~35 s); all later tries dropped; no conversation could start | ✅ |
+| 5 Harmless program downloaded 5 times | 1 `RULE_EXECUTABLE_DOWNLOAD` alert (5 flows); the model itself gave no alert; no block | ✅ |
+| 6 Manual block / unblock | API 201 → router `block_src` has the attacker → camera unreachable → API 200 → reachable again | ✅ |
+
+  In every scenario the camera was **never blocked**. Real enforcement also checked by hand: a router block gave 100% packet loss, unblock restored it.
+- **Limits:** containers, not a real camera; little normal traffic (63 flows in 10 min); Nmap only finds the 6 live hosts, so a scan is small; scenario 4 did not test conversation detection, because the server was blocked before any conversation.
+
 ---
 
 ## 4. Challenges and how they were solved
@@ -1148,8 +1310,8 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 | 11 | ~~`response.adapter` setting ignored; code reads `firewall.type`.~~ | **Closed (8 Nov 2026):** Harmonized `get_firewall_adapter()` (D-038). **Updated 8 Nov 2026:** `response.adapter` is now the only setting, via `firewall_config_from_settings()` (D-041). | — |
 | 12 | ~~`.env.example` router names differ from the code.~~ | **Closed (8 Nov 2026):** Harmonized `RouterAdapter` to accept both `ROUTER_HOST` / `ROUTER_PORT` / `ROUTER_USER` / `ROUTER_KEY_FILE` and legacy `ROUTER_SSH_*` aliases. Updated `.env.example` (D-038). | — |
 | 13 | ~~Wrong targets / verdicts in some reports (`test_split_plan.md`).~~ | **Closed (8 Nov 2026):** Corrected `reports/test_split_plan.md` to exact Proposal Table 9 targets ($\ge 0.85$ Macro-F1, $\le 5.0\%$ FPR, latency $< 2.0$s); maintained honest reporting of held-out 0.4028 score (D-038). **Note (9 Nov 2026):** 0.4028 is replaced by the new results (D-043). | — |
-| 14 | Unused React files, npm packages, `log_exporter.py`, extra model files. | Move to `archive/` or delete after the team agrees. | Low |
-| 15 | Too many overlapping documents. | Keep the guide, this file, the decision log and one explanation; merge or archive the others. | Low |
+| 14 | ~~Unused React files, npm packages, `log_exporter.py`, extra model files.~~ | **Closed (9 Nov 2026, D-049):** removed (entry 3.64). The model files are pipeline outputs and stay. | — |
+| 15 | ~~Too many overlapping documents.~~ | **Closed (9 Nov 2026, D-049):** 4 documents moved to `docs/archive/` (entry 3.64). | — |
 | 16 | The trained model file is not in Git. | Copy `ml_engine/models/ids_bundle_v1.joblib` to the sensor by USB/scp. | Medium |
 | 17 | ~~Automatic response never runs (found 8 Nov 2026, entry 3.55).~~ | **Closed (8 Nov 2026):** `DecisionEngine.respond_to_outcome()` is called for each flow in `process_flows`; the reason for every skipped block is saved on the event (D-041, entry 3.56). | — |
 | 18 | ~~False claims still in `camera_baseline_summary.md`, `evaluation_iot23.md`, `model_card.md`, `schema_check.md`, D-024, `execution_record.md`.~~ | **Closed (8–9 Nov 2026):** the reports are now written by the scripts from measured values and say SYNTHETIC where the data is synthetic; D-042 replaces D-024 and D-026; correction banner in `execution_record.md` (entry 3.56). | — |
@@ -1166,10 +1328,21 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 | 29 | ~~Startup recovery logs SUCCESS on failure; no allowlist check.~~ | **Closed (9 Nov 2026, D-048):** allowlist checked first, failures logged as FAILURE, direction compared, minutes rounded up; 3 unit tests added. | — |
 | 30 | ~~Step 34 / D-047 say "VERIFIED" and "Phase 8 100% COMPLETE".~~ | **Closed (9 Nov 2026, D-048):** wording is now "built and tested on the PC; lab check in Steps 35 and 38" in the guide, progress file, D-047 note and execution record. | — |
 | 31 | ~~The web page of the dataset copy is not recorded.~~ | **Closed (9 Nov 2026):** Kaggle "IOT-23 Full Dataset" by surajsooraj26 (https://www.kaggle.com/datasets/surajsooraj26/iot-23, v1, CC0); all 23 file sizes equal the Kaggle file list (D-039). | — |
-| 32 | Dashboard loads Tailwind CSS from the internet (`cdn.tailwindcss.com`); the separated lab may have no internet (entry 3.62). | Build Tailwind locally with the `tailwindcss` package (or save the script in `my-app/public/`) and remove the CDN line. Test the dashboard with the network cable out. | **High** |
-| 33 | `requirements.txt`: `flask-jwt-extended` is listed but not used; `PyJWT` is used but not listed (entry 3.62). | Replace `flask-jwt-extended` with a pinned `PyJWT`. | Low |
-| 34 | Unused React pages, CSS, images and 8 npm packages; `core_engine/log_exporter.py` alias (entry 3.62; replaces issue 14). | Move to `archive/` or delete; remove the packages from `package.json`; re-run tests and `npm run build`. | Low |
-| 35 | Four long documents keep old numbers under correction banners (entry 3.62; replaces issue 15). | Before the viva: rewrite them from the current results, or move them to `archive/` and keep the guide, this file, the decision log, the checklist and README. | Medium |
+| 32 | ~~Dashboard loads Tailwind CSS from the internet (`cdn.tailwindcss.com`).~~ | **Fixed in code (9 Nov 2026, `bce3faa`, checked in 3.63):** Tailwind is built locally. **Still to do:** open the dashboard once with no internet (Step 35). | Low |
+| 33 | ~~`requirements.txt`: `flask-jwt-extended` listed but not used; `PyJWT` not listed.~~ | **Closed (9 Nov 2026, `bce3faa`, checked in 3.63):** `pyjwt==2.15.1` listed; `check_env.py` updated. | — |
+| 34 | ~~Unused React pages, CSS, images and 8 npm packages; `core_engine/log_exporter.py` alias.~~ | **Closed (9 Nov 2026, D-049, entry 3.64):** 12 files and 8 packages removed; `log_exporter.py` deleted; build and tests pass. | — |
+| 35 | ~~Four long documents keep old numbers under correction banners.~~ | **Closed (9 Nov 2026, D-049, entry 3.64):** moved to `docs/archive/` with an "ARCHIVED" notice; links updated. | — |
+| 36 | ~~Leftovers from the 32/33 fixes: Tailwind 4 in `package.json`, `flask-jwt-extended` in the guide, `py-0.2`.~~ | **Closed (9 Nov 2026, D-049, entry 3.64):** `tailwindcss 3.4.17` pinned; guide uses PyJWT; `py-0.5`. | — |
+| 37 | The trusted-label rule (D-051, variant WC) is a data decision made by the team. | Show `reports/experiments/variant_selection.md` to the supervisor; both variants are reported. | Medium |
+| 38 | PortScan block threshold is now 0.95; the held-out scan records got 0.4–0.7, so a lab Nmap scan may only raise alerts. | Measure in Step 35 (scenario 2); do not change the threshold after seeing the result. | Medium |
+| 39 | Camera traffic that retries an unreachable cloud server regularly may look like C&C (CnC block threshold 0.30). | Check in Step 20 and Table 10 scenario 1 before turning `auto_response` on. | High |
+| 40 | The C&C reason code `AUTO_CNC_DEST_BLOCK` is also used when the C&C-like host is the outside **source** (direction `src`). | Rename to a direction-neutral code, or add `AUTO_CNC_SRC_BLOCK`, before the lab tests. | Low |
+| 41 | Window features are computed again from empty memory after a restart of the sensor. | Small effect for the first minute; note it in Step 38 (reliability). | Low |
+| 42 | 1,947 flows in 42-1 to 185.244.25.183:4975 are labelled Benign but look like C&C (entry 3.71). | Supervisor decides whether they may be marked not trusted; report both variants. | High |
+| 43 | Repeated failed connections to one address (DDoS target, single-target probe) can be blocked under the C&C reason (3 of 4 demo blocks, entry 3.71). | Record the true type of each blocked address in the lab; consider the D-052 feature. | Medium |
+| 44 | The 5-class score on 34-1 is capped at 0.80 (no Malware_Download flows), so H1 (≥ 0.85) cannot be met on that number. | Agree with the supervisor which number H1 uses (classes present) and add the lab data as a clean test. | Medium |
+| 45 | Model choice WC vs WCD (D-052): WC was chosen by the rule, but out-of-fold WCD finds 41% of C&C conversations vs 3% (same Benign error). Switching now would be a choice after seeing results. | Owner and supervisor decide; if WCD, record a new decision and re-run Steps 15-18 for WCD (about 30 min). | High |
+| 46 | Virtual-lab Nmap scan: only 1 of the scan flows raised an alert (PortScan 0.79). | Repeat in the hardware lab (Step 35 scenario 2); record confidences; do not change thresholds after seeing them. | Medium |
 
 ---
 
@@ -1227,8 +1400,7 @@ These will move into `docs/decision_log.md` when it is created (Step 4).
 ```
 D:\intrusion detection\
 ├── .env.example, .gitignore, .gitattributes, README.md, requirements.txt   (in Git)
-├── STEP_BY_STEP_GUIDE.md, PROJECT_EXPLANATION.md, PROJECT_EXPLANATION_EN.md,
-│   PROJECT_PROGRESS_AND_CHALLENGES.md                                     (tracked in Git)
+├── STEP_BY_STEP_GUIDE.md, PROJECT_PROGRESS_AND_CHALLENGES.md            (tracked in Git)
 ├── config/
 │   ├── settings.example.yaml      # Step 4 template layout, start values
 │   ├── settings.yaml              # Step 4 active local settings (in .gitignore)
@@ -1244,7 +1416,6 @@ D:\intrusion detection\
 │   ├── response_policy.py         # Step 31 direction-aware policy engine & 7 safety guardrails (Table 5)
 │   ├── scanner_service.py         # Step 27 authorized Nmap discovery service (camera heuristics, approved subnet guardrails)
 │   ├── export_service.py          # Step 28 forensic log export service (multi-attribute filtering, RFC 4180 CSV & JSON)
-│   ├── log_exporter.py            # Step 28 backward-compatible alias module
 │   └── firewall/                  # Step 32-33 firewall adapters
 │       ├── __init__.py            # Step 33 factory init & get_firewall_adapter()
 │       ├── base.py                # Step 33 BaseFirewallAdapter ABC & allowlist verification
@@ -1253,7 +1424,7 @@ D:\intrusion detection\
 │       └── simulation_adapter.py  # Step 33 development simulation adapter (is_simulated=True)
 ├── data/                          # raw/iot23 (23 scenarios, 44.13 GB), interim (23 Parquet, 10.6 GB), processed (train_features, heldout), local (not in Git)
 ├── docs/
-│   ├── execution_record.md        # detailed practical execution & commands log
+│   ├── archive/                   # old, out-of-date documents kept as a record (D-049): explanations, A-to-Z guide, execution record
 │   ├── lab_logbook.md             # lab logbook (Step 1)
 │   ├── project_summary.md         # one-page summary (Step 0)
 │   ├── literature_notes.md        # notes on 13 references (Step 0)
@@ -1359,20 +1530,17 @@ D:\intrusion detection\
 ## 8. Next steps (in order)
 
 1. **Step 0 through Step 33:** ✅ done. Project foundations, threat model, requirements, official IoT-23 dataset manifest (325.3M flows, SHA-256 hashes), frozen label mapping (5 classes, D-014), data-quality audit report (`reports/data_quality_report.md`), chunked interim Parquet dataset (`ml_engine/load_iot23.py`, 23 Parquet files, 10.62 GB), unified feature extraction engine ([`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py), D-015), stratified sampling and feature extraction ([`ml_engine/sample_dataset.py`](file:///d:/intrusion%20detection/ml_engine/sample_dataset.py), 1,384,070 flows, 100% CnC kept, D-016), three-level evaluation plan ([`reports/test_split_plan.md`](file:///d:/intrusion%20detection/reports/test_split_plan.md), D-017), Random Forest classifier training ([`ml_engine/train.py`](file:///d:/intrusion%20detection/ml_engine/train.py), D-018), multi-model benchmarking pipeline ([`ml_engine/compare_models.py`](file:///d:/intrusion%20detection/ml_engine/compare_models.py), D-019), Level 2 evaluation on the dedicated held-out scenario `Capture-34-1` ([`ml_engine/evaluate.py`](file:///d:/intrusion%20detection/ml_engine/evaluate.py), D-020), Step 17 probability calibration, explainability, and operational threshold matrix tuning ([`ml_engine/calibrate_and_explain.py`](file:///d:/intrusion%20detection/ml_engine/calibrate_and_explain.py), D-021), Step 18 production bundle export ([`ml_engine/export_bundle.py`](file:///d:/intrusion%20detection/ml_engine/export_bundle.py), `ids_bundle_v1.joblib`, 30.84 MB) and formal Model Card publication ([`reports/experiments/model_card.md`](file:///d:/intrusion%20detection/reports/experiments/model_card.md), D-022), Step 19 Zeek live monitoring policies, daemon manager (`sensor/run_zeek.sh`), and simulation test harness (`sensor/zeek_runner.py`, D-023), Step 20 benign IP-camera baseline collection ([`sensor/collect_camera_traffic.py`](file:///d:/intrusion%20detection/sensor/collect_camera_traffic.py), 5,000 flows, 100% accuracy, FPR = 0.000% <= 5%, D-024), Step 21 real-time Zeek streaming ingestion adapter ([`core_engine/zeek_adapter.py`](file:///d:/intrusion%20detection/core_engine/zeek_adapter.py), 23,108 fps throughput, D-025), Step 22 offline vs live feature schema audit ([`tools/schema_check.py`](file:///d:/intrusion%20detection/tools/schema_check.py), 100% 19-feature alignment, zero training-serving skew, Checkpoint C6 & RQ3 resolved, D-026), Step 23 MongoDB database setup ([`core_engine/db_service.py`](file:///d:/intrusion%20detection/core_engine/db_service.py), 9 collections, full block history audit trail, dynamic settings, TTL indexes, D-027), Step 24 Authentication and secrets management ([`core_engine/auth.py`](file:///d:/intrusion%20detection/core_engine/auth.py), [`tools/create_admin.py`](file:///d:/intrusion%20detection/tools/create_admin.py), bcrypt, 8h JWT tokens, system_logs audit, D-028), Step 25 Consolidated Flask + Socket.IO server ([`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py), 20 REST endpoints, authenticated WebSocket push telemetry, lab safety guardrails, D-029), Step 26 Detector and decision engine ([`core_engine/detector.py`](file:///d:/intrusion%20detection/core_engine/detector.py), [`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py), calibrated inference, dual thresholds, allowlist safety, burst coalescing, and latency tracking, D-030), Step 27 Device discovery (Nmap) ([`core_engine/scanner_service.py`](file:///d:/intrusion%20detection/core_engine/scanner_service.py), authorized Nmap scanner, multi-evidence camera heuristics, approved subnet restrictions, camera confirmation RBAC API, D-031), Step 28 Log export ([`core_engine/export_service.py`](file:///d:/intrusion%20detection/core_engine/export_service.py), RFC 4180 CSV & JSON multi-attribute filtered export, system_logs audit invariant, D-032), Step 29 React frontend cleanup (single URL, JWT WebSocket, fake attack elimination, D-033), Step 30 Canonical 7-page dashboard suite (responsive Layout, Model Prediction vs Confirmed Incident badges, D-034), Step 31 Autonomous response policy and safety guardrail engine (7 safety guardrails, sliding-window repeat coalescing, D-035), Step 32 native Linux nftables rulesets and programmatic kernel adapter ([`sensor/ids_inline.nft`](file:///d:/intrusion%20detection/sensor/ids_inline.nft), [`sensor/ids_router.nft`](file:///d:/intrusion%20detection/sensor/ids_router.nft), [`core_engine/firewall/nftables_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/nftables_adapter.py), timed auto-expiry sets, dev simulation fallback, D-036), and Step 33 modular response adapter suite and engine integration ([`core_engine/firewall/base.py`](file:///d:/intrusion%20detection/core_engine/firewall/base.py), [`router_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/router_adapter.py), [`simulation_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/simulation_adapter.py), [`__init__.py`](file:///d:/intrusion%20detection/core_engine/firewall/__init__.py), D-037) are complete with 204 passing unit and integration tests (100% pass rate).
-2. **Track 1 & Track 2 Milestones Concluded:** Both Track 1 (Dataset and ML Pipeline, Steps 7–18) and Track 2 (Live Sensor Telemetry, Steps 19–22) are 100% COMPLETE.
-3. **Phase 6 & Phase 7 Concluded:** Phase 6 (System Integration, Database & Response APIs, Steps 23–28) and Phase 7 (React SOC Dashboard & Telemetry, Steps 29–30) are 100% COMPLETE.
-4. **Phase 8 — Firewall Response Controls (In Progress):**
-   - Step 31 ✅ Done (Direction-aware response policy & safety guardrail engine).
-   - Step 32 ✅ Done (nftables rules and timeout-based sets).
-   - Step 33 ✅ Done (Modular response adapter suite, SSH router adapter, simulation engine, and engine integration).
-   - Step 34 (Next): Manual control, expiry timers, and crash recovery.
-5. **After the 8 Nov 2026 review (see 3.53), the order is:**
-   1. Buy or borrow the lab hardware (camera, managed switch, Linux sensor, router, attack laptop, cables).
-   2. Fix the software gaps: issues 9, 11, 12 (live runner, adapter setting, router names).
-   3. Correct the reports: issues 10 and 13.
-   4. Build the lab (Step 5), run real Zeek (Step 19), capture real camera traffic (Step 20), redo the schema check (Step 22).
-   5. Step 34, then the 6 Table 10 scenarios (Step 35), then Steps 36–42.
-   6. Clean-up: issues 14 and 15.
+> **Correction (10 Nov 2026):** item 1 above is an old text from 1 Nov 2026. Its Step 20 result ("100% accuracy, FPR = 0.000%") and Step 22 result ("100% alignment") came from **synthetic** data and were **withdrawn** (D-042). Steps 19, 20 and 22 are **not done**. The list below replaces the old items 2–5.
+
+2. **Done on the development PC (10 Nov 2026):** Steps 0–18, 21 and 23–34. Software issues 9–36 are closed; issues 37–46 are open. 288 tests pass. A virtual lab runs the whole system (D-053). The PC demonstration works (`tools/demo_pc_replay.py`, D-050, D-051).
+3. **Not done (needs the lab):** Steps 5, 19, 20, 22, 35–40 and 42. Step 3b/3c (sensor install).
+4. **Order from now on:**
+   1. Commit the D-050 fix, `tools/demo_pc_replay.py`, the D-051/D-052 work (model v3.0.0) and the virtual lab (D-053).
+   2. Meet the supervisor: confirm the lab type (real camera or simulator, D-038); decide what Table 10 scenario 3 (DDoS) should do, since DDoS is alert only (guide Step 35 note); confirm the trusted-label rule (issue 37); decide WC vs WCD (issue 45); which number counts for H1 (issue 44).
+   3. Get the hardware (guide A4): IP camera, managed switch with port mirroring, Linux sensor with 2 network ports, a Linux/OpenWrt lab router, an attack laptop, cables.
+   4. Build the lab (Step 5) and install the sensor (Step 3b/3c).
+   5. Step 19 (Zeek on the mirror port) → Step 20 (real benign camera traffic) → Step 22 (schema check). If a feature does not match, retrain (Steps 14–18).
+   6. Step 35 (the 6 Table 10 scenarios), then Steps 36–42.
 
 ---
 

@@ -1,0 +1,55 @@
+{
+  "decision": "D-051",
+  "rule": "compare on trusted rows; WC only if its macro-F1 is at least 0.01 higher, else W",
+  "gain_WC_minus_W": 0.0544,
+  "chosen": "WC",
+  "untrusted_rows_left_out_in_WC": 200066,
+  "results": {
+    "W_trusted_rows": {
+      "macro_f1": 0.646513621900014,
+      "rows": 1184004,
+      "f1_Benign": 0.5878801657067798,
+      "f1_DDoS_DoS": 0.7727757486287335,
+      "f1_PortScan": 0.5613604292769876,
+      "f1_CnC": 0.5150629239659228,
+      "f1_Malware_Download": 0.7954888419216463
+    },
+    "WC_trusted_rows": {
+      "macro_f1": 0.7008662497646357,
+      "rows": 1184004,
+      "f1_Benign": 0.7472731330001318,
+      "f1_DDoS_DoS": 0.785997214954636,
+      "f1_PortScan": 0.5995552016817527,
+      "f1_CnC": 0.751098566792861,
+      "f1_Malware_Download": 0.6204071323937971
+    },
+    "W_all_rows": {
+      "macro_f1": 0.6041188033822055,
+      "rows": 1384070,
+      "f1_Benign": 0.5176215904969923,
+      "f1_DDoS_DoS": 0.7727757486287335,
+      "f1_PortScan": 0.502269735066057,
+      "f1_CnC": 0.5087992419114661,
+      "f1_Malware_Download": 0.7191277008077784
+    },
+    "v1_19features_all_rows": {
+      "macro_f1": 0.3421818513961158,
+      "rows": 1384070,
+      "f1_Benign": 0.44716862073366676,
+      "f1_DDoS_DoS": 0.0032148998562848384,
+      "f1_PortScan": 0.46397213590046044,
+      "f1_CnC": 0.16744845759789187,
+      "f1_Malware_Download": 0.6291051428922749
+    },
+    "v1_19features_trusted_rows": {
+      "macro_f1": 0.37301154402706704,
+      "rows": 1184004,
+      "f1_Benign": 0.4741662323245314,
+      "f1_DDoS_DoS": 0.0032148998562848384,
+      "f1_PortScan": 0.4948565464719164,
+      "f1_CnC": 0.20601105481345003,
+      "f1_Malware_Download": 0.6868089866691526
+    }
+  },
+  "created": "2026-11-10 18:00:46"
+}

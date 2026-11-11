@@ -6,12 +6,12 @@ Governing Standards:
 - Decision Log: D-026
 
 Audits:
-1. Exact column names and locked ordering (19 candidate features).
+1. Exact column names and locked ordering (26 features: 19 one-flow + 7 window features, D-051).
 2. Data types (dtypes) consistency across offline and live inference pipelines.
 3. Missing value (NaN/null/inf) zero-tolerance validation.
 4. Numerical dynamic ranges, physical feasibility, and statistical distribution shifts (KS 2-sample test).
 5. Categorical cardinality, domain coverage, and novel unseen category handling by the preprocessor.
-6. End-to-end inference execution against the production model bundle (ids_bundle_v1.joblib).
+6. End-to-end inference execution against the production model bundle (ids_bundle_v3.joblib).
 7. A report that states whether the live data is real or synthetic (only real data answers RQ3).
 """
 
@@ -54,7 +54,7 @@ logger = logging.getLogger("schema_check")
 # Default input and output paths
 DEFAULT_OFFLINE_PATH = PROJECT_ROOT / "data" / "processed" / "train_features.parquet"
 DEFAULT_LIVE_LOG_PATH = PROJECT_ROOT / "data" / "local" / "synthetic" / "2026-10-31" / "conn.log"
-DEFAULT_MODEL_BUNDLE = PROJECT_ROOT / "ml_engine" / "models" / "ids_bundle_v1.joblib"
+DEFAULT_MODEL_BUNDLE = PROJECT_ROOT / "ml_engine" / "models" / "ids_bundle_v3.joblib"
 DEFAULT_REPORT_MD = PROJECT_ROOT / "reports" / "schema_check.md"
 DEFAULT_REPORT_CSV = PROJECT_ROOT / "reports" / "schema_check.csv"
 
@@ -78,7 +78,7 @@ class SchemaAuditor:
         live_cols = list(self.live_df.columns)
 
         names_match = offline_cols == live_cols
-        count_match = len(live_cols) == len(FEATURE_COLUMNS) == 19
+        count_match = len(live_cols) == len(FEATURE_COLUMNS)  # 26 since D-051
         order_match = live_cols == FEATURE_COLUMNS
 
         return {
@@ -158,9 +158,12 @@ class SchemaAuditor:
             # Feasibility rules:
             # 1. Non-negative for byte and packet counts
             # 2. Ratios bounded between 0.0 and 1.0
+            # 3. pair_gap / pair_gap_change: -1 means "no previous contact" (D-051); otherwise >= 0
             feasible = True
-            if col in ("byte_ratio", "pkt_ratio"):
+            if col in ("byte_ratio", "pkt_ratio", "src_udst_ratio"):
                 feasible = bool((live_s.min() >= -1e-6) and (live_s.max() <= 1.00001))
+            elif col in ("pair_gap", "pair_gap_change"):
+                feasible = bool(((live_s == -1.0) | (live_s >= -1e-6)).all())
             elif col != "is_incomplete_flow":
                 feasible = bool(live_s.min() >= -1e-6)
 
@@ -219,12 +222,14 @@ class SchemaAuditor:
         try:
             bundle = joblib.load(self.model_bundle_path)
             model = bundle["calibrated_model"]
+            model_cols = list(bundle.get("feature_columns", FEATURE_COLUMNS))  # the bundle's own list
+            live_x = self.live_df[model_cols]
             classes = bundle.get("classes", [0, 1, 2, 3, 4])
             class_names = bundle.get("class_names", {})
 
             t0 = time.perf_counter()
-            probs = model.predict_proba(self.live_df)
-            preds = model.predict(self.live_df)
+            probs = model.predict_proba(live_x)
+            preds = model.predict(live_x)
             t_elapsed = time.perf_counter() - t0
 
             latency_us_per_flow = (t_elapsed / max(1, len(self.live_df))) * 1e6
@@ -369,7 +374,7 @@ def run_full_schema_check(
 
 | Check (proposal 3.5) | Result | Verdict |
 | :--- | :--- | :--- |
-| Column names and order (19 features) | live {col_results['live_count']} / expected {col_results['expected_count']}; order match = {col_results['order_match']} | **{verdict(cols_ok)}** |
+| Column names and order ({col_results['expected_count']} features) | live {col_results['live_count']} / expected {col_results['expected_count']}; order match = {col_results['order_match']} | **{verdict(cols_ok)}** |
 | Data types | {n_dtype_ok} / {len(dtype_df)} compatible | **{verdict(dtypes_ok)}** |
 | Missing values | {n_null_ok} / {len(null_df)} features with no missing values | **{verdict(nulls_ok)}** |
 | Normal ranges (no negative counts; ratios in 0–1) | {n_range_ok} / {len(range_df)} numeric features valid | **{verdict(ranges_ok)}** |
@@ -377,7 +382,7 @@ def run_full_schema_check(
 | Categories not seen in training | {len(novel)} feature(s): {', '.join(f'`{k}`' for k in novel) or 'none'} | reported (encoded as unknown = -1) |
 | Summary distributions (KS statistic >= 0.3) | {len(shifted)} feature(s): {', '.join(f'`{f}`' for f in shifted) or 'none'} | reported (a large shift is a domain difference, see below) |
 
-**Format check overall: {verdict(overall_pass)}.** This means the live pipeline makes the same 19 columns, with the same types, without missing or impossible values, and the model accepts them. It does **not** mean the live traffic looks like IoT-23: the distribution and category rows show how different it is.
+**Format check overall: {verdict(overall_pass)}.** This means the live pipeline makes the same {col_results['expected_count']} columns, with the same types, without missing or impossible values, and the model accepts them. It does **not** mean the live traffic looks like IoT-23: the distribution and category rows show how different it is.
 
 ## 1. Data types and missing values
 

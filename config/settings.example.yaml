@@ -32,9 +32,10 @@ firewall:                       # details for the adapter chosen in response.ada
 
 zeek:
   conn_log_path: /var/log/ids-zeek/conn.log  # Zeek is started in this folder (Step 19)
+  # files_log_path: /var/log/ids-zeek/files.log  # file-type check (D-052); default: next to conn.log
 
 model:
-  bundle_path: ml_engine/models/ids_bundle_v1.joblib
+  bundle_path: ml_engine/models/ids_bundle_v3.joblib
   random_seed: 42
 
 retention_days:   # filled in from agreed retention plan (Step 1)

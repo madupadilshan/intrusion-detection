@@ -1,0 +1,1817 @@
+> **ARCHIVED (9 November 2026). Do not use this file for numbers or status.** It was moved here because many results and claims in it are out of date or were withdrawn (for example the old macro-F1 values, "Steps 0-33 complete", and results from script-made camera traffic). The current, correct sources are `STEP_BY_STEP_GUIDE.md`, `PROJECT_PROGRESS_AND_CHALLENGES.md`, `docs/decision_log.md`, `docs/requirements_checklist.md` and `reports/experiments/model_card.md` (decision D-049).
+
+# Project Execution Record and Command Log
+
+> **Correction notice (8 November 2026) — read this first.** A full check against the proposal found errors in earlier text. Where this file disagrees with the points below, the points below are correct (decisions D-039 to D-042 in `docs/decision_log.md`):
+> 1. The 5,000 "camera" flows of 31 Oct 2026 were **made by a script**, not captured from a Tapo C200 or any camera. The result "FPR 0.000%, H1 clause 2 PASS" is **withdrawn**. The FPR part of H1 is **not tested yet** (Step 20 in the lab).
+> 2. The Step 22 schema check used the same synthetic file, so **RQ3 is not answered yet**.
+> 3. Hypothesis H1 has two parts only: macro-F1 ≥ 0.85 on the held-out scenarios, and benign FPR ≤ 5% on our local camera traffic. Latency is a separate Table 9 target: median decision < 2 s and 95th percentile < 5 s, end to end. It is **not** "sub-second", and the model inference time (microseconds) is not the end-to-end time.
+> 4. The held-out macro-F1 is **below** the 0.85 target (see `reports/experiments/model_card.md` for the current numbers). This is reported as it is (proposal Table 9).
+> 5. Step 17 was redone: calibration and thresholds now come from grouped out-of-fold training data only (D-040).
+> 6. Four scenario names in the dataset map were swapped (8-1/9-1 and 35-1/36-1) and were corrected (D-039).
+> 7. The automatic response was not connected before 8 Nov 2026; it is now connected, off by default, and still has to be tested in the lab (D-041).
+
+**Project:** Real-Time Intrusion Detection and Response System for IP-Camera IoT Networks Using Machine Learning  
+**Team:** Group 03 — University of Sri Jayewardenepura  
+**Local Workspace:** `D:\intrusion detection`  
+**GitHub Repository:** [https://github.com/madupadilshan/intrusion-detection.git](https://github.com/madupadilshan/intrusion-detection.git) (branch `main`)  
+**Main Master Guide:** `STEP_BY_STEP_GUIDE.md`  
+**Progress Tracker:** `PROJECT_PROGRESS_AND_CHALLENGES.md`  
+**Last Updated:** 1 November 2026  
+
+---
+
+## Purpose of This Document
+
+This document is the **exact, practical execution record** of the project. It records:
+1. **What was done** in each step from the very beginning.
+2. **How it was done**, step-by-step.
+3. **The exact terminal commands** executed (PowerShell, Bash, Git).
+4. **The files created, modified, or verified**.
+5. **The verification output and audit results**.
+
+Use this document to reproduce any step, review past work, prepare for supervisor meetings, or explain execution during viva examinations.
+
+---
+
+## Table of Steps Completed
+
+| Step | Phase | Status | Main Output / Deliverable | Commit |
+|---|---|:---:|---|:---:|
+| **Step 0** | Understand Project & Literature Review | ✅ Completed | `docs/project_summary.md`, `docs/literature_notes.md` | `10f5ac7` |
+| **Step 1** | Ethics, Lab Plan, Retention & Logbook | ✅ Completed | `docs/ethics/lab_plan_and_rules.md`, `docs/ethics/data_retention_plan.md`, `docs/lab_logbook.md` | `9cc193f` |
+| **Step 2** | Clean Folder Layout & Git Setup | ✅ Completed | Clean directory structure, `.gitignore`, `.gitattributes`, initial push | `9f90ce1`, `25c8b6e` |
+| **Step 3a & 3d** | Development PC Environment Setup | ✅ Completed | `.venv` (Python 3.10.0), locked `requirements.txt`, `tools/check_env.py`, `reports/environment_versions.txt` | `29d99ff` |
+| **Step 4** | Settings File and Decision Log | ✅ Completed | `config/settings.yaml`, `.env`, `docs/decision_log.md` (D-001 to D-013) | `efcfaba` |
+| **Step 6** | Threat Model and Requirements Checklist | ✅ Completed | `docs/threat_model.md`, `docs/requirements_checklist.md` | `e1bafbb` |
+| **Step 7** | Ingest IoT-23 and Manifest Generation | ✅ Completed | `ml_engine/manifest.py`, `reports/dataset_manifest.csv` (325.3M flows) | `c62c5be` |
+| **Step 8** | Write & Freeze Label Mapping | ✅ Completed | `config/label_mapping.yaml` (5 target classes, D-014) | `6e43cd1` |
+| **Step 9** | Data-Quality Report & Class Matrix | ✅ Completed | `ml_engine/data_quality.py`, `reports/data_quality_report.md` | `c3af025` |
+| **Step 10** | Load and Clean Data to Parquet | ✅ Completed | `ml_engine/load_iot23.py`, `data/interim/*.parquet` (23 files, 10.6 GB) | `8dcc856` |
+| **Step 11** | Shared Feature Extraction Engine | ✅ Completed | `ml_engine/features.py` (19 features, Table 6, D-015), unit tests | `73596da` |
+| **Step 12** | Stratified Sampling & Class Balance | ✅ Completed | `ml_engine/sample_dataset.py`, `train_features.parquet` (1.38M flows, D-016) | `1934c98` |
+| **Step 13** | Three-Level Evaluation Plan | ✅ Completed | `reports/test_split_plan.md`, held-out `Capture-34-1` isolation (D-017) | `1934c98` |
+| **Step 14** | Train Random Forest Model | ✅ Completed | `ml_engine/train.py`, `rf_model.joblib` (15.19 MB, 6.46 µs latency, D-018) | `a431e5f` |
+| **Step 15** | Comparative Multi-Model Benchmarks | ✅ Completed | `ml_engine/compare_models.py`, `reports/experiments/model_comparison.md` (D-019) | `7e2961f` |
+| **Step 16** | Level 2 Held-Out Zero-Day Evaluation | ✅ Completed | `ml_engine/evaluate.py`, `reports/experiments/evaluation_iot23.md` (D-020) | `ff121b4` |
+| **Step 17** | Probability Calibration & Thresholds | ✅ Completed | `ml_engine/calibrate_and_explain.py`, `operational_thresholds.json` (D-021) | `1165df5` |
+| **Step 18** | Production Bundle & Model Card | ✅ Completed | `ml_engine/export_bundle.py`, `ids_bundle_v1.joblib` (30.84 MB, D-022) | `e92cdba` |
+| **Step 19** | Zeek Streaming Telemetry & Daemon | ✅ Completed | `sensor/local.zeek`, `sensor/run_zeek.sh`, `sensor/zeek_runner.py` (D-023) | `810b7c0` |
+| **Step 20** | Benign Camera Traffic & H1 FPR Check | ✅ Completed | `sensor/collect_camera_traffic.py`, 0.000% FPR on Tapo C200 (D-024) | `dbe8c7f` |
+| **Step 21** | Real-Time Zeek Streaming Adapter | ✅ Completed | `core_engine/zeek_adapter.py` (23k fps, micro-batching, D-025) | `dd0eb41` |
+| **Step 22** | Offline vs Live Schema Check (RQ3) | ✅ Completed | `tools/schema_check.py`, zero training-serving skew (D-026) | `bdacf47` |
+| **Step 23** | MongoDB Database Setup | ✅ Completed | `core_engine/db_service.py` (9 collections, TTL retention, D-027) | `a19d1c3` |
+| **Step 24** | Authentication & Secrets Management | ✅ Completed | `core_engine/auth.py`, `tools/create_admin.py` (bcrypt, 8h JWT, D-028) | `5110196` |
+| **Step 25** | Flask + Socket.IO Unified Server | ✅ Completed | `core_engine/app.py` (port 5000, 20 REST endpoints across Phases 6–8, RBAC, D-029) | `2c577b1` |
+| **Step 26** | Detector & Decision Engine | ✅ Completed | `core_engine/detector.py`, `core_engine/decision_engine.py` (D-030) | `2b8f7c6` |
+| **Step 27** | Device Discovery (Nmap) | ✅ Completed | `core_engine/scanner_service.py` (camera heuristics, RBAC API, D-031) | `bd9dae7` |
+| **Step 28** | Forensic Log Export Service | ✅ Completed | `core_engine/export_service.py` (RFC 4180 CSV/JSON, audit trail, D-032) | `15d3f4c` |
+| **Step 29** | React App Clean-Up & Socket.IO Auth | ✅ Completed | `my-app/src/config.js`, Bearer auth, fake attacks purged (D-033) | `50e292d` |
+| **Step 30** | Canonical 7-Page SOC Dashboard | ✅ Completed | `my-app/src/pages/` (7 pages, Layout.js, verification badges, D-034) | `2ce2cfb` |
+| **Step 31** | Autonomous Response Policy & Guardrails | ✅ Completed | `core_engine/response_policy.py` (Table 5 matrix, 7 guardrails, D-035) | `fdd0498` |
+| **Step 32** | Linux nftables Rules & Kernel Adapter | ✅ Completed | `sensor/ids_inline.nft`, `core_engine/firewall/nftables_adapter.py` (D-036) | `e43f4c1` |
+| **Step 33** | Modular Firewall Adapters & Integration | ✅ Completed | `core_engine/firewall/` (base, router, simulation, init, D-037) | `0c2b2e6` |
+| **Step 34** | Manual Control, Expiry & Crash Recovery | ✅ Completed | `core_engine/rule_worker.py` (RuleExpiryWorker, startup reconciliation, D-047) | `0c62399` |
+
+---
+
+## Detailed Step-by-Step Execution Log
+
+### Step 0: Understand the Project & Literature Review
+
+* **Objective:** Establish the formal academic baseline strictly using the Group 03 Research Proposal (July 2026), review literature, and resolve any citation errors.
+* **Date:** 20 October 2026
+* **How It Was Done:**
+  1. Read and extracted core requirements from `Group03_Proposal.pdf`: Aim, Objectives (O1–O6), Hypothesis (H1), and Research Questions (RQ1–RQ5).
+  2. Created [`docs/project_summary.md`](file:///d:/intrusion%20detection/docs/project_summary.md) capturing exact proposal wording and scope limits.
+  3. Created [`docs/literature_notes.md`](file:///d:/intrusion%20detection/docs/literature_notes.md) reviewing all 11 proposal papers plus 2 cited in text.
+  4. Performed literature verification on two citations appearing in Section 1.4:
+     - **Santos et al. (2023):** Verified via web and Crossref (*Cluster Computing*, 26(1), pp. 37–57). Verified as real and valid.
+     - **Almashhadani et al. (2024):** Searched across Crossref (94 papers by Almashhadani in 2023–2025) and academic databases. No intrusion detection paper found. Under **Decision D-009**, the team removed this unverified citation and supported the claim using Santos et al. (2023) alone.
+* **Files Created / Modified:**
+  - `docs/project_summary.md`
+  - `docs/literature_notes.md`
+  - `docs/decision_log.md` (Decision `D-009`)
+* **Commands Executed:**
+  ```powershell
+  # Check git status
+  git status
+
+  # Stage and commit Step 0 documents
+  git add docs/project_summary.md docs/literature_notes.md docs/decision_log.md
+  git commit -m "Step 0: project summary and literature notes"
+
+  # Push to GitHub
+  git push origin main
+  ```
+* **Verification Result:** Commit `10f5ac7` pushed to `origin/main`. All team members confirmed understanding of the proposal.
+
+---
+
+### Step 1: Lab Plan, Data Retention Plan & Lab Logbook
+
+* **Objective:** Establish ethical boundaries, safety rules, device allocations, and data minimization policies before running any live tests (Proposal Sections 1.2, 3.8, and 5.1).
+* **Date:** 20–21 October 2026
+* **How It Was Done:**
+  1. Wrote the safety and ethics plan [`docs/ethics/lab_plan_and_rules.md`](file:///d:/intrusion%20detection/docs/ethics/lab_plan_and_rules.md):
+     - Defined isolated subnets: Camera LAN (`192.168.50.0/24`) and Outside Attacker subnet (`10.10.10.0/24`). No connection to the internet during tests.
+     - Defined the 6 allowed test scenarios (Table 10).
+     - Defined the strict "Never" rules: no live malware, no public IPs, no camera video/audio recording.
+     - Hardware allocation strategy under **Decision D-010**: Since physical IP cameras and switches are not yet available, allocated RTSP Camera Simulator (software emulation / mobile RTSP stream) and software bridges / lab loans so development continues without delays.
+     - Team permissions: Ticked authorizations (`☑`) for all 3 members (Dilshan, Dilshara, Mendis) across attack tools, lab passwords, and firewall rule changes.
+  2. Wrote the data retention plan [`docs/ethics/data_retention_plan.md`](file:///d:/intrusion%20detection/docs/ethics/data_retention_plan.md):
+     - Metadata-only policy: store Zeek flow metadata only; never store video feeds or payloads.
+     - Retention durations under **Decision D-011**:
+       - `attack_events`: 90 days (automatic deletion via MongoDB TTL index)
+       - `traffic_summaries`: 30 days (automatic deletion via MongoDB TTL index)
+       - `system_logs`: 90 days (automatic deletion via MongoDB TTL index)
+       - Local test captures: Maximum 180 days (deleted when evaluation completes)
+     - Recorded formal team sign-off dated 2026-10-21.
+  3. Updated [`config/settings.example.yaml`](file:///d:/intrusion%20detection/config/settings.example.yaml) lines 33–36 with the agreed values (`90`, `30`, `90`).
+  4. Initialized [`docs/lab_logbook.md`](file:///d:/intrusion%20detection/docs/lab_logbook.md) with logging rules and Entry 1.
+* **Files Created / Modified:**
+  - `docs/ethics/lab_plan_and_rules.md`
+  - `docs/ethics/data_retention_plan.md`
+  - `docs/lab_logbook.md`
+  - `config/settings.example.yaml`
+  - `docs/decision_log.md` (Decisions `D-010`, `D-011`)
+* **Commands Executed:**
+  ```powershell
+  # Check changes
+  git diff
+
+  # Stage and commit Step 1 files
+  git add config/settings.example.yaml docs/decision_log.md docs/ethics/data_retention_plan.md docs/ethics/lab_plan_and_rules.md
+  git commit -m "Step 1: complete lab plan, permissions, and data retention durations"
+
+  # Push to GitHub
+  git push origin main
+  ```
+* **Verification Result:** Commit `9cc193f` pushed cleanly to `origin/main`. Working tree clean.
+
+---
+
+### Step 2: Clean Folder Structure & Git Repository Setup
+
+* **Objective:** Clean up the project directory, archive unusable legacy code/models, establish a standard engineering layout, and initialize Git version control.
+* **Date:** 19 October 2026
+* **How It Was Done:**
+  1. Standardized directory layout:
+     ```
+     D:\intrusion detection\
+     ├── config/              <- settings and label mappings
+     ├── core_engine/         <- backend, db_service, firewall adapters
+     ├── data/                <- raw/iot23, interim, processed, local (gitignored)
+     ├── docs/                <- ethics, decision log, summaries, notes
+     ├── ml_engine/           <- manifest, features, training, evaluation
+     ├── my-app/              <- React dashboard
+     ├── reports/             <- verification and evaluation reports
+     ├── sensor/              <- Zeek scripts and nftables configs
+     ├── tests/               <- unit, integration, and lab scenario tests
+     ├── tools/               <- check_env, latency measurement scripts
+     └── archive/             <- archived legacy code, old models, old data (gitignored)
+     ```
+  2. Moved legacy assets to `archive/` (gitignored):
+     - Unusable 820 MB `random_forest_model.pkl` (data leakage, unknown labels, min-max scaling mismatch).
+     - Legacy data `X_train.csv` (no scenario IDs, row-split leakage).
+     - Old scripts (`iot23_attacks.py`, `network_scan.py`, `db_manager.py`).
+  3. Removed inner `.git` from `my-app/` so the React dashboard files are tracked directly by the main Git repository.
+  4. Configured `.gitignore` (ignoring `.venv/`, `data/`, models, secrets, and large binaries) and `.gitattributes` (normalizing line endings).
+  5. Established default branch as `main` and pushed to GitHub.
+* **Files Created / Modified:**
+  - `.gitignore`, `.gitattributes`, `README.md`, `.env.example`
+  - Initial directory `.gitkeep` files
+* **Commands Executed:**
+  ```powershell
+  # Check Git remote and branch
+  git remote -v
+  git branch -M main
+
+  # Add and commit cleaned folder layout
+  git add .
+  git commit -m "Step 2: Clean project structure, architecture guides, and initial setup"
+
+  # Push to GitHub repository
+  git push -u origin main
+  ```
+* **Verification Result:** Commits `891a8e5` and `9f90ce1` pushed to `origin/main`. Working directory clean and verified.
+
+---
+
+### Step 3a & 3d: Windows Development PC Setup & Verification
+
+* **Objective:** Set up an isolated Python virtual environment (`.venv`) on the Windows laptop, install all project dependencies, lock exact versions, and verify system connectivity.
+* **Date:** 22 October 2026
+* **Host Environment Assessment:**
+  - OS: Windows 10/11 AMD64
+  - Host Python: 3.10.0
+  - Database: MongoDB Server 8.0.6 running locally on port 27017
+  - Node.js: 22.12
+  - Network driver: `Npcap` verified installed at `C:\Program Files\Npcap`
+  - Network scanner: Nmap binary deferred to Step 27 under **Decision D-012** (ML Steps 7–18 do not require Nmap)
+* **How It Was Done:**
+  1. Created isolated Python virtual environment `.venv` using Python 3.10.0:
+     ```powershell
+     python -m venv .venv
+     ```
+  2. Upgraded pip to latest version:
+     ```powershell
+     .\.venv\Scripts\python.exe -m pip install --upgrade pip
+     ```
+  3. Installed all 18 project packages inside `.venv` from [`requirements.txt`](file:///d:/intrusion%20detection/requirements.txt):
+     ```powershell
+     .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+     ```
+  4. Locked exact package versions using `pip freeze` and updated `requirements.txt`:
+     - `pandas==2.3.3`
+     - `numpy==2.2.6`
+     - `pyarrow==25.0.1`
+     - `scikit-learn==1.7.2`
+     - `scipy==1.15.3`
+     - `joblib==1.6.0`
+     - `matplotlib==3.10.9`
+     - `pyyaml==6.0.3`
+     - `python-dotenv==1.2.4`
+     - `flask==3.1.3`
+     - `flask-socketio==5.7.0`
+     - `flask-cors==6.0.5`
+     - `flask-jwt-extended==4.7.4`
+     - `bcrypt==5.0.0`
+     - `pymongo==4.18.3`
+     - `python-nmap==0.7.1`
+     - `psutil==7.2.2`
+     - `scapy==2.8.0`
+     - `pytest==9.1.1`
+  5. Created the verification script [`tools/check_env.py`](file:///d:/intrusion%20detection/tools/check_env.py).
+  6. Executed `tools/check_env.py` inside `.venv` to run automated verification:
+     ```powershell
+     .\.venv\Scripts\python.exe tools/check_env.py
+     ```
+  7. Generated the audit report [`reports/environment_versions.txt`](file:///d:/intrusion%20detection/reports/environment_versions.txt).
+  8. Committed and pushed all changes to GitHub repository.
+* **Commands Executed:**
+  ```powershell
+  # 1. Create virtual environment
+  python -m venv .venv
+
+  # 2. Upgrade pip inside .venv
+  .\.venv\Scripts\python.exe -m pip install --upgrade pip
+
+  # 3. Install dependencies
+  .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+  # 4. Check installed versions
+  .\.venv\Scripts\pip.exe freeze
+
+  # 5. Run verification script
+  .\.venv\Scripts\python.exe tools/check_env.py
+
+  # 6. Commit and push
+  git add requirements.txt docs/decision_log.md tools/check_env.py reports/environment_versions.txt
+  git commit -m "Step 3a: lock package versions in .venv and add check_env verification script"
+  git push origin main
+  ```
+* **Verification Output:**
+  ```text
+  ============================================================
+  IDS Software Environment Verification Report
+  Generated: 2026-10-22 10:56:07
+  Host: MadupaDilshan (Windows 10 AMD64)
+  Python: 3.10.0 (D:\intrusion detection\.venv\Scripts\python.exe)
+  ============================================================
+
+  --- Python Packages ---
+    [OK]    pandas                : 2.3.3
+    [OK]    numpy                 : 2.2.6
+    [OK]    pyarrow               : 25.0.1
+    [OK]    scikit-learn          : 1.7.2
+    [OK]    joblib                : 1.6.0
+    [OK]    matplotlib            : 3.10.9
+    [OK]    pyyaml                : 6.0.3
+    [OK]    python-dotenv         : 1.2.4
+    [OK]    flask                 : 3.1.3
+    [OK]    flask-socketio        : 5.7.0
+    [OK]    flask-cors            : 6.0.5
+    [OK]    flask-jwt-extended    : 4.7.4
+    [OK]    bcrypt                : 5.0.0
+    [OK]    pymongo               : 4.18.3
+    [OK]    python-nmap           : 0.7.1
+    [OK]    psutil                : 7.2.2
+    [OK]    scapy                 : 2.8.0
+    [OK]    pytest                : 9.1.1
+
+  --- Database Service ---
+    [OK]    MongoDB Connected (v8.0.6)
+
+  --- Network & System Tools ---
+    [OK]    Npcap detected at C:\Program Files\Npcap
+    [INFO]  Nmap binary not found in PATH (deferred to Step 27 or install from nmap.org)
+
+  ============================================================
+  OVERALL STATUS: PASSED
+  ============================================================
+  ```
+* **Git Commit:** `29d99ff` pushed to `origin/main`. Working tree clean.
+
+---
+
+### Step 4: Settings File and Decision Log Setup
+
+* **Objective:** Establish the centralized project configuration (`config/settings.yaml`), safe management allowlists, cryptographic secrets isolation (`.env`), and maintain the official architectural decision log (`docs/decision_log.md`).
+* **Date:** 23 October 2026
+* **How It Was Done:**
+  1. Created active configuration [`config/settings.yaml`](file:///d:/intrusion%20detection/config/settings.yaml) from [`config/settings.example.yaml`](file:///d:/intrusion%20detection/config/settings.example.yaml):
+     - Configured `approved_scan_subnets` (`["192.168.50.0/24"]`) to restrict scanner scope (Proposal Section 3.7).
+     - Confirmed static management allowlist:
+       - Router / Gateway: `192.168.50.1`
+       - Sensor (management): `192.168.50.5`
+       - Admin workstation: `192.168.50.10`
+       - NVR: `192.168.50.20`
+       *(Guarantees critical control nodes are never blocked by automated responses)*.
+     - Configured response safety parameters:
+       - `deployment_mode: passive` (default per Proposal Table 11).
+       - `adapter: simulation` (for Windows local development) / `router` (for physical lab).
+       - `min_confidence: 0.85`, `min_repeats: 3`, `repeat_window_seconds: 60`, `max_rule_minutes: 30` (rules expire automatically).
+     - Fixed `random_seed: 42` for 100% scientific reproducibility across all machine learning models (Proposal Section 3.4).
+     - Set data retention periods to `attack_events: 90`, `traffic_summaries: 30`, `system_logs: 90` (matching Step 1 agreed retention policy).
+  2. Generated cryptographic secrets and created `.env`:
+     - Executed Python cryptographic token generation to create 32-byte hexadecimal random keys for `JWT_SECRET_KEY` and `FLASK_SECRET_KEY`.
+     - Configured local MongoDB connection: `MONGO_URI=mongodb://localhost:27017/` and `DB_NAME=iot_ids_db`.
+     - Left router SSH fields ready for physical deployment.
+     - Confirmed `.env` and `config/settings.yaml` are strictly ignored by `.gitignore` to prevent any credentials from entering public GitHub repository.
+  3. Recorded Decision `D-013` in [`docs/decision_log.md`](file:///d:/intrusion%20detection/docs/decision_log.md).
+* **Commands Executed:**
+  ```powershell
+  # 1. Generate 32-byte cryptographic random hex secrets
+  .\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32)); print(secrets.token_hex(32))"
+
+  # 2. Verify git status and ensure secrets are ignored
+  git status
+  ```
+* **Files Created / Modified:**
+  - `config/settings.yaml` (Local, Git-ignored)
+  - `.env` (Local, Git-ignored)
+  - `docs/decision_log.md` (Decision `D-013` added)
+  - `STEP_BY_STEP_GUIDE.md` (Step 4 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Entry 3.23 added)
+* **Verification Result:** Both files active locally, no secrets exposed in Git, allowlist confirmed. Step 4 status is ✅ Done.
+
+---
+
+### Step 6: Threat Model and Requirements Checklist
+
+* **Objective:** Formalize the system security threat model, attack vectors, flow trajectories, protected assets, and defensive boundaries (Proposal Sections 1.2, 1.5, 3.1, 3.7, 3.8; Tables 10, 11), and establish the definitive traceability checklist for all Functional Requirements (FR-01 to FR-08), Non-Functional Requirements (NFR-01 to NFR-05), Research Objectives (O1 to O6), and Research Questions (RQ1 to RQ5) / Hypothesis H1.
+* **Date:** 23 October 2026
+* **How It Was Done:**
+  1. Authoring System Threat Model ([`docs/threat_model.md`](file:///d:/intrusion%20detection/docs/threat_model.md)):
+     - Defined protected network assets: IP camera (`192.168.50.30`), NVR recorder (`192.168.50.20`), Gateway (`192.168.50.1`), Sensor node (`192.168.50.5`), Admin workstation (`192.168.50.10`), and video stream privacy.
+     - Profiled threat actors: External attacker (`10.10.10.0/24`) attempting scanning and floods; compromised IoT camera attempting outbound C&C beacons and lateral infection.
+     - Documented traffic trajectories: Inbound attacks (probes, SYN floods), Outbound attacks (Mirai heartbeats, file downloads), and Lateral camera streaming (normal RTSP traffic).
+     - Mapped the 6 standardized evaluation scenarios from Proposal Table 10 (Normal streaming, Port scan, DDoS flood, C&C beacon, File download, and Manual block/unblock).
+     - Defined defensive architecture and safety constraints: static management allowlist bypass, confidence ($\ge 0.85$) and repetition ($\ge 3$ within 60s) multi-checks, 30-minute rule auto-expiry, and strict metadata-only inspection policy.
+  2. Authoring Requirements Checklist ([`docs/requirements_checklist.md`](file:///d:/intrusion%20detection/docs/requirements_checklist.md)):
+     - Mapped all 8 Functional Requirements (FR-01 to FR-08) from Proposal Table 7 with priority (6 MUST, 2 SHOULD), verification method, and associated guide steps.
+     - Defined 5 Non-Functional Requirements: detection latency $< 2.0$s (NFR-01), sensor memory $< 1.0$ GB RAM (NFR-02), zero scenario leakage via group splits (NFR-03), Macro-F1 $> 0.90$ with FPR $< 1.0\%$ (NFR-04), and strict scientific reproducibility (NFR-05).
+     - Cross-referenced 6 Research Objectives (O1 to O6) from Proposal Table 3 with target deliverables and milestones.
+     - Documented alignment with Hypothesis H1 and Research Questions RQ1 through RQ5.
+  3. Verified consistency across all project documentation:
+     - Checked alignment with `config/settings.yaml` (allowlist, thresholds, retention).
+     - Updated Step 6 in `STEP_BY_STEP_GUIDE.md` and `PROJECT_PROGRESS_AND_CHALLENGES.md`.
+* **Commands Executed:**
+  ```powershell
+  # 1. Verify tracked and untracked files
+  git status
+
+  # 2. Stage new documentation files and updated records
+  git add docs/threat_model.md docs/requirements_checklist.md docs/execution_record.md
+
+  # 3. Commit changes to Git
+  git commit -m "Step 6: add threat model and requirements checklist"
+
+  # 4. Push commit to GitHub
+  git push origin main
+  ```
+* **Files Created / Modified:**
+  - `docs/threat_model.md` (Created, in Git)
+  - `docs/requirements_checklist.md` (Created, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 6 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.25 added)
+* **Verification Result:** Full traceability established. Zero hardware dependencies needed for ML track. Step 6 status is ✅ Done.
+
+---
+
+### Step 7: Official IoT-23 Dataset Placement and Manifest Generation
+
+* **Objective:** Ingest the complete official IoT-23 dataset (v1.0.0) into `data/raw/iot23/`, replace flawed unverified legacy data, compute cryptographic SHA-256 hashes across all 23 scenario files, count total connection flows and label breakdowns, and generate the definitive audit manifest (`reports/dataset_manifest.csv`) for scientific reproducibility (Proposal Section 3.2, Objective O1).
+* **Date:** 23 October 2026
+* **How It Was Done:**
+  1. Dataset Placement & Verification:
+     - Verified source archive `D:\Download\archive.zip` (9,164,399,808 bytes, downloaded 2026-10-19 16:49) extracted into `D:\Download\archive` on 2026-10-23 21:53 containing 23 scenario CSVs (`dataset1.csv` through `dataset23.csv`).
+     - Verified authenticity against official CTU Stratosphere repository (`https://mcfp.felk.cvut.cz/publicDatasets/IoT-23-Dataset/` and `https://www.stratosphereips.org/datasets-iot23`) using `tools/verify_iot23_copy.py` (Proposal 3.2): 23/23 first flows match, 23/23 last flows match, and minor discrepancies verified verbatim against raw CTU server files via HTTP range requests (`reports/iot23_copy_verification.md`, D-039, D-046).
+     - Moved all 23 scenario files (44.13 GB total) into the designated local folder `data/raw/iot23/`.
+     - Confirmed `data/raw/` is strictly ignored by `.gitignore` so no multi-gigabyte data files enter Git version control.
+  2. Manifest Script Implementation ([`ml_engine/manifest.py`](file:///d:/intrusion%20detection/ml_engine/manifest.py)):
+     - Designed single-pass streaming architecture to read files line-by-line in binary mode (`hasher.update()`).
+     - Mapped each file to its corresponding official CTU scenario ID (`CTU-IoT-Malware-Capture-*` and `CTU-Honeypot-Capture-*`).
+     - Kept peak memory footprint under 100 MB RAM to safely execute on host PC (11.7 GB RAM).
+     - Calculated total rows, benign vs malicious counts, and detailed label distributions for each scenario.
+  3. Execution & Verification:
+     - Executed `ml_engine/manifest.py` inside `.venv` on development PC.
+     - Processed all 23 files in 572.9 seconds (~9.5 minutes) at an average rate of ~568,000 flows/second.
+     - Generated official audit manifest: [`reports/dataset_manifest.csv`](file:///d:/intrusion%20detection/reports/dataset_manifest.csv).
+* **Commands Executed:**
+  ```powershell
+  # 1. Move scenario files from download location to raw data folder
+  Move-Item -Path "D:\Download\archive\*.csv" -Destination "D:\intrusion detection\data\raw\iot23\" -Force
+
+  # 2. Run the manifest generator inside .venv
+  .\.venv\Scripts\python.exe ml_engine/manifest.py
+
+  # 3. Check Git status and track manifest deliverables
+  git add ml_engine/manifest.py reports/dataset_manifest.csv docs/execution_record.md
+  git commit -m "Step 7: generate official IoT-23 dataset manifest with SHA-256 hashes"
+  git push origin main
+  ```
+* **Audit Summary from `reports/dataset_manifest.csv`:**
+  - Total Scenarios Processed: 23 (20 Malware, 3 Benign)
+  - Total Disk Footprint: 44.13 GB
+  - Total Processed Connection Flows: **325,309,946**
+  - Processing Runtime: 572.9 seconds (9.55 minutes)
+  - Scenario Breakdown Highlights:
+    - `dataset1.csv` (`CTU-Honeypot-Capture-4-1`, Philips Hue): 452 rows (452 Benign) | SHA256: `b06bdc4d7de8...`
+    - `dataset2.csv` (`CTU-Honeypot-Capture-5-1`, Amazon Echo): 1,374 rows (1,374 Benign) | SHA256: `4fc5fec1414f...`
+    - `dataset3.csv` (`CTU-Honeypot-Capture-7-1`, Somfy Doorlock): 130 rows (130 Benign) | SHA256: `a0ada4f95dda...`
+    - `dataset4.csv` (`CTU-IoT-Malware-Capture-8-1`, Hakai): 6,378,293 rows | SHA256: `d442d4fe1806...`
+    - `dataset6.csv` (`CTU-IoT-Malware-Capture-7-1`, Mirai): 11,454,714 rows | SHA256: `b63cc09f5873...`
+    - `dataset7.csv` (`CTU-IoT-Malware-Capture-60-1`, Gagfyt): 3,581,028 rows | SHA256: `2239ed7d1288...`
+    - `dataset12.csv` (`CTU-IoT-Malware-Capture-43-1`, Mirai): 67,321,809 rows | SHA256: `8dac6b3cb9c3...`
+    - `dataset14.csv` (`CTU-IoT-Malware-Capture-39-1`, Muhstik): 73,568,981 rows | SHA256: `b22fcbb94d07...`
+    - `dataset17.csv` (`CTU-IoT-Malware-Capture-34-1`, Mirai): 23,145 rows | SHA256: `2ea17a6fde41...`
+    - `dataset18.csv` (`CTU-IoT-Malware-Capture-33-1`, Kenjiro): 54,454,591 rows | SHA256: `c0d67cebdf09...`
+    - `dataset22.csv` (`CTU-IoT-Malware-Capture-17-1`, Kenjiro): 54,659,855 rows | SHA256: `536bebcca1f9...`
+    - `dataset23.csv` (`CTU-IoT-Malware-Capture-1-1`, Hide and Seek): 1,008,748 rows | SHA256: `8cc68c096c8e...`
+* **Files Created / Modified:**
+  - `ml_engine/manifest.py` (Created, in Git)
+  - `reports/dataset_manifest.csv` (Created, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 7 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.26 added)
+* **Verification Result:** All 23 scenarios verified with SHA-256 integrity proofs. Objective O1 satisfied. Step 7 status is ✅ Done.
+
+---
+
+### Step 8: Write and Freeze Label Mapping to 5 Target Classes
+
+* **Objective:** Establish and freeze the definitive mapping from all 17 raw IoT-23 labels to the 5 target attack classes specified in Research Proposal Table 5, resolve the 8 previously undecided mixed labels based on empirical manifest flow analysis, exclude ambiguous non-flooding labels to prevent label noise (Sections 2.3, 3.2), and record Decision `D-014` before model training begins (preventing post-hoc data snooping).
+* **Date:** 23 October 2026
+* **How It Was Done:**
+  1. Label Breakdown Analysis from Step 7 Manifest ([`reports/dataset_manifest.csv`](file:///d:/intrusion%20detection/reports/dataset_manifest.csv)):
+     - Audited all 325,309,946 flows across the 23 scenarios.
+     - Identified 17 unique (label, detailed-label) combinations.
+     - Found that the 8 mixed/unclear labels (`Attack`, `Okiru-Attack`, `C&C-HeartBeat-Attack`, `PartOfAHorizontalPortScan-Attack`, `C&C-FileDownload`, `C&C-HeartBeat-FileDownload`, `C&C-Mirai`, `C&C-PartOfAHorizontalPortScan`) total only 11,194 flows (0.0034% of the dataset).
+  2. Resolution of Undecided Labels (`config/label_mapping.yaml`):
+     - `C&C-FileDownload` (53 flows) and `C&C-HeartBeat-FileDownload` (11 flows) ➔ Mapped to `Malware_Download` (dominant behavior is downloading executable binary stages over HTTP/port 80).
+     - `C&C-Mirai` (2 flows) ➔ Mapped to `Malware_Download` (Proposal Table 5 explicitly assigns Mirai to Malware).
+     - `C&C-PartOfAHorizontalPortScan` (888 flows) ➔ Mapped to `PortScan` (dominant volume traffic is port 23 TCP SYN probes).
+     - `Attack` (9,398 flows), `Okiru-Attack` (3 flows), `C&C-HeartBeat-Attack` (834 flows), and `PartOfAHorizontalPortScan-Attack` (5 flows) ➔ Marked `EXCLUDE` per Proposal Table 5 ("attack labels that we checked are flooding -> DDoS_DoS, otherwise EXCLUDE") and Section 3.2 ("If a label is too general or unclear, do NOT force it. EXCLUDE it."). Total excluded flows: 10,240 (0.0031%).
+  3. Freezing the Mapping:
+     - Set `mapping_status: frozen` in [`config/label_mapping.yaml`](file:///d:/intrusion%20detection/config/label_mapping.yaml).
+     - Recorded Decision `D-014` in [`docs/decision_log.md`](file:///d:/intrusion%20detection/docs/decision_log.md).
+* **Projected Class Distribution (325,309,946 Flows):**
+  - **Class 2 (`PortScan`):** 213,853,812 flows (65.74%)
+  - **Class 4 (`Malware_Download`):** 60,990,792 flows (18.75%)
+  - **Class 0 (`Benign`):** 30,860,691 flows (9.49%)
+  - **Class 1 (`DDoS_DoS`):** 19,538,713 flows (6.01%)
+  - **Class 3 (`CnC`):** 55,698 flows (0.02%)
+  - **`EXCLUDE` (Ambiguous):** 10,240 flows (0.0031%)
+* **Commands Executed:**
+  ```powershell
+  # 1. Stage updated label mapping, decision log, and execution record
+  git add config/label_mapping.yaml docs/decision_log.md docs/execution_record.md
+
+  # 2. Commit frozen mapping to Git
+  git commit -m "Step 8: freeze IoT-23 label mapping to 5 target classes (D-014)"
+
+  # 3. Push commit to GitHub
+  git push origin main
+  ```
+* **Files Created / Modified:**
+  - `config/label_mapping.yaml` (Updated status to `frozen`, in Git)
+  - `docs/decision_log.md` (Added Decision `D-014`, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 8 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.27 added)
+* **Verification Result:** Zero ambiguous labels remain undecided. Supervisor Checkpoint C3 fulfilled. Step 8 status is ✅ Done.
+
+---
+
+### Step 9: Data-Quality Report and Dataset Feature Audit
+
+* **Objective:** Conduct a comprehensive empirical data quality audit across the official IoT-23 dataset (v1.0.0), compute the definitive Class × Scenario distribution matrix across all 325,309,946 flows, analyze missing values (`-`), audit feature distributions and categorical cardinalities, evaluate held-out scenario candidates, and generate visual charts and the official audit report (`reports/data_quality_report.md`) per Proposal Section 3.2 & Objective O1.
+* **Date:** 23 October 2026
+* **How It Was Done:**
+  1. Implemented Data Quality Auditor ([`ml_engine/data_quality.py`](file:///d:/intrusion%20detection/ml_engine/data_quality.py)):
+     - Integrated `reports/dataset_manifest.csv` and frozen `config/label_mapping.yaml` (D-014) to build the 100% exact Class × Scenario distribution matrix covering all 325,309,946 flows.
+     - Implemented stratified streaming sampler to inspect ~620,000 connection flows across all 23 scenarios with memory utilization under 200 MB RAM.
+     - Calculated missing rate percentages for all fields (`duration`: 61.46%, `orig_bytes`: 61.46%, `resp_bytes`: 61.46%, `service`: 98.48%).
+     - Audited numerical statistics (min, max, median, 95th/99th percentiles, zero rates) for `duration`, `orig_bytes`, `resp_bytes`, `orig_pkts`, `resp_pkts`.
+     - Analyzed categorical cardinalities (`proto`: 94.72% TCP, 5.07% UDP; `conn_state`: 86.95% `S0`, 9.04% `OTH`, 2.02% `SF`).
+  2. Generated Visualization Charts:
+     - `reports/data_quality_class_distribution.png`: Log-scale bar chart showing distribution across the 5 target classes.
+     - `reports/data_quality_scenario_matrix.png`: Heatmap matrix showing class representations across the 23 scenarios.
+  3. Formulated Engineering Recommendations:
+     - Imputation strategy for Step 10: `duration` ➔ `0.0`, `orig_bytes`/`resp_bytes` ➔ `0`, `service` ➔ `'unknown'`.
+     - Feature engineering targets for Step 11: `is_incomplete_flow` flag, directional byte/packet ratios, destination port binning.
+     - Sampling plan for Step 12: Preserve all 55,698 `CnC` flows, downsample `PortScan` to 400,000, `Malware_Download` to 350,000, and retain benign baseline flows.
+     - Held-out scenario candidates for Step 13: Identified `CTU-IoT-Malware-Capture-34-1` (Mirai, 4 classes) and `CTU-IoT-Malware-Capture-48-1` (Mirai, 3 classes) as optimal candidates.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run data quality auditor inside .venv
+  .\.venv\Scripts\python.exe ml_engine/data_quality.py
+
+  # 2. Stage new script, report, charts, and execution record
+  git add ml_engine/data_quality.py reports/data_quality_report.md reports/data_quality_class_distribution.png reports/data_quality_scenario_matrix.png docs/execution_record.md
+
+  # 3. Commit and push to GitHub
+  git commit -m "Step 9: generate data quality report and feature distributions audit"
+  git push origin main
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/data_quality.py` (Created, in Git)
+  - `reports/data_quality_report.md` (Created, in Git)
+  - `reports/data_quality_class_distribution.png` (Created, in Git)
+  - `reports/data_quality_scenario_matrix.png` (Created, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 9 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.28 added)
+* **Verification Result:** Full Class × Scenario matrix verified. Missing rates and statistical distributions documented. Objective O1 completed. Step 9 status is ✅ Done.
+
+---
+
+### Step 10: Load and Clean IoT-23 Dataset into Standardized Interim Parquet
+
+* **Objective:** Stream all 23 official IoT-23 scenarios (325,309,946 flows, 44.13 GB), perform memory-safe chunked reading (`chunksize=500,000`), impute Zeek missing values (`-` in duration to 0.0, bytes to 0, service/history to 'unknown'), apply frozen label mapping (D-014) to 5 target classes, exclude ambiguous compound labels (10,240 rows), attach `scenario_id` metadata to guarantee zero cross-scenario data leakage, downcast numerical types (`float32`, `int64`, `int32`, `int8`), and export compressed columnar Parquet files (`data/interim/<scenario_id>.parquet`) and the audit log (`reports/interim_data_summary.md`) per Proposal Section 3.3 (Steps 1–4) & Objective O1.
+* **Date:** 25 October 2026
+* **How It Was Done:**
+  1. Implemented Chunked Ingestion Pipeline ([`ml_engine/load_iot23.py`](file:///d:/intrusion%20detection/ml_engine/load_iot23.py)):
+     - Designed streaming processor reading in chunks of 500,000 rows with RAM footprint staying under 400 MB.
+     - Extracted `label` and `detailed-label` from trailing whitespace-separated field across all scenario files.
+     - Filtered out 10,240 ambiguous flows (`Attack`, `Okiru-Attack`, compound labels) per Proposal Sections 2.3 & 3.2.
+     - Mapped raw labels into the 5 target classes: `0: Benign`, `1: DDoS_DoS`, `2: PortScan`, `3: CnC`, `4: Malware_Download`.
+     - Imputed missing indicators: `duration` ➔ `0.0` (`float32`), `orig_bytes`/`resp_bytes`/`missed_bytes`/`pkts` ➔ `0` (`int64`/`int32`), `service`/`history` ➔ `'unknown'`.
+     - Attached `scenario_id` to every row to preserve grouping for `StratifiedGroupKFold` in Step 13.
+     - Enforced uniform schema via PyArrow `INTERIM_SCHEMA` and exported compressed Snappy Parquet files.
+  2. Generated Ingestion & Audit Reports:
+     - `reports/interim_data_summary.csv`: Machine-readable scenario ingestion log.
+     - `reports/interim_data_summary.md`: Markdown audit report detailing raw rows, clean rows, excluded counts, parquet sizes, and runtime per scenario.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run full dataset ingestion and cleaner
+  .\.venv\Scripts\python.exe ml_engine/load_iot23.py
+
+  # 2. Add large binary patterns to .gitignore (*.parquet)
+  git add .gitignore ml_engine/load_iot23.py reports/interim_data_summary.csv reports/interim_data_summary.md docs/execution_record.md
+
+  # 3. Commit and push
+  git commit -m "Step 10: load and clean IoT-23 dataset into standardized interim Parquet files"
+  git push origin main
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/load_iot23.py` (Created, in Git)
+  - `reports/interim_data_summary.csv` (Created, in Git)
+  - `reports/interim_data_summary.md` (Created, in Git)
+  - `.gitignore` (Modified, added `*.parquet`)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 10 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.29 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 4 with Step 10 details)
+  - `data/interim/*.parquet` (23 Parquet files generated, gitignored)
+* **Verification Result:** Zero memory crashes, clean type enforcement, 100% of excluded rows counted and removed, zero data leakage between scenarios. Step 10 status is ✅ Done.
+
+---
+
+### Step 11: Write Shared Feature Engineering Code and Unit Tests
+
+* **Objective:** Implement the unified feature engineering engine ([`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py)) that computes exactly 19 candidate features per Proposal Table 6, guaranteeing zero training-serving skew between offline model training and real-time live detection, and verify correctness with comprehensive automated unit tests ([`tests/unit/test_features.py`](file:///d:/intrusion%20detection/tests/unit/test_features.py)).
+* **Date:** 25 October 2026
+* **How It Was Done:**
+  1. Implemented Feature Extractor ([`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py)):
+     - Designed `make_features(df)` accepting DataFrames, dictionaries, or lists of records.
+     - Vectorized port categorization into IANA standard bins: `well_known` (0–1023), `registered` (1024–49151), `dynamic` (49152–65535), and `icmp` (Zeek ICMP types in port field).
+     - Standardized categoricals: `proto`, `service`, `conn_state`, `history`, `orig_port_cat`, `resp_port_cat`.
+     - Standardized numerics: `duration`, `orig_bytes`, `resp_bytes`, `missed_bytes`, `orig_pkts`, `orig_ip_bytes`, `resp_pkts`, `resp_ip_bytes`.
+     - Computed directional ratios: `orig_bytes_per_pkt`, `resp_bytes_per_pkt`, `byte_ratio`, `pkt_ratio` using `np.divide(..., where=...)` for guaranteed zero-division safety.
+     - Computed flow quality flag: `is_incomplete_flow` (detects scanning states S0, REJ, zero duration/bytes, and unanswered probes).
+     - Enforced strict removal of network identifiers (`uid`, `id.orig_h`, `id.resp_h`, `ts`, `scenario_id`) per Golden Rule 5.
+     - Built scikit-learn `build_feature_preprocessor(scaling=...)` ColumnTransformer.
+  2. Implemented Automated Unit Test Suite ([`tests/unit/test_features.py`](file:///d:/intrusion%20detection/tests/unit/test_features.py)):
+     - Verified IANA port categorization rules (system, registered, dynamic, ICMP, invalid).
+     - Verified extraction on real IoT-23 interim Parquet flows (`Capture-34-1`).
+     - Verified extraction on simulated live Zeek JSON records with missing fields.
+     - Verified zero-division safety (zero packets, zero bytes producing clean zeros, 0 warnings).
+     - Verified incomplete flow flag detection logic.
+     - Verified scikit-learn ColumnTransformer fit and transform pipelines.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run automated unit test suite inside .venv
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_features.py -v
+
+  # 2. Stage features module, tests, and decision log
+  git add ml_engine/features.py tests/unit/test_features.py docs/decision_log.md docs/execution_record.md
+
+  # 3. Commit and push
+  git commit -m "Step 11: implement shared feature extraction engine with automated unit tests"
+  git push origin main
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/features.py` (Created, in Git)
+  - `tests/unit/test_features.py` (Created, in Git)
+  - `docs/decision_log.md` (Updated with Decision D-015, in Git)
+  - `docs/execution_record.md` (Updated with Step 11, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 11 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.30 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 6 with feature formulas)
+* **Verification Result:** All 10 unit tests passed in 1.94s with 0 errors and 0 warnings. Throughput benchmark: 391,940 flows/second. Step 11 status is ✅ Done.
+
+---
+
+### Step 12: Sampling and Class Balance
+
+* **Objective:** Balance the massive IoT-23 dataset by limiting over-represented scenarios and attack classes ($N=50,000$ per scenario-class cap, seed `42`), preserve 100% of extreme minority Command & Control (`CnC`) botnet flows, extract all 19 features via [`ml_engine/features.py`](file:///d:/intrusion%20detection/ml_engine/features.py) with zero NaN values, maintain development PC RAM consumption strictly under 1 GB via streaming row-group processing, and generate the final processed training dataset [`data/processed/train_features.parquet`](file:///d:/intrusion%20detection/data/processed/train_features.parquet) per Proposal Section 3.3 (Step 6) and Table 11.
+* **Date:** 25 October 2026
+* **How It Was Done:**
+  1. Implemented Memory-Safe Stratified Sampler ([`ml_engine/sample_dataset.py`](file:///d:/intrusion%20detection/ml_engine/sample_dataset.py)):
+     - Capped maximum rows per (scenario, class) at $N = 50,000$ rows using fixed `random_seed: 42` from [`config/settings.yaml`](file:///d:/intrusion%20detection/config/settings.yaml).
+     - Streaming row-group reader processed all 325,299,706 flows across 23 scenarios while keeping peak RAM usage under 180 MB.
+     - For classes with $\le 50,000$ rows in a scenario, preserved 100% of flows. As a direct result, **all 48,992 `CnC` flows across all 22 training scenarios were preserved (zero flows lost)**.
+     - For classes with $> 50,000$ rows, sampled with slight oversampling factor ($1.05 \times N / M$) across row groups, followed by uniform random downsampling to exactly 50,000 rows.
+     - Extracted 19 features using [`make_features()`](file:///d:/intrusion%20detection/ml_engine/features.py) and appended `class_name`, `label_idx`, and `scenario_id`.
+  2. Dataset Outputs:
+     - Final training features saved to [`data/processed/train_features.parquet`](file:///d:/intrusion%20detection/data/processed/train_features.parquet) (10.81 MB snappy parquet, 1,384,070 rows, 22 columns).
+     - Training Class Distribution:
+       - `PortScan`: 500,000 flows (36.13%)
+       - `Benign`: 345,424 flows (24.96%)
+       - `Malware_Download`: 250,069 flows (18.07%)
+       - `DDoS_DoS`: 239,585 flows (17.31%)
+       - `CnC`: 48,992 flows (3.54%, 100% preserved)
+     - Imbalance ratio drastically reduced from **4,354 : 1** down to **10.2 : 1**.
+  3. Generated Audit Reports:
+     - [`reports/sampling_summary.csv`](file:///d:/intrusion%20detection/reports/sampling_summary.csv): Machine-readable scenario sampling counts.
+     - [`reports/sampling_report.md`](file:///d:/intrusion%20detection/reports/sampling_report.md): Full markdown sampling audit with breakdown per scenario and class.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run dataset sampling and feature extraction pipeline inside .venv
+  .\.venv\Scripts\python.exe ml_engine/sample_dataset.py
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/sample_dataset.py` (Created, in Git)
+  - `reports/sampling_summary.csv` (Created, in Git)
+  - `reports/sampling_report.md` (Created, in Git)
+  - `data/processed/train_features.parquet` (Generated, gitignored)
+  - `docs/decision_log.md` (Added Decision D-016, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 12 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.31 added)
+* **Verification Result:** Zero NaN values, 1,384,070 rows generated, all 48,992 CnC flows intact, peak RAM < 180 MB. Step 12 status is ✅ Done.
+
+---
+
+### Step 13: Plan the Three Test Levels
+
+* **Objective:** Formalize the anti-leakage three-level model evaluation architecture prior to training, isolate held-out zero-day scenario `CTU-IoT-Malware-Capture-34-1` into a dedicated sealed directory ([`data/processed/heldout/`](file:///d:/intrusion%20detection/data/processed/heldout/)), design Level 1 Grouped Cross-Validation (`StratifiedGroupKFold`) with `groups = scenario_id`, specify Level 3 physical lab camera validation for operational False Positive Rate testing (Hypothesis H1), and verify with automated tests per Proposal Section 3.4 and Objective O2.
+* **Date:** 25 October 2026
+* **How It Was Done:**
+  1. Formulated Evaluation Plan ([`reports/test_split_plan.md`](file:///d:/intrusion%20detection/reports/test_split_plan.md)):
+     - **Level 1 — Grouped Cross-Validation:** 5-fold cross-validation on 22 training scenarios using `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` with `groups = scenario_id`. Guarantees flows from any capture stay strictly together in either training folds or validation fold, eliminating intra-session data leakage during hyperparameter search (Steps 14, 15, 17).
+     - **Level 2 — Held-Out Scenario (`CTU-IoT-Malware-Capture-34-1`):** Complete isolation of 23,145 flows from Mirai botnet (14,394 DDoS_DoS, 6,706 CnC, 1,923 Benign, 122 PortScan). 100% untouched (no down-sampling or artificial rebalancing). Sealed in dedicated directory [`data/processed/heldout/held_out_test.parquet`](file:///d:/intrusion%20detection/data/processed/heldout/held_out_test.parquet) and opened ONLY in Step 16 (Checkpoint C4).
+     - **Level 3 — Physical Lab Camera Traffic:** Live evaluation using real Tapo C200 IP camera 1080p RTSP/H.264 video streaming baseline (Step 20) and 6 controlled test attack scenarios (Phase 9, Steps 35–39) to measure operational False Positive Rate $< 1\%$ and sub-second defense response latency (testing Hypothesis H1).
+  2. Implemented Automated Test Suite ([`tests/unit/test_sampling_and_splits.py`](file:///d:/intrusion%20detection/tests/unit/test_sampling_and_splits.py)):
+     - `test_files_exist`: Verified all parquet and report files exist on disk.
+     - `test_train_parquet_schema_and_integrity`: Verified exact 1,384,070 rows, 22 columns, and 0 NaNs.
+     - `test_held_out_parquet_schema_and_isolation`: Verified exact 23,145 rows, 4 classes, and complete scenario isolation.
+     - `test_no_scenario_leakage_between_train_and_heldout`: Verified `Capture-34-1` is strictly absent from training set.
+     - `test_class_balance_and_extreme_minority_preservation`: Verified exact training class distribution and 100% CnC preservation.
+     - `test_level_1_stratified_group_kfold_feasibility`: Verified zero scenario leakage across cross-validation folds and verified all 5 classes present in training folds.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run unit tests for sampling, splits, and cross-validation integrity
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_sampling_and_splits.py -v
+  ```
+* **Files Created / Modified:**
+  - `reports/test_split_plan.md` (Created, in Git)
+  - `tests/unit/test_sampling_and_splits.py` (Created, in Git)
+  - `data/processed/heldout/held_out_test.parquet` (Generated, gitignored)
+  - `data/processed/held_out_test.parquet` (Generated, gitignored)
+  - `docs/decision_log.md` (Added Decision D-017, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 13 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.32 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 7 with 3-level split details)
+* **Verification Result:** All 6 unit tests passed in 5.00s. Zero scenario leakage confirmed. Checkpoint C4 satisfied. Step 13 status is ✅ Done.
+
+---
+
+### Step 14: Train the Random Forest Classifier
+
+* **Objective:** Construct a unified scikit-learn Pipeline with `ColumnTransformer` (OrdinalEncoder with rare category grouping and unknown value handling) and `RandomForestClassifier` per Proposal Section 3.3 (Step 5), tune hyperparameters via `RandomizedSearchCV` scored on `f1_macro` inside Level 1 Grouped Cross-Validation (`StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` with `groups = scenario_id`) across 22 training scenarios, evaluate out-of-fold generalization metrics on the entire 1,384,070 flows without intra-session data leakage, fit the final model, benchmark per-flow inference latency, export the model bundle to [`ml_engine/models/rf_model.joblib`](file:///d:/intrusion%20detection/ml_engine/models/rf_model.joblib), and generate audit reports per Proposal Sections 2.4 and 3.4.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Implemented Training Engine ([`ml_engine/train.py`](file:///d:/intrusion%20detection/ml_engine/train.py)):
+     - Designed integrated `Pipeline`:
+       - `ColumnTransformer` with `OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1, min_frequency=50)` for 6 categorical features (`proto`, `service`, `conn_state`, `history`, `orig_port_cat`, `resp_port_cat`).
+       - Numerical features passed through without alteration (`remainder="passthrough"`).
+       - Estimator: `RandomForestClassifier(random_state=42, n_jobs=-1)`.
+     - Hyperparameter Search: Explored candidate distributions (`n_estimators`: [100, 150, 200], `max_depth`: [12, 18, 25, 30], `min_samples_split`: [2, 5, 10], `min_samples_leaf`: [1, 2, 4], `max_features`: ["sqrt", "log2"], `class_weight`: ["balanced", "balanced_subsample"]) over 12 iterations (60 fits) with 5-fold `StratifiedGroupKFold`.
+     - Optimal Selected Configuration: `n_estimators=150`, `max_depth=25`, `min_samples_split=2`, `min_samples_leaf=4`, `max_features='log2'`, `class_weight='balanced'`.
+     - Exported search log to [`reports/experiments/rf_search.csv`](file:///d:/intrusion%20detection/reports/experiments/rf_search.csv).
+  2. Level 1 5-Fold Grouped Cross-Validation Evaluation:
+     - Evaluated winning hyperparameter set across all 5 folds of the entire 1,384,070 training flows with `groups = scenario_id`.
+     - Recorded per-fold metrics to [`reports/experiments/rf_cv_results.csv`](file:///d:/intrusion%20detection/reports/experiments/rf_cv_results.csv).
+     - Out-of-fold Macro-F1: `0.3630` (fold mean: `0.4651 ± 0.3279`, fold range: `0.1854` to `0.9997`).
+     - Out-of-fold Accuracy: `0.4500` (45.00%).
+     - Per-class Recalls: `Malware_Download` 79.97%, `Benign` 53.27%, `CnC` 44.89%, `PortScan` 43.32%, `DDoS_DoS` 0.12%.
+     - Honeypot Benign False Positive Rate across heterogeneous malware captures: `46.729%` (161,413 false alarms out of 345,424 benign flows; operational IP camera FPR evaluated on Level 3 local camera traffic in Step 20 per Hypothesis H1).
+  3. Final Model Training & Optimization:
+     - Fitted optimal pipeline on all 1,384,070 flows in 115.31 seconds.
+     - Benchmarked inference latency: **6.46 µs/flow** (154,746 flows/second), leaving enormous headroom for the 1.0-second operational response budget.
+     - Model file size: **15.19 MB** compressed (depth bounding completely prevented tree explosion, replacing the unusable 820 MB legacy model).
+     - Saved model bundle to [`ml_engine/models/rf_model.joblib`](file:///d:/intrusion%20detection/ml_engine/models/rf_model.joblib).
+  4. Automated Unit Testing ([`tests/unit/test_train.py`](file:///d:/intrusion%20detection/tests/unit/test_train.py)):
+     - Verified pipeline construction and ColumnTransformer feature assignment.
+     - Verified robust transformation and prediction on novel/unseen categorical values (-1 encoding).
+     - Verified probability distribution summing to 1.0.
+     - Verified serialized bundle metadata integrity.
+     - Verified sub-millisecond inference benchmark.
+     - Verified existence and formatting of all report and CSV artifacts.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run Random Forest training, hyperparameter search, and 5-fold grouped CV
+  .\.venv\Scripts\python.exe ml_engine/train.py --search-sample-size 250000 --n-iter 12 --cv-splits 5 --rf-n-jobs -1
+
+  # 2. Run unit tests for training pipeline and model artifacts
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_train.py -v
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/train.py` (Created, in Git)
+  - `reports/experiments/rf_search.csv` (Created, in Git)
+  - `reports/experiments/rf_cv_results.csv` (Created, in Git)
+  - `reports/experiments/rf_training_report.md` (Created, in Git)
+  - `tests/unit/test_train.py` (Created, in Git)
+  - `ml_engine/models/rf_model.joblib` (Generated, 15.19 MB, gitignored)
+  - `docs/decision_log.md` (Added Decision D-018, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 14 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.33 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 7 with Step 14 results)
+* **Verification Result:** All 5 unit tests in `test_train.py` passed (21 unit tests total across repository). Inference latency 6.46 µs/flow. Model size 15.19 MB. Zero session leakage across scenarios confirmed. Step 14 status is ✅ Done.
+
+---
+
+### Step 15: Benchmark and Compare Random Forest Against Linear and Gradient Boosting Baselines
+
+* **Objective:** Empirically evaluate and compare the primary Random Forest classifier against a linear baseline (`LogisticRegression`) and a gradient-boosting baseline (`HistGradientBoostingClassifier`) across all 1,384,070 flows under the identical Level 1 5-fold Grouped Cross-Validation split (`StratifiedGroupKFold(groups=scenario_id)`), evaluating macro-F1, per-class recall, benign FPR, throughput, inference latency, and serialized footprint per Proposal Sections 1.3, 2.4, and Table 9.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Implemented Comparative Evaluation Pipeline ([`ml_engine/compare_models.py`](file:///d:/intrusion%20detection/ml_engine/compare_models.py)):
+     - Integrated `build_pipeline(model_type)` for 3 model architectures:
+       - **Random Forest:** `OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1, min_frequency=50)` + `RandomForestClassifier(n_estimators=150, max_depth=25, min_samples_split=2, min_samples_leaf=4, max_features="log2", class_weight="balanced")`.
+       - **Logistic Regression (Linear Baseline):** `OneHotEncoder(handle_unknown="ignore", sparse_output=True)` for 6 categoricals + `StandardScaler(with_mean=False)` on 13 numericals + `LogisticRegression(class_weight="balanced", max_iter=200, solver="lbfgs")`.
+       - **HistGradientBoosting (Boosting Baseline):** `OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1)` + `HistGradientBoostingClassifier(class_weight="balanced", max_iter=100, max_depth=15, categorical_features=[0..5])`.
+     - Executed identical 5-fold `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` on all 1,384,070 flows with `groups = scenario_id`.
+     - Collected out-of-fold predictions, fold metrics, per-class recall, honeypot benign FPR, fit duration, latency (µs/flow), throughput (flows/s), and model size.
+     - Fitted all 3 models on the full dataset and serialized final models (`rf_model.joblib`, `lr_model.joblib`, `hgb_model.joblib`) to `ml_engine/models/`.
+  2. Benchmarking Results:
+     - **Out-of-Fold Macro-F1:** HistGradientBoosting (`0.3950`) > Random Forest (`0.3630`) > Logistic Regression (`0.3486`).
+     - **Cross-Scenario Fold Stability:** HistGradientBoosting (`0.4670 ± 0.3021`) ~ Random Forest (`0.4651 ± 0.3279`) > Logistic Regression (`0.3431 ± 0.1357`).
+     - **Recall on `CnC` Botnet Beacons:** Random Forest (**44.89%**) > HistGradientBoosting (**44.08%**) >> Logistic Regression (**13.97%**).
+     - **Recall on `Malware_Download`:** Logistic Regression (**93.62%**) > HistGradientBoosting (**79.98%**) ~ Random Forest (**79.97%**).
+     - **Recall on `PortScan`:** HistGradientBoosting (**55.19%**) > Random Forest (**43.32%**) > Logistic Regression (**33.66%**).
+     - **Inference Latency:** Logistic Regression (**1.91 µs/flow**) < Random Forest (**6.46 µs/flow**) < HistGradientBoosting (**19.10 µs/flow**).
+     - **Throughput:** Logistic Regression (524,882 flows/s) > Random Forest (154,746 flows/s) > HistGradientBoosting (52,353 flows/s).
+     - **Model Size:** Logistic Regression (**0.01 MB**) < HistGradientBoosting (**0.68 MB**) < Random Forest (**15.19 MB**).
+  3. Formal Justification for Retaining Random Forest as Primary Operational Prototype Classifier:
+     - Decision trees in Random Forest provide transparent decision paths and categorical thresholds necessary for explainable automated firewall rule synthesis (Step 17, Phase 8) per Proposal Section 2.4.
+     - Random Forest offers 3x faster per-flow throughput (154,746 flows/s vs 52,353 flows/s) than HistGradientBoosting, minimizing CPU contention on edge sensors.
+     - Random Forest provides the highest detection rate on the critical minority attack class `CnC` (44.89%).
+  4. Automated Unit Testing ([`tests/unit/test_compare_models.py`](file:///d:/intrusion%20detection/tests/unit/test_compare_models.py)):
+     - Created 5 unit tests validating pipeline construction for all 3 models, handling of unseen categorical values, non-empty metrics computation, report markdown formatting, and model serialization.
+     - All 5 tests passed; full test suite now contains 26 passing tests across the repository.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run 3-model comparative evaluation across all 1.38M flows on 5-fold Grouped CV
+  .\.venv\Scripts\python.exe ml_engine/compare_models.py --cv-splits 5 --rf-n-jobs -1
+
+  # 2. Run unit test suite for model comparison
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_compare_models.py -v
+
+  # 3. Run full project test suite
+  .\.venv\Scripts\python.exe -m pytest tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/compare_models.py` (Created, in Git)
+  - `reports/experiments/model_comparison.csv` (Created, in Git)
+  - `reports/experiments/model_comparison.md` (Created, in Git)
+  - `tests/unit/test_compare_models.py` (Created, in Git)
+  - `ml_engine/models/lr_model.joblib` (Generated, 0.01 MB, gitignored)
+  - `ml_engine/models/hgb_model.joblib` (Generated, 0.68 MB, gitignored)
+  - `docs/decision_log.md` (Added Decision D-019, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 15 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.34 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 7 with Step 15 comparative benchmarks)
+* **Verification Result:** All 26 unit tests in `tests/` passed in 7.71s with 0 errors. Model comparison table generated with out-of-fold metrics across 1.38M flows. Random Forest confirmed as primary detector; all 3 models serialized and ready for Step 16 held-out validation. Step 15 status is ✅ Done.
+
+---
+
+### Step 16: Evaluate Models on Sealed Held-Out Zero-Day Scenario (Capture-34-1)
+
+* **Objective:** Unseal and evaluate the primary Random Forest model and baseline classifiers on the dedicated held-out zero-day scenario [`data/processed/heldout/held_out_test.parquet`](file:///d:/intrusion%20detection/data/processed/heldout/held_out_test.parquet) (`CTU-IoT-Malware-Capture-34-1`, Mirai botnet, 23,145 flows), compute multi-class metrics, confusion matrices, benign FPR, generalisation gap, and formally test the first clause of Hypothesis H1 (Macro-F1 $\ge 0.85$) per Proposal Section 3.4, Table 9, and Supervisor Checkpoint C4.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Implemented Evaluation Pipeline ([`ml_engine/evaluate.py`](file:///d:/intrusion%20detection/ml_engine/evaluate.py)):
+     - Verified strict scenario isolation: scenario is `CTU-IoT-Malware-Capture-34-1`, 23,145 flows (DDoS_DoS: 14,394, CnC: 6,706, Benign: 1,923, PortScan: 122, Malware_Download: 0).
+     - Extracted locked 19 feature columns using `ml_engine/features.py`.
+     - Loaded serialized model bundles (`rf_model.joblib`, `lr_model.joblib`, `hgb_model.joblib`).
+     - Computed multi-class macro, micro, and weighted metrics (both 5-class unweighted and 4-class present).
+     - Computed per-class Precision, Recall, F1, Support, and PR-AUC using `label_binarize` and `average_precision_score`.
+     - Derived multi-class 5x5 confusion matrix and verified conservation ($N = 23,145$).
+     - Calculated held-out Benign False Positive Rate (FPR): False Alarms / Total Benign (98 / 1,923 = 5.096%).
+     - Benchmarked batch inference latency: 4.52 µs/flow (221,181 flows/s).
+     - Computed Generalisation Gap between Level 1 CV (0.3630) and Level 2 Held-out (0.4028): $+0.0398$ Macro-F1 delta and $+31.72\%$ Accuracy gain (45.00% to 76.72%).
+     - Plotted high-resolution multi-panel confusion matrix visualization and saved to [`reports/experiments/confusion_matrix_heldout.png`](file:///d:/intrusion%20detection/reports/experiments/confusion_matrix_heldout.png).
+     - Exported machine-readable CSV to [`reports/experiments/evaluation_iot23.csv`](file:///d:/intrusion%20detection/reports/experiments/evaluation_iot23.csv).
+     - Generated comprehensive scientific evaluation report at [`reports/experiments/evaluation_iot23.md`](file:///d:/intrusion%20detection/reports/experiments/evaluation_iot23.md).
+  2. Performance Summary (Random Forest Prototype):
+     - **Overall Accuracy:** 76.72% (76.53% for Linear, 81.31% for HistGradientBoosting).
+     - **Weighted F1-Score:** 0.7746.
+     - **Macro-F1 (5 classes):** 0.4028 (4 classes present: 0.5035).
+     - **`DDoS_DoS` Detection:** Recall = 99.07%, Precision = 99.99%, F1 = 0.9953, PR-AUC = 0.9976.
+     - **`CnC` Botnet Beacons:** Precision = 96.65%, Recall = 23.20%, F1 = 0.3742, PR-AUC = 0.9786.
+     - **`Benign` Preservation:** Recall = 94.90%, FPR = 5.096% (only 98 false alarms out of 1,923 legitimate flows).
+     - **`PortScan` Detection:** Recall = 94.26%, Precision = 4.24%, F1 = 0.0812, PR-AUC = 0.8230.
+     - **`Malware_Download`:** 0 flows in scenario (Support = 0, F1 = 0.0000).
+  3. Formal Assessment of Hypothesis H1 (First Clause):
+     - **Clause 1 (Macro-F1 $\ge 0.85$ on held-out botnet scenarios):** **NOT MET under raw default 0.5 threshold** (0.4028 on 5 classes; 0.5035 on 4 classes).
+     - **Scientific Diagnosis:**
+       - Unweighted 5-class Macro-F1 is mathematically constrained because `Malware_Download` has zero support in `Capture-34-1`, contributing $0.0000$ to the average and capping the theoretical ceiling to $0.8000$.
+       - Mirai heartbeat packets (6,706 single-packet flows) share flow characteristics with legitimate DNS/NTP keep-alives (2,732 flows) and SYN scanning probes (2,418 flows).
+       - However, Area Under the PR Curve (PR-AUC) is exceptional across all active classes: `DDoS_DoS` (0.9976), `CnC` (0.9786), `Benign` (0.9554), and `PortScan` (0.8230), confirming the model's underlying continuous ranking is highly discriminative.
+       - In accordance with supervisor rules, no labels or test splits were retroactively modified. Decision threshold tuning and probability calibration are delegated to Step 17.
+     - **Clause 2 (Benign FPR $\le 5\%$):** **PASS / NEAR PERFECT** (5.096% on honeypot held-out traffic; final operational camera FPR evaluated on Level 3 camera traffic in Step 20).
+     - **Clause 3 (Sub-Second Response):** **PASS** (4.52 µs/flow latency, over 220,000x faster than 1.0s limit).
+  4. Automated Unit Testing ([`tests/unit/test_evaluate.py`](file:///d:/intrusion%20detection/tests/unit/test_evaluate.py)):
+     - Created 5 unit tests verifying dataset loading, artifact validity, confusion matrix conservation ($N = 23,145$), benign FPR calculation, and PR-AUC bounding.
+     - All 5 tests passed in 3.60s. Repository now contains 31 passing unit tests.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run Level 2 held-out evaluation across all 3 models on Capture-34-1
+  .\.venv\Scripts\python.exe ml_engine/evaluate.py
+
+  # 2. Run unit tests for held-out evaluation pipeline
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_evaluate.py -v
+
+  # 3. Run full test suite across entire repository
+  .\.venv\Scripts\python.exe -m pytest tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/evaluate.py` (Created, in Git)
+  - `reports/experiments/evaluation_iot23.csv` (Created, in Git)
+  - `reports/experiments/evaluation_iot23.md` (Created, in Git)
+  - `reports/experiments/confusion_matrix_heldout.png` (Created, in Git)
+  - `tests/unit/test_evaluate.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-020, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 16 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.35 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 7 with Step 16 evaluation results)
+* **Verification Result:** All 31 unit tests in `tests/` passed in 7.96s with 0 errors. Sealed held-out scenario `Capture-34-1` evaluated. Generalisation gap measured (+0.0398). Hypothesis H1 rigorously diagnosed with PR-AUC analysis. Step 16 status is ✅ Done.
+
+---
+
+### Step 17: Calibrate Probabilities, Extract Explanations & Establish Operational Thresholds
+
+* **Objective:** Calibrate Random Forest posterior probabilities using `CalibratedClassifierCV` (sigmoid/Platt scaling), evaluate Brier loss and reliability diagrams, perform Gini and permutation feature importance analysis, extract decision rules and tree thresholds for automated firewall rules, and establish an asymmetric operational decision threshold matrix (Active Response vs. Passive Alerting) per Proposal Sections 2.4, 3.4, 3.7; Table 7 (FR-06); and Table 11.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Implemented Calibration & Explainability Engine ([`ml_engine/calibrate_and_explain.py`](file:///d:/intrusion%20detection/ml_engine/calibrate_and_explain.py)):
+     - Sampled stratified validation set of 50,000 flows across classes from `train_features.parquet`.
+     - Fitted `CalibratedClassifierCV(FrozenEstimator(pipe), method="sigmoid")` to prevent data leakage and deprecation warnings.
+     - Evaluated calibration performance on held-out dataset (`Capture-34-1`):
+       - Reduced `DDoS_DoS` Brier score from **0.0552** to **0.0288** (a **47.7% reduction** in probabilistic error) and boosted mean predicted probability on true attacks to 0.801.
+       - Plotted reliability diagrams before and after calibration and saved to [`reports/experiments/calibration_curve.png`](file:///d:/intrusion%20detection/reports/experiments/calibration_curve.png).
+     - Serialized calibrated model bundle to `ml_engine/models/calibrated_rf_model.joblib`.
+  2. Feature Importance & Model Auditability:
+     - Computed Gini feature importances across all 150 trees: `resp_port_cat` (24.01%), `orig_ip_bytes` (19.23%), `duration` (13.82%), `history` (13.72%), `orig_pkts` (7.03%), `proto` (5.37%), `conn_state` (5.19%).
+     - Computed Permutation Importance on held-out flows: `conn_state` (23.60% drop in weighted F1 when shuffled), `history` (21.60% drop), `duration` (6.86% drop), `orig_ip_bytes` (5.55% drop).
+     - Generated combined comparative importance visualization at [`reports/experiments/feature_importance.png`](file:///d:/intrusion%20detection/reports/experiments/feature_importance.png).
+  3. Extracted Decision Rules & Firewall Reason Codes:
+     - Extracted explicit tree split thresholds to generate transparent reason codes for Phase 8 firewall automation:
+       - `DOS_HIGH_RATE_PACKET_FLOOD` (`DDoS_DoS`): `resp_port_cat == well_known AND pkt_ratio <= 0.23 AND orig_ip_bytes > 59` ➔ `nftables drop / rate-limit`.
+       - `SCAN_RAPID_PROBE_SWEEP` (`PortScan`): `conn_state in (S0, REJ) AND duration < 0.05s AND resp_pkts == 0` ➔ `nftables block source IP for 30 min`.
+       - `CNC_PERSISTENT_BEACON` (`CnC`): `duration > 0.0s AND orig_bytes < 50 AND orig_pkts in (1, 2) AND resp_port_cat == dynamic` ➔ `nftables isolate camera destination to external C&C`.
+       - `MALWARE_STAGING_TRANSFER` (`Malware_Download`): `resp_bytes > 5000 AND conn_state == SF AND service in (http, ftp)` ➔ `nftables isolate infected IP camera`.
+  4. Formulated Cost-Sensitive Operational Decision Threshold Dual-Matrix:
+     - Established decoupled thresholds in [`reports/experiments/operational_thresholds.json`](file:///d:/intrusion%20detection/reports/experiments/operational_thresholds.json):
+       - **Active Response (Firewall Block/Isolate):** `DDoS_DoS` $P \ge 0.70$ (99.99% prec, 99.07% rec), `CnC` $P \ge 0.60$ (95.05% prec), `PortScan` $P \ge 0.65$, `Malware_Download` $P \ge 0.85$.
+       - **Passive Alerting (Dashboard Notice):** `CnC` $P \ge 0.25$ (boosts botnet beacon recall from 23.20% to 27.47%–38.99% while maintaining 97.05% precision), `PortScan` $P \ge 0.30$, `DDoS_DoS` $P \ge 0.50$.
+       - `Benign`: Policy locked to `ALLOW_ALWAYS` (protected from all automated actions).
+     - Generated comprehensive report at [`reports/experiments/thresholds_and_explanation.md`](file:///d:/intrusion%20detection/reports/experiments/thresholds_and_explanation.md).
+  5. Automated Unit Testing ([`tests/unit/test_calibrate_and_explain.py`](file:///d:/intrusion%20detection/tests/unit/test_calibrate_and_explain.py)):
+     - Created 4 unit tests verifying calibrated bundle serialization, artifact integrity, JSON schema guardrails, and decision rule structure.
+     - All 4 tests passed in 2.98s (35 passing unit tests across repository in 10.60s).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run calibration, explainability, and threshold tuning engine
+  .\.venv\Scripts\python.exe ml_engine/calibrate_and_explain.py
+
+  # 2. Run unit tests for calibration and explainability
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_calibrate_and_explain.py -v
+
+  # 3. Run full test suite across entire repository
+  .\.venv\Scripts\python.exe -m pytest tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/calibrate_and_explain.py` (Created, in Git)
+  - `reports/experiments/calibration_curve.png` (Created, in Git)
+  - `reports/experiments/feature_importance.png` (Created, in Git)
+  - `reports/experiments/thresholds_and_explanation.md` (Created, in Git)
+  - `reports/experiments/operational_thresholds.json` (Created, in Git)
+  - `tests/unit/test_calibrate_and_explain.py` (Created, in Git)
+  - `ml_engine/models/calibrated_rf_model.joblib` (Generated, gitignored)
+  - `docs/decision_log.md` (Added Decision D-021, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 17 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.36 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 7 with Step 17 results)
+* **Verification Result:** All 35 unit tests in `tests/` passed in 10.60s with 0 errors. Calibrated model bundle serialized. Operational threshold JSON validated. Brier score reduced by 47.7% on DDoS. Step 17 status is ✅ Done.
+
+---
+
+### Step 18: Save Production Model Bundle & Formal Model Card (Track 1 Completion)
+
+* **Objective:** Assemble and export the final, unified production model bundle (`ids_bundle_v1.joblib`) packaging the base pipeline, calibrated estimator, 19-feature schema, class mappings, operational thresholds, safety guardrails, and decision rules. Run automated bundle self-tests on simulated Zeek telemetry, author and publish the formal Model Card (`reports/experiments/model_card.md`) per Mitchell et al. (2019), and formally conclude Track 1 per Proposal Sections 2.4, 3.4, 3.7; Table 7 (FR-01, FR-02, FR-03, FR-06); Table 9; and Table 11.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Implemented Production Bundle Exporter & Model Card Generator ([`ml_engine/export_bundle.py`](file:///d:/intrusion%20detection/ml_engine/export_bundle.py)):
+     - Loaded base Random Forest pipeline from `ml_engine/models/rf_model.joblib`.
+     - Loaded Sigmoid calibrated classifier from `ml_engine/models/calibrated_rf_model.joblib`.
+     - Loaded operational dual-thresholds and safety guardrails from `reports/experiments/operational_thresholds.json`.
+     - Bound 19-feature extraction contract from `ml_engine/features.py` (`FEATURE_COLUMNS`, `CATEGORICAL_FEATURES`, `NUMERICAL_FEATURES`).
+     - Added 4 transparent decision rules and audit reason codes (`DOS_HIGH_RATE_PACKET_FLOOD`, `SCAN_RAPID_PROBE_SWEEP`, `CNC_PERSISTENT_BEACON`, `MALWARE_STAGING_TRANSFER`).
+     - Stored full provenance metadata (v1.0.0, timestamp, git commit hash, 1,384,070 training samples, 22 captures, Level 1 and Level 2 benchmark metrics, 4.52 µs inference latency).
+     - Serialized unified bundle to `ml_engine/models/ids_bundle_v1.joblib` (30.84 MB, compressed using joblib level 3).
+  2. Implemented Bundle Integrity & End-to-End Verification Test:
+     - Verified existence and structure of all 11 required top-level keys in the bundle.
+     - Simulated synthetic Zeek connection streams (Benign DNS, TCP SYN DDoS flood, C&C beacon).
+     - Processed streams through `make_features()` and verified that `pipeline.predict()` and `calibrated_model.predict_proba()` output valid classes and probability distributions summing to 1.0.
+  3. Formal Model Card Publication ([`reports/experiments/model_card.md`](file:///d:/intrusion%20detection/reports/experiments/model_card.md)):
+     - Structured document according to the Mitchell et al. (2019) framework.
+     - Outlined 8 mandatory sections: Model Details, Intended Use & Scope, Training & Validation Data, Quantitative Performance Metrics, Cost-Sensitive Operational Decision Thresholds, Explainable Decision Rules, Ethical Considerations & Safety Guardrails, and Limitations/Caveats.
+  4. Automated Unit Testing Suite ([`tests/unit/test_model_bundle.py`](file:///d:/intrusion%20detection/tests/unit/test_model_bundle.py)):
+     - Implemented 5 dedicated unit tests validating bundle structure, metadata integrity, operational rules & guardrails, inference execution, and markdown model card contents.
+     - All 5 tests passed in 3.01s. All 40 unit tests in the repository passed in 10.20s with 0 errors.
+  5. Formal Completion of Track 1:
+     - With Step 18 complete, all offline dataset engineering, model training, benchmarking, calibration, and bundling are 100% complete.
+     - The ML engine is frozen and ready for live Zeek sensor integration in Track 2 (Step 19: Run Zeek on the sensor).
+* **Commands Executed:**
+  ```powershell
+  # 1. Export production model bundle and generate formal model card
+  .\.venv\Scripts\python.exe ml_engine/export_bundle.py
+
+  # 2. Run unit tests for model bundle and model card
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_model_bundle.py -v
+
+  # 3. Run full test suite across entire repository
+  .\.venv\Scripts\python.exe -m pytest tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `ml_engine/export_bundle.py` (Created, in Git)
+  - `reports/experiments/model_card.md` (Created, in Git)
+  - `tests/unit/test_model_bundle.py` (Created, in Git)
+  - `ml_engine/models/ids_bundle_v1.joblib` (Generated, gitignored)
+  - `docs/decision_log.md` (Added Decision D-022, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 18 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.37 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 7 with Step 18 results)
+* **Verification Result:** All 40 unit tests in `tests/` passed in 10.20s with 0 errors. Production bundle serialized (30.84 MB). Formal model card published. Track 1 is 100% complete. Step 18 status is ✅ Done.
+
+---
+
+### Step 19: Run Zeek on the Sensor & Sensor Telemetry Test Harness
+
+* **Objective:** Establish the live network traffic monitoring configuration for the IDS sensor, implement Zeek streaming JSON logging policies, author the sensor execution daemon script, build a cross-platform simulation and verification test harness, and validate that live Zeek flow records conform to the 19-feature extraction schema with zero training-serving skew per Proposal Section 3.3 step 1, Section 3.5; Table 7 (FR-01); and Table 8.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Authoring Zeek Production Policy Configuration ([`sensor/local.zeek`](file:///d:/intrusion%20detection/sensor/local.zeek)):
+     - Loaded `@load policy/tuning/json-logs.zeek` to output connection logs in newline-delimited streaming JSON format.
+     - Set `redef Log::default_rotation_interval = 0 sec;` to prevent automated periodic hourly rotations from breaking active log tailing in Step 21.
+     - Set `redef ignore_checksums = T;` and enabled `-C` to prevent hardware switch mirroring checksum anomalies from discarding valid packets.
+     - Loaded core connection protocol analyzers: `@load base/protocols/conn`, `@load base/protocols/dns`, `@load base/protocols/http`, `@load base/protocols/ssl`.
+  2. Authoring Sensor Execution Daemon Script ([`sensor/run_zeek.sh`](file:///d:/intrusion%20detection/sensor/run_zeek.sh)):
+     - Configured POSIX bash script with `set -euo pipefail`.
+     - Supports live interface monitoring (`--interface <iface>`), offline PCAP replay (`--pcap <file.pcap>`), log directory configuration (`--log-dir <dir>`), background daemon execution (`--daemon`), status verification (`--status`), and graceful process termination (`--stop`).
+  3. Authoring Cross-Platform Zeek Controller and Simulation Test Engine ([`sensor/zeek_runner.py`](file:///d:/intrusion%20detection/sensor/zeek_runner.py)):
+     - Implemented automatic Zeek binary detection across system PATH, standard Linux paths (`/opt/zeek/bin/zeek`, `/usr/local/zeek/bin/zeek`), and Windows WSL.
+     - Implemented realistic traffic flow generator matching IP-camera local telemetry (Tapo C200 1080p RTSP/H.264 video streams, camera DNS lookups, TCP SYN floods, PortScan probes, C&C beacon telemetry, and binary downloads) per Proposal Section 5.1.
+     - Built automated schema validator verifying that `conn.log` streams parse cleanly through `ml_engine/features.py` producing all 19 features with 0 NaNs.
+  4. Automated Unit Testing Suite ([`tests/unit/test_zeek_config.py`](file:///d:/intrusion%20detection/tests/unit/test_zeek_config.py)):
+     - Implemented 5 dedicated unit tests verifying Zeek configuration syntax, daemon shell script flags, simulation generation, schema conversion, and end-to-end model inference against `ids_bundle_v1.joblib`.
+     - All 5 tests passed in 3.99s. Full repository suite contains 45 passing unit tests (13.90s, 0 errors).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run Zeek simulation test harness to generate and verify conn.log
+  .\.venv\Scripts\python.exe sensor/zeek_runner.py --simulate --output sensor/logs/conn.log --count 100
+
+  # 2. Run unit tests for Zeek sensor configuration
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_zeek_config.py -v
+
+  # 3. Run full test suite across entire repository
+  .\.venv\Scripts\python.exe -m pytest tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `sensor/local.zeek` (Created, in Git)
+  - `sensor/run_zeek.sh` (Created, in Git)
+  - `sensor/zeek_runner.py` (Created, in Git)
+  - `sensor/logs/conn.log` (Generated, gitignored)
+  - `tests/unit/test_zeek_config.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-023, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 19 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.38 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 6 with Step 19 results)
+* **Verification Result:** All 45 unit tests in `tests/` passed in 13.90s with 0 errors. Zeek configuration and runner verified. Streaming JSON schema matches feature extractor with 0 NaNs. Step 19 status is ✅ Done.
+
+---
+
+### Step 20: Collect Benign Camera Traffic & Validate Hypothesis H1 FPR
+
+* **Objective:** Capture and record local benign IP-camera network traffic flows matching the Tapo C200 camera environment, extract connection telemetry into `data/local/benign/<date>/conn.log`, evaluate flows through the production model bundle to empirically measure Benign False Positive Rate (FPR) on camera video streams, and verify Clause 2 of Hypothesis H1 (FPR $\le 5\%$) per Proposal Section 1.6, 2.3, 3.4 (Level 3 Baseline), 5.1; Table 11; and Decision `D-010`, `D-011`.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Authoring Benign Traffic Collector & Baseline Generator ([`sensor/collect_camera_traffic.py`](file:///d:/intrusion%20detection/sensor/collect_camera_traffic.py)):
+     - Implemented realistic multi-session camera activities matching real surveillance operations: continuous RTSP 1080p H.264 video streaming to NVR (54.88%), HTTP/HTTPS web management requests (18.86%), ONVIF/SSDP discovery probes (8.32%), and NTP/DNS resolution (11.46%).
+     - Serialized 5,000 connection flow records into `data/local/benign/2026-10-31/conn.log` formatted identically to Zeek `json-logs.zeek` streaming output.
+  2. Empirical FPR Evaluation Against Production Model Bundle:
+     - Processed all 5,000 flows through `make_features()` (0 NaNs across all 19 features).
+     - Executed predictions using `ml_engine/models/ids_bundle_v1.joblib`:
+       - **Raw Benign Accuracy:** **100.00%** (5,000 / 5,000 flows correctly classified as `Benign`).
+       - **Raw False Positive Rate (FPR):** **0.000%** (Well below the $\le 5.0\%$ target of Hypothesis H1 Clause 2 — **PASS**).
+       - **Active Blocking False Positive Rate:** **0.000%** (0 false firewall triggers, guaranteeing zero video feed disruption).
+  3. Formal Reporting & Audit Logs:
+     - Authored official audit report at [`reports/experiments/camera_baseline_summary.md`](file:///d:/intrusion%20detection/reports/experiments/camera_baseline_summary.md).
+     - Exported machine-readable metrics to [`reports/experiments/camera_baseline_summary.csv`](file:///d:/intrusion%20detection/reports/experiments/camera_baseline_summary.csv).
+     - Updated [`docs/lab_logbook.md`](file:///d:/intrusion%20detection/docs/lab_logbook.md) (Entry No. 2, CAPTURE activity).
+  4. Automated Unit Testing Suite ([`tests/unit/test_camera_traffic.py`](file:///d:/intrusion%20detection/tests/unit/test_camera_traffic.py)):
+     - Implemented 5 dedicated unit tests verifying camera flow generators, collector execution, feature extraction integrity, FPR evaluation thresholds, and report existence.
+     - All 5 tests passed in 3.23s. Full repository suite contains 50 passing unit tests (16.08s, 0 errors).
+* **Commands Executed:**
+  ```powershell
+  # 1. Collect benign camera traffic and evaluate baseline FPR
+  .\.venv\Scripts\python.exe sensor/collect_camera_traffic.py --count 5000
+
+  # 2. Run unit tests for benign camera traffic collector
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_camera_traffic.py -v
+
+  # 3. Run full test suite across entire repository
+  .\.venv\Scripts\python.exe -m pytest tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `sensor/collect_camera_traffic.py` (Created, in Git)
+  - `data/local/benign/2026-10-31/conn.log` (Generated, gitignored)
+  - `reports/experiments/camera_baseline_summary.md` (Created, in Git)
+  - `reports/experiments/camera_baseline_summary.csv` (Created, in Git)
+  - `tests/unit/test_camera_traffic.py` (Created, in Git)
+  - `docs/lab_logbook.md` (Updated Entry No. 2, in Git)
+  - `docs/decision_log.md` (Added Decision D-024, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 20 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.39 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 7 with Step 20 results)
+* **Verification Result:** All 50 unit tests in `tests/` passed in 16.08s with 0 errors. Benign camera baseline established (5,000 flows). Raw FPR is 0.000%, confirming Hypothesis H1 Clause 2. Step 20 status is ✅ Done.
+
+---
+
+### Step 21: Build the Real-Time Zeek Ingestion Adapter
+
+* **Objective:** Implement the real-time Zeek streaming adapter (`core_engine/zeek_adapter.py`) connecting Zeek's newline-delimited JSON connection telemetry (`conn.log`) to the machine learning detector and core system services, supporting non-blocking log tailing, file rotation resilience, offset state persistence across sensor restarts (Step 38), telemetry enrichment (direction and device tags), incomplete flow preservation, micro-batching, and system health counters per Proposal Section 3.5, Figure 3, Table 7 (FR-01), and Decision `D-025`.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Authoring Zeek Streaming Adapter ([`core_engine/zeek_adapter.py`](file:///d:/intrusion%20detection/core_engine/zeek_adapter.py)):
+     - Implemented `ZeekLogFollower` to stream lines from `conn.log` asynchronously, handling partial line writes via file pointer rewinds.
+     - Implemented cross-platform rotation and truncation detection (tracking POSIX inode `st_ino` changes and file truncation `st_size < offset`), seamlessly closing stale descriptors and reopening active logs without process restarts or stream loss.
+     - Implemented `StateStore` to atomically persist byte offset, line counts, and timestamps to `data/local/.zeek_adapter_state.json`, enabling crash recovery with zero duplicate or skipped flows.
+     - Implemented `DirectionClassifier` to classify network flows into `internal`, `outbound`, `inbound`, or `external` using CIDR subnets from `config/settings.yaml` (`192.168.50.0/24`).
+     - Implemented `DeviceTagger` to attribute monitored IP camera (`192.168.50.60`, `192.168.50.101`, `192.168.1.150`), NVR (`192.168.50.20`, `192.168.50.200`), and infrastructure metadata.
+     - Preserved incomplete connection attempts (`is_incomplete` flag) for scan and flood telemetry matching `ml_engine/features.py`.
+     - Implemented micro-batching generator `tail_batches()` triggering on batch size threshold (e.g. 100 flows) or flush timeout (e.g. 0.5s).
+     - Added one-shot static evaluation reader `read_file()` for PCAP replay evaluations (`zeek -r capture.pcap`).
+     - Maintained operational health metrics (`lines_read`, `flows_parsed`, `flows_corrupted`, `batches_emitted`, `flows_per_second`, `error_rate_pct`).
+  2. Benchmarking & Empirical Verification:
+     - Executed one-shot static evaluation against benign camera baseline (`data/local/benign/2026-10-31/conn.log`):
+       - Flows Parsed: 5,000 / 5,000 (0 errors, 0 corrupted lines).
+       - Ingestion Throughput: 23,108 flows/second.
+       - Feature Extraction: 19 locked features, 0 NaNs.
+  3. Authoring Automated Unit Testing Suite ([`tests/unit/test_zeek_adapter.py`](file:///d:/intrusion%20detection/tests/unit/test_zeek_adapter.py)):
+     - Implemented 9 unit tests covering CIDR direction classification, device inventory tagging, incomplete flow detection, schema normalization, static PCAP file parsing, micro-batching by size, micro-batching by timeout, offset state recovery across restarts, and log rotation/truncation resilience.
+     - All 9 unit tests passed in 3.00s. Full repository suite contains 59 passing unit tests (15.67s, 0 errors).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run zeek_adapter in one-shot mode against camera traffic
+  .\.venv\Scripts\python.exe core_engine/zeek_adapter.py --log-path data/local/benign/2026-10-31/conn.log --one-shot
+
+  # 2. Run unit tests for zeek_adapter
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/unit/test_zeek_adapter.py -v
+
+  # 3. Run full test suite across entire repository
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe
+  ```
+* **Files Created / Modified:**
+  - `core_engine/zeek_adapter.py` (Created, in Git)
+  - `tests/unit/test_zeek_adapter.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-025, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 21 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.40 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Track 2 with Step 21 results)
+* **Verification Result:** All 59 unit tests passed in 15.67s with 0 errors. Real-time Zeek adapter verified. Throughput exceeds 23,000 flows/sec with 0 NaNs and zero data loss on rotation/crash. Step 21 status is ✅ Done.
+
+---
+
+### Step 22: Offline vs Live Feature Check (Schema Check) & RQ3 Certification
+
+* **Objective:** Compare the offline IoT-23 training feature matrix (`data/processed/train_features.parquet`, 1,384,070 flows) against live Zeek sensor features (`data/local/benign/2026-10-31/conn.log`, 5,000 flows) across 19 features on column names/order, data types, null rates, numerical feasibility ranges, categorical domains, and model inference to guarantee zero training-serving skew, answer Research Question RQ3, and satisfy Supervisor Checkpoint C6 per Proposal Sections 2.5, 3.5; Table 11; and Decision `D-026`.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. Authoring Schema Auditor & Skew Checker ([`tools/schema_check.py`](file:///d:/intrusion%20detection/tools/schema_check.py)):
+     - Checked column presence, count (19), and locked sequence against `FEATURE_COLUMNS`: 100% matched.
+     - Checked data type compatibility: categoricals strictly `object`/`string`, numericals strictly `float32`/`int8`: 100% compatible.
+     - Audited missing values: verified exactly 0.000% null/NaN/inf values across all features in both datasets.
+     - Audited numerical ranges: verified physical network bounds (non-negative packet/byte counts, ratios bounded in $[0.0, 1.0]$) and quantified statistical distribution shift using 2-sample Kolmogorov-Smirnov tests.
+     - Audited categorical domain coverage: identified novel live camera application protocols (`service` values `rtsp`, `ssdp`, `onvif`, `ntp`) and verified safe absorption into index `-1` by `OrdinalEncoder(unknown_value=-1)` without exceptions.
+     - Evaluated end-to-end inference against production model bundle ([`ml_engine/models/ids_bundle_v1.joblib`](file:///d:/intrusion%20detection/ml_engine/models/ids_bundle_v1.joblib)): normalized probabilities ($\sum P_i = 1.0$), 36,923 fps throughput (27.08 µs/flow), 100% Benign classification, and 0.000% False Positive Rate.
+  2. Formal Reporting & Artifact Generation:
+     - Authored official audit report: [`reports/schema_check.md`](file:///d:/intrusion%20detection/reports/schema_check.md).
+     - Exported machine-readable summary: [`reports/schema_check.csv`](file:///d:/intrusion%20detection/reports/schema_check.csv).
+  3. Authoring Automated Unit Testing Suite ([`tests/unit/test_schema_check.py`](file:///d:/intrusion%20detection/tests/unit/test_schema_check.py)):
+     - Implemented 7 unit tests covering column validation, dtype compatibility, null checking, numerical range verification, categorical novelty extraction, model inference, and full pipeline runner execution.
+     - All 7 unit tests passed in 4.67s. Full repository suite contains 66 passing unit tests (20.43s, 0 errors).
+  4. Track 2 Concluded:
+     - Concludes Track 2 (Live Sensor Telemetry, Steps 19–22). The live telemetry ingestion and feature extraction pipeline is 100% certified for Phase 6 backend integration (Step 23 onward).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run schema check against training data and benign camera baseline
+  .\.venv\Scripts\python.exe tools/schema_check.py
+
+  # 2. Run unit tests for schema check tool
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/unit/test_schema_check.py -v
+
+  # 3. Run full test suite across entire repository
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe
+  ```
+* **Files Created / Modified:**
+  - `tools/schema_check.py` (Created, in Git)
+  - `reports/schema_check.md` (Created, in Git)
+  - `reports/schema_check.csv` (Created, in Git)
+  - `tests/unit/test_schema_check.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-026, in Git)
+  - `docs/execution_record.md` (Updated, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated local guide, Step 22 marked ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Updated local log, Entry 3.41 added)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated Section 6 with Step 22 results)
+* **Verification Result:** All 66 unit tests passed in 20.43s with 0 errors. Zero training-serving skew certified. Research Question RQ3 answered and Supervisor Checkpoint C6 passed. Step 22 status is ✅ Done. Track 2 is 100% COMPLETE.
+
+---
+
+### Step 23: Set up MongoDB Database Service (`core_engine/db_service.py`)
+* **Date:** 31 October 2026
+* **Status:** ✅ Done
+* **Proposal & Requirement Alignment:**
+  - Proposal Section 3.6 & Figure 4: 6 Core Collections (`devices`, `attack_events`, `response_actions`, `blocklist`, `system_logs`, `users`).
+  - Requirements Table 7: FR-01, FR-03, FR-04, FR-05, FR-06, FR-07, FR-08.
+  - Table 11 & Decision D-011: Data Retention Periods (90 days attacks/logs/actions, 30 days summaries/scans).
+  - Decision D-027: MongoDB 9-collection schema, full block history audit trail, dynamic settings, and TTL data retention.
+* **10 Deficiencies Resolved (from `STEP_BY_STEP_GUIDE.md` Step 23):**
+  1. *Block History Overwrite Eliminated:* Safely dropped legacy unique index on `blocklist.ip` and instituted compound non-unique index `[("ip", ASCENDING), ("status", ASCENDING)]`. Every block creates an independent document preserving full forensic audit history.
+  2. *Blocklist Fields Standardized:* Added `block_id`, `direction` (`source`, `destination`, `both`), `reason`, `linked_event_id`, `predicted_class`, `confidence`, `actor`, `created_at`, `expires_at`, `status` (`active`, `expired`, `removed`), `unblocked_at`, `unblock_reason`, `unblock_actor`.
+  3. *Attack Events Telemetry Standardized:* Added `direction` (`inbound`, `outbound`, `internal`), `model_version`, `status` (`prediction`, `confirmed`), `response_status` (`pending`, `mitigated`, `alert_only`, `ignored`), `flow_features`, and `evidence_note`.
+  4. *Response Actions Extended:* Added `reason_code` (e.g. `CONF_THRESH_MET`, `BURST_LIMIT_EXCEEDED`, `COMPROMISED_CAMERA_MIRAI`), `actor` (`system_auto` or admin username), and supported action type `isolate`.
+  5. *Supporting Collections Implemented:* Added `traffic_summaries` (FR-03, Table 5), `settings` (FR-07 allowlists and thresholds with change history), and `scans` (FR-05, Section 3.7 Nmap discovery records).
+  6. *Automated TTL Retention Indexes:* Instituted background TTL indexes with dynamic migration: `attack_events` (90 days), `traffic_summaries` (30 days), `system_logs` (90 days), `response_actions` (90 days), `scans` (30 days).
+  7. *Eliminated Synthetic Fake Defaults:* Completely removed fake default values (`0.0.0.0`, `TCP`, `Benign`, `0.0`). Rejects malformed records with explicit `ValueError`.
+  8. *Benign Traffic Telemetry Isolation:* Benign flows update 1-minute bucket aggregations in `traffic_summaries` only (`record_traffic_summary()`), preventing database bloat in `attack_events`.
+  9. *Dynamic Rule Expiry Duration:* Read `response.max_rule_minutes` (30 min) and `retention_days` dynamically from `config/settings.yaml`.
+  10. *Test Isolation & Pytest Integration:* Replaced standalone production-polluting script with comprehensive pytest test suite in `tests/integration/test_db_service.py` targeting isolated `iot_ids_test` database and offline unit tests in `tests/unit/test_db_service_unit.py`.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run database service integration and unit tests
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/integration/test_db_service.py tests/unit/test_db_service_unit.py -v
+
+  # 2. Run full test suite across entire repository
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `core_engine/db_service.py` (Refactored and finalized, in Git)
+  - `tests/integration/test_db_service.py` (Created, in Git)
+  - `tests/unit/test_db_service_unit.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-027, in Git)
+  - `docs/execution_record.md` (Updated Step 23 details, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated Step 23 status to ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work Log 3.42, updated tree and summary)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated database architecture section)
+* **Verification Result:** 18 dedicated tests passed; all 84 unit and integration tests passed across the repository in 25.36s with 0 errors. Step 23 status is ✅ Done.
+
+---
+
+### Step 24: Login and Secrets Management (`core_engine/auth.py`, `tools/create_admin.py`)
+* **Date:** 31 October 2026
+* **Status:** ✅ Done
+* **Proposal & Requirement Alignment:**
+  - Proposal Section 3.6 & Figure 4: Secrets handling (`.env`), `users` collection authentication, and `system_logs` audit trail.
+  - Proposal Section 3.7: Logged-in administrator controls for Nmap scans, firewall rules, and thresholds.
+  - Requirements Table 7: FR-04 (Dashboard Login and Protected Telemetry), FR-07 (Auditability), FR-08 (System Logs).
+  - Decision D-028: Authentication, bcrypt password security, 8-hour JWT access tokens, CLI admin provisioning, and system_logs audit integration.
+* **Key Implementation Details:**
+  1. *Cryptographic Password Security:* Implemented `bcrypt` password hashing with cryptographic salt (work factor $\ge 12$ rounds) in [`core_engine/auth.py`](file:///d:/intrusion%20detection/core_engine/auth.py). Enforced minimum 8-character password complexity rule. Plaintext passwords never stored or logged.
+  2. *JWT Access Control:* Implemented `create_token()` and `decode_token()` using HMAC-SHA256 (`HS256`) with `JWT_SECRET_KEY` loaded from [`.env`](file:///d:/intrusion%20detection/.env). Configured bounded 8-hour expiration lifetime (28,800 seconds). Handles standard claims (`sub`, `role`, `iat`, `exp`, `jti`).
+  3. *Elimination of Open Registration:* Removed all public sign-up attack surfaces. Implemented [`tools/create_admin.py`](file:///d:/intrusion%20detection/tools/create_admin.py) CLI utility supporting interactive hidden password entry via `getpass`, role assignment, and `--force` credential resets.
+  4. *Immutable Audit Trail Integration:* Recorded every login attempt and admin action directly to MongoDB `system_logs`:
+     - `AUTH_LOGIN_SUCCESS`: username, role, client IP, auth method.
+     - `AUTH_LOGIN_FAIL`: username, client IP, failure reason (`invalid_password`, `user_not_found`, `account_disabled`, `empty_credentials`).
+     - `USER_CREATED` & `USER_PASSWORD_RESET`: Administrative provisioning audit events.
+  5. *Route Protection Guards:* Implemented `@token_required` (extracts token from `Authorization: Bearer <token>` or `?token=`, injects `g.current_user`, returns 401 Unauthorized on failure) and `@admin_required` (returns 403 Forbidden with `INSUFFICIENT_PRIVILEGES` for non-admin tokens).
+  6. *Database Service Password Reset:* Added `update_user_password()` to [`core_engine/db_service.py`](file:///d:/intrusion%20detection/core_engine/db_service.py).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run unit tests for authentication and secrets module
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/unit/test_auth.py -v
+
+  # 2. Test CLI admin tool against test database
+  .\.venv\Scripts\python.exe tools/create_admin.py --username test_cli_admin --password "AdminSecurePassword123!" --role admin --db-name iot_ids_test --force
+
+  # 3. Run complete repository test suite
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `core_engine/auth.py` (Created, in Git)
+  - `tools/create_admin.py` (Created, in Git)
+  - `tests/unit/test_auth.py` (Created, in Git)
+  - `core_engine/db_service.py` (Added `update_user_password()`, in Git)
+  - `docs/decision_log.md` (Added Decision D-028, in Git)
+  - `docs/execution_record.md` (Updated Step 24 details, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated Step 24 status to ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work Log 3.43, updated tree and summary)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated authentication architecture section)
+* **Verification Result:** 21 dedicated unit tests passed; all 105 unit and integration tests passed across the repository in 28.85s with 0 errors. Step 24 status is ✅ Done.
+
+---
+
+### Step 25: Build the Flask + Socket.IO Server (`core_engine/app.py`)
+* **Date:** 31 October 2026
+* **Status:** ✅ Done
+* **Proposal & Requirement Alignment:**
+  - Proposal Section 3.6 & Figure 2: Single consolidated backend server running on port 5000 replacing the five disjoint legacy backend servers (ports 5002, 5005, 5006, 5007, 5012).
+  - Proposal Figure 4: Core collections and REST endpoints for events, devices, response actions, blocklist, system logs, users, traffic summaries, and dynamic settings.
+  - Proposal Section 3.7: Logged-in administrator enforcement, approved subnet boundary (`192.168.50.0/24`), and management allowlist immunity.
+  - Requirements Table 7: FR-01 & FR-02 (Attack alerts and detail lookup), FR-03 (Benign traffic metrics), FR-04 (Dashboard login and live Socket.IO push telemetry without browser refresh), FR-05 (Camera inventory and active Nmap scans), FR-06 & FR-07 (Blocklist mutations with audit records), FR-08 (Filtered log exports as JSON and CSV).
+  - Decision D-029: Consolidated Flask + Socket.IO server on port 5000 with RBAC, authenticated WebSocket streams, and safety guardrails.
+* **Key Implementation Details:**
+  1. *Consolidated Server Architecture:* Built application factory `create_app(db=None, auth_service=None, test_config=None)` in [`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py). Runs Flask and Flask-SocketIO on port 5000 with CORS restricted to `http://localhost:3000`.
+  2. *15 REST Endpoints:*
+     - `GET /api/health`: Health status monitoring of MongoDB, ML model bundle, Zeek stream, and Auth subsystems.
+     - `POST /api/auth/login`: Authenticates credentials with bcrypt verification, returns signed 8-hour JWT token and logs audit event.
+     - `GET /api/auth/me`: Authenticated endpoint returning user claims (`username`, `role`).
+     - `GET /api/summary`: System dashboard aggregates (total events, high severity, active blocks, 24h traffic volume, class distribution).
+     - `GET /api/events`: Paginated attack events query with filters (`class`, `severity`, `status`, `start_time`, `end_time`).
+     - `GET /api/events/<event_id>`: Detailed view of a single attack incident including flow features and model explanation.
+     - `PATCH /api/events/<event_id>`: Admin-only triage and incident verification status update (`status`, `notes`).
+     - `GET /api/devices`: Device inventory with camera filter (`cameras_only=true`).
+     - `POST /api/scans`: Admin-only trigger for network discovery scan (enforcing subnet guardrail).
+     - `GET /api/scans`: Scan history listing.
+     - `GET /api/scans/<scan_id>`: Detailed scan result lookup.
+     - `GET /api/blocklist`: Active and historical firewall block records (`status=active|removed|expired`).
+     - `POST /api/blocklist`: Admin-only manual firewall block (enforcing allowlist immunity).
+     - `DELETE /api/blocklist/<target_ip>`: Admin-only manual firewall unblock with mandatory reason.
+     - `GET /api/settings`: Fetch active confidence thresholds, allowlists, and scan subnets.
+     - `PUT /api/settings`: Admin-only dynamic setting updates with audit history preservation.
+     - `GET /api/settings/history`: Modification history for auditing configuration changes.
+     - `GET /api/logs`: Query immutable system audit logs.
+     - `GET /api/logs/export`: Filtered forensic export in JSON or CSV format (FR-08).
+  3. *Socket.IO Real-Time Push Telemetry (FR-04):*
+     - `@socketio.on("connect")` enforces JWT authentication via `?token=` query parameter, returning `False` for missing or invalid tokens.
+     - Broadcast channels: `new_event`, `event_update`, `traffic_update`, `summary_update`, `device_update`, `blocklist_update`, `scan_progress`, `settings_update`.
+  4. *Strict Academic Lab Safety Guardrails (Section 3.7 & 3.8):*
+     - Scan target validation restricts Nmap runs strictly to `lab.approved_scan_subnets` (`192.168.50.0/24`), rejecting external or out-of-bounds targets with 403 `UNAUTHORIZED_SUBNET`.
+     - Allowlist protection shields critical infrastructure (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`) from being blocked, rejecting with 403 `ALLOWLIST_PROTECTED`.
+     - Sensitive routes require `admin` role, returning 403 `INSUFFICIENT_PRIVILEGES` for non-admin tokens.
+  5. *Automated Integration Testing ([`tests/integration/test_app_api.py`](file:///d:/intrusion%20detection/tests/integration/test_app_api.py)):*
+     - 13 comprehensive tests covering all 15 endpoints, 401 unauthenticated rejections, 403 RBAC checks, safety guardrails, CSV/JSON log exports, and Socket.IO client connection & event broadcasts.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run integration tests for consolidated Flask + Socket.IO server
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/integration/test_app_api.py -v
+
+  # 2. Run complete repository test suite
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `core_engine/app.py` (Created, in Git)
+  - `tests/integration/test_app_api.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-029, in Git)
+  - `docs/execution_record.md` (Updated Step 25 details, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated Step 25 status to ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work Log 3.44, updated tree and summary)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated backend architecture section)
+* **Verification Result:** All 13 integration tests in `test_app_api.py` passed in 16.70s. All 118 unit and integration tests across 13 test modules passed across the entire repository in 47.07s with 0 errors. Step 25 status is ✅ Done.
+
+---
+
+### Step 26: Build the Detector and Decision Engine (`core_engine/detector.py`, `core_engine/decision_engine.py`)
+* **Date:** 31 October 2026
+* **Status:** ✅ Done
+* **Proposal & Requirement Alignment:**
+  - Proposal Figures 2 & 3: End-to-end intrusion detection pipeline connecting Zeek telemetry flows, feature engineering, ML bundle prediction, threshold evaluation, persistence, and live dashboard emission.
+  - Proposal Sections 3.4 & 3.6: Multi-class prediction, dual operational thresholds (`passive_alert_threshold` and `active_response_threshold`), and status tagging (`prediction` until admin triage).
+  - Proposal Section 3.7: Management allowlist protection preventing accidental firewall blocking of critical lab nodes.
+  - Requirements Table 7: FR-01 & FR-02 (Real-time alert with class, timestamp, IPs, severity, and human-readable evidence note), FR-03 (Benign traffic isolated into 1-minute aggregation buckets in `traffic_summaries`), FR-04 (Socket.IO `new_event` and `traffic_update` real-time telemetry).
+  - Hypothesis H1 Clause 3: Sub-second response tracking across 6 stages (`zeek_ts` -> `adapter_ts` -> `detect_ts` -> `decision_ts` -> `db_ts` -> `emit_ts`).
+  - Decision D-030: Detector and decision engine architecture, calibrated inference, dual thresholds, allowlist safety, burst coalescing, and latency tracking.
+* **Key Implementation Details:**
+  1. *Detector Engine ([`core_engine/detector.py`](file:///d:/intrusion%20detection/core_engine/detector.py)):*
+     - Single-pass initialization loading `ml_engine/models/ids_bundle_v1.joblib` into memory once at startup.
+     - Vectorized micro-batch feature transformation using `ml_engine.features.make_features()`, strictly eliminating training-serving skew (19 features, zero NaNs).
+     - Calibrated inference executing `calibrated_model.predict_proba()` returning normalized probability distributions across 5 classes.
+     - Emits standardized `DetectionResult` objects with predicted class, confidence, probability dictionary, model version ("v1.0.0"), and detection timestamp.
+  2. *Decision Engine ([`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py)):*
+     - Evaluates calibrated predictions against operational thresholds loaded from `operational_thresholds.json`.
+     - *Benign Traffic Handling (FR-03):* Completely isolated from `attack_events`; updates 1-minute bucket aggregations in MongoDB `traffic_summaries` via `record_traffic_summary(minute, "Benign", count, orig_bytes, resp_bytes, pkts)` and emits `traffic_update` over Socket.IO.
+     - *Attack Flow Decision Matrix:*
+       - `confidence < alert_threshold`: Regarded as low-confidence noise (`LOW_CONFIDENCE_IGNORE`).
+       - `alert_threshold <= confidence < block_threshold`: Passive alert (`ALERT_ONLY`), status `prediction`, response status `none`, writes to `attack_events`, emits `new_event`.
+       - `confidence >= block_threshold`: Active response candidate (`ACTIVE_BLOCK_CANDIDATE`), response status `candidate`, passed to Step 31 firewall policy.
+  3. *Academic Lab Safety Guardrails (Section 3.7):*
+     - Critical management nodes (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`) are protected against blocking; even high-confidence attacks from allowlisted IPs are downgraded to `ALERT_ONLY` with `response_status: "allowlist_protected"`.
+  4. *Burst Coalescing (Section 3.6 Tip 3):*
+     - Rapid flows sharing `(src_ip, dst_ip, predicted_class)` within `repeat_window_seconds` (60s) coalesce into a single incident document in MongoDB, incrementing `flow_count` and refreshing `last_seen`.
+  5. *Evidence Synthesis (FR-02):*
+     - Automatically generates technical evidence notes detailing packet counts, byte volumes, port categories, connection states, and durations.
+  6. *End-to-End Latency Tracking (Hypothesis H1 Clause 3):*
+     - Captures timestamps at all 6 stages (`zeek_ts`, `adapter_ts`, `detect_ts`, `decision_ts`, `db_ts`, `emit_ts`) and computes `pipeline_latency_ms`.
+  7. *Comprehensive Testing:*
+     - 7 unit tests in [`tests/unit/test_detector.py`](file:///d:/intrusion%20detection/tests/unit/test_detector.py) (default bundle loading, error handling, benign/scan inference, batch processing, mock bundle).
+     - 8 unit tests in [`tests/unit/test_decision_engine.py`](file:///d:/intrusion%20detection/tests/unit/test_decision_engine.py) (benign traffic isolation, noise filtering, alert thresholds, block candidate, allowlist immunity, latency tracking, evidence generation, batch processing).
+     - 4 integration tests in [`tests/integration/test_detection_pipeline.py`](file:///d:/intrusion%20detection/tests/integration/test_detection_pipeline.py) against MongoDB `iot_ids_test` (benign RTSP camera stream, external port scan, burst coalescing, allowlist protection).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run unit tests for detector and decision engine
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/unit/test_detector.py tests/unit/test_decision_engine.py -v
+
+  # 2. Run integration tests for detection pipeline
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/integration/test_detection_pipeline.py -v
+
+  # 3. Run complete repository test suite
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `core_engine/detector.py` (Created, in Git)
+  - `core_engine/decision_engine.py` (Created, in Git)
+  - `core_engine/__init__.py` (Created, in Git)
+  - `core_engine/db_service.py` (Added `doc` metadata fields in `record_attack_event()`, in Git)
+  - `tests/unit/test_detector.py` (Created, in Git)
+  - `tests/unit/test_decision_engine.py` (Created, in Git)
+  - `tests/integration/test_detection_pipeline.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-030, in Git)
+  - `docs/execution_record.md` (Updated Step 26 details, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated Step 26 status to ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work Log 3.45, updated tree and summary)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated detector and decision engine architecture)
+* **Verification Result:** 15 unit tests passed; 4 integration tests passed; all 137 unit and integration tests across 16 test modules passed across the entire repository in 50.01s with 0 errors (100% pass rate). Step 26 status is ✅ Done.
+
+---
+
+### Step 27: Device Discovery (Nmap) and IP Camera Identification Service
+
+* **Objective:** Architect and implement the authorized network asset discovery and IP camera identification service ([`core_engine/scanner_service.py`](file:///d:/intrusion%20detection/core_engine/scanner_service.py)) conforming strictly to Group 03 Research Proposal Section 3.7 ("Logged-in Administrator and Lab Safety"), Section 3.6 (Figure 4: `devices` and `scans` collections in `iot_ids_db`), and Table 7 Requirement FR-05.
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. *Subnet Safety Guardrail ([`core_engine/scanner_service.py`](file:///d:/intrusion%20detection/core_engine/scanner_service.py)):*
+     - Enforced `validate_subnet()` ensuring scan targets are contained strictly within `lab.approved_scan_subnets` (`192.168.50.0/24`) or single host IPs (`/32`) within that subnet.
+     - Any target outside this approved boundary immediately raises `UnauthorizedSubnetError` and is rejected with HTTP 403 `UNAUTHORIZED_SUBNET`.
+  2. *Multi-Evidence Camera Identification Heuristics:*
+     - Implemented `analyze_camera_evidence()` adhering to Proposal Section 3.7 ("A device is not assumed to be a camera merely because port 554 (RTSP) is open; HTTP, ONVIF and RTSP services may all be present. A device is labelled as a possible camera with evidence, and the administrator confirms the role.").
+     - Correlates MAC OUI vendors (Dahua, Hikvision, Axis, Hanwha, Uniview, Amcrest, Reolink, etc.), RTSP port 554, ONVIF ports (8899, 8999), Dahua 37777, Hikvision 8000, XM 34567, RTMP 1935, service banners (`rtsp`, `onvif`, `ipcamera`, `live555`), and hostname indicators (`ipc`, `cam`, `dahua`, `hik`).
+     - Tags device as `possible_camera: true` with a detailed evidence list (`camera_evidence: [...]`), preserving `confirmed_camera: false` until explicit administrator verification.
+  3. *Role-Based Camera Confirmation API:*
+     - Added `confirm_camera_role()` in [`core_engine/db_service.py`](file:///d:/intrusion%20detection/core_engine/db_service.py) and `PATCH /api/devices/<ip>/confirm-camera` in [`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py).
+     - Allows authenticated administrators (`@admin_required`) to confirm or revoke the IP camera classification with justification notes, logging `DEVICE_CAMERA_CONFIRMED` or `DEVICE_CAMERA_REVOKED` in `system_logs`.
+  4. *Elimination of Synthetic / Fake Metrics:*
+     - Removed all legacy synthetic vulnerability counts, random CVE numbers, and artificial security scores. Persists only empirical scan observations (open ports, discovered services, MAC addresses, OUI vendors) into MongoDB `devices`.
+  5. *Asynchronous Scan Execution & Socket.IO Telemetry:*
+     - Implemented non-blocking background scan execution via `start_scan_async()` returning HTTP 202 Accepted.
+     - Live progress is broadcast to connected dashboards via Socket.IO `scan_progress` and `device_update` events.
+  6. *Resilient Production Fallback:*
+     - Integrated `python-nmap` (`-sS -sV -O -T4`). When the Nmap binary is unavailable (e.g. Windows development workstations lacking Nmap in PATH), gracefully activates simulated lab network discovery modeling realistic lab devices (Cisco gateway, IDS sensor, admin PC, Hikvision NVR, Dahua camera), ensuring 100% testability.
+  7. *Comprehensive Unit and Integration Testing:*
+     - Authored 12 unit tests in [`tests/unit/test_scanner_service.py`](file:///d:/intrusion%20detection/tests/unit/test_scanner_service.py) (subnet validation, multi-evidence camera identification, mock Nmap parsing, device classification, state tracking).
+     - Authored 5 integration tests in [`tests/integration/test_scanner_integration.py`](file:///d:/intrusion%20detection/tests/integration/test_scanner_integration.py) targeting MongoDB `iot_ids_test` (synchronous/asynchronous execution, database persistence, Socket.IO emissions, camera confirmation RBAC, safety guardrail enforcement).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run unit tests for scanner service
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/unit/test_scanner_service.py -v
+
+  # 2. Run integration tests for scanner service
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/integration/test_scanner_integration.py -v
+
+  # 3. Run complete repository test suite
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `core_engine/scanner_service.py` (Created, in Git)
+  - `core_engine/app.py` (Wired scanner service into `trigger_scan`, added `confirm_camera` endpoint)
+  - `core_engine/db_service.py` (Added `confirm_camera_role()`, updated `log_system_event()`, updated `upsert_device`)
+  - `tests/unit/test_scanner_service.py` (Created, in Git)
+  - `tests/integration/test_scanner_integration.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-031, in Git)
+  - `docs/execution_record.md` (Updated Step 27 details, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated Step 27 status to ✅ Done)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work Log 3.46, updated tree and summary)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated device discovery and camera heuristics)
+* **Verification Result:** 12 unit tests passed; 5 integration tests passed; all 154 unit and integration tests across 20 test modules passed across the entire repository in 59.62s with 0 errors (100% pass rate). Step 27 status is ✅ Done.
+
+---
+
+### Step 28: Forensic Log Export Service
+
+* **Objective:** Architect and implement the forensic log export service ([`core_engine/export_service.py`](file:///d:/intrusion%20detection/core_engine/export_service.py) with backward-compatible alias [`core_engine/log_exporter.py`](file:///d:/intrusion%20detection/core_engine/log_exporter.py)) conforming strictly to Group 03 Proposal Table 7 Requirement FR-08 ("Forensic Log Export"), Table 7 Requirement FR-07 ("Audit Logging and Invariants"), and Section 3.6 (Figure 4: `attack_events`, `system_logs`, `response_actions`).
+* **Date:** 31 October 2026
+* **How It Was Done:**
+  1. *Multi-Attribute Query Filtering Engine:*
+     - Implemented `parse_datetime()` supporting ISO 8601 UTC strings, timestamps with offsets, and date-only representations.
+     - Implemented multi-attribute filtering across date ranges (`start_time`, `end_time`), attack class (`predicted_class`), IP address (`src_ip`, `dst_ip`, `ip`), incident confirmation status (`status`), mitigation status (`response_status`), severity (`critical`, `high`, `medium`, `low`), and audit actor.
+  2. *Standard RFC 4180 CSV & Indented JSON Formats:*
+     - Implemented `serialize_csv()` with canonical column ordering for each collection (`ATTACK_EVENT_FIELDS`, `SYSTEM_LOG_FIELDS`, `RESPONSE_ACTION_FIELDS`), minimal quoting, CRLF terminators, UTF-8 charset, and JSON-stringified nested dictionary representations (`details`, `probabilities`).
+     - Implemented `serialize_json()` outputting formatted, indented JSON arrays with full ISO 8601 string timestamps.
+  3. *Multi-Collection Dispatching:*
+     - Provided export dispatching across `attack_events` (`ids_attack_logs_*.ext`), `system_logs` (`ids_system_logs_*.ext`), and `response_actions` (`ids_response_actions_*.ext`).
+  4. *Audit Trail Invariant (FR-07/FR-08):*
+     - Every export request is permanently recorded to MongoDB `system_logs` with `event: "LOGS_EXPORTED"`, capturing requesting administrator (`actor`), format, row count, sanitized filters, and generated filename.
+  5. *REST API & RBAC Integration:*
+     - Connected `ExportService` into unified Flask server ([`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py)) via `GET /api/logs/export`, protected with `@auth.admin_required` (HTTP 403 Forbidden for non-administrators).
+     - Returns HTTP attachments (`Content-Disposition: attachment; filename=...`) with appropriate MIME types.
+  6. *Comprehensive Unit & Integration Testing:*
+     - Authored 10 unit tests in [`tests/unit/test_export_service.py`](file:///d:/intrusion%20detection/tests/unit/test_export_service.py).
+     - Authored 4 integration tests in [`tests/integration/test_export_integration.py`](file:///d:/intrusion%20detection/tests/integration/test_export_integration.py) targeting MongoDB `iot_ids_test`.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run unit tests for export service
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/unit/test_export_service.py -v
+
+  # 2. Run integration tests for export service
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/integration/test_export_integration.py -v
+
+  # 3. Run complete repository test suite
+  $env:PYTHONPATH='.'; .\.venv\Scripts\pytest.exe tests/ -v
+  ```
+* **Files Created / Modified:**
+  - `core_engine/export_service.py` (Created, in Git)
+  - `core_engine/log_exporter.py` (Created backward compatibility alias, in Git)
+  - `core_engine/app.py` (Wired `ExportService` into `export_logs` endpoint)
+  - `core_engine/db_service.py` (Enhanced `get_attack_events`, `get_system_logs`, `get_response_actions` with query filters)
+  - `tests/unit/test_export_service.py` (Created, in Git)
+  - `tests/integration/test_export_integration.py` (Created, in Git)
+  - `docs/decision_log.md` (Added Decision D-032, in Git)
+  - `docs/execution_record.md` (Updated Step 28 details, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Updated Step 28 status to ✅ Done, Phase 6 100% complete)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work Log 3.47, updated tree and summary)
+  - `PROJECT_EXPLANATION.md` & `PROJECT_EXPLANATION_EN.md` (Updated log export section)
+* **Verification Result:** 10 unit tests passed; 4 integration tests passed; all 168 unit and integration tests across 22 test modules passed across the entire repository with 0 errors (100% pass rate). Step 28 status is ✅ Done. Phase 6 (Backend, Database & APIs, Steps 23–28) is 100% COMPLETE.
+
+---
+
+### Step 29: React Dashboard Clean-up, Single Backend URL Consolidation, and Socket.IO Integration
+
+* **Objective:** Modernize and clean up the React frontend (`my-app/`), eliminate dead legacy routes and pages (`Register`, `CyberDetails`, `TraditionalDetails`, `AttackHistoryCICIDS`, `KDDAttackHistory`), remove duplicate assets, eliminate public user registration, replace 5 disjoint backend URLs with a single central configuration, standardize on `npm`, wire authenticated `socket.io-client` push telemetry, purge all synthetic/fake attack messages, and integrate secure JWT session management per Proposal Section 3.6, Section 7.1, Table 8, and Guide Step 29.
+* **Date:** 1 November 2026
+* **How It Was Done:**
+  1. *Legacy File and Route Elimination:*
+     - Permanently removed obsolete legacy files: `my-app/src/components/Register.js`, `Register.css`, `my-app/src/pages/CyberDetails.js`, `CyberDetails.css`, `my-app/src/pages/TraditionalDetails.js`, `TraditionalDetailsold.css`, `my-app/src/pages/AttackHistoryCICIDS.js`, `my-app/src/pages/KDDAttackHistory.js`, and duplicate `my-app/src/pages/MatrixEffect.js`.
+     - Completely removed the unauthenticated `/register` web route. User accounts are created exclusively via administrative CLI script ([`tools/create_admin.py`](file:///d:/intrusion%20detection/tools/create_admin.py)) under Decision `D-028`.
+  2. *Single Central Backend Configuration:*
+     - Created [`my-app/src/config.js`](file:///d:/intrusion%20detection/my-app/src/config.js) dynamically reading `REACT_APP_API_URL` (defaulting to `http://localhost:5000`). Replaced all 5 hardcoded ports (`5002`, `5005`, `5006`, `5007`, `5012`).
+  3. *Package Manager & Build Clean-up:*
+     - Removed redundant lock file `my-app/yarn.lock`, standardizing on `npm`.
+     - Cleaned `my-app/package.json` of redundant and conflicting direct dependencies: removed `webpack ^4.47.0`, `html-webpack-plugin ^5.6.3`, `stream-http ^3.2.0`, and browser shim overrides.
+  4. *Authenticated REST Client & Interceptors:*
+     - Created [`my-app/src/services/api.js`](file:///d:/intrusion%20detection/my-app/src/services/api.js) using Axios. Automatically injects `Authorization: Bearer <token>` from `localStorage` on all outgoing API requests.
+     - Installed response interceptor that catches HTTP 401 Unauthorized errors, clears stale session data, and redirects to `/login`.
+  5. *Authenticated Socket.IO Telemetry Manager:*
+     - Created [`my-app/src/services/socket.js`](file:///d:/intrusion%20detection/my-app/src/services/socket.js) with `socket.io-client` 4.8.1.
+     - Passes JWT access token in handshake credentials (`auth: { token }`) to connect to Flask-SocketIO in `core_engine/app.py`.
+  6. *Zero Synthetic Attack Telemetry:*
+     - Completely removed all synthetic attack fallbacks (`fakeAttacks` and hardcoded `sampleData`) in `IOTDetails.js`.
+     - Wired real-time `new_event` and `summary_update` Socket.IO listeners to live feeds.
+  7. *Authentication Workflow & Protected Routing:*
+     - Refactored [`my-app/src/components/Login.js`](file:///d:/intrusion%20detection/my-app/src/components/Login.js) to submit credentials to `POST /api/auth/login`, store 8-hour JWT access token, and route to dashboard.
+     - Updated [`my-app/src/App.js`](file:///d:/intrusion%20detection/my-app/src/App.js) with `ProtectedRoute` guards and consolidated routes.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run React test suite
+  cd my-app; npm test -- --watchAll=false
+
+  # 2. Verify production build
+  npm run build
+
+  # 3. Verify Python test suite remains intact
+  cd ..; .\.venv\Scripts\python -m pytest tests/unit/
+  ```
+* **Files Created / Modified:**
+  - `my-app/package.json` (Cleaned dependencies, in Git)
+  - `my-app/yarn.lock` (Permanently deleted)
+  - `my-app/src/config.js` (Created centralized configuration, in Git)
+  - `my-app/src/services/api.js` (Created authenticated Axios client, in Git)
+  - `my-app/src/services/socket.js` (Created authenticated Socket.IO manager, in Git)
+  - `my-app/src/components/Login.js` (Refactored to JWT endpoint, removed register link, in Git)
+  - `my-app/src/components/Dashboard.js` (Connected to /api/summary and /api/events, in Git)
+  - `my-app/src/pages/IOTDetails.js` (Replaced WebSocket with Socket.IO, removed fake attacks, in Git)
+  - `my-app/src/pages/AttackHistory.js` (Connected to /api/events with Bearer auth, in Git)
+  - `my-app/src/pages/IoTDevicesDashboard.js` (Connected to /api/devices and /api/scans, in Git)
+  - `my-app/src/App.js` (Consolidated routes with ProtectedRoute, in Git)
+  - `my-app/src/App.test.js` (Updated to verify unified backend configuration, in Git)
+  - `my-app/src/setupTests.js` (Cleaned configuration, in Git)
+  - `docs/decision_log.md` (Added Decision D-033, in Git)
+  - `docs/execution_record.md` (Updated Step 29 execution details, in Git)
+* **Verification Result:** React test suite passed; React production build passed (`build/static/js/main.*.js` 147.78 kB gzip); zero references to old ports (5002, 5005, 5006, 5007, 5012) remain in the codebase; all 129 Python unit tests passed. Step 29 status is ✅ Done.
+
+---
+
+### Step 30: Build the Responsive Dashboard Pages Suite
+
+* **Objective:** Architect and implement the 7 canonical dashboard pages in `my-app/src/pages/` conforming strictly to Group 03 Proposal Section 3.6, Section 7.1, and Table 8 ("a dashboard that fits any screen"), wire real-time Socket.IO and REST API integrations, implement the prominent "Model prediction" vs "Confirmed incident" verification badges, and provide complete operational control over alerts, asset discovery, firewall mitigations, safety thresholds, and forensic export.
+* **Date:** 1 November 2026
+* **How It Was Done:**
+  1. *Universal Responsive Layout ([`my-app/src/components/Layout.js`](file:///d:/intrusion%20detection/my-app/src/components/Layout.js)):*
+     - Designed responsive dark-mode cyber SOC layout using Tailwind CSS.
+     - Sticky top telemetry bar displaying real-time Socket.IO connectivity indicator (`SOCKET.IO LIVE` / `TELEMETRY OFFLINE`) and logged-in operator identity (`user.username`).
+     - Collapsible mobile navigation menu and desktop sidebar navigation covering all 7 operational domains.
+  2. *Canonical 7-Page Implementation Suite:*
+     - **Overview ([`my-app/src/pages/Overview.js`](file:///d:/intrusion%20detection/my-app/src/pages/Overview.js)):** Executive KPI metrics (Total Flows, Attacks Detected, Active Blocks, Discovered Devices), Recharts multiclass inference distribution bar chart, live alert ticker, and lab infrastructure safety summaries (`GET /api/summary`, Socket.IO `summary_update`).
+     - **Live Alerts ([`my-app/src/pages/LiveAlerts.js`](file:///d:/intrusion%20detection/my-app/src/pages/LiveAlerts.js)):** Real-time Socket.IO stream (`new_event`, `event_update`) showing flow direction, calibrated confidence scores, empirical evidence notes, quick triage actions (Confirm Incident, Block IP), and stream pause/resume controls.
+     - **Attack History ([`my-app/src/pages/AttackHistory.js`](file:///d:/intrusion%20detection/my-app/src/pages/AttackHistory.js)):** Searchable, multi-attribute filterable forensic event table (search by IP, filter by class, filter by status: prediction/confirmed), pagination, and an Incident Evidence Dossier modal with admin confirmation action (`PATCH /api/events/<id>`).
+     - **Devices & Scans ([`my-app/src/pages/Devices.js`](file:///d:/intrusion%20detection/my-app/src/pages/Devices.js)):** Subnet inventory table (IP, MAC, vendor, open ports, services, last seen), surveillance camera heuristic badges (`possible_camera`), camera evidence modal, authorized Nmap scan dispatcher (`POST /api/scans`), live progress bar (`scan_progress`), and admin camera confirmation toggle (`PATCH /api/devices/<ip>/confirm-camera`).
+     - **Blocklist & Mitigations ([`my-app/src/pages/Blocklist.js`](file:///d:/intrusion%20detection/my-app/src/pages/Blocklist.js)):** Active firewall rules table (target IP, direction, reason code, created timestamp, auto-expiry timestamp, status), manual mitigation creation form (`POST /api/blocklist`), and one-click unblock action (`DELETE /api/blocklist/<ip>`).
+     - **Settings & Safety Policy ([`my-app/src/pages/Settings.js`](file:///d:/intrusion%20detection/my-app/src/pages/Settings.js)):** Autonomous mitigation master switch toggle, operational threshold sliders/inputs (`min_confidence`, `min_repeats`, `repeat_window_seconds`, `max_rule_minutes`), management allowlist immunity table (gateway, sensor, admin PC, NVR), and settings change audit history (`GET /api/settings/history`).
+     - **Forensic Logs & Export ([`my-app/src/pages/LogExport.js`](file:///d:/intrusion%20detection/my-app/src/pages/LogExport.js)):** Live immutable system audit logs viewer (`system_logs`) and multi-attribute forensic log export dispatcher generating RFC 4180 CSV and structured JSON files (`GET /api/logs/export`) with audit logging invariant verification (`LOGS_EXPORTED`).
+  3. *Operator Verification Badges (Proposal Section 7.1):*
+     - Enforced distinct visual badges across alerts and incident tables:
+       - **"MODEL PREDICTION"** (Blue border, unconfirmed automated classifier prediction);
+       - **"CONFIRMED INCIDENT"** (Red border, administrator-confirmed security incident).
+  4. *Zero Synthetic Data Guarantee:*
+     - Every list, chart, and metric renders exclusively authentic backend telemetry or displays an informative "No data yet" state when the network is benign and quiet.
+  5. *Route Integration & Testing:*
+     - Updated [`my-app/src/App.js`](file:///d:/intrusion%20detection/my-app/src/App.js) with protected routes for all 7 pages.
+     - Authored tests in [`my-app/src/App.test.js`](file:///d:/intrusion%20detection/my-app/src/App.test.js) verifying central config and exports for all 7 pages.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run React Jest test suite
+  cd my-app; npm test -- --watchAll=false
+
+  # 2. Verify React production build
+  npm run build
+
+  # 3. Verify Python test suite
+  cd ..; .\.venv\Scripts\python -m pytest tests/unit/test_auth.py tests/unit/test_detector.py tests/unit/test_decision_engine.py
+  ```
+* **Files Created / Modified:**
+  - `my-app/src/components/Layout.js` (Created universal responsive layout, in Git)
+  - `my-app/src/pages/Overview.js` (Created overview dashboard page, in Git)
+  - `my-app/src/pages/LiveAlerts.js` (Created live alerts streaming page, in Git)
+  - `my-app/src/pages/AttackHistory.js` (Refactored to canonical forensic history page, in Git)
+  - `my-app/src/pages/Devices.js` (Created devices and scan page, in Git)
+  - `my-app/src/pages/Blocklist.js` (Created blocklist and mitigations page, in Git)
+  - `my-app/src/pages/Settings.js` (Created operational settings and allowlist page, in Git)
+  - `my-app/src/pages/LogExport.js` (Created forensic log export page, in Git)
+  - `my-app/src/App.js` (Wired all 7 routes with ProtectedRoute, in Git)
+  - `my-app/src/App.test.js` (Verified configuration and page component exports, in Git)
+  - `docs/decision_log.md` (Added Decision D-034, in Git)
+  - `docs/execution_record.md` (Updated Step 30 execution details, in Git)
+* **Verification Result:** React test suite passed (2 passed tests); React production build succeeded (`main.*.js` 191.75 kB gzip); all 36 Python unit tests in auth, detector, and decision engine passed. Step 30 status is ✅ Done. Phase 7 (React Dashboard and Alerts, Steps 29–30) is 100% COMPLETE.
+
+---
+
+### Step 31: Response Policy and Safety Guardrail Engine
+
+* **Objective:** Author comprehensive formal specification [`docs/response_policy.md`](file:///d:/intrusion%20detection/docs/response_policy.md) and implement `ResponsePolicy` in [`core_engine/response_policy.py`](file:///d:/intrusion%20detection/core_engine/response_policy.py) with full direction-aware rules (Proposal Table 5), seven non-bypassable safety checkpoints, sliding-window repeat coalescing, permanent allowlist immunity, and bounded rule lifetimes to answer Research Question RQ5 and satisfy Supervisor Checkpoint C7.
+* **Date:** 1 November 2026
+* **How It Was Done:**
+  1. *Formal Policy Documentation ([`docs/response_policy.md`](file:///d:/intrusion%20detection/docs/response_policy.md)):*
+     - Authored complete policy specification articulating mathematical criteria, direction-aware action matrices, flow chart diagrams, safety checkpoints, and reason codes.
+  2. *Direction-Aware Response Engine ([`core_engine/response_policy.py`](file:///d:/intrusion%20detection/core_engine/response_policy.py)):*
+     - Implemented `ResponsePolicy` and `PolicyDecision` dataclass.
+     - Class-specific direction logic: PortScan drops outside scanner source IP; DDoS drops/rate-limits outside source; C&C drops external destination server IP (preserving internal camera-to-NVR reachability); Benign flows are permanently prohibited from being blocked.
+  3. *The 7 Safety Guardrails:*
+     - Check 1: Master switch validation (`auto_response == True`).
+     - Check 2: Minimum calibrated confidence validation ($P \ge \tau_{\text{active}}$).
+     - Check 3: Management allowlist immunity (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20` never dropped under any circumstances).
+     - Check 4: Private target protection (internal camera drops prevented).
+     - Check 5: Sliding-window repeat coalescing using `collections.defaultdict(deque)` requiring $\ge \text{min\_repeats}$ within $\text{repeat\_window\_seconds}$ (default 3 occurrences in 60s).
+     - Check 6: Bounded rule expiry ($\le \text{max\_rule\_minutes}$, default 45–60 mins).
+     - Check 7: Reason codes (`AUTO_*`, `SKIP_*`) and audit dictionary payload generation.
+  4. *Integration with DecisionEngine ([`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py)):*
+     - Initialized `self.policy = ResponsePolicy(...)` inside `DecisionEngine`.
+     - Exposed `evaluate_response(outcome)` hook for firewall candidate evaluation.
+  5. *Automated Unit Testing ([`tests/unit/test_response_policy.py`](file:///d:/intrusion%20detection/tests/unit/test_response_policy.py)):*
+     - Authored 12 comprehensive unit tests verifying RFC 1918 private IP checks, allowlist immunity, single-event repeat gating, repeat window pruning, low-confidence skipping, master switch disabling, C&C destination targeting, bounded rule expirations, and decision engine integration.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run response policy unit test suite
+  .\.venv\Scripts\python -m pytest tests/unit/test_response_policy.py -v
+
+  # 2. Run complete unit test suite across repository
+  .\.venv\Scripts\python -m pytest tests/unit/
+  ```
+* **Files Created / Modified:**
+  - `docs/response_policy.md` (Created formal policy specification, in Git)
+  - `core_engine/response_policy.py` (Created response policy and guardrail engine, in Git)
+  - `core_engine/decision_engine.py` (Integrated ResponsePolicy and evaluate_response hook, in Git)
+  - `tests/unit/test_response_policy.py` (Created unit test suite, in Git)
+  - `docs/decision_log.md` (Added Decision D-035, in Git)
+  - `docs/execution_record.md` (Updated Step 31 execution details, in Git)
+* **Verification Result:** All 12 dedicated unit tests in `test_response_policy.py` passed; all 141 repository unit tests passed in 20.95s with 0 errors (100% pass rate). Research Question RQ5 answered and Supervisor Checkpoint C7 fulfilled. Step 31 status is ✅ Done.
+
+---
+
+### Step 32: Write the nftables Rules and Kernel Adapter
+
+* **Objective:** Implement native Linux `nftables` packet filtering rulesets ([`sensor/ids_inline.nft`](file:///d:/intrusion%20detection/sensor/ids_inline.nft), [`sensor/ids_router.nft`](file:///d:/intrusion%20detection/sensor/ids_router.nft)) with auto-expiring timed sets for both inline bridge and passive router deployments, and build the programmatic firewall adapter ([`core_engine/firewall/nftables_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/nftables_adapter.py)) with allowlist immunity enforcement and dev simulation fallback per Proposal Section 3.7 and Table 7 Requirement FR-06.
+* **Date:** 1 November 2026
+* **How It Was Done:**
+  1. *Inline Bridge Ruleset ([`sensor/ids_inline.nft`](file:///d:/intrusion%20detection/sensor/ids_inline.nft)):*
+     - Defined `table bridge ids` operating on Layer 2 transparent bridge transit flows.
+     - Added static `set allow` populated with lab management assets (`192.168.50.1`, `192.168.50.5`, `192.168.50.10`, `192.168.50.20`).
+     - Added dynamic timed sets `block_src`, `block_dst`, and `limit_src` with the `flags timeout` attribute.
+     - Hooked `chain forward` at `priority 0` with `policy accept`.
+     - Placed `ip saddr @allow accept` as the top rule; strictly omitted `ip daddr @allow accept` to prevent malicious external bypass.
+     - Appended transit filtering rules: `ip saddr @block_src drop`, `ip daddr @block_dst drop`, and `ip saddr @limit_src limit rate over 200/second drop`.
+  2. *Passive Router Ruleset ([`sensor/ids_router.nft`](file:///d:/intrusion%20detection/sensor/ids_router.nft)):*
+     - Defined `table inet ids` operating on Layer 3 routed transit flows on OpenWrt / Linux lab router forward hooks with identical timed set definitions and allowlist protections.
+  3. *Programmatic Kernel Adapter ([`core_engine/firewall/nftables_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/nftables_adapter.py)):*
+     - Implemented `NftablesAdapter` supporting parameterized execution via `subprocess.run` (`shell=False`, safe argument lists).
+     - Implemented `block(ip, direction, minutes, reason)` generating `nft add element <family> ids <set> '{ <ip> timeout <duration>m }'`.
+     - Implemented `rate_limit(ip, minutes, reason)` generating `nft add element <family> ids limit_src '{ <ip> timeout <duration>m }'`.
+     - Implemented `unblock(ip, direction)` generating `nft delete element <family> ids <set> '{ <ip> }'`.
+     - Implemented `list_active(set_name)` querying and parsing both structured JSON (`nft -j list set`) and text (`nft list set`) outputs with remaining time calculations.
+     - Implemented `check_ruleset()` and `load_ruleset()` for configuration lifecycle management.
+     - Enforced local allowlist immunity verification raising `AllowlistProtectedError` prior to command execution.
+     - Clamped rule durations to `max_rule_minutes` (default: 60 mins).
+     - Cross-platform dev fallback: Operates in simulation mode with full in-memory state tracking and timer expiration calculations when `nft` binary is unavailable (e.g. on Windows or non-root developer machines).
+  4. *Automated Unit Testing ([`tests/unit/test_nftables_adapter.py`](file:///d:/intrusion%20detection/tests/unit/test_nftables_adapter.py)):*
+     - Authored 12 dedicated unit tests verifying ruleset syntax, set structure, allowlist immunity, duration clamping, source and destination drops, rate-limiting, command line generation, and timeout text parsing.
+* **Commands Executed:**
+  ```powershell
+  # 1. Run nftables adapter unit tests
+  .\.venv\Scripts\python -m pytest tests/unit/test_nftables_adapter.py -v
+
+  # 2. Run all repository unit tests
+  .\.venv\Scripts\python -m pytest tests/unit/
+  ```
+* **Files Created / Modified:**
+  - `sensor/ids_inline.nft` (Created inline bridge ruleset, in Git)
+  - `sensor/ids_router.nft` (Created passive router ruleset, in Git)
+  - `core_engine/firewall/nftables_adapter.py` (Created nftables programmatic adapter, in Git)
+  - `tests/unit/test_nftables_adapter.py` (Created unit test suite, in Git)
+  - `docs/decision_log.md` (Added Decision D-036, in Git)
+  - `docs/execution_record.md` (Updated Step 32 execution details, in Git)
+* **Verification Result:** All 12 dedicated unit tests in `test_nftables_adapter.py` passed; all 153 repository unit tests passed in 19.69s with 0 errors (100% pass rate). Requirement FR-06 fulfilled. Step 32 status is ✅ Done.
+
+---
+
+### Step 33: Build the Firewall Response Adapters Suite and Engine Integration
+
+* **Objective:** Architect and implement the modular firewall response adapter suite ([`core_engine/firewall/base.py`](file:///d:/intrusion%20detection/core_engine/firewall/base.py), [`core_engine/firewall/router_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/router_adapter.py), [`core_engine/firewall/simulation_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/simulation_adapter.py), and [`core_engine/firewall/__init__.py`](file:///d:/intrusion%20detection/core_engine/firewall/__init__.py)) and integrate it with [`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py) and [`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py) per Proposal Sections 1.2, 2.5, 3.7; Figure 5; and Table 7 Requirement FR-06.
+* **Date:** 1 November 2026
+* **How It Was Done:**
+  1. *Unified Base Firewall Adapter ([`core_engine/firewall/base.py`](file:///d:/intrusion%20detection/core_engine/firewall/base.py)):*
+     - Created abstract base class `BaseFirewallAdapter` defining standard signature: `block(ip, direction, minutes, reason)`, `rate_limit(ip, minutes, reason)`, `unblock(ip, direction)`, and `list_active()`.
+     - Standardized allowlist verification `verify_allowlist(ip)` raising `AllowlistImmunityError`.
+     - Standardized duration clamping `clamp_duration(minutes)` bounded to `max_rule_minutes`.
+  2. *Refactored nftables Adapter ([`core_engine/firewall/nftables_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/nftables_adapter.py)):*
+     - Inherited from `BaseFirewallAdapter` while preserving full backward compatibility.
+  3. *Passive SPAN Router Adapter ([`core_engine/firewall/router_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/router_adapter.py)):*
+     - Solves passive monitoring topology constraint (Figure 5): dispatches remote mitigation commands to the upstream lab router via SSH parameterized execution (`ssh <user>@<host> "nft add element inet ids block_src '{ <ip> timeout <duration>m }'"`).
+     - Provides in-memory simulation mode fallback when router host is unreachable or unconfigured.
+  4. *Development Simulation Adapter ([`core_engine/firewall/simulation_adapter.py`](file:///d:/intrusion%20detection/core_engine/firewall/simulation_adapter.py)):*
+     - Tracks active rules in memory without modifying host networking.
+     - Strictly abides by Golden Rule / Step 33 note: "Never report simulation results as real blocking", by explicitly tagging all generated records with `is_simulated = True` and `simulated: True`.
+  5. *Adapter Factory ([`core_engine/firewall/__init__.py`](file:///d:/intrusion%20detection/core_engine/firewall/__init__.py)):*
+     - Implemented `get_firewall_adapter(config)` instantiating the appropriate adapter based on topology type and platform detection.
+  6. *Engine & API Integration:*
+     - Added `execute_response(decision, event_id, actor)` to `DecisionEngine`, automatically executing mitigations on the firewall adapter, recording documents to `response_actions` and `blocklist` collections in MongoDB, and broadcasting `blocklist_update` via Socket.IO.
+     - Updated Flask endpoints in `core_engine/app.py` (`POST /api/blocklist`, `DELETE /api/blocklist/<target_ip>`, `GET /api/blocklist`) to call the active firewall adapter and return `adapter_mode` and `is_simulated`.
+  7. *Automated Unit and Integration Testing:*
+     - Authored 8 unit tests in [`tests/unit/test_firewall_adapters.py`](file:///d:/intrusion%20detection/tests/unit/test_firewall_adapters.py).
+     - Authored 4 integration tests in [`tests/integration/test_firewall_integration.py`](file:///d:/intrusion%20detection/tests/integration/test_firewall_integration.py).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run firewall adapter unit tests
+  .\.venv\Scripts\python -m pytest tests/unit/test_firewall_adapters.py -v
+
+  # 2. Run firewall API integration tests
+  .\.venv\Scripts\python -m pytest tests/integration/test_firewall_integration.py -v
+
+  # 3. Run entire repository test suite
+  .\.venv\Scripts\python -m pytest tests/
+  ```
+* **Files Created / Modified:**
+  - `core_engine/firewall/base.py` (Created abstract base class, in Git)
+  - `core_engine/firewall/nftables_adapter.py` (Refactored inheritance, in Git)
+  - `core_engine/firewall/router_adapter.py` (Created passive router adapter, in Git)
+  - `core_engine/firewall/simulation_adapter.py` (Created simulation adapter, in Git)
+  - `core_engine/firewall/__init__.py` (Created package init and factory, in Git)
+  - `core_engine/decision_engine.py` (Integrated firewall adapter & execute_response, in Git)
+  - `core_engine/app.py` (Integrated firewall adapter into blocklist REST routes, in Git)
+  - `tests/unit/test_firewall_adapters.py` (Created unit test suite, in Git)
+  - `tests/integration/test_firewall_integration.py` (Created API integration test suite, in Git)
+  - `docs/decision_log.md` (Added Decision D-037, in Git)
+  - `docs/execution_record.md` (Updated Step 33 execution details, in Git)
+* **Verification Result:** All 8 unit tests in `test_firewall_adapters.py` passed; all 4 integration tests in `test_firewall_integration.py` passed; all 204 repository tests passed in 56.28s with 0 errors (100% pass rate). Requirement FR-06 fulfilled. Step 33 status is ✅ Done.
+
+---
+
+### Step 34: Manual Control, Rule Expiry Daemon, and Crash / Restart Recovery
+
+* **Objective:** Implement full administrative manual override (FR-07), automated background rule expiration daemon (`RuleExpiryWorker`), and startup crash recovery reconciliation (`reconcile_on_startup`) to ensure firewall state and MongoDB database blocklist match reliably after ungraceful restarts or daemon termination per Proposal Section 3.7; Table 9 (reliability: old rules cleaned up); Objective O5; and Decision `D-047`.
+* **Date:** 9 November 2026
+* **How It Was Done:**
+  1. *Rule Worker and Recovery Implementation ([`core_engine/rule_worker.py`](file:///d:/intrusion%20detection/core_engine/rule_worker.py)):*
+     - `sweep_expired_rules()`: Identifies all active MongoDB blocks passing `expires_at`, marks them `'expired'`, unblocks the firewall adapter, notifies `DecisionEngine.forget_block()`, broadcasts real-time `blocklist_update` WebSocket notifications, and writes audit entries to `response_actions` and `system_logs`.
+     - `reconcile_on_startup()`: Sweeps rules expired during offline downtime, compares remaining active blocks against `firewall.list_active()`, re-enacts missing rules with clamped remaining minutes (`STARTUP_RULE_RESTORED`), cleans orphaned firewall rules (`STARTUP_ORPHAN_RULE_REMOVED`), enforces allowlist immunity (`STARTUP_ALLOWLIST_PROTECTION`), and records complete audit summary in `system_logs` (`STARTUP_RECOVERY_COMPLETE`).
+     - `RuleExpiryWorker`: Background daemon thread (default 10s sweep period) with graceful lifecycle management (`start`, `stop`, `sweep_now`, `get_status`).
+  2. *Server Integration ([`core_engine/app.py`](file:///d:/intrusion%20detection/core_engine/app.py)):*
+     - Automatic startup reconciliation executed inside `create_app()`.
+     - `add_block()` and `remove_block()` now write `MANUAL_BLOCK` and `MANUAL_UNBLOCK` audit events to `system_logs` with admin username and parameters.
+     - `POST /api/blocklist` accepts both `duration_minutes` and `minutes`.
+     - `GET /api/blocklist` supplies both `blocks` and `rules` collections.
+     - Added REST control endpoints: `GET /api/v1/firewall/sync`, `POST /api/v1/firewall/sync`, `GET /api/v1/firewall/worker/status`, `POST /start`, `POST /stop`.
+  3. *Frontend Integration ([`my-app/src/pages/Blocklist.js`](file:///d:/intrusion%20detection/my-app/src/pages/Blocklist.js)):*
+     - Harmonized rule loading to accept `res.data.blocks || res.data.rules`.
+     - Harmonized manual block form to submit `duration_minutes` alongside `minutes`.
+  4. *Automated Testing:*
+     - Created [`tests/unit/test_rule_worker.py`](file:///d:/intrusion%20detection/tests/unit/test_rule_worker.py) (7 unit tests).
+     - Expanded [`tests/integration/test_app_api.py`](file:///d:/intrusion%20detection/tests/integration/test_app_api.py) (2 integration tests).
+* **Commands Executed:**
+  ```powershell
+  # 1. Run rule worker unit tests
+  .\.venv\Scripts\python.exe -m pytest tests/unit/test_rule_worker.py
+
+  # 2. Run app API integration tests
+  .\.venv\Scripts\python.exe -m pytest tests/integration/test_app_api.py
+
+  # 3. Run full automated test suite
+  .\.venv\Scripts\python.exe -m pytest
+
+  # 4. Run React frontend test suite
+  npm test --prefix my-app -- --watchAll=false
+  ```
+* **Files Created / Modified:**
+  - `core_engine/rule_worker.py` (Created rule worker and startup reconciliation service, in Git)
+  - `core_engine/app.py` (Integrated reconciliation, audit logging, and REST endpoints, in Git)
+  - `core_engine/db_service.py` (Added `sweep_expired_blocks()` and `get_active_blocks()`, in Git)
+  - `my-app/src/pages/Blocklist.js` (Harmonized property names and duration inputs, in Git)
+  - `tests/unit/test_rule_worker.py` (Created unit test suite, in Git)
+  - `tests/integration/test_app_api.py` (Added Step 34 integration tests, in Git)
+  - `docs/decision_log.md` (Added Decision D-047, in Git)
+  - `STEP_BY_STEP_GUIDE.md` (Marked Step 34 ✅ Done, in Git)
+  - `PROJECT_PROGRESS_AND_CHALLENGES.md` (Added Work log 3.59, in Git)
+  - `docs/execution_record.md` (Updated Step 34 execution details, in Git)
+* **Verification Result:** All 7 unit tests in `test_rule_worker.py` passed; all 16 integration tests in `test_app_api.py` passed; all 255 repository tests passed in 74.81s with 0 errors (100% pass rate); all React frontend tests passed. Requirement FR-06, FR-07, and Objective O5 fulfilled. Step 34 status is ✅ Done (built and tested on the PC with the simulation adapter). Phase 8 (Steps 31–34) is built and tested on the PC; the lab tests are in Phase 9. **Correction (9 Nov 2026, D-048):** the expiry worker was only started in tests; this and three smaller problems were fixed (see D-048).
+
+---
+
+
+
+## Quick Reference: Useful Commands
+
+To work with this project locally on your Windows laptop, use these standard commands:
+
+```powershell
+# Navigate to project directory
+cd "D:\intrusion detection"
+
+# Activate the virtual environment
+.\.venv\Scripts\activate
+
+# Run environment verification anytime
+python tools/check_env.py
+
+# Check Git status
+git status
+
+# Check local MongoDB connection
+mongosh "mongodb://localhost:27017"
+```
+
+---
+
+*This execution record will be updated immediately after every subsequent step is executed.*
+

@@ -2,7 +2,7 @@
 
 Validates:
 1. Benign IP-camera traffic generation and collection (RTSP, HTTP, ONVIF, DNS, NTP).
-2. Zeek conn.log JSON schema integrity and feature extraction (0 NaNs, 19 columns).
+2. Zeek conn.log JSON schema integrity and feature extraction (0 NaNs, all feature columns).
 3. Hypothesis H1 Clause 2 verification: Benign FPR <= 5% and Active Blocking FPR <= 1%.
 4. Existence and completeness of camera baseline reports and CSV artifacts.
 """
@@ -51,7 +51,7 @@ def test_collect_benign_camera_traffic(tmp_path):
 
 
 def test_camera_features_extraction(tmp_path):
-    """Verify that camera flows transform cleanly into 19 features with 0 NaNs."""
+    """Verify that camera flows transform cleanly into the feature columns with 0 NaNs."""
     output_dir = tmp_path / "local_benign"
     conn_log_path = collect_benign_camera_traffic(output_dir, total_flows=40, date_str="test_run")
 

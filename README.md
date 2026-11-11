@@ -11,17 +11,31 @@ Faculty of Technology, University of Sri Jayewardenepura
 This repository contains the prototype implementation of a real-time network intrusion detection and automated response system (NIDS/IPS) tailored for small IP-camera IoT networks.
 
 * **Traffic Analytics:** Zeek (`conn.log`) connection flow processing.
-* **Classifier:** Random Forest model trained on the IoT-23 benchmark dataset.
+* **Classifier:** Random Forest model trained on the IoT-23 benchmark dataset, with 19 one-flow features and 8 window features (what the same source did in the last 60 s, and failed tries to the same destination in the last hour; decisions D-051, D-052). Model v3.0.0: held-out macro-F1 0.66 (5 classes) / 0.82 (classes present); the proposal target 0.85 is not met. Program downloads are checked by a separate rule on Zeek's files.log (D-052). A virtual lab (`lab_virtual/`, D-053) runs the whole system on real packets with Docker.
 * **Target Classes (5):** Benign, DDoS/DoS, Port Scan, Command & Control (C&C), Malware/Download.
 * **Active Response:** `nftables` rules on the lab router (passive mode) or on the sensor (inline mode), only when the safety rules pass (`docs/response_policy.md`); every rule expires and the admin can unblock by hand. Automatic response is off by default.
 * **Management & Visualization:** Unified Flask & Socket.IO backend with a real-time React dashboard and MongoDB audit store.
 
 ---
 
+## See it work on the PC
+
+With MongoDB running, this sends real IoT-23 records (held-out scenario 34-1) through the whole system
+(Zeek reader, features, model, decision, safety checks, simulation firewall, MongoDB) and prints each step:
+
+```
+.venv\Scripts\python.exe tools\demo_pc_replay.py
+```
+
+It uses a separate database (`iot_ids_demo`) and does not change `config/settings.yaml`. It is a demonstration,
+not a lab result (decision D-050).
+
 ## Documentation
 
 * [`STEP_BY_STEP_GUIDE.md`](STEP_BY_STEP_GUIDE.md): the master guide (Steps 0-42), from setup to evaluation. Follow the steps in order.
-* [`PROJECT_EXPLANATION_EN.md`](PROJECT_EXPLANATION_EN.md) (English) and [`PROJECT_EXPLANATION.md`](PROJECT_EXPLANATION.md) (Sinhala): what the system is and why it is designed this way. Rewritten on 19 Oct 2026 to follow the proposal.
+* [`docs/requirements_checklist.md`](docs/requirements_checklist.md): the proposal requirements and their status.
+* [`reports/experiments/model_card.md`](reports/experiments/model_card.md): the current model results.
+* [`docs/archive/`](docs/archive/README.md): old explanation documents and the old command log, kept only as a record (out of date; archived 9 Nov 2026, D-049).
 * [`PROJECT_PROGRESS_AND_CHALLENGES.md`](PROJECT_PROGRESS_AND_CHALLENGES.md): dated work log, open issues and next steps.
 * [`docs/decision_log.md`](docs/decision_log.md): every project decision (D-001 onward).
 
@@ -70,7 +84,7 @@ copy config\settings.example.yaml config\settings.yaml
 python core_engine/app.py           # backend + live pipeline on port 5000
 cd my-app; npm start                # dashboard on port 3000
 ```
-On the Linux sensor, Zeek must write `conn.log` to the path in `zeek.conn_log_path` (`sensor/run_zeek.sh`). Copy `ml_engine/models/ids_bundle_v1.joblib` to the sensor (it is not in Git).
+On the Linux sensor, Zeek must write `conn.log` to the path in `zeek.conn_log_path` (`sensor/run_zeek.sh`). Copy `ml_engine/models/ids_bundle_v3.joblib` to the sensor (it is not in Git).
 
 ### 4. Follow the Step-by-Step Guide
 Refer to [`STEP_BY_STEP_GUIDE.md`](STEP_BY_STEP_GUIDE.md) to proceed through each milestone systematically.

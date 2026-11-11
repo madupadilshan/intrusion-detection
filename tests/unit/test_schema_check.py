@@ -40,7 +40,7 @@ from tools.schema_check import (
 
 @pytest.fixture
 def mock_feature_dfs():
-    """Create synthetic offline and live feature DataFrames adhering to the 19-feature schema."""
+    """Create synthetic offline and live feature DataFrames with the full feature schema (26)."""
     n_samples = 50
 
     data = {
@@ -64,6 +64,19 @@ def mock_feature_dfs():
         "pkt_ratio": np.linspace(0.2, 0.6, n_samples, dtype=np.float32),
         "is_incomplete_flow": np.zeros(n_samples, dtype=np.int8),
     }
+    # Window features (D-051)
+    data.update({
+        "src_conn_60s": np.linspace(1.0, 20.0, n_samples, dtype=np.float32),
+        "src_udst_60s": np.linspace(1.0, 5.0, n_samples, dtype=np.float32),
+        "src_uport_60s": np.ones(n_samples, dtype=np.float32),
+        "src_udst_ratio": np.linspace(0.2, 1.0, n_samples, dtype=np.float32),
+        "pair_conn_60s": np.linspace(1.0, 4.0, n_samples, dtype=np.float32),
+        # -1 = no previous contact; otherwise seconds (>= 0)
+        "pair_gap": np.where(np.arange(n_samples) % 5 == 0, -1.0, np.linspace(0.0, 30.0, n_samples)).astype(np.float32),
+        "pair_gap_change": np.where(np.arange(n_samples) % 5 == 0, -1.0, np.linspace(0.0, 5.0, n_samples)).astype(np.float32),
+        # D-052: earlier failed TCP tries to the same destination in the last hour (count >= 0)
+        "pair_fail_1h": np.floor(np.linspace(0.0, 12.0, n_samples)).astype(np.float32),
+    })
 
     offline_df = pd.DataFrame(data)
     # Live dataframe with slight parameter variation
@@ -80,9 +93,9 @@ def test_schema_check_column_validation(mock_feature_dfs):
     res = auditor.check_columns()
 
     assert res["passed"] is True
-    assert res["expected_count"] == 19
-    assert res["offline_count"] == 19
-    assert res["live_count"] == 19
+    assert res["expected_count"] == len(FEATURE_COLUMNS)
+    assert res["offline_count"] == len(FEATURE_COLUMNS)
+    assert res["live_count"] == len(FEATURE_COLUMNS)
     assert len(res["missing_in_live"]) == 0
     assert len(res["extra_in_live"]) == 0
 
@@ -100,7 +113,7 @@ def test_schema_check_dtype_validation(mock_feature_dfs):
     auditor = SchemaAuditor(offline_df, live_df)
     dtype_df = auditor.check_dtypes()
 
-    assert len(dtype_df) == 19
+    assert len(dtype_df) == len(FEATURE_COLUMNS)
     assert (dtype_df["status"] == "PASS").all()
     assert (dtype_df["compatible"] == True).all()
 
@@ -111,7 +124,7 @@ def test_schema_check_null_validation(mock_feature_dfs):
     auditor = SchemaAuditor(offline_df, live_df)
     null_df = auditor.check_nulls()
 
-    assert len(null_df) == 19
+    assert len(null_df) == len(FEATURE_COLUMNS)
     assert (null_df["status"] == "PASS").all()
     assert (null_df["offline_null_count"] == 0).all()
     assert (null_df["live_null_count"] == 0).all()
@@ -181,7 +194,7 @@ def test_schema_check_full_pipeline_execution(tmp_path, mock_feature_dfs):
     assert report_csv.exists()
 
     csv_df = pd.read_csv(report_csv)
-    assert len(csv_df) == 19
+    assert len(csv_df) == len(FEATURE_COLUMNS)
     assert (csv_df["overall_feature_status"] == "PASS").all()
 
     md_content = report_md.read_text(encoding="utf-8")

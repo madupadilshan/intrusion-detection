@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from core_engine.decision_engine import DecisionEngine, DecisionOutcome
+from core_engine.file_check import FileCheck, FilesLogFollower
 from core_engine.zeek_adapter import ZeekAdapter
 
 logger = logging.getLogger("core_engine.runner")
@@ -37,10 +38,17 @@ class LivePipelineRunner:
         decision_engine: Optional[DecisionEngine] = None,
         socketio: Optional[Any] = None,
         auto_start: bool = False,
+        file_check: Optional[FileCheck] = None,
+        files_log_path: Optional[Union[str, Path]] = None,
     ) -> None:
         self.zeek_adapter = zeek_adapter or ZeekAdapter()
         self.decision_engine = decision_engine or DecisionEngine(socketio=socketio)
         self.socketio = socketio
+        # File-type check on Zeek's files.log (D-052), next to conn.log unless given.
+        self.files_follower: Optional[FilesLogFollower] = None
+        if file_check is not None:
+            path = Path(files_log_path) if files_log_path else Path(self.zeek_adapter.conn_log_path).parent / "files.log"
+            self.files_follower = FilesLogFollower(path, file_check)
 
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
@@ -75,6 +83,10 @@ class LivePipelineRunner:
                 "error_message": self._error_message,
                 "conn_log_path": str(self.zeek_adapter.conn_log_path),
                 "metrics": dict(self._metrics),
+                "file_check": ({"files_log_path": str(self.files_follower.path),
+                                "running": self.files_follower.is_running,
+                                **self.files_follower.check.metrics}
+                               if self.files_follower else None),
             }
 
     def start(self) -> bool:
@@ -98,6 +110,8 @@ class LivePipelineRunner:
                 daemon=True,
             )
             self._thread.start()
+            if self.files_follower is not None:
+                self.files_follower.start()
             logger.info(
                 "LivePipelineRunner started in background, tailing: %s",
                 self.zeek_adapter.conn_log_path,
@@ -116,6 +130,8 @@ class LivePipelineRunner:
 
             logger.info("Signaling LivePipelineRunner to stop...")
             self._stop_event.set()
+            if self.files_follower is not None:
+                self.files_follower.stop()
             self.zeek_adapter.stop()
 
         self._thread.join(timeout=timeout)

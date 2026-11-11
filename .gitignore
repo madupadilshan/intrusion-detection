@@ -4,8 +4,8 @@ data/**
 !data/**/
 !data/**/.gitkeep
 
-# Old code and files we no longer use
-archive/
+# Old code and files we no longer use (top-level folder only; docs/archive/ is tracked)
+/archive/
 
 # Models and captures (large files)
 *.pkl
@@ -63,3 +63,10 @@ image/
 
 
 
+
+# Virtual lab (D-053): keys, Zeek output and backend logs stay on this PC
+lab_virtual/keys/*
+!lab_virtual/keys/.gitignore
+lab_virtual/zeek_logs/*
+!lab_virtual/zeek_logs/.gitignore
+lab_virtual/ids_backend.log

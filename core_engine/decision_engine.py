@@ -23,6 +23,8 @@ Governing Standards & Requirements:
 
 from __future__ import annotations
 
+import os
+
 import json
 import logging
 import time
@@ -46,7 +48,8 @@ logger = logging.getLogger("core_engine.decision_engine")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_THRESHOLDS_PATH = PROJECT_ROOT / "reports" / "experiments" / "operational_thresholds.json"
-DEFAULT_SETTINGS_PATH = PROJECT_ROOT / "config" / "settings.yaml"
+# IDS_SETTINGS_FILE lets a test setup (e.g. lab_virtual/) use its own settings file.
+DEFAULT_SETTINGS_PATH = Path(os.getenv("IDS_SETTINGS_FILE") or PROJECT_ROOT / "config" / "settings.yaml")
 
 # Default fallback thresholds if config files cannot be loaded
 FALLBACK_THRESHOLDS = {
@@ -277,18 +280,25 @@ class DecisionEngine:
                 reason=decision.reason,
             )
 
-        # Record in MongoDB
+        # Record in MongoDB. The blocklist stores the direction as 'source' / 'destination'
+        # (db_service.add_to_blocklist); the firewall uses 'src' / 'dst'.
         if self.db is not None:
-            try:
-                if hasattr(self.db, "add_to_blocklist"):
+            details = decision.details or {}
+            if hasattr(self.db, "add_to_blocklist"):
+                try:
                     self.db.add_to_blocklist(
                         ip=decision.target_ip,
-                        direction=decision.target_direction,
+                        direction="destination" if decision.target_direction == "dst" else "source",
                         reason=decision.reason,
                         duration_minutes=decision.duration_minutes,
+                        linked_event_id=event_id,
+                        predicted_class=details.get("class"),
+                        confidence=details.get("confidence"),
                         actor=actor,
-                        event_id=event_id,
                     )
+                except Exception as exc:
+                    logger.error("Failed to save the block of %s in the blocklist: %s", decision.target_ip, exc)
+            try:
                 if hasattr(self.db, "log_response_action"):
                     self.db.log_response_action({
                         "event_id": event_id,

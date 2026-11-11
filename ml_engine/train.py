@@ -70,6 +70,7 @@ from ml_engine.features import (
     CATEGORICAL_FEATURES,
     NUMERICAL_FEATURES,
 )
+from ml_engine.training_rows import VARIANTS, apply_variant, chosen_variant
 
 # Configure logging
 logging.basicConfig(
@@ -564,7 +565,14 @@ def main():
         help="Subsample size for hyperparameter search (0 for full dataset)",
     )
     parser.add_argument("--rf-n-jobs", type=int, default=-1, help="Parallel jobs for Random Forest")
+    parser.add_argument("--variant", choices=VARIANTS, default=None,
+                        help="W = all rows; WC = leave out label_trusted=False rows (D-051); "
+                             "WCD = WC and leave out the rows in config/disputed_labels.yaml (D-052). "
+                             "Default: the variant in reports/experiments/variant_selection.json")
+    parser.add_argument("--oof-path", type=Path, default=None,
+                        help="Where to save the out-of-fold predictions (default: next to the data)")
     args = parser.parse_args()
+    variant = args.variant or chosen_variant()
 
     start_time = time.time()
     args.experiments_dir.mkdir(parents=True, exist_ok=True)
@@ -593,6 +601,9 @@ def main():
     df = table.to_pandas()
     t1_read = time.time()
     logger.info(f"Loaded {len(df):,} flows ({df.shape[1]} columns) in {t1_read - t0_read:.2f}s.")
+    has_trust = "label_trusted" in df.columns
+    df = apply_variant(df, variant)
+    logger.info(f"Variant {variant} (D-051/D-052): {len(df):,} training rows used.")
 
     # Convert categoricals to category dtype for memory safety
     for c in CATEGORICAL_FEATURES:
@@ -649,13 +660,17 @@ def main():
     fold_ids = np.zeros(len(y), dtype=np.int8)
     for fold_no, (_, val_idx) in enumerate(sgkf_ids.split(X, y, groups=groups), 1):
         fold_ids[val_idx] = fold_no
-    oof_path = args.data_path.parent / "rf_oof_predictions.npz"
+    oof_path = args.oof_path or (args.data_path.parent / "rf_oof_predictions.npz")
+    trusted = (df["label_trusted"].astype(bool).to_numpy() if has_trust
+               else np.ones(len(y), dtype=bool))
     np.savez_compressed(
         oof_path,
         oof_probs=oof_probs.astype(np.float32),
         y=y.astype(np.int8),
         groups=np.asarray(groups).astype(str),
         fold_ids=fold_ids,
+        label_trusted=trusted,
+        variant=np.array(variant),
     )
     logger.info(f"Saved grouped out-of-fold probabilities to {oof_path}")
 
@@ -673,7 +688,7 @@ def main():
     t0_fit = time.time()
     final_pipeline.fit(X, y)
     t1_fit = time.time()
-    logger.info(f"Final model fitted on 1,384,070 flows in {t1_fit - t0_fit:.2f}s.")
+    logger.info(f"Final model fitted on {len(X):,} flows in {t1_fit - t0_fit:.2f}s.")
 
     # 5. Latency Benchmark
     latency_us, throughput_fps = benchmark_inference_latency(final_pipeline, X)
@@ -698,6 +713,7 @@ def main():
         "throughput_fps": throughput_fps,
         "random_seed": random_seed,
         "training_samples_count": len(X),
+        "training_variant": variant,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
     joblib.dump(bundle, args.output_model, compress=3)

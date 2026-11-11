@@ -1,0 +1,153 @@
+# lab_virtual/docker-compose.yml - A small virtual copy of the proposal's lab (Figure 2, Step 5).
+#
+#   outside network 10.10.10.0/24          camera LAN 192.168.50.0/24
+#   attacker 10.10.10.50  --+          +-- camera 192.168.50.30
+#   cloud    10.10.10.123 --+-- router -+-- NVR    192.168.50.20
+#                          10.10.10.1   +-- admin  192.168.50.10
+#                                192.168.50.1
+#   sensor (Zeek) listens on the camera LAN bridge (= the switch's mirror port; it has no IP there)
+#
+# The router routes without NAT and runs the project's own nftables table (sensor/ids_router.nft).
+# The IDS (Flask + pipeline + dashboard) runs on Windows, reads lab_virtual/zeek_logs/conn.log,
+# and blocks through the router over SSH (127.0.0.1:2222), as in the real passive mode.
+# Start and drive it with:  python lab_virtual/lab.py  (see lab_virtual/README.md)
+
+name: ids-lab
+
+networks:
+  outside:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-ids-out
+    ipam:
+      config:
+        - subnet: 10.10.10.0/24
+          gateway: 10.10.10.254
+  camlan:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-ids-lan
+    ipam:
+      config:
+        - subnet: 192.168.50.0/24
+          gateway: 192.168.50.254
+  mgmt:            # only for the SSH port from Windows to the router (not part of the lab traffic)
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.250.0/24
+
+x-python: &python
+  image: python:3.12
+  volumes:
+    - ../tests/lab_scenarios:/lab:ro
+  restart: unless-stopped
+
+services:
+  router:
+    build: ./router
+    image: ids-lab-router
+    container_name: ids-lab-router
+    hostname: lab-router
+    cap_add: [NET_ADMIN, NET_RAW]
+    sysctls:
+      net.ipv4.ip_forward: "1"
+      net.ipv4.conf.all.rp_filter: "0"
+      net.ipv4.conf.default.rp_filter: "0"
+    networks:
+      mgmt:
+        priority: 1000
+      camlan:
+        ipv4_address: 192.168.50.1
+      outside:
+        ipv4_address: 10.10.10.1
+    ports:
+      - "127.0.0.1:2222:22"
+    volumes:
+      - ../sensor/ids_router.nft:/lab/ids_router.nft:ro
+      - ./keys:/keys:ro
+    restart: unless-stopped
+
+  sensor:
+    image: zeek/zeek:lts
+    container_name: ids-lab-sensor
+    network_mode: host
+    cap_add: [NET_ADMIN, NET_RAW]
+    working_dir: /logs
+    volumes:
+      - ../sensor/local.zeek:/lab/local.zeek:ro
+      - ./zeek_logs:/logs
+    command: ["sh", "-c", "until [ -e /sys/class/net/br-ids-lan ]; do sleep 1; done; exec zeek -C -i br-ids-lan /lab/local.zeek"]
+    depends_on: [router]
+    restart: unless-stopped
+
+  # Small Alpine containers hold the network settings (routes) for the Python services below,
+  # because the python image has no `ip` command. Each Python service shares its holder's network.
+  camera-net:
+    image: alpine:latest
+    container_name: ids-lab-camera-net
+    cap_add: [NET_ADMIN]
+    networks:
+      camlan:
+        ipv4_address: 192.168.50.30
+    command: ["sh", "-c", "ip route replace default via 192.168.50.1 && exec sleep infinity"]
+    restart: unless-stopped
+  camera:
+    <<: *python
+    container_name: ids-lab-camera
+    network_mode: service:camera-net
+    command: ["python", "-u", "/lab/camera_sim.py", "normal", "--cloud", "10.10.10.123"]
+    depends_on: [camera-net, router]
+
+  nvr:
+    <<: *python
+    container_name: ids-lab-nvr
+    networks:
+      camlan:
+        ipv4_address: 192.168.50.20
+    command: ["python", "-u", "/lab/camera_sim.py", "nvr", "--camera", "192.168.50.30"]
+    depends_on: [camera]
+
+  admin:
+    <<: *python
+    container_name: ids-lab-admin
+    networks:
+      camlan:
+        ipv4_address: 192.168.50.10
+    command: ["python", "-u", "/lab/camera_sim.py", "admin", "--camera", "192.168.50.30"]
+    depends_on: [camera]
+
+  cloud-net:
+    image: alpine:latest
+    container_name: ids-lab-cloud-net
+    cap_add: [NET_ADMIN]
+    networks:
+      outside:
+        ipv4_address: 10.10.10.123
+    command: ["sh", "-c", "ip route add 192.168.50.0/24 via 10.10.10.1 && exec sleep infinity"]
+    restart: unless-stopped
+  cloud:
+    <<: *python
+    container_name: ids-lab-cloud
+    network_mode: service:cloud-net
+    command: ["python", "-u", "/lab/lab_server.py", "--role", "cloud"]
+    depends_on: [cloud-net]
+
+  attacker:
+    build: ./attacker
+    image: ids-lab-attacker
+    container_name: ids-lab-attacker
+    hostname: attack-laptop
+    cap_add: [NET_ADMIN, NET_RAW]
+    networks:
+      outside:
+        ipv4_address: 10.10.10.50
+    command: ["sh", "-c", "ip route add 192.168.50.0/24 via 10.10.10.1 && exec sleep infinity"]
+    restart: unless-stopped
+  attack-server:   # the attack computer's lab web server (harmless test program); same address
+    <<: *python
+    container_name: ids-lab-attack-server
+    network_mode: service:attacker
+    cap_add: [NET_RAW]
+    command: ["python", "-u", "/lab/lab_server.py", "--role", "attack", "--no-cnc"]
+    depends_on: [attacker]

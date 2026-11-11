@@ -17,6 +17,12 @@ Key Objectives:
        evaluation of real-world zero-day generalization.
   3. Zero Training-Serving Skew: Uses `ml_engine.features.make_features()` exclusively.
   4. Isolation: Separates held-out dataset into `data/processed/heldout/`.
+  5. Window features (D-051): `ml_engine.window_features.WindowState` runs over the FULL
+     scenario stream, in the order Zeek wrote the flows, BEFORE sampling. The sample rows are
+     chosen exactly as before (same seed, same rows); they only get 7 more columns.
+  6. Trusted-label flag (D-051): `label_trusted` marks the IoT-23 "Benign" flows that are
+     unanswered outbound connection attempts from the infected device. It is an audit column,
+     never a model input.
 """
 
 import sys
@@ -24,6 +30,8 @@ import os
 import time
 import json
 import logging
+import ipaddress
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Any, Tuple
 
@@ -39,6 +47,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from ml_engine.features import make_features, FEATURE_COLUMNS, CATEGORICAL_FEATURES, NUMERICAL_FEATURES
+from ml_engine.window_features import WINDOW_FEATURES, WindowState, compute_window_features
 
 # Configure logging
 logging.basicConfig(
@@ -85,10 +94,46 @@ REQUIRED_INTERIM_COLS = [
     "detailed_label",
 ]
 
-# Extra columns written next to the 19 features. They are NOT model inputs: every model step
+# Extra columns written next to the 26 features. They are NOT model inputs: every model step
 # selects FEATURE_COLUMNS by name. They are used to (1) replay the response policy's repeat rule
 # on training data (proposal 3.4, D-046) and (2) report results per original IoT-23 label (proposal 3.2).
-AUDIT_COLUMNS = ["ts", "id.orig_h", "id.resp_h", "id.resp_p", "detailed_label"]
+AUDIT_COLUMNS = ["ts", "id.orig_h", "id.resp_h", "id.resp_p", "detailed_label", "label_trusted"]
+
+# Scenarios processed at the same time (each keeps its own WindowState, so results do not change).
+DEFAULT_WORKERS = 4
+
+
+def _is_private(ip: Any) -> bool:
+    try:
+        return ipaddress.ip_address(str(ip)).is_private
+    except ValueError:
+        return False
+
+
+def label_trusted(df: pd.DataFrame, scenario_id: str) -> np.ndarray:
+    """D-051 rule, fixed before any result. A flow is NOT trusted when it is labelled Benign,
+    comes from a CTU-IoT-Malware-* capture, has conn_state S0, sends 0 bytes, and goes from a
+    private source to a public destination (an unanswered outbound connection attempt from the
+    infected device, which is what scanning looks like). Every other flow is trusted."""
+    n = len(df)
+    if not str(scenario_id).startswith("CTU-IoT-Malware-") or n == 0:
+        return np.ones(n, dtype=bool)
+    benign = df["class_name"].astype(str).eq("Benign").to_numpy()
+    s0 = df["conn_state"].astype(str).eq("S0").to_numpy()
+    zero = pd.to_numeric(df["orig_bytes"], errors="coerce").fillna(0).eq(0).to_numpy()
+    cache: Dict[str, bool] = {}
+
+    def priv(series: pd.Series) -> np.ndarray:
+        out = []
+        for v in series.astype(str).tolist():
+            if v not in cache:
+                cache[v] = _is_private(v)
+            out.append(cache[v])
+        return np.array(out, dtype=bool)
+
+    src_private = priv(df["id.orig_h"])
+    dst_public = ~priv(df["id.resp_h"])
+    return ~(benign & s0 & zero & src_private & dst_public)
 
 
 def load_settings() -> Dict[str, Any]:
@@ -127,6 +172,7 @@ def sample_scenario_interim(
 
     pf = pq.ParquetFile(interim_path)
     samples_by_class: Dict[str, List[pd.DataFrame]] = {c: [] for c in class_counts.keys()}
+    window_state = WindowState()  # one per scenario, over every row, in Zeek's order (D-051)
 
     logger.info(
         f"Processing {scenario_id}: {total_raw:,} rows across {pf.num_row_groups} row groups..."
@@ -134,6 +180,10 @@ def sample_scenario_interim(
 
     for rg_idx in range(pf.num_row_groups):
         rg_df = pf.read_row_group(rg_idx, columns=REQUIRED_INTERIM_COLS).to_pandas()
+        win = compute_window_features(rg_df, window_state)
+        for col in WINDOW_FEATURES:
+            rg_df[col] = win[col].values
+        rg_df["label_trusted"] = label_trusted(rg_df, scenario_id)
 
         for c, count in class_counts.items():
             c_df = rg_df[rg_df["class_name"] == c]
@@ -171,9 +221,13 @@ def sample_scenario_interim(
 
 def process_and_extract_features(raw_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Extract the standardized 19 features using features.make_features() and
+    Extract the standardized 26 features using features.make_features() and
     attach metadata columns (class_name, label_idx, scenario_id).
+    The window columns must already be in `raw_df` (computed on the full stream).
     """
+    missing = [c for c in WINDOW_FEATURES if c not in raw_df.columns]
+    if missing:
+        raise ValueError(f"Window features must be computed on the full stream first: {missing}")
     features_df = make_features(raw_df)
     features_df["class_name"] = raw_df["class_name"].values
     features_df["label_idx"] = raw_df["label_idx"].values.astype(np.int8)
@@ -183,6 +237,14 @@ def process_and_extract_features(raw_df: pd.DataFrame) -> pd.DataFrame:
             values = raw_df[col].values
             features_df[col] = values.astype(str) if col in ("id.orig_h", "id.resp_h", "detailed_label") else values
     return features_df
+
+
+def _process_training_scenario(args: Tuple[str, int, int]) -> Tuple[pd.DataFrame, float]:
+    """Worker: sample one training scenario and make its features (runs in its own process)."""
+    path_str, cap_per_class, random_seed = args
+    t0 = time.time()
+    sampled_raw = sample_scenario_interim(Path(path_str), cap_per_class=cap_per_class, random_seed=random_seed)
+    return process_and_extract_features(sampled_raw), time.time() - t0
 
 
 def main():
@@ -218,6 +280,10 @@ def main():
     logger.info(f"Extracting features for Held-Out Scenario: {HELD_OUT_SCENARIO_ID} (100% UNTOUCHED)...")
     t0_held = time.time()
     held_out_raw = pq.read_table(held_out_path, columns=REQUIRED_INTERIM_COLS).to_pandas()
+    held_win = compute_window_features(held_out_raw)  # full scenario, Zeek's order (D-051)
+    for col in WINDOW_FEATURES:
+        held_out_raw[col] = held_win[col].values
+    held_out_raw["label_trusted"] = label_trusted(held_out_raw, HELD_OUT_SCENARIO_ID)
     held_out_features = process_and_extract_features(held_out_raw)
     t1_held = time.time()
     logger.info(
@@ -254,13 +320,20 @@ def main():
     total_training_raw = 0
     total_training_sampled = 0
 
+    # Largest files first, so the workers finish at about the same time; results keep file order.
+    jobs = [(str(p), cap_per_class, random_seed) for p in training_files]
+    order = sorted(range(len(jobs)), key=lambda i: -Path(jobs[i][0]).stat().st_size)
+    results: Dict[int, Tuple[pd.DataFrame, float]] = {}
+    with ProcessPoolExecutor(max_workers=DEFAULT_WORKERS) as pool:
+        futures = {i: pool.submit(_process_training_scenario, jobs[i]) for i in order}
+        for i in order:
+            results[i] = futures[i].result()
+            logger.info(f"done: {training_files[i].stem} ({results[i][1]:.1f}s)")
+
     for idx, fpath in enumerate(training_files, 1):
         sc_id = fpath.stem
-        t0_sc = time.time()
-        sampled_raw = sample_scenario_interim(fpath, cap_per_class=cap_per_class, random_seed=random_seed)
-        feat_df = process_and_extract_features(sampled_raw)
+        feat_df, sc_seconds = results[idx - 1]
         training_feature_dfs.append(feat_df)
-        t1_sc = time.time()
 
         counts = feat_df["class_name"].value_counts().to_dict()
         pf = pq.ParquetFile(fpath)
@@ -283,7 +356,7 @@ def main():
         scenario_stats.append(stat_entry)
         logger.info(
             f"[{idx:02d}/{len(training_files):02d}] {sc_id}: {raw_total:,} -> {len(feat_df):,} "
-            f"flows in {t1_sc - t0_sc:.2f}s (RAM safe)"
+            f"flows in {sc_seconds:.2f}s"
         )
 
     # 3. Concatenate and Shuffle Training Features
@@ -332,7 +405,8 @@ def generate_markdown_report(
     cap_n: int,
     seed: int,
 ):
-    """Generate detailed markdown report with tables, memory audit, and verification."""
+    """Generate detailed markdown report with tables and verification."""
+    CLASSES5 = ["Benign", "DDoS_DoS", "PortScan", "CnC", "Malware_Download"]
     train_stats = stats_df[stats_df["split"].str.startswith("Train")]
     held_stats = stats_df[stats_df["split"].str.startswith("Held-Out")]
 
@@ -373,9 +447,10 @@ This report documents the execution of **Step 12 (Sampling and class balance)** 
 - **Total Official Raw Flows Audited:** {train_totals['raw_total'] + held_totals['raw_total']:,}
 - **Final Training Dataset (`data/processed/train_features.parquet`):** {len(train_df):,} flows across 22 scenarios
 - **Final Held-Out Dataset (`data/processed/heldout/held_out_test.parquet`):** {len(held_df):,} flows (100% untouched)
-- **Features Extracted:** Exactly 19 features (6 Categorical, 13 Numerical) matching Proposal Table 6
+- **Features Extracted:** {len(FEATURE_COLUMNS)} features ({len(CATEGORICAL_FEATURES)} categorical, {len(NUMERICAL_FEATURES)} numerical): the 19 one-flow features of proposal Table 6 and the 7 window features of D-051 (Table 6: "rate over a time window"), computed on the full scenario stream before sampling
 - **Metadata Columns:** `class_name`, `label_idx`, `scenario_id` (enabling Grouped Cross-Validation without leakage)
-- **Null / NaN Values:** Exactly 0 (0.00%)
+- **Missing values in the feature columns:** {int(train_df[FEATURE_COLUMNS].isna().sum().sum()):,} (training), {int(held_df[FEATURE_COLUMNS].isna().sum().sum()):,} (held-out)
+- **Trusted-label flag (D-051):** {int((~train_df['label_trusted']).sum()):,} training rows are "Benign" flows that look like scanning from the infected device (`label_trusted = False`); held-out: {int((~held_df['label_trusted']).sum()):,}
 
 ---
 
@@ -392,7 +467,7 @@ This report documents the execution of **Step 12 (Sampling and class balance)** 
 | 4 | `Malware_Download` | - | {train_totals['Malware_Download']:,} | {train_totals['Malware_Download'] / len(train_df) * 100:.2f}% | {train_totals['Malware_Download'] / train_totals['CnC']:.2f} : 1 |
 | **Total** | | **{train_totals['raw_total']:,}** | **{len(train_df):,}** | **100.00%** | - |
 
-> **Key Finding:** By preserving 100% of all 48,992 `CnC` flows while capping over-represented classes at 50,000 flows per scenario, the class imbalance ratio was reduced from **4,354 : 1** down to **10.2 : 1**. This establishes ideal conditions for tree-based models and gradient boosting without distorting feature manifolds.
+> All `CnC` flows are kept; the other classes are capped at {cap_n:,} flows per scenario. Largest class : smallest class in the sample = **{max(train_totals[c] for c in CLASSES5) / max(1, min(train_totals[c] for c in CLASSES5)):.1f} : 1**.
 
 ### Level 2 Held-Out Scenario (`CTU-IoT-Malware-Capture-34-1`, 100% Untouched)
 
@@ -427,18 +502,17 @@ This report documents the execution of **Step 12 (Sampling and class balance)** 
 
 The generated training feature matrix was verified against all project constraints:
 
-1. **Feature Columns (19):**
-   - Categorical (6): `{', '.join(CATEGORICAL_FEATURES)}`
-   - Numerical (13): `{', '.join(NUMERICAL_FEATURES)}`
+1. **Feature Columns ({len(FEATURE_COLUMNS)}):**
+   - Categorical ({len(CATEGORICAL_FEATURES)}): `{', '.join(CATEGORICAL_FEATURES)}`
+   - Numerical ({len(NUMERICAL_FEATURES)}): `{', '.join(NUMERICAL_FEATURES)}`
 2. **Metadata Columns (3):**
    - `class_name` (Target string: Benign, DDoS_DoS, PortScan, CnC, Malware_Download)
    - `label_idx` (Target integer: 0 to 4)
    - `scenario_id` (Grouping identifier for `StratifiedGroupKFold`)
 3. **Data Integrity:**
    - Total rows in `train_features.parquet`: `{len(train_df):,}`
-   - Total NaN / Null values across all columns: **0**
+   - Missing values in the feature columns: **{int(train_df[FEATURE_COLUMNS].isna().sum().sum()):,}**
    - Memory usage of training dataframe: **~{train_df.memory_usage(deep=True).sum() / (1024 * 1024):.2f} MB**
-   - Peak RAM consumed during sampling: **< 180 MB** (strictly within < 1 GB budget)
 """
 
     with open(report_path, "w", encoding="utf-8") as f:

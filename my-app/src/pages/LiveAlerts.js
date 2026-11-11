@@ -280,7 +280,7 @@ const LiveAlerts = () => {
                       <span className="text-gray-400">{evt.dst_ip || "unknown"}:{evt.dst_port || "*"}</span>
                       <span className="text-gray-500 text-[11px]">({evt.proto || "TCP"})</span>
                       {evt.direction && (
-                        <span className="text-[10px] bg-gray-900 border border-gray-800 px-1.5 py-0.2 rounded text-gray-400">
+                        <span className="text-[10px] bg-gray-900 border border-gray-800 px-1.5 py-0.5 rounded text-gray-400">
                           {evt.direction}
                         </span>
                       )}

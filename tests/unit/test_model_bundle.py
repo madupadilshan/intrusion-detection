@@ -16,7 +16,7 @@ import pytest
 from ml_engine.features import FEATURE_COLUMNS, make_features
 
 
-BUNDLE_PATH = Path("ml_engine/models/ids_bundle_v1.joblib")
+BUNDLE_PATH = Path("ml_engine/models/ids_bundle_v3.joblib")
 MODEL_CARD_PATH = Path("reports/experiments/model_card.md")
 
 
@@ -52,7 +52,7 @@ def test_bundle_structure_and_keys(model_bundle):
 def test_bundle_metadata(model_bundle):
     """Verify metadata contains versioning, training metrics, and provenance."""
     meta = model_bundle["metadata"]
-    assert str(meta["bundle_version"]).startswith("v1.")
+    assert str(meta["bundle_version"]).startswith("v3.")
     assert meta["training_samples_count"] > 0
     assert meta["level_2_heldout_scenario"] == "CTU-IoT-Malware-Capture-34-1"
     # Results are read from the real result files, not typed in by hand

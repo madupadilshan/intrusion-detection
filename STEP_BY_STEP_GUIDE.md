@@ -102,7 +102,7 @@ The status was checked on **19 October 2026**. We looked at the project folder (
    - `config/settings.example.yaml` (the Step 4 layout, with example values);
    - a **draft** `config/label_mapping.yaml` (Step 8; not frozen yet).
 5. **An early draft of the database code** (`core_engine/db_service.py`, Step 23) was written ahead of order. It connects to MongoDB 8, and its small self-test passed. It still needs the changes listed in Step 23.
-6. **The explanation documents were corrected.** `PROJECT_EXPLANATION_EN.md` and `PROJECT_EXPLANATION.md` were rewritten to follow the proposal (Part B2).
+6. **The explanation documents were corrected.** `PROJECT_EXPLANATION_EN.md` and `PROJECT_EXPLANATION.md` were rewritten to follow the proposal (Part B2). (On 9 Nov 2026 they were moved to `docs/archive/` because later additions made them out of date; D-049.)
 7. **The development PC is partly ready (Step 3).** It has Python 3.10, scikit-learn 1.6.0, pandas 2.2.3, pymongo, Flask-SocketIO, python-nmap, Scapy, Node.js 22, Git and MongoDB 8.
 
 **Not started yet:**
@@ -130,17 +130,17 @@ The status was checked on **19 October 2026**. We looked at the project folder (
 | 8    | Write and freeze the label mapping         | ✅     | Frozen `config/label_mapping.yaml` to 5 target classes (D-014); all 17 labels resolved; ambiguous excluded (0.0031%). |
 | 9    | Data-quality report                        | ✅     | `reports/data_quality_report.md` complete with Class x Scenario matrix (325.3M flows), missing rates & charts. |
 | 10   | Load and clean the data                    | ✅     | Streamed all 23 scenarios (325.3M flows); imputed Zeek nulls; 10,240 ambiguous excluded; 23 Parquet files in `data/interim/` (10.62 GB); summary in `reports/interim_data_summary.md`. |
-| 11   | Shared feature code                        | ✅     | `ml_engine/features.py` unified engine; 19 features (6 cat, 13 num); 10 unit tests in `tests/unit/test_features.py` passed (D-015). |
-| 12   | Sampling and class balance                 | ✅     | `ml_engine/sample_dataset.py`; capped $N=50,000$/class per scenario; 1,384,070 training flows; re-run 9 Nov 2026 to keep audit columns (time, IPs, original label; never model inputs, D-046): feature columns identical, model not retrained (D-016, D-046). |
+| 11   | Shared feature code                        | ✅     | `ml_engine/features.py` unified engine. **Updated 10 Nov 2026 (D-051, D-052):** 27 features = 19 one-flow features (6 cat, 13 num) + 8 window features from `ml_engine/window_features.py` (the same `WindowState` code in training and in the live Zeek adapter), including `pair_fail_1h` (failed tries to the same destination in the last hour, D-052); tests in `tests/unit/test_features.py` and `tests/unit/test_window_features.py` (18, incl. training = live check) (D-015, D-051, D-052). |
+| 12   | Sampling and class balance                 | ✅     | `ml_engine/sample_dataset.py`; capped $N=50,000$/class per scenario; 1,384,070 training flows. **Re-run 10 Nov 2026 (D-052):** window features (8) computed on all 325,299,706 flows in Zeek's order before sampling (70 min); same rows in the same order, earlier 26 columns identical (checked); `label_trusted` audit column (D-016, D-046, D-051, D-052). |
 | 13   | Plan the three test levels                 | ✅     | Three-level plan in `reports/test_split_plan.md`; Level 1 Grouped CV (`StratifiedGroupKFold`); Level 2 Held-out `Capture-34-1` (23,145 flows sealed in `data/processed/heldout/`); Level 3 Lab camera; tests passed in `tests/unit/test_sampling_and_splits.py` (D-017). |
-| 14   | Train the Random Forest                    | ✅     | `ml_engine/train.py`; grouped CV by scenario; re-run 8 Nov 2026 after D-039: out-of-fold macro-F1 **0.3422** (fold mean 0.3353 ± 0.1704); best `n_estimators=100, max_depth=18`; 4.30 MB; out-of-fold probabilities saved for Step 17 (D-018, D-040, D-043). |
-| 15   | Compare with other models                  | ✅     | `ml_engine/compare_models.py`; re-run 9 Nov 2026: out-of-fold macro-F1 HGB **0.4331** > RF 0.3422 > LR 0.2722; RF kept as the main model per proposal 2.4 (explainable tree paths); `reports/experiments/model_comparison.md` (D-019, D-043). |
-| 16   | Evaluate on the held-out scenario          | ✅     | `ml_engine/evaluate.py`; re-run 9 Nov 2026 on `Capture-34-1` (23,145 flows): uncalibrated RF macro-F1 0.4530 (5 classes) / 0.5662 (4 present); H1 part 1 **not met** (D-020, D-043). |
-| 17   | Calibration, explanation, thresholds       | ✅     | Redone 8–9 Nov 2026: `temperature` calibration (D-045); deployed model on 34-1 macro-F1 **0.4530**; block thresholds by replaying the proposal's repeat rule (D-046): **PortScan 0.30, CnC 0.39**, DDoS and Malware alert only; results per original label added. |
-| 18   | Model bundle and model card                | ✅     | Re-run 9 Nov 2026: `ml_engine/models/ids_bundle_v1.joblib` v1.2.0 (9.3 MB, not in Git, `temperature` calibration); `reports/experiments/model_card.md` filled from the result files (D-022, D-045). |
+| 14   | Train the Random Forest                    | ✅     | `ml_engine/train.py`; grouped CV by scenario. **Re-run 10 Nov 2026 (D-052):** out-of-fold macro-F1 on the same rows: v1 0.3726, v2 0.7010, **WC 0.7085**, WCD 0.7097 → **WC chosen** by the rule written first (gain < 0.01; `reports/experiments/variant_selection.md`). WCD finds far more C&C conversations out-of-fold (41% vs 3%) — open decision, progress issue 45 (D-018, D-043, D-051, D-052). |
+| 15   | Compare with other models                  | ✅     | `ml_engine/compare_models.py`; **re-run 10 Nov 2026 (D-052):** out-of-fold macro-F1 RF **0.7084** > HGB 0.6947 > LR 0.6220 (same WC rows) (D-019, D-043, D-052). |
+| 16   | Evaluate on the held-out scenario          | ✅     | `ml_engine/evaluate.py`; **re-run 10 Nov 2026 (D-052)** on `Capture-34-1` (23,145 flows; **seen and studied before, not a clean test**): macro-F1 **0.6596** (5 classes) / **0.8244** (4 present), v2 0.6337 / 0.7921; PortScan precision 0.51 → 0.71; CnC recall 0.744 → 0.750 (C&C conversations still missed). H1 part 1 (≥ 0.85) **not met** (D-020, D-043, D-052). |
+| 17   | Calibration, explanation, thresholds       | ✅     | **Re-run 10 Nov 2026 (D-052):** Step 17a chose `none`; thresholds from out-of-fold data with the repeat-rule replay (D-046): block **CnC 0.30**, **PortScan 0.91**, DDoS and Malware_Download alert only; held-out final check macro-F1 0.6596. |
+| 18   | Model bundle and model card                | ✅     | **Re-run 10 Nov 2026:** `ml_engine/models/ids_bundle_v3.joblib` **v3.0.0** (5.2 MB, 27 features, variant WC, not in Git); v2 kept in `ml_engine/models/v2_26features/`, v1 in `v1_19features/`; `reports/experiments/model_card.md` filled from the result files (D-022, D-045, D-051, D-052). |
 | 19   | Run Zeek on the sensor                     | 🟡     | Re-opened 8 Nov 2026 (D-042): config, start script and tests ready; Zeek not yet run on the Linux sensor. |
 | 20   | Collect our own benign camera traffic      | 🟡     | Re-opened 8 Nov 2026 (D-042): the 31 Oct flows were synthetic and the result is withdrawn; real capture pending (`collect_camera_traffic.py --source real`). |
-| 21   | Zeek adapter                               | ✅     | `core_engine/zeek_adapter.py` streaming JSON adapter; offset persistence in `.zeek_adapter_state.json`; micro-batching (`batch_size=100`, `timeout=0.5s`); direction & device enrichment; 9 unit tests passed (D-025). |
+| 21   | Zeek adapter                               | ✅     | `core_engine/zeek_adapter.py` streaming JSON adapter; offset persistence; micro-batching (`batch_size=100`, `timeout=0.5s`); direction & device enrichment; **8 window features added to every flow by `WindowState` (D-051, D-052)**; **file-type check on `files.log`** (`core_engine/file_check.py`, D-052); tested in the virtual lab with real Zeek 9.0.1 (D-053) (D-025, D-051, D-052, D-053). |
 | 22   | Offline vs live schema check               | 🟡     | Re-opened 8 Nov 2026 (D-042): `tools/schema_check.py` ready; run on the real capture to answer RQ3. |
 | 23   | Set up MongoDB                             | ✅     | `core_engine/db_service.py` 9 collections, full block history compound non-unique index, dynamic settings, TTL indexes (D-027). 18 dedicated unit/integration tests passed. |
 | 24   | Login and secrets                          | ✅     | `core_engine/auth.py` bcrypt hashing, 8-hour JWT access tokens, `tools/create_admin.py` CLI provisioning, route decorators, system_logs audit integration (D-028). 21 unit tests passed. |
@@ -167,24 +167,24 @@ The status was checked on **19 October 2026**. We looked at the project folder (
 
 | Status                     | Number of steps | Steps             |
 | -------------------------- | --------------- | ----------------- |
-| ✅ Fully done              | 29              | 0, 1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33 |
+| ✅ Fully done              | 30              | 0, 1, 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34 (34: lab check still in Steps 35 and 38) |
 | 🔧 Done, small changes left | 0               | —                 |
 | 🟡 Started                 | 5               | 3, 19, 20, 22, 41 |
 | ♻️ Old code to reuse       | 0               | —                 |
-| ⬜ Not started             | 9               | 5, 34, 35, 36, 37, 38, 39, 40, 42 |
+| ⬜ Not started             | 8               | 5, 35, 36, 37, 38, 39, 40, 42 |
 
 ## 0.3 What to do next, in order
 
 **First, three tasks that need no hardware (9 Nov 2026):**
 
 A. ~~Decide how automatic blocking should work~~ **Done 9 Nov 2026 (D-046):** block thresholds follow proposal 3.4 (confidence threshold + repeats); PortScan and CnC can be blocked, DDoS and Malware are alert only.
-B. **Write down where the IoT-23 CSV copy was downloaded from** (page link and date). The content already matches the official files (D-039).
+B. ~~Write down where the IoT-23 CSV copy was downloaded from~~ **Done 9 Nov 2026 (issues 22 and 31):** Kaggle "IOT-23 Full Dataset", downloaded 19 Oct 2026; content checked against the official files (D-039, D-046).
 C. **Confirm the lab type with the supervisor** (real camera or camera simulator; physical or virtual lab), and update D-038.
 
 **Then the lab work:**
 
 1. **Set up the lab (Step 5).** A real camera, or a camera simulator confirmed with the supervisor (D-038), a switch that can mirror ports (or a virtual switch), a Linux sensor, a lab router, an attack computer and the admin PC. Fill in the real IPs and models in `docs/ethics/lab_plan_and_rules.md`.
-2. **Prepare the sensor (Step 3b/3c).** Ubuntu, Zeek, MongoDB, Python `.venv`, the project from Git, and `ml_engine/models/ids_bundle_v1.joblib` copied by USB (it is not in Git).
+2. **Prepare the sensor (Step 3b/3c).** Ubuntu, Zeek, MongoDB, Python `.venv`, the project from Git, and `ml_engine/models/ids_bundle_v3.joblib` copied by USB (it is not in Git).
 3. **Step 19:** run Zeek on the mirror port; check real `conn.log` lines.
 4. **Step 20:** capture real benign camera traffic for several hours; run `sensor/collect_camera_traffic.py --conn-log ... --source real`.
 5. **Step 22:** run `tools/schema_check.py --live-path ... --source real`. Drop and retrain any feature that cannot be made the same way (proposal 3.5).
@@ -525,9 +525,10 @@ Read this before you start. It explains what the old files were, what was wrong,
 
 **Other documents in the folder:**
 
-- `PROJECT_EXPLANATION_EN.md` (English) and `PROJECT_EXPLANATION.md` (Sinhala) explain **what** the system is and **why** it is built this way. They were rewritten on 19 Oct 2026 (version 2) and now agree with this guide. This guide explains **how** to build it.
-- `PROJECT_PROGRESS_AND_CHALLENGES.md` is the team's progress report. It was corrected on 19 Oct 2026.
-- These files and this guide are listed in `.gitignore`, so Git does not share them. Share them with the team another way, or remove them from `.gitignore`.
+- `PROJECT_PROGRESS_AND_CHALLENGES.md` is the team's progress report: the dated work log, open issues and next steps.
+- `docs/decision_log.md` records every decision; `docs/requirements_checklist.md` tracks the proposal requirements.
+- `docs/archive/` holds the old explanation files (`PROJECT_EXPLANATION_EN.md`, `PROJECT_EXPLANATION.md`), `COMPLETE_PROJECT_GUIDE_A_TO_Z.md` and `execution_record.md`. They are out of date and kept only as a record (9 Nov 2026, D-049).
+- All of these files and this guide are tracked in Git.
 
 ## B2. Where the old `PROJECT_EXPLANATION_EN.md` did not match the proposal (✅ resolved)
 
@@ -895,7 +896,7 @@ git commit -m "Clean project structure"
 3. Upgraded pip and installed all packages from `requirements.txt`:
    - Data & ML: `pandas`, `numpy`, `pyarrow`, `scikit-learn`, `scipy`, `joblib`, `matplotlib`
    - Settings: `pyyaml`, `python-dotenv`
-   - Backend: `flask`, `flask-socketio`, `flask-cors`, `flask-jwt-extended`, `bcrypt`, `pymongo`
+   - Backend: `flask`, `flask-socketio`, `flask-cors`, `pyjwt`, `bcrypt`, `pymongo` (until 9 Nov 2026 the list had `flask-jwt-extended`, which the code never used; it was replaced by `pyjwt`)
    - Tools & Tests: `python-nmap`, `psutil`, `scapy`, `pytest`
 4. Locked exact versions into `requirements.txt` using `pip freeze`.
 5. Created and ran `tools/check_env.py` to verify all imports and local MongoDB connection. Audit log written to `reports/environment_versions.txt`.
@@ -973,7 +974,7 @@ zeek:
   conn_log_path: /var/log/ids-zeek/conn.log  # Zeek is started in this folder (Step 19)
 
 model:
-  bundle_path: ml_engine/models/ids_bundle_v1.joblib
+  bundle_path: ml_engine/models/ids_bundle_v3.joblib
   random_seed: 42
 
 retention_days:   # fill in from the agreed retention plan (Step 1)
@@ -1362,6 +1363,8 @@ def read_chunks(path, chunksize=1_000_000):
 
 ## Step 11. Write the shared feature code
 
+> **Update 10 Nov 2026 (D-051):** 7 window features were added (`ml_engine/window_features.py`): what the same source did in the current 60 s, and how regularly it contacts the same destination. `make_features()` now returns 26 columns. The window values are made by one class, `WindowState`, which reads flows in the order Zeek writes them, in training (Step 12, on the full stream) and live (Step 21). IP addresses are only used to group flows; they are never model inputs.
+
 > **Status: ✅ Done** (25 Oct 2026)
 >
 > - ✅ `ml_engine/features.py` implemented with `make_features(df)` and `build_feature_preprocessor()`.
@@ -1520,6 +1523,8 @@ def make_features(df):
 
 ## Step 14. Train the Random Forest
 
+> **Update 10 Nov 2026 (D-051):** this step was run again with 26 features (19 one-flow + 7 window features). The current numbers are in the status table (Part 0.2) and in `reports/experiments/model_card.md`; the numbers written below in this step are the history of the 19-feature model v1.
+
 > **Status: ✅ Done (first run 31 Oct 2026; run again 8 Nov 2026 after the scenario-name fix, D-039)**
 >
 > - Script: [`ml_engine/train.py`](file:///d:/intrusion%20detection/ml_engine/train.py), run inside `.venv`.
@@ -1596,6 +1601,8 @@ search.fit(X_train, y_train, groups=groups_train)
 
 ## Step 15. Compare with other models
 
+> **Update 10 Nov 2026 (D-051):** this step was run again with 26 features (19 one-flow + 7 window features). The current numbers are in the status table (Part 0.2) and in `reports/experiments/model_card.md`; the numbers written below in this step are the history of the 19-feature model v1.
+
 > **Status: ✅ Done (first run 31 Oct 2026; run again 9 Nov 2026 after D-039)**
 
 **Why:** We must **check**, not assume, that Random Forest gives a good balance of accuracy and speed.
@@ -1620,6 +1627,8 @@ search.fit(X_train, y_train, groups=groups_train)
 ---
 
 ## Step 16. Evaluate on the held-out scenario
+
+> **Update 10 Nov 2026 (D-051):** this step was run again with 26 features (19 one-flow + 7 window features). The current numbers are in the status table (Part 0.2) and in `reports/experiments/model_card.md`; the numbers written below in this step are the history of the 19-feature model v1.
 
 > **Status: ✅ Done (first run 31 Oct 2026; run again 9 Nov 2026 after D-039)**
 
@@ -1657,6 +1666,8 @@ search.fit(X_train, y_train, groups=groups_train)
 ---
 
 ## Step 17. Calibration, explanation and final thresholds
+
+> **Update 10 Nov 2026 (D-051):** this step was run again with 26 features (19 one-flow + 7 window features). The current numbers are in the status table (Part 0.2) and in `reports/experiments/model_card.md`; the numbers written below in this step are the history of the 19-feature model v1.
 
 > **Status: ✅ Done (redone 8–9 Nov 2026: D-040, D-043, D-044, D-045, D-046). The 31 Oct method and numbers are withdrawn.**
 
@@ -1713,6 +1724,8 @@ Replay on 34-1 with these thresholds (reported only): PortScan 27 blocks, 1 fire
 ---
 
 ## Step 18. Save the model bundle and model card
+
+> **Update 10 Nov 2026 (D-051):** this step was run again with 26 features (19 one-flow + 7 window features). The current numbers are in the status table (Part 0.2) and in `reports/experiments/model_card.md`; the numbers written below in this step are the history of the 19-feature model v1.
 
 > **Status: ✅ Done (run again 9 Nov 2026, bundle `v1.2.0`, D-045)**
 >
@@ -1813,7 +1826,7 @@ sudo zeek -C -i <interface> /path/to/project/sensor/local.zeek
 
 **Output:** [`sensor/local.zeek`](file:///d:/intrusion%20detection/sensor/local.zeek), [`sensor/run_zeek.sh`](file:///d:/intrusion%20detection/sensor/run_zeek.sh), [`sensor/zeek_runner.py`](file:///d:/intrusion%20detection/sensor/zeek_runner.py), [`tests/unit/test_zeek_config.py`](file:///d:/intrusion%20detection/tests/unit/test_zeek_config.py).
 
-**Done when:** Zeek **on the sensor** writes newline-delimited JSON connection records to `conn.log`, and `verify_conn_log_schema` passes on those real records with 0 NaNs and all 19 features matching `ml_engine/features.py`.
+**Done when:** Zeek **on the sensor** writes newline-delimited JSON connection records to `conn.log`, and `verify_conn_log_schema` passes on those real records with 0 NaNs and all 26 features matching `ml_engine/features.py` (19 one-flow + 7 window features, D-051).
 
 **Output:** `sensor/local.zeek`; Zeek writing `conn.log`.
 
@@ -2076,15 +2089,17 @@ db.traffic_summaries.create_index("minute", expireAfterSeconds=DAYS * 86400)  # 
 Check the token when a Socket.IO client connects:
 
 ```python
-from flask_socketio import SocketIO
-from flask_jwt_extended import decode_token
+import jwt  # PyJWT
 
 @socketio.on("connect")
 def on_connect(auth):
     try:
-        decode_token(auth["token"])
+        jwt.decode(auth["token"], SECRET_KEY, algorithms=["HS256"])
     except Exception:
         return False   # refuse the connection
+
+# The real code is in core_engine/app.py (handle_socket_connect),
+# which calls AuthManager.decode_token() in core_engine/auth.py.
 ```
 
 **Tips:**
@@ -2174,7 +2189,7 @@ def on_connect(auth):
 > **Status: ✅ Done** (31 October 2026)
 >
 > **Implementation Summary:**
-> - `core_engine/export_service.py` implemented with `ExportService`, `parse_datetime()`, `serialize_csv()`, and `serialize_json()`. Backward compatibility alias provided in `core_engine/log_exporter.py`.
+> - `core_engine/export_service.py` implemented with `ExportService`, `parse_datetime()`, `serialize_csv()`, and `serialize_json()`. (A second module name, `core_engine/log_exporter.py`, was removed on 9 Nov 2026 because nothing imported it; D-049.)
 > - Multi-attribute query filtering supporting date/time ranges (`start_time`, `end_time`), attack class (`predicted_class`), IP address (`src_ip`, `dst_ip`, `ip`), incident confirmation status (`status`), mitigation status (`response_status`), severity, and audit actor.
 > - Standard RFC 4180 CSV serialization with canonical column order and JSON-stringified nested dictionary representations.
 > - Structured, indented JSON array serialization with full ISO 8601 string representations.
@@ -2415,6 +2430,8 @@ sudo nft list set bridge ids block_src                                    # list
 > **Status: ✅ Fully done** (1 Nov 2026, Decision D-037)
 >
 > **Update 8 Nov 2026 (D-041):** the adapter is chosen only by `response.adapter`; `ROUTER_USER` from `.env` is now used. Real blocking on the router has not been tested yet (Step 35).
+>
+> **Lab note (10 Nov 2026):** `router_adapter.py` runs `nft ...` on the router over SSH **without sudo**. So the SSH user must be allowed to run `nft` directly: `root` on OpenWrt (22.03 or newer, which uses nftables), or `root` with key login on a Linux router. Before Step 35, load `sensor/ids_router.nft` on the router (`nft -f ids_router.nft`). From the sensor, `ssh -i <key> root@192.168.50.1 nft list table inet ids` must work with no password prompt.
 
 **Why:** The same decision must work in both deployment modes.
 
@@ -2492,6 +2509,8 @@ sudo nft list set bridge ids block_src                                    # list
 > **Status: ⬜ Not started**
 >
 > This step needs the lab (Step 5) and a working system (Steps 19–34). The empty folder `tests/lab_scenarios/` is ready.
+>
+> **Update 10 Nov 2026 (D-053):** the scripts are now in `tests/lab_scenarios/` (`camera_sim.py`, `lab_server.py`, `syn_flood.py`). All 6 scenarios were run in the **virtual** lab (`lab_virtual/`, Docker, real Zeek and real router firewall); results in `reports/lab_tests/virtual/` and progress entry 3.73. These are rehearsals, not the hardware-lab results this step asks for.
 
 **Why:** These tests prove that the full system works safely (proposal Table 10).
 
@@ -2505,6 +2524,14 @@ sudo nft list set bridge ids block_src                                    # list
 | 4 | C&C-like periodic outbound simulation   | The camera simulator (a lab device on the camera side) opens a small connection to the attack computer (acting as a lab "C&C server") every N seconds  | C&C or heartbeat evidence from a local device to the outside                 | Destination blocked, or device isolated, following the policy.                            |
 | 5 | Controlled file-transfer pattern        | The lab device downloads a **harmless** file from a lab web server on the attack computer, again and again                                              | Download or malware prediction, **if** the learned features can show it      | Alert and evidence kept. **We claim nothing if the model cannot generalise.**             |
 | 6 | Manual block and unblock                | The admin blocks and then unblocks the attack computer from the dashboard                                                                               | The rule change is seen in the dashboard and the database                    | The connection comes back; the full audit record is kept.                                 |
+
+**What the current system will do in scenarios 3, 4 and 5 (added 10 Nov 2026; write this down before the tests, so the results are not judged after we see them):**
+
+- **Scenario 2 (Nmap scan):** since D-051 the PortScan block threshold is **0.95** (stricter than before: at lower values too many replayed blocks hit benign targets). The real IoT-23 scan records of the held-out scenario got confidences of about 0.4–0.7, so a scan may get **alerts only** unless the lab scan looks more like the training scans. Record the confidences; do not change the threshold after seeing them.
+
+- **Scenario 3 (DDoS):** DDoS_DoS is still **alert only** after D-051 (the model now finds DDoS well, but the replay on the sampled training data gave only 6 blocks, fewer than the 10 needed as evidence). Step 17 found no block threshold that meets the rule. So the system will **not** block or rate-limit the flood source by itself. The proposal's safe result ("source blocked or rate-limited") can only be reached by the admin's **manual block** from the dashboard. Record it this way. Changing it (for example, an automatic rate-limit for DDoS) is a decision for the supervisor, and it needs a new decision-log entry **before** the test.
+- **Scenario 4 (C&C):** since D-051 the block threshold is 0.30 and the model finds 74% of the held-out C&C flows. In the PC demonstration the real C&C server (185.244.25.235) was blocked as a destination and the camera itself was not blocked; but 3 other addresses (a PortScan target, a DDoS target and one labelled Benign) were also blocked under the C&C reason, because repeated failed connections to one address look like C&C retries. Record the true type of every blocked address. Expect the destination to be blocked after 3 repeats in 60 s. **Risk:** a camera that keeps retrying an unreachable cloud server looks similar; check this in scenario 1 and Step 20 first.
+- **Scenario 5 (file transfer):** Malware_Download is alert only, and the held-out scenario has no such flows. IoT-23 has only about 84 real file-download flows; this class mostly learned Okiru exploit attempts (port 37215), not file transfers (model card, D-051). The proposal already says "we claim nothing if the model cannot generalise".
 
 "Replay" means sending saved traffic again. You can also process IoT-23 or lab captures offline with `zeek -C -r file.pcap`. Replay traffic on the wire **only** on the separated lab network.
 

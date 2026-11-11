@@ -44,6 +44,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from ml_engine.features import FEATURE_COLUMNS, make_features
+from ml_engine.window_features import WINDOW_FEATURES, WindowState
 
 logging.basicConfig(
     level=logging.INFO,
@@ -53,7 +54,8 @@ logging.basicConfig(
 logger = logging.getLogger("zeek_adapter")
 
 # Default paths and configurations
-DEFAULT_SETTINGS_PATH = PROJECT_ROOT / "config" / "settings.yaml"
+# IDS_SETTINGS_FILE lets a test setup (e.g. lab_virtual/) use its own settings file.
+DEFAULT_SETTINGS_PATH = Path(os.getenv("IDS_SETTINGS_FILE") or PROJECT_ROOT / "config" / "settings.yaml")
 DEFAULT_STATE_PATH = PROJECT_ROOT / "data" / "local" / ".zeek_adapter_state.json"
 DEFAULT_CONN_LOG = PROJECT_ROOT / "sensor" / "logs" / "conn.log"
 
@@ -446,7 +448,12 @@ class ZeekAdapter:
             self.conn_log_path = Path(conn_log_path)
         else:
             configured_path = self.settings.get("zeek", {}).get("conn_log_path")
-            self.conn_log_path = Path(configured_path) if configured_path else DEFAULT_CONN_LOG
+            if configured_path:
+                p = Path(configured_path)
+                # a relative path in settings.yaml starts at the project folder
+                self.conn_log_path = p if p.is_absolute() else PROJECT_ROOT / p
+            else:
+                self.conn_log_path = DEFAULT_CONN_LOG
 
         # 2. Resolve subnets and devices
         subnets = local_networks or self.settings.get("lab", {}).get("local_networks")
@@ -464,6 +471,10 @@ class ZeekAdapter:
 
         # 5. Metrics counter
         self.metrics = AdapterMetrics()
+
+        # 6. Window features (D-051): the same WindowState code as in training, fed in the
+        #    order Zeek writes the lines. It starts empty after a restart.
+        self.window_state = WindowState()
         self._stop_event = threading.Event()
 
     def _load_settings(self, settings_path: Optional[Union[str, Path]]) -> Dict[str, Any]:
@@ -481,9 +492,10 @@ class ZeekAdapter:
         self._stop_event.set()
 
     def reset_state(self) -> None:
-        """Clear persistent offset state."""
+        """Clear persistent offset state and the window-feature memory."""
         if self.state_store:
             self.state_store.clear()
+        self.window_state.reset()
 
     def parse_and_enrich(self, line: str) -> Optional[Dict[str, Any]]:
         """
@@ -529,6 +541,10 @@ class ZeekAdapter:
         direction = self.direction_classifier.classify(orig_h, resp_h)
         device_meta = self.device_tagger.tag(orig_h, resp_h)
         incomplete = is_incomplete_flow(record)
+        window_values = self.window_state.update(
+            record.get("id.orig_h"), record.get("id.resp_h"), record.get("id.resp_p"), record.get("ts"),
+            record.get("proto"), record.get("conn_state"),
+        )
 
         now = datetime.now(timezone.utc)
         record["observed_at"] = now.isoformat()
@@ -536,6 +552,8 @@ class ZeekAdapter:
         record["traffic_direction"] = direction.value
         record["device_tag"] = device_meta
         record["is_incomplete"] = incomplete
+        for name, value in zip(WINDOW_FEATURES, window_values):
+            record[name] = value
 
         # Record metrics
         event_ts = record.get("ts")
@@ -650,7 +668,7 @@ class ZeekAdapter:
 
     def to_feature_dataframe(self, flows: List[Dict[str, Any]]) -> pd.DataFrame:
         """
-        Convert a batch of enriched flows into the locked 19-feature matrix X
+        Convert a batch of enriched flows into the locked feature matrix X (26 columns, D-051)
         using the unified ml_engine.features.make_features engine.
         """
         if not flows:

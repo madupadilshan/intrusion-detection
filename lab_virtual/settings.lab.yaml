@@ -1,0 +1,48 @@
+# lab_virtual/settings.lab.yaml - Settings for the VIRTUAL lab (Docker), read through IDS_SETTINGS_FILE.
+# Same structure as config/settings.yaml; only the values that differ for the virtual lab change.
+# config/settings.yaml (the real lab and development settings) is not changed by the virtual lab.
+
+lab:
+  approved_scan_subnets: ["192.168.50.0/24"]  # Nmap may scan ONLY these (Section 3.7)
+  local_networks: ["192.168.50.0/24"]         # the camera LAN; never auto-blocked. The outside test network is NOT listed.
+  sensor_mirror_interface: "br-ids-lan"       # Docker bridge of the camera LAN (the virtual mirror port)
+
+allowlist:            # management IPs that are NEVER blocked
+  - 192.168.50.1      # lab router / gateway
+  - 192.168.50.5      # IDS sensor (not used in the virtual lab; kept the same as the real lab)
+  - 192.168.50.10     # admin workstation
+  - 192.168.50.20     # NVR
+
+response:
+  deployment_mode: passive      # passive: the lab router blocks (Table 11)
+  adapter: router               # real nftables on the lab router container, over SSH
+  auto_response: true           # ON for the planned virtual-lab tests only (guide Step 35)
+  min_confidence: 0.30
+  min_repeats: 3
+  repeat_window_seconds: 60
+  max_rule_minutes: 30
+  allow_device_isolation: false
+
+firewall:
+  table_name: ids
+  table_family: inet
+  router_host: 127.0.0.1        # the router container's SSH port, published on this PC only
+  router_port: 2222
+  router_user: root
+  router_key_file: lab_virtual/keys/router_admin
+  router_known_hosts_file: lab_virtual/keys/known_hosts   # the lab's own host key; ~/.ssh is not touched
+  simulate: false               # 127.0.0.1 would otherwise mean "simulation"
+  use_sudo: false
+
+zeek:
+  conn_log_path: lab_virtual/zeek_logs/conn.log
+  files_log_path: lab_virtual/zeek_logs/files.log
+
+model:
+  bundle_path: ml_engine/models/ids_bundle_v3.joblib
+  random_seed: 42
+
+retention_days:
+  attack_events: 90
+  traffic_summaries: 30
+  system_logs: 90

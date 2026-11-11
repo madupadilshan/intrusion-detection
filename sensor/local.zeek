@@ -32,3 +32,9 @@ redef ignore_checksums = T;
 @load base/protocols/http
 @load base/protocols/ssl
 
+
+# 4. File analysis (D-052): files.log records the type (mime_type) of each file seen in HTTP/FTP.
+#    core_engine/file_check.py reads it and raises a Malware_Download alert when a local device
+#    downloads a program or script from outside (rule, alert only).
+@load base/frameworks/files
+@load base/protocols/ftp

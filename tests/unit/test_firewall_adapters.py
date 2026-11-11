@@ -190,6 +190,35 @@ def test_decision_engine_execute_response_integration():
     assert emit_payload["ip"] == "203.0.113.66"
 
 
+@pytest.mark.parametrize("direction, expected", [("inbound", "source"), ("outbound", "destination")])
+def test_execute_response_matches_real_db_signature(direction, expected):
+    """An automatic block must reach the real blocklist method with valid arguments.
+
+    A plain MagicMock accepts any argument name, which hid a bug: `event_id=` was passed
+    instead of `linked_event_id=`, so automatic blocks were never saved (found by
+    tools/demo_pc_replay.py, 9 Nov 2026). create_autospec checks the real signature.
+    """
+    from unittest.mock import create_autospec
+    from core_engine.db_service import DatabaseService
+
+    db = create_autospec(DatabaseService, instance=True)
+    engine = DecisionEngine(db_service=db, firewall_adapter=SimulationAdapter())
+    decision = PolicyDecision(
+        should_act=True, action_type="block", target_ip="203.0.113.77", direction=direction,
+        duration_minutes=30, reason_code="AUTO_CNC_DEST_BLOCK",
+        details={"class": "CnC", "confidence": 0.52},
+    )
+    engine.execute_response(decision, event_id="event_42")
+
+    db.add_to_blocklist.assert_called_once()
+    kwargs = db.add_to_blocklist.call_args.kwargs
+    assert kwargs["direction"] == expected
+    assert kwargs["linked_event_id"] == "event_42"
+    assert kwargs["predicted_class"] == "CnC"
+    assert kwargs["confidence"] == 0.52
+    db.log_response_action.assert_called_once()
+
+
 def test_decision_engine_execute_response_skipped():
     """Verify DecisionEngine.execute_response logs skipped action when should_act is False."""
     mock_db = MagicMock()

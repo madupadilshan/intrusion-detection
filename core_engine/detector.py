@@ -9,7 +9,7 @@ Governing Standards & Requirements:
 - Step-by-Step Guide: Step 26 ("Build the detector and decision engine").
 - Key Principles:
   1. Load model bundle ONCE at initialization (low memory footprint, fast startup).
-  2. Zero Training-Serving Skew: Extracts identical 19 features via `ml_engine.features.make_features()`.
+  2. Zero Training-Serving Skew: Extracts identical features (26 since D-051) via `ml_engine.features.make_features()`.
   3. Batch and single-flow inference producing calibrated probability distributions.
   4. Returns standardized `DetectionResult` with predicted class, confidence, and model metadata.
 """
@@ -31,7 +31,7 @@ from ml_engine.features import FEATURE_COLUMNS, make_features
 logger = logging.getLogger("core_engine.detector")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_BUNDLE_PATH = PROJECT_ROOT / "ml_engine" / "models" / "ids_bundle_v1.joblib"
+DEFAULT_BUNDLE_PATH = PROJECT_ROOT / "ml_engine" / "models" / "ids_bundle_v3.joblib"
 
 
 @dataclass
@@ -63,7 +63,7 @@ class Detector:
     """
     Real-Time Machine Learning Intrusion Detector.
 
-    Caches the unified production model bundle (`ids_bundle_v1.joblib`) and executes
+    Caches the unified production model bundle (`ids_bundle_v3.joblib`) and executes
     calibrated inference across streaming flow micro-batches.
     """
 
@@ -76,7 +76,7 @@ class Detector:
         Initialize the detector.
 
         Args:
-            bundle_path: Path to serialized `ids_bundle_v1.joblib`. If None, uses default.
+            bundle_path: Path to serialized `ids_bundle_v3.joblib`. If None, uses default.
             bundle_dict: Pre-loaded bundle dictionary (used for unit testing with mocks).
         """
         self.bundle_path = Path(bundle_path) if bundle_path else DEFAULT_BUNDLE_PATH
@@ -155,8 +155,12 @@ class Detector:
 
         # Step 2: Calibrated probability inference
         # model.predict_proba returns ndarray of shape (n_samples, n_classes)
+        # Give the model exactly the columns it was trained with (the bundle stores the list:
+        # 19 for v1 bundles, 26 with the window features of D-051).
+        model_cols = [c for c in self.feature_columns if c in features_df.columns]
+        model_input = features_df[model_cols] if len(model_cols) == len(self.feature_columns) else features_df
         try:
-            proba_matrix = self.model.predict_proba(features_df)
+            proba_matrix = self.model.predict_proba(model_input)
         except Exception as e:
             logger.error("Inference failed on flow batch: %s", e)
             raise RuntimeError(f"Detector inference error: {e}") from e

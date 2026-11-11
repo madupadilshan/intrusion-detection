@@ -37,6 +37,7 @@ class RouterAdapter(BaseFirewallAdapter):
         allowlist: Optional[Set[str]] = None,
         max_rule_minutes: int = 60,
         simulate: Optional[bool] = None,
+        known_hosts_file: Optional[str] = None,
     ):
         """
         Initialize the router adapter.
@@ -50,6 +51,8 @@ class RouterAdapter(BaseFirewallAdapter):
         :param allowlist: Protected IP set
         :param max_rule_minutes: Clamping limit for rules
         :param simulate: Force simulation mode; defaults to True if host not reachable or None
+        :param known_hosts_file: Optional known_hosts file for the router's host key (e.g. the
+            lab_virtual/ test lab), so the user's own ~/.ssh/known_hosts is not used or changed
         """
         super().__init__(
             name="router_ssh",
@@ -61,6 +64,7 @@ class RouterAdapter(BaseFirewallAdapter):
         self.router_port = int(router_port or os.getenv("ROUTER_PORT") or os.getenv("ROUTER_SSH_PORT", 22))
         self.router_user = router_user or os.getenv("ROUTER_USER") or os.getenv("ROUTER_SSH_USER") or "root"
         self.router_key_file = router_key_file or os.getenv("ROUTER_KEY_FILE") or os.getenv("ROUTER_SSH_KEY_PATH")
+        self.known_hosts_file = known_hosts_file or os.getenv("ROUTER_KNOWN_HOSTS")
         self.table_family = table_family
         self.table_name = table_name
 
@@ -96,7 +100,10 @@ class RouterAdapter(BaseFirewallAdapter):
         """Execute a command on the remote router via SSH."""
         cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", "-p", str(self.router_port)]
         if self.router_key_file and os.path.exists(self.router_key_file):
-            cmd.extend(["-i", self.router_key_file])
+            cmd.extend(["-i", self.router_key_file, "-o", "IdentitiesOnly=yes"])
+        if self.known_hosts_file:
+            # quoted: the path may contain spaces (e.g. "D:\intrusion detection\...")
+            cmd.extend(["-o", f'UserKnownHostsFile="{self.known_hosts_file}"', "-o", "StrictHostKeyChecking=yes"])
         cmd.append(f"{self.router_user}@{self.router_host}")
         cmd.append(remote_cmd)
 
