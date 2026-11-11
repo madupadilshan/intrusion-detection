@@ -18,3 +18,11 @@ resp_bytes_per_pkt,PASS,PASS,PASS,PASS
 byte_ratio,PASS,PASS,PASS,PASS
 pkt_ratio,PASS,PASS,PASS,PASS
 is_incomplete_flow,PASS,PASS,PASS,PASS
+src_conn_60s,PASS,PASS,PASS,PASS
+src_udst_60s,PASS,PASS,PASS,PASS
+src_uport_60s,PASS,PASS,PASS,PASS
+src_udst_ratio,PASS,PASS,PASS,PASS
+pair_conn_60s,PASS,PASS,PASS,PASS
+pair_gap,PASS,PASS,PASS,PASS
+pair_gap_change,PASS,PASS,PASS,PASS
+pair_fail_1h,PASS,PASS,PASS,PASS

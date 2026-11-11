@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lab IP Camera - Live Web Interface</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 24px; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .header { background: #0f172a; padding: 16px 24px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+        h1 { margin: 0; font-size: 1.25rem; font-weight: 600; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+        .badge { background: #065f46; color: #34d399; padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+        .badge::before { content: ""; width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+        .content { padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .viewport { grid-column: span 2; background: #020617; border-radius: 8px; height: 300px; border: 1px solid #1e293b; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .viewport-grid { position: absolute; inset: 0; background-image: radial-gradient(#334155 1px, transparent 1px); background-size: 24px 24px; opacity: 0.3; }
+        .viewport-overlay { position: absolute; top: 12px; left: 16px; font-family: monospace; font-size: 0.85rem; color: #f8fafc; text-shadow: 0 1px 3px black; }
+        .viewport-rec { position: absolute; top: 12px; right: 16px; color: #ef4444; font-family: monospace; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; }
+        .viewport-rec::before { content: ""; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; }
+        .viewport-center { text-align: center; color: #64748b; z-index: 1; }
+        .viewport-center svg { width: 48px; height: 48px; margin-bottom: 8px; fill: #475569; }
+        .card { background: #0f172a; padding: 16px; border-radius: 8px; border: 1px solid #334155; }
+        .card h3 { margin-top: 0; font-size: 0.95rem; color: #94a3b8; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
+        .row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 8px; }
+        .label { color: #64748b; }
+        .val { font-family: monospace; color: #e2e8f0; font-weight: 500; }
+        .footer { background: #0f172a; padding: 12px 24px; border-top: 1px solid #334155; font-size: 0.75rem; color: #64748b; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Lab IP camera</h1>
+            <span class="badge">RECORDING / STREAMING</span>
+        </div>
+        <div class="content">
+            <div class="viewport">
+                <div class="viewport-grid"></div>
+                <div class="viewport-overlay">CH01 - LAB ENVIRONMENT &bull; RTSP 1080P</div>
+                <div class="viewport-rec">REC</div>
+                <div class="viewport-center">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
+                    <div>LIVE RTSP STREAM ACTIVE (PORT 554)</div>
+                    <div style="font-size:0.75rem; color:#475569; margin-top:4px;">Transmitting ~200 KB/s to NVR</div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Camera Properties</h3>
+                <div class="row"><span class="label">IP Address:</span><span class="val">192.168.50.30</span></div>
+                <div class="row"><span class="label">Status:</span><span class="val">status: recording</span></div>
+                <div class="row"><span class="label">Subnet Mask:</span><span class="val">255.255.255.0</span></div>
+                <div class="row"><span class="label">Default Gateway:</span><span class="val">192.168.50.1 (ids-lab-router)</span></div>
+                <div class="row"><span class="label">Firmware:</span><span class="val">v2.14-USJ-SEC</span></div>
+            </div>
+            <div class="card">
+                <h3>Live Streaming Feeds</h3>
+                <div class="row"><span class="label">RTSP Stream:</span><span class="val">rtsp://192.168.50.30:554/ch0</span></div>
+                <div class="row"><span class="label">Resolution / FPS:</span><span class="val">1920x1080 @ 25 fps</span></div>
+                <div class="row"><span class="label">Connected NVR:</span><span class="val">192.168.50.20 (58.6 MB / 5m)</span></div>
+                <div class="row"><span class="label">Cloud Heartbeat:</span><span class="val">10.10.10.123 (Port 443)</span></div>
+                <div class="row"><span class="label">Security Sensor:</span><span class="val">Zeek Sniffing br-ids-lan</span></div>
+            </div>
+        </div>
+        <div class="footer">
+            Real-Time Intrusion Detection and Autonomous Response System for IP Cameras &bull; Group 03 USJ
+        </div>
+    </div>
+</body>
+</html>

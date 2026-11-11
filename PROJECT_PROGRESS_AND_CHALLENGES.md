@@ -1337,6 +1337,20 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 - **Templates:** `docs/lab_network.md` (Step 5) and `docs/usability_tasks.md` (Step 39).
 - **Not done yet:** nothing has been run on real devices (issue 51).
 
+**3.77 End-to-end presentation manual and live lab proof guide (11 November 2026)**
+
+- **What was done:** Created `A_TO_Z_SYSTEM_FLOW.md` as the comprehensive presentation and operational manual for team members and academic supervisors (Dr. A.A.M. Matheeh & Dr. Senaka Amarakeerthi).
+- **Core components detailed:**
+  - The 5 network entities (Camera, NVR, Admin PC, Router/Firewall, Attacker, Zeek sensor).
+  - The 7-step pipeline from raw packets -> Zeek `conn.log` -> 27-feature engineering -> Random Forest model inference (v3.1.0) -> Decision Engine policy -> Router `nftables` SSH mitigation -> MongoDB & WebSocket live push.
+  - Live dashboard connection architecture: unified port 5000 server, JWT authentication, and zero-refresh real-time updates via Socket.IO (FR-04).
+  - Proposal-aligned 12-proof verification suite for Section 4.2 mapping Table 7 FR-01 to FR-08, Table 3 Objectives O1 to O6, Table 9 acceptance targets, and Table 10 scenarios to live terminal outputs with a dedicated Master Alignment Matrix.
+  - Dedicated callout boxes for every subsection (4.2.0 to 4.2.11) stating exact Objective, Requirement, Research Question/Hypothesis, Scenario, and supervisor explanation script.
+  - Line-by-line command and code breakdowns across all sections (Cold Start lifecycle, live packet injection, Zeek counters, nftables rulesets, Nmap scans, sub-second latency measurements, C&C mitigation, Nmap inventory discovery, and manual block/unblock with filtered CSV export) in simple, accessible Sinhala and English.
+  - Strictly virtual testbed focus: 100% focused on Docker containers, virtual bridges (`br-ids-lan`, `br-ids-out`), and host bindings with zero physical hardware comparisons or mentions.
+  - Walkthroughs for normal video streaming vs. C&C beaconing (Scenario 4) and word-for-word presentation script for supervisors.
+  - Enhanced camera simulator web server in `tests/lab_scenarios/camera_sim.py` to return a styled dark-mode IP Camera Web Management portal with live video status viewport and network properties, viewable directly in Chrome/Edge via Admin container export.
+
 ---
 
 ## 4. Challenges and how they were solved
@@ -1475,7 +1489,7 @@ These will move into `docs/decision_log.md` when it is created (Step 4).
 ```
 D:\intrusion detection\
 ├── .env.example, .gitignore, .gitattributes, README.md, requirements.txt   (in Git)
-├── STEP_BY_STEP_GUIDE.md, PROJECT_PROGRESS_AND_CHALLENGES.md            (tracked in Git)
+├── STEP_BY_STEP_GUIDE.md, PROJECT_PROGRESS_AND_CHALLENGES.md, A_TO_Z_SYSTEM_FLOW.md (tracked in Git)
 ├── config/
 │   ├── settings.example.yaml      # Step 4 template layout, start values
 │   ├── settings.yaml              # Step 4 active local settings (in .gitignore)
