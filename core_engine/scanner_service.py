@@ -543,7 +543,7 @@ class ScannerService:
                 "services": ["http Hikvision-Web", "rtsp", "hikvision-mgmt", "http-proxy"],
             },
             {
-                "ip": "192.168.50.60",
+                "ip": "192.168.50.30",
                 "mac": "3C:EF:8C:11:22:33",
                 "vendor": "Dahua Technology",
                 "hostname": "ipc-hfw1230",
