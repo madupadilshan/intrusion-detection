@@ -991,6 +991,7 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
   > - **`"model_version": "v3.1.0"`:** Proposal Table 7 FR-02 අනුව පුහුණු කරන ලද සැබෑ Random Forest Model අනුවාදය.
   > - **`"latency_ms_p50": 112.24`:** ගලා ආ flows 2,000 කට අධික ප්‍රමාණයක් නිරීක්ෂණය කිරීමෙන් පසු තීරණයක් ගැනීමට ගතවූ Median (සාමාන්‍ය) කාලය මිලි තත්පර 112.24 කි (තත්පර 0.11).
   > - **`"benign_flows_24h": 7605`:** පසුගිය පැය 24 තුළ කැමරාවෙන් සාමාන්‍ය වීඩියෝ flows 7,605 ක් කිසිදු බාධාවකින් තොරව ගමන් කර MongoDB හි ආරක්ෂිතව සටහන් වී ඇත.
+  >
 
 ---
 
@@ -1043,7 +1044,7 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
   > - **පියවර 3 (`time.sleep(0.5)`):** Zeek sensor එක විසින් flow එක සටහන් කර, Python adapter එක එය කියවා Machine Learning model එක හරහා තීරණය ගැනීමට අවශ්‍ය තත්පර භාගයක කාලය ලබාදෙයි.
   > - **පියවර 4 (`GET /api/v1/pipeline/status`):** පද්ධතිය තුළ සැබෑ flows 2,200 කට අධික ප්‍රමාණයක් මත ගණනය කරන ලද Median (`p50`) සහ 95th Percentile (`p95`) Latency අගයන් කියවා ගනී.
   > - **පියවර 5 (`print`):** Proposal Table 9 හි ඉලක්කය වූ තත්පර 2.0 (2000 ms) හා සසඳා පද්ධතිය කෙතරම් වේගවත්ද යන්න සනාථ කරයි.
-
+  >
 - **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
 
   ```text
@@ -1099,24 +1100,25 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
    - තීරණය MongoDB දත්ත සමුදායේ `traffic_summaries` හෝ `attack_events` හි සටහන් කරයි.
    - එම මොහොතේදීම WebSockets (Socket.IO) හරහා React SOC Dashboard එකට `traffic_update` හෝ `alert_event` ලෙස broadcast කරයි (පරිශීලකයාට Browser Refresh කිරීමට අවශ්‍ය නැත).
 
-- **කේතය තුළ Latency ගණනය වන නිල සූත්‍රය ([`core_engine/decision_engine.py`](file:///d:/intrusion%20detection/core_engine/decision_engine.py#L548)):**
+- **කේතය තුළ Latency ගණනය වන නිල සූත්‍රය ([`core_engine/decision_engine.py`](<file:///d:/intrusion%20detection/core_engine/decision_engine.py#L548>)):**
 
-  $$\text{Pipeline Decision Latency (ms)} = (\text{emit\_ts} - \text{adapter\_ts}) \times 1000.0$$
-
+  $$
+  \text{Pipeline Decision Latency (ms)} = (\text{emit\_ts} - \text{adapter\_ts}) \times 1000.0
+  $$
 - **`latency_ms_p50` සහ `latency_ms_p95` හි සංඛ්‍යානමය තේරුම:**
+
   - **`latency_ms_p50` (Median - 50th Percentile):** පද්ධතිය හරහා ගලාගිය flows 2,294 න් **50% කටම** තීරණයක් ලබාදී Dashboard එකට push කිරීමට ගතවූ කාලය **මිලි තත්පර 112.24 (තත්පර 0.11)** ට වඩා අඩුය!
   - **`latency_ms_p95` (95th Percentile):** ජාලයේ දැඩි තදබදයක් ඇති අවස්ථාවල පවා flows වලින් **95% කටම** තීරණය ලබාදීමට ගතවූ කාලය **මිලි තත්පර 141.10 (තත්පර 0.14)** ට වඩා අඩුය!
-
 - **Proposal Table 9 Benchmark Target සමග සංසන්දනය:**
 
-  | මිනුම (Metric) | Proposal Table 9 ඉලක්කය | අපගේ සැබෑ පද්ධතියේ ප්‍රතිඵලය | තත්ත්වය (Status) |
-  | :--- | :--- | :--- | :--- |
-  | **Median Decision Latency ($p50$)** | $< 2.0\text{ s}$ ($2000\text{ ms}$) | **$112.24\text{ ms}$ ($0.11\text{ s}$)** | ✅ **PASS (18x Faster!)** |
-  | **95th Percentile Latency ($p95$)** | $< 5.0\text{ s}$ ($5000\text{ ms}$) | **$141.10\text{ ms}$ ($0.14\text{ s}$)** | ✅ **PASS (35x Faster!)** |
-
+  | මිනුම (Metric)                         | Proposal Table 9 ඉලක්කය           | අපගේ සැබෑ පද්ධතියේ ප්‍රතිඵලය | තත්ත්වය (Status)         |
+  | :------------------------------------------ | :-------------------------------------- | :---------------------------------------------------- | :------------------------------ |
+  | **Median Decision Latency ($p50$)** | $< 2.0\text{ s}$ ($2000\text{ ms}$) | **$112.24\text{ ms}$ ($0.11\text{ s}$)**    | ✅ **PASS (18x Faster!)** |
+  | **95th Percentile Latency ($p95$)** | $< 5.0\text{ s}$ ($5000\text{ ms}$) | **$141.10\text{ ms}$ ($0.14\text{ s}$)**    | ✅ **PASS (35x Faster!)** |
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
   > *"Sir, as demonstrated by our live packet injection test and telemetry metrics, our system achieves an empirical median decision latency of only 112.24 ms and a 95th percentile latency of 141.10 ms across 2,294 real processed flows. This satisfies Proposal Objectives O2 & O6, Table 7 FR-02 & FR-03, and crushes our Proposal Table 9 benchmark (< 2.0 s) by running 18 times faster than required."*
+  >
 
 ---
 
@@ -1138,13 +1140,31 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
 
   > **කේතයෙන් සිදුවන දේ සරලව:** Router Container එක ඇතුළට ගොස් Linux `nftables` හි `block_dst` නම් Drop ලැයිස්තුව ප්‍රහාරයට පෙර හිස්දැයි (`elements = { }`) තහවුරු කරගන්න.
   >
-- **පියවර 2: සජීවී C&C ප්‍රහාරය දියත් කිරීම:**
+- **පියවර 2: සජීවී C&C ප්‍රහාරය දියත් කිරීම (Proposal Table 10 Scenario 4):**
 
   ```powershell
   .venv\Scripts\python.exe lab_virtual\lab.py scenario 4
   ```
 
-  > **කේතයෙන් සිදුවන දේ සරලව:** Attacker Container එක මඟින් කැමරාව වෙත සජීවී C&C Botnet Beacons ප්‍රහාරය එල්ල කිරීම ආරම්භ කරන්න.
+  > 🔍 **මෙම `scenario 4` කොටස කොහෙන්ද ආවේ? (Origin per Proposal):**
+  >
+  > - මෙම `scenario 4` යනු අහඹු අංකයක් නොවේ. එය අපගේ **Group 03 Research Proposal එකේ Table 10 ("Evaluation Scenarios")** හි 4 වන පේළියේ නියම කර ඇති නිල පර්යේෂණ අවස්ථාවයි:
+  >   - **Proposal Table 10 Scenario 4:** *"C&C-like periodic outbound simulation — lab C&C server on the attack laptop (port 6667); camera simulator connects every 5 s and keeps short chat sessions; C&C destination blocked, camera never blocked."*
+  > - අපගේ Virtual Lab පාලක ස්ක්‍රිප්ටුව වන `lab_virtual/lab.py` තුළ Proposal Table 10 හි ඇති පර්යේෂණ අවස්ථා 6 ම (`scenario 1` සිට `scenario 6` දක්වා) එකම command එකකින් පරිපාලකයාට පහසුවෙන් run කළ හැකි වන පරිදි කේතනය කර ඇත.
+  >
+  > ⚙️ **`scenario 4` ධාවනය කළ විට ඇතුළතින් සිදුවන්නේ කුමක්ද? (How it Works Under the Hood):**
+  >
+  > මෙම command එක run කළ සැණින් Docker පරිසරය තුළ පහත ප්‍රධාන පියවර 3 සම්බන්ධීකරණය වේ:
+  >
+  > 1. **Attacker පරිගණකයේ Master C&C Server එකක් විවෘත වීම ([`lab_server.py`](file:///d:/intrusion%20detection/lab_virtual/lab.py#L242)):**
+  >    - Attacker කන්ටේනරය (`ids-lab-attack-server` / IP `10.10.10.50`) තුළ Port 6667 (IRC/Botnet control port) හරහා Command & Control (C&C) Master Server සේවාව සක්‍රිය වේ.
+  > 2. **කැමරාව තුළින් පිටතට Periodic Botnet Beacons යැවීම ([`camera_sim.py`](file:///d:/intrusion%20detection/lab_virtual/lab.py#L244)):**
+  >    - ආසාදිත කැමරාව (`ids-lab-camera` / IP `192.168.50.30`) තුළ malware bot ආසාදනයක් අනුකරණය කරමින්, සෑම තත්පර 5 කට වරක්ම (`--every 5`) පිටත ඇති Attacker C&C Server එක (`10.10.10.50`) වෙත periodic outbound beacons (keep-alive / reverse shell සංඥා) යවමින් "ඊළඟ command එක කුමක්ද?" කියා විමසයි.
+  > 3. **පද්ධතියේ AI සහ Autonomous Mitigation ක්‍රියාත්මක වීම:**
+  >    - **Zeek Sniffing:** Zeek sensor එක කැමරාවෙන් පිටතට යන මෙම periodic outbound flows ක්ෂණිකව capture කර `conn.log` හි ලියයි.
+  >    - **ML Model Inference (v3.1.0):** Flow Features 27 ක් කියවා බලා, මෙය සාමාන්‍ය වීඩියෝවක් නොව **`CnC`** ප්‍රහාරයක් බව Random Forest Model එක $P \ge 0.85$ ඉහළ Confidence එකකින් හඳුනාගනී.
+  >    - **Safety Guardrail & Autonomous Block:** කැමරාව Allowlist හි ඇති බැවින් කැමරාව කිසිසේත්ම block නොකර, පිටත ඇති නපුරු C&C Server IP ලිපිනය (`10.10.10.50`) Router එකේ Linux `nftables` Drop ලැයිස්තුවට (`block_dst`) තත්පර 1800 ක (මිනිත්තු 30) Auto-expiry timer එකක් සමඟ ස්වයංක්‍රීයව ඇතුළත් කරයි.
+  >    - **Zero Disruption (Hypothesis H1):** කැමරාව සහ NVR අතර RTSP වීඩියෝවට (Port 554) කිසිදු බාධාවක් නොවන අතර, React SOC Dashboard එකට WebSocket හරහා live alert එක තල්ලු වේ.
   >
 - **පියවර 3: ප්‍රහාරය අතරතුර Router එකේ `block_dst` නැවත පරීක්ෂා කිරීම:**
 
