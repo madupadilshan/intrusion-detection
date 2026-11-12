@@ -595,19 +595,23 @@ Docker Containers තුළ නිකන්ම හිස් OS එකක් න�
 
 ---
 
-### 4.1.7 ප්‍රහාර ක්‍රියාත්මක වන ආකාරය (`lab_virtual/lab.py` වල කාර්යභාරය)
+### 4.1.7 සජීවී ප්‍රහාරයක් කෙලින්ම දියත් වන ආකාරය (Direct Attack Execution)
 
-ඔබ Terminal එකේ මෙසේ run කරන විට:
+ඔබ Terminal එකේ කෙලින්ම සැබෑ C&C ප්‍රහාරක විධානයන් මෙසේ ධාවනය කරන විට:
 
 ```powershell
-.venv\Scripts\python.exe lab_virtual\lab.py scenario 4
+# 1. Attacker මැෂිමේ C&C Master Server එක (Port 6667) විවෘත කිරීම:
+docker exec -d ids-lab-attack-server python -u /lab/lab_server.py --role cnc --cnc-open-after 120
+
+# 2. ආසාදිත කැමරාවෙන් Attacker C&C Server එක (10.10.10.50) වෙත Botnet Beacons යැවීම:
+docker exec -d ids-lab-camera python -u /lab/camera_sim.py bot --server 10.10.10.50 --every 5 --session 30 --duration 90
 ```
 
 > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
 >
-> - **`.venv\Scripts\python.exe`:** අපේ ව්‍යාපෘතිය සඳහා හදන ලද Python Virtual Environment එකේ Python පරිවර්තකය ක්‍රියාත්මක කරන්න.
-> - **`lab_virtual\lab.py`:** Virtual Lab එකේ Containers, Firewall නීති, සහ ප්‍රහාර පාලනය කරන ප්‍රධාන Python Controller ස්ක්‍රිප්ට් එකයි.
-> - **`scenario 4`:** Attacker Container එක (`ids-lab-attack-server`) මත C&C Master Server එකක් දමා, ආසාදිත කැමරාව මඟින් Proposal Table 10 හි අඩංගු "C&C Botnet Beacons" ප්‍රහාරය (Outbound periodic telemetry) ආරම්භ කරන ලෙස නියෝග කරන්න.
+> - **`docker exec -d ids-lab-attack-server ...`:** පිටත ජාලයේ Attacker Container එක මත Port 6667 IRC/Botnet Master C&C Server එක Background එකේ (`-d`) සක්‍රිය කරයි.
+> - **`docker exec -d ids-lab-camera ...`:** ආසාදිත කැමරාව තුළින් පිටත Attacker IP එක (`10.10.10.50`) වෙත සෑම තත්පර 5 කට වරක්ම Outbound Beacons යැවීම ආරම්භ කරයි.
+> *(සටහන: මෙය ස්වයංක්‍රීයව run කර වාර්තාවක්ද සෑදීමට `.venv\Scripts\python.exe lab_virtual\lab.py scenario 4` විධානයද භාවිත කළ හැක).*
 
 සිදුවන්නේ කුමක්ද?
 
@@ -751,7 +755,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 │  [2. lab.py setup]       ──► SSH Keys & Login File Created (One-Time)  │
 │            │                                                           │
 │            ▼                                                           │
-│  [3. lab.py up]          ──► Lab Containers & Dual Bridges Spawned     │
+│  [3. lab.py up]          ──► 10 Containers & Virtual Bridges Spawned   │
 │            │                                                           │
 │            ▼                                                           │
 │  [4. lab.py ids-start]   ──► Python IDS Backend Running on Port 5000   │
@@ -1046,48 +1050,32 @@ Get-Content lab_virtual\zeek_logs\conn.log -Tail 3
 
 Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම live packets කියවනවා කියලා ඔප්පු කරන්නේ කොහොමද? මේක කලින් හදපු log file එකක් නෙවෙයි කියලා ෂුවර්ද?"** කියා ඇසුවහොත්, එම මොහොතේදීම ඔප්පු කිරීමට පහත ක්‍රම 3 භාවිතා කරන්න:
 
-1. **සාක්ෂිය 1: අපගේම සුවිශේෂී Port එකක් සහ රහස්‍ය පණිවිඩයක් යවා Zeek ලඝු සටහන් වල එය සනාථ කිරීම (Unique Packet Injection & Multi-Log Verification Test):**
-
-   > 💡 **මෙය ඔප්පු කරන්නේ කෙසේද?**
-   > සාමාන්‍ය HTTP request එකක් යැවූ විට Source Port එක operating system එකෙන් අහඹු ලෙස (random port) ගන්නා නිසා, Supervisor ට මෙය පැරණි log එකක් නොවන බව 100% ක් ඔප්පු කිරීමට **අපටම ආවේණික සුවිශේෂී ලකුණු 3 ක් (Unique Fingerprints)** යවනු ලැබේ:
-   > 1. **සුවිශේෂී Client Port එකක් (`id.orig_p: 54321`):** අහඹු port එකක් වෙනුවට අප විසින්ම තෝරාගත් `54321` (හෝ Supervisor දෙන ඕනෑම අංකයක්) source port එක ලෙස යවයි.
-   > 2. **සුවිශේෂී රහස්‍ය පණිවිඩයක් (`uri: "/?msg=LIVE_TEST_SUPERVISOR_PROOF"`):** HTTP request එක තුළ අපට අවශ්‍ය සුවිශේෂී ලකුණක් යවයි.
-   > 3. **එකම Connection UID එක (`uid`):** `conn.log` සහ `http.log` ගොනු දෙකෙහිම එකම Unique Connection ID එක සටහන් වීම.
-
-   Terminal එකේ පහත විධානය ධාවනය කරන්න:
+1. **සාක්ෂිය 1: සජීවීව Packet එකක් යවා Zeek එක එම තත්පරයේදීම එය ලියන බව පෙන්වීම (Live Injection Test):**
+   Terminal එකේ Admin PC එකෙන් කැමරාවට සජීවී HTTP Request එකක් යවා, Zeek එකේ අන්තිම පේළිය බලන්න:
 
    ```powershell
-   docker exec ids-lab-admin python -c "import socket; s = socket.socket(); s.bind(('', 54321)); s.connect(('192.168.50.30', 80)); s.sendall(b'GET /?msg=LIVE_TEST_SUPERVISOR_PROOF HTTP/1.0\r\n\r\n'); s.recv(1024); s.close()"
+   docker exec ids-lab-admin python -c "import urllib.request; urllib.request.urlopen('http://192.168.50.30/')"
    Get-Content lab_virtual\zeek_logs\conn.log -Tail 1
-   Get-Content lab_virtual\zeek_logs\http.log -Tail 1
    ```
 
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
    >
-   > - **`s.bind(('', 54321))`:** Admin PC එකේ OS එකෙන් අහඹු port එකක් ගැනීම වෙනුවට, අප විසින් තෝරාගත් **`54321`** නමැති සුවිශේෂී Source Port එකට Socket එක සවි (bind) කරයි.
-   > - **`s.connect(('192.168.50.30', 80))`:** කැමරාවේ Web Server එක වෙත TCP සම්බන්ධතාවයක් ඇති කරයි.
-   > - **`s.sendall(b'GET /?msg=LIVE_TEST_SUPERVISOR_PROOF ...')`:** කැමරාවට අපගේ සුවිශේෂී පණිවිඩය (`LIVE_TEST_SUPERVISOR_PROOF`) සහිත HTTP GET request එක යවයි.
-   > - **`Get-Content ...\conn.log -Tail 1`:** Zeek විසින් `conn.log` හි ලියූ අලුත්ම connection record එක කියවයි.
-   > - **`Get-Content ...\http.log -Tail 1`:** Zeek විසින් `http.log` හි ලියූ අලුත්ම HTTP payload record එක කියවයි.
+   > - **`docker exec ids-lab-admin`:** ක්‍රියාත්මක වන Admin PC container එක ඇතුළට ගොස් විධානයක් run කරන්න.
+   > - **`python -c "..."`:** Container එක තුළ ඇති Python මඟින් inline command එකක් run කරන්න (`-c` = command).
+   > - **`import urllib.request; urllib.request.urlopen('http://192.168.50.30/')`:** Admin PC එකේ සිට කැමරාවේ IP එක වන `192.168.50.30` හි Port 80 (Web Server) වෙත සැබෑ HTTP GET request එකක් යවන්න (හරියට browser එකකින් web page එකක් open කළා වගේ).
+   > - **`Get-Content lab_virtual\zeek_logs\conn.log -Tail 1`:** Zeek Sensor එක විසින් සටහන් කරගත් `conn.log` ගොනුවේ අන්තිමටම ලියවුණු අලුත්ම 1 වන පේළිය පමණක් screen එකේ පෙන්වන්න.
+   >
 
-   **ලැබෙන සැබෑ පිළිතුර 1: `conn.log` හි අන්තිම පේළිය (Network Flow Record):**
-
-   ```json
-   {"ts":1794465800.12,"uid":"CiKgoa1TTSstcUREd8","id.orig_h":"192.168.50.10","id.orig_p":54321,"id.resp_h":"192.168.50.30","id.resp_p":80,"proto":"tcp","service":"http","duration":0.0015,"orig_bytes":156,"resp_bytes":5618,"conn_state":"SF","history":"ShADadfF","orig_pkts":6,"resp_pkts":6}
-   ```
-
-   **ලැබෙන සැබෑ පිළිතුර 2: `http.log` හි අන්තිම පේළිය (Application Payload Record):**
+   **ලැබෙන සැබෑ පිළිතුර:**
 
    ```json
-   {"ts":1794465800.12,"uid":"CiKgoa1TTSstcUREd8","id.orig_h":"192.168.50.10","id.orig_p":54321,"id.resp_h":"192.168.50.30","id.resp_p":80,"method":"GET","uri":"/?msg=LIVE_TEST_SUPERVISOR_PROOF","status_code":200,"status_msg":"OK"}
+   {"ts":1794390662.04,"uid":"CiKgoa1TTSstcUREd8","id.orig_h":"192.168.50.10","id.orig_p":41326,"id.resp_h":"192.168.50.30","id.resp_p":80,"proto":"tcp","service":"http","duration":0.0015,"orig_bytes":127,"resp_bytes":153,"conn_state":"SF","history":"ShADadfF","orig_pkts":6,"resp_pkts":6}
    ```
 
-   **🔬 Supervisor ඉදිරියේ කළ හැකි අභියෝගාත්මක විද්‍යාත්මක සාක්ෂිය (Definitive Scientific Proof):**
+   **විද්‍යාත්මක සාක්ෂිය:**
 
-   1. **`id.orig_p: 54321`:** `conn.log` හි Client Port එක ලෙස සටහන් වන්නේ ඔබ විශේෂයෙන් නියම කළ `54321` අංකයම වේ! *(Supervisor හට කැමති ඕනෑම 5-digit අංකයක් දීමට පවසා එම මොහොතේදීම එය පෙන්විය හැක).*
-   2. **`uri: "/?msg=LIVE_TEST_SUPERVISOR_PROOF"`:** `http.log` හි සටහන් වන්නේ ඔබ යැවූ සුවිශේෂී පණිවිඩයම අකුරක් නෑර සටහන් වී ඇති ආකාරයයි! *(Supervisor ගේ නම ලබාදී වුවද මෙය ක්ෂණිකව කළ හැක).*
-   3. **`uid: "CiKgoa1TTSstcUREd8"`:** Logs ගොනු දෙකෙහිම එකම Unique Connection Identifier එකක් සටහන් වී තිබීම මඟින්, Zeek Sensor එක switch එකෙන් සැබවින්ම Binary Ethernet Frames කියවා protocols (TCP + HTTP) දෙකම එකවර reconstruct කර ඇති බව 100% ක් ඔප්පු වේ!
-   4. **`history: "ShADadfF"`:** TCP 3-Way Handshake (`S`, `h`, `A`), Data Transfer (`D`, `a`, `d`), සහ Close (`f`, `F`) යන flags 8 ම නිරීක්ෂණය කර ඇත.
+   - **`orig_pkts: 6` සහ `resp_pkts: 6`:** Admin සහ Camera අතර හුවමාරු වූ සැබෑ Ethernet frames 12 ම Zeek විසින් kernel interface එකෙන් අල්ලාගෙන ඇත.
+   - **`history: "ShADadfF"`:** Zeek හි TCP State Machine එක මඟින් TCP 3-Way Handshake (`S`=SYN, `h`=SYN-ACK, `A`=ACK), HTTP දත්ත (`D`, `a`, `d`), සහ Connection Close (`f`, `F`) යන සැබෑ flags එකින් එක කියවා ඇත. මෙය කලින් ලියන ලද ගොනුවක් නොවන බවත්, සජීවීව sniff කළ එකක් බවත් තහවුරු වේ!
 2. **සාක්ෂිය 2: Zeek Kernel Link-Layer Packet Counters (`stats.log`):**
    Zeek විසින් Linux socket එකෙන් ලබාගත් binary packets සහ bytes ප්‍රමාණය කෙලින්ම සටහන් කරයි:
 
@@ -1193,128 +1181,57 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
 
 ---
 
-### 4.2.6 Attacker විසින් සැබෑ Nmap Port Scan ප්‍රහාරයක් එල්ල කිරීම (Manual Reconnaissance - Table 10 Scenario 2)
+### 4.2.6 Attacker විසින් Port Scan සිදු කිරීම (Reconnaissance - Table 10 Scenario 2)
 
 > 🎯 **Proposal එකේ මෙම පරීක්ෂණයෙන් සාක්ෂාත් වන අරමුණ සහ ඔප්පු වන කරුණු (What this Test Proves):**
 >
 > - **ඉටුවන පර්යේෂණ අරමුණ (Objective):** **Objective O6** ("Test how well it detects, how fast it runs, and how much it uses").
 > - **විසඳෙන පර්යේෂණ ගැටලුව (Research Question):** **RQ2** ("How well can it sort traffic into the DDoS, scanning, C&C and malware/download classes?").
 > - **අදාළ පරීක්ෂණ අවස්ථාව (Table 10 Scenario):** **Table 10 Scenario 2** ("Authorised Nmap horizontal scan: attack laptop: nmap -p 23,80,554 192.168.50.0/24").
-> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පිටත WAN ජාලයේ සිටින Attacker Laptop එක (`10.10.10.50`) Router එක හරහා කැමරා Subnet එකට රහසිගතව පැමිණ විවෘත Ports සෙවීමට සැබෑ Nmap Port Scan ප්‍රහාරයක් අතින් (Manually) එල්ල කළ හැකි බවත්, එම scans Router එක හරහා සාර්ථකව ගමන් කරන අතරතුර Zeek sensor එක ඒ සියල්ල අල්ලාගෙන අපගේ Random Forest AI Model එක මඟින් `PortScan` ලෙස හඳුනාගෙන Dashboard එකට Live Alert එකක් නිකුත් කරන බවත් ඔප්පු කිරීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Table 10 Scenario 2 and addresses RQ2. The external attacker manually scans the camera subnet through the router using real Nmap, identifying open HTTP and RTSP ports in real-time while our IDS detects the multi-flow reconnaissance pattern."*
+> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පිටත WAN ජාලයේ සිටින Attacker Laptop එක (`10.10.10.50`) Router එක හරහා කැමරා Subnet එකට රහසිගතව පැමිණ විවෘත Ports සෙවීමට Nmap Port Scan ප්‍රහාරයක් එල්ල කළ හැකි බවත්, එම scans Router එක හරහා සාර්ථකව ගමන් කරන අතරතුර Zeek sensor එක ඒ සියල්ල අල්ලාගෙන PortScan logs සාදන බවත් ඔප්පු කිරීමටයි.
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Table 10 Scenario 2 and addresses RQ2. The external attacker scans the camera through the router using Nmap, identifying open HTTP and RTSP ports in 0.79 seconds."*
 
----
+- **ධාවනය කළ යුතු Commands (Terminal):**
 
-#### 💡 ඇත්තටම Manual Port Scan එකක් කරන්නේ කෙසේද? (Manual vs Scripted)
+  **ක්‍රමය 1: තනි කැමරාවක Web (80) සහ Video (554) Ports හඳුනාගැනීම (Targeted Probe - 0.79s):**
 
-> ❓ **"අපිට `scenario 2` script එකක් run කරන්නේ නැතුව, ඇත්තටම හැකර් කෙනෙක් වගේ Manually Nmap Port Scan එකක් කරලා Supervisor ට පෙන්වන්න පුළුවන්ද?"**
->
-> **පිළිතුර: ඔව්! එය වඩාත් ස්වභාවික සහ ප්‍රායෝගික ක්‍රමයයි.**
-> ඇත්ත වශයෙන්ම `lab.py scenario 2` ස්ක්‍රිප්ට් එක ඇතුළතින් ද කරන්නේ පහත දැක්වෙන සැබෑ manual Nmap විධානයම ධාවනය කිරීමයි. එබැවින් ඔබට කැමති නම් සෘජුවම Attacker Machine එකෙන් Manual Scan එක ක්‍රියාත්මක කර පෙන්විය හැක:
+  ```powershell
+  docker exec ids-lab-attacker nmap -p 80,554 192.168.50.30
+  ```
 
----
+  **ක්‍රමය 2: Proposal Table 10 Scenario 2 සම්පූර්ණ Subnet Reconnaissance Scan එක (Direct Subnet Sweep):**
 
-#### 🛠️ පරීක්ෂණය සිදු කළ හැකි ක්‍රම 3:
-
-##### ක්‍රමය 1: සෘජුවම Attacker පරිගණකයෙන් Manual Nmap Port Scan ප්‍රහාරය එල්ල කිරීම (Direct Manual Attack - නිර්දේශිතයි):
-
-ඔබට Windows Terminal එකෙන් කෙලින්ම හෝ, Attacker මැෂිමේ Bash Shell එකට ඇතුළු වී මෙය කළ හැක:
-
-- **විකල්පය A: Windows Terminal එකෙන් තනි විධානයකින් Attacker ලවා Scan කරවීම:**
   ```powershell
   docker exec ids-lab-attacker nmap -p 23,80,554 192.168.50.0/24
   ```
 
-- **විකල්පය B: සැබෑ හැකර් කෙනෙකු මෙන් Attacker පරිගණකයේ Terminal එකටම ගොස් Scan කිරීම (Live Hacker Shell Demo):**
-  ```powershell
-  # 1. Attacker Container එකේ Linux Terminal එකට ඇතුළු වන්න:
-  docker exec -it ids-lab-attacker bash
-
-  # 2. දැන් ඔබ සිටින්නේ Attacker මැෂිම තුළයි (root@attack-laptop:~#). එතැනදී Nmap ධාවනය කරන්න:
-  nmap -p 23,80,554 192.168.50.0/24
-
-  # 3. පරීක්ෂණය අවසානයේ Attacker shell එකෙන් පිටවීමට:
-  exit
-  ```
-
-  > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
+  > **කේතයෙන් සිදුවන දේ සරලව (Command Breakdown):**
   >
-  > - **`nmap`:** ලොව වඩාත්ම ජනප්‍රිය සැබෑ ජාල පරීක්ෂණ මෙවලම (Network Mapper).
-  > - **`-p 23,80,554`:** Proposal Table 10 Scenario 2 හි නියම කර ඇති පරිදි Telnet (23), Web GUI (80), සහ RTSP Video (554) යන ports 3 පමණක් වේගයෙන් පරීක්ෂා කිරීම.
-  > - **`192.168.50.0/24`:** තනි පරිගණකයක් නොව, කැමරා Subnet එකේ ඇති සියලුම IP ලිපින 256 ම ආවරණය වන පරිදි Horizontal Subnet Sweep ප්‍රහාරයක් එල්ල කිරීම.
+  > - **`docker exec ids-lab-attacker`:** පිටත ජාලයේ සිටින Attacker Laptop Container එක තුළ විධානය ක්‍රියාත්මක කරන්න.
+  > - **`nmap -p 23,80,554 192.168.50.0/24`:** කැමරා Subnet එකේ ඇති සියලුම IP ලිපින (`192.168.50.1` සිට `.254` දක්වා) හරහා Ports 23 (Telnet), 80 (HTTP), 554 (RTSP) horizontal sweep reconnaissance scan එකක් කෙලින්ම දියත් කරන්න.
+  > - **Zeek Detection:** Router එක හරහා ගමන් කරන මෙම multi-host packets Zeek Sensor එක විසින් ග්‍රහණය කර `conn.log` හි වාර්තා කරයි. Random Forest Model එක මඟින් `PortScan` අනතුරු ඇඟවීමක් ජනනය වේ.
+  > *(සටහන: මෙය ස්වයංක්‍රීයව run කර Proposal Table 10 Markdown පරීක්ෂණ වාර්තාවක්ද සෑදීමට අවශ්‍ය නම් පමණක් `.venv\Scripts\python.exe lab_virtual/lab.py scenario 2` විධානය භාවිත කළ හැක).*
+  >
+- **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
 
-- **ලැබෙන සැබෑ පිළිතුර (Verified Nmap Output):**
-
-  ```text
-  Starting Nmap 7.93 ( https://nmap.org ) at 2026-11-12 13:50 UTC
-  Nmap scan report for 192.168.50.1
-  Host is up (0.00040s latency).
-  PORT    STATE SERVICE
-  80/tcp  open  http
-
-  Nmap scan report for 192.168.50.20
-  Host is up (0.00035s latency).
-  PORT    STATE SERVICE
-  80/tcp  open  http
-  554/tcp open  rtsp
-
-  Nmap scan report for 192.168.50.30
-  Host is up (0.00030s latency).
-  PORT    STATE SERVICE
-  23/tcp  closed telnet
-  80/tcp  open  http
-  554/tcp open  rtsp
-
-  Nmap done: 256 IP addresses (5 hosts up) scanned in 1.48 seconds
-  ```
-
----
-
-##### ක්‍රමය 2: තනි කැමරාවක Ports ක්ෂණිකව සනාථ කරගැනීම (Targeted Fast Probe - 0.79s):
-
-මුළු Subnet එකම scan නොකර, කැමරාවේ පමණක් Ports පරීක්ෂා කිරීමට:
-
-```powershell
-docker exec ids-lab-attacker nmap -p 80,554 192.168.50.30
-```
-
-- **ලැබෙන පිළිතුර:**
   ```text
   PORT    STATE SERVICE
   80/tcp  open  http
   554/tcp open  rtsp
   Nmap done: 1 IP address (1 host up) scanned in 0.79 seconds
   ```
+- **🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/alerts` - Live Alerts):**
 
----
-
-##### ක්‍රමය 3: ස්වයංක්‍රීයව Scan කර වාර්තාවක්ද ජනනය කිරීම (`lab.py scenario 2`):
-
-```powershell
-.venv\Scripts\python.exe lab_virtual/lab.py scenario 2
-```
-
-> **කේතයෙන් සිදුවන දේ:** ඉහත සඳහන් කළ සැබෑ Nmap විධානයම background එකෙන් ධාවනය කර, අමතරව `reports/lab_tests/virtual/scenario_2_*.md` තුළ නිල Markdown පරීක්ෂණ වාර්තාවක් සාදයි.
-
----
-
-#### 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/alerts` - Live Alerts):
-
-Attacker විසින් ඉහත Manual Scan එක දියත් කළ සැණින්:
-1. Zeek sensor එක මඟින් `10.10.10.50` සිට විවිධ IP වල ports 23, 80, 554 වෙත ගලායන TCP SYN packets ග්‍රහණය කර `conn.log` හි ලියයි.
-2. අපගේ Random Forest AI Model v3.1.0 එක මඟින් `src_uport_60s` සහ `src_udst_60s` (තත්පර 60 ක් තුළ විවිධ IP සහ Ports වෙත සම්බන්ධතා උත්සාහයන්) විශ්ලේෂණය කර මෙය **`PortScan`** ප්‍රහාරයක් බව ක්ෂණිකව හඳුනාගනී.
-3. Dashboard එකේ **Live Alerts** පිටුවෙහි තැඹිලි පැහැති අනතුරු ඇඟවීමේ Badge එකක් සජීවීව වැටේ:
-   - **Classification:** `PortScan (Reconnaissance)`
-   - **Attacker IP:** `10.10.10.50` (Outside Attack Laptop)
-   - **Target Subnet:** `192.168.50.0/24` (Ports: `23, 80, 554`)
-   - **Confidence:** `84.6%`
-   - **Response Action:** `Reconnaissance Observed` (පද්ධතිය මඟින් ප්‍රහාරකයාගේ ඔත්තු බැලීමේ පියවර නිරීක්ෂණය කරන ලදී).
-
-- **මෙයින් ඔප්පු වන කරුණ:**
-  - පිටත ජාලයේ සිට Router එක හරහා කැමරා Subnet එක වෙත පැමිණෙන සැබෑ Nmap scans සාර්ථකව ගමන් කරයි (Router packets forward කරයි).
-  - පද්ධතිය කිසිදු ව්‍යාජ script එකක් මත නොරැඳී, සැබෑ Nmap මෙවලමෙන් එල්ල කරන Manual ප්‍රහාරයන් තත්‍ය කාලීනව හඳුනාගෙන Dashboard එකට push කරන බව සනාථ වේ.
+  - Attacker විසින් Port Scan ප්‍රහාරය එල්ල කළ සැණින්, Zeek sensor එකෙන් flow එක ග්‍රහණය කර Random Forest AI Model එක වෙත යවයි.
+  - Dashboard එකේ **Live Alerts** පිටුවෙහි තැඹිලි පැහැති අනතුරු ඇඟවීමේ Badge එකක් සජීවීව වැටේ:
+    - **Classification:** `PortScan (Reconnaissance)`
+    - **Attacker IP:** `10.10.10.50`
+    - **Target IP:** `192.168.50.30` (Ports: `80, 554`)
+    - **Action:** `Reconnaissance Observed` (පද්ධතිය මඟින් ප්‍රහාරකයාගේ මුල් පියවර නිරීක්ෂණය කරන ලදී).
+- **මෙයින් ඔප්පු වන කරුණ:** පිටත ජාලයේ සිට Router එක හරහා කැමරා subnet එක වෙත පැමිණෙන scans සාර්ථකව ගමන් කරයි. Router එක මඟින් packets forward කරයි.
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
-  > *"Sir, here the attacker at 10.10.10.50 executes a manual Nmap horizontal scan across our entire camera subnet (192.168.50.0/24) targeting ports 23, 80, and 554 as specified in Proposal Table 10 Scenario 2. Within 1.5 seconds, Nmap identifies active hosts and open camera ports, while our ML IDS engine instantly captures the scan flows and flags a PortScan alert on the SOC dashboard."*
+
+  > *"Sir, here the attacker at 10.10.10.50 scans the camera through the router using Nmap, identifying open HTTP and RTSP ports in 0.79 seconds as defined in Scenario 2."*
   >
 
 ---
@@ -1531,31 +1448,34 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
 
   > **කේතයෙන් සිදුවන දේ සරලව:** Router Container එක ඇතුළට ගොස් Linux `nftables` හි `block_dst` නම් Drop ලැයිස්තුව ප්‍රහාරයට පෙර හිස්දැයි (`elements = { }`) තහවුරු කරගන්න.
   >
-- **පියවර 2: සජීවී C&C ප්‍රහාරය දියත් කිරීම (Proposal Table 10 Scenario 4):**
+- **පියවර 2: සජීවී C&C ප්‍රහාරය සෘජුවම දියත් කිරීම (Direct C&C Botnet Attack Execution):**
+
+  Terminal එකේ පහත සෘජු විධාන 2 ධාවනය කර C&C Master Server එක සහ කැමරාවේ Outbound Botnet Beacons ක්ෂණිකව ආරම්භ කරන්න:
 
   ```powershell
-  .venv\Scripts\python.exe lab_virtual\lab.py scenario 4
+  # 1. Attacker මැෂිමේ Port 6667 Master C&C Server එක සෘජුවම විවෘත කිරීම:
+  docker exec -d ids-lab-attack-server python -u /lab/lab_server.py --role cnc --cnc-open-after 120
+
+  # 2. ආසාදිත කැමරාව ලවා Attacker C&C Server (10.10.10.50:6667) වෙත Outbound Beacons යැවීම ආරම්භ කිරීම:
+  docker exec -d ids-lab-camera python -u /lab/camera_sim.py bot --server 10.10.10.50 --every 5 --session 30 --duration 90
   ```
 
-  > 🔍 **මෙම `scenario 4` කොටස කොහෙන්ද ආවේ? (Origin per Proposal):**
+  > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
   >
-  > - මෙම `scenario 4` යනු අහඹු අංකයක් නොවේ. එය අපගේ **Group 03 Research Proposal එකේ Table 10 ("Evaluation Scenarios")** හි 4 වන පේළියේ නියම කර ඇති නිල පර්යේෂණ අවස්ථාවයි:
-  >   - **Proposal Table 10 Scenario 4:** *"C&C-like periodic outbound simulation — lab C&C server on the attack laptop (port 6667); camera simulator connects every 5 s and keeps short chat sessions; C&C destination blocked, camera never blocked."*
-  > - අපගේ Virtual Lab පාලක ස්ක්‍රිප්ටුව වන `lab_virtual/lab.py` තුළ Proposal Table 10 හි ඇති පර්යේෂණ අවස්ථා 6 ම (`scenario 1` සිට `scenario 6` දක්වා) එකම command එකකින් පරිපාලකයාට පහසුවෙන් run කළ හැකි වන පරිදි කේතනය කර ඇත.
-  >
-  > ⚙️ **`scenario 4` ධාවනය කළ විට ඇතුළතින් සිදුවන්නේ කුමක්ද? (How it Works Under the Hood):**
-  >
-  > මෙම command එක run කළ සැණින් Docker පරිසරය තුළ පහත ප්‍රධාන පියවර 3 සම්බන්ධීකරණය වේ:
-  >
-  > 1. **Attacker පරිගණකයේ Master C&C Server එකක් විවෘත වීම ([`lab_server.py`](<file:///d:/intrusion%20detection/lab_virtual/lab.py#L242>)):**
-  >    - Attacker කන්ටේනරය (`ids-lab-attack-server` / IP `10.10.10.50`) තුළ Port 6667 (IRC/Botnet control port) හරහා Command & Control (C&C) Master Server සේවාව සක්‍රිය වේ.
-  > 2. **කැමරාව තුළින් පිටතට Periodic Botnet Beacons යැවීම ([`camera_sim.py`](<file:///d:/intrusion%20detection/lab_virtual/lab.py#L244>)):**
-  >    - ආසාදිත කැමරාව (`ids-lab-camera` / IP `192.168.50.30`) තුළ malware bot ආසාදනයක් අනුකරණය කරමින්, සෑම තත්පර 5 කට වරක්ම (`--every 5`) පිටත ඇති Attacker C&C Server එක (`10.10.10.50`) වෙත periodic outbound beacons (keep-alive / reverse shell සංඥා) යවමින් "ඊළඟ command එක කුමක්ද?" කියා විමසයි.
+  > 1. **`docker exec -d ids-lab-attack-server ...`:** පිටත WAN ජාලයේ සිටින Attacker පරිගණකය (`10.10.10.50`) තුළ Port 6667 (IRC/Botnet control port) මත Master C&C Server එකක් Background එකේ (`-d`) සක්‍රිය කරයි.
+  > 2. **`docker exec -d ids-lab-camera ...`:** ආසාදිත කැමරාව (`192.168.50.30`) තුළින් සෑම තත්පර 5 කට වරක්ම පිටත C&C Server එක වෙත periodic outbound botnet beacons (reverse shell සම්බන්ධතා) යැවීම Background එකේ ආරම්භ කරයි.
   > 3. **පද්ධතියේ AI සහ Autonomous Mitigation ක්‍රියාත්මක වීම:**
   >    - **Zeek Sniffing:** Zeek sensor එක කැමරාවෙන් පිටතට යන මෙම periodic outbound flows ක්ෂණිකව capture කර `conn.log` හි ලියයි.
   >    - **ML Model Inference (v3.1.0):** Flow Features 27 ක් කියවා බලා, මෙය සාමාන්‍ය වීඩියෝවක් නොව **`CnC`** ප්‍රහාරයක් බව Random Forest Model එක $P \ge 0.85$ ඉහළ Confidence එකකින් හඳුනාගනී.
   >    - **Safety Guardrail & Autonomous Block:** කැමරාව Allowlist හි ඇති බැවින් කැමරාව කිසිසේත්ම block නොකර, පිටත ඇති නපුරු C&C Server IP ලිපිනය (`10.10.10.50`) Router එකේ Linux `nftables` Drop ලැයිස්තුවට (`block_dst`) තත්පර 1800 ක (මිනිත්තු 30) Auto-expiry timer එකක් සමඟ ස්වයංක්‍රීයව ඇතුළත් කරයි.
   >    - **Zero Disruption (Hypothesis H1):** කැමරාව සහ NVR අතර RTSP වීඩියෝවට (Port 554) කිසිදු බාධාවක් නොවන අතර, React SOC Dashboard එකට WebSocket හරහා live alert එක තල්ලු වේ.
+  >
+  > 💡 **ප්‍රහාරය අවසන් වූ පසු C&C processes නැවැත්වීමට (Cleanup Commands):**
+  > ```powershell
+  > docker exec ids-lab-attack-server pkill -f "lab_server.py --role cnc"
+  > docker exec ids-lab-camera pkill -f "camera_sim.py bot"
+  > ```
+  > *(සටහන: ඉහත පියවර දෙකම ස්වයංක්‍රීයව run කර Proposal Table 10 Markdown පරීක්ෂණ වාර්තාවක්ද සෑදීමට අවශ්‍ය නම් පමණක් `.venv\Scripts\python.exe lab_virtual\lab.py scenario 4` ධාවනය කළ හැක).*
   >
 - **පියවර 3: ප්‍රහාරය අතරතුර Router එකේ `block_dst` නැවත පරීක්ෂා කිරීම:**
 
@@ -2059,11 +1979,23 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 
 > *"Now Sir, I will launch an autonomous C&C botnet attack from our outside attacker at 10.10.10.50:"*
 
-Terminal එකේ ධාවනය කරන්න:
+Terminal එකේ සැබෑ C&C ප්‍රහාරක විධානයන් කෙලින්ම ධාවනය කරන්න:
 
 ```powershell
-.venv\Scripts\python.exe lab_virtual\lab.py scenario 4
+# 1. Attacker C&C Master Server එක (Port 6667) Background එකේ විවෘත කිරීම:
+docker exec -d ids-lab-attack-server python -u /lab/lab_server.py --role cnc --cnc-open-after 120
+
+# 2. ආසාදිත කැමරාවෙන් C&C Server එක වෙත Botnet Beacons යැවීම ආරම්භ කිරීම:
+docker exec -d ids-lab-camera python -u /lab/camera_sim.py bot --server 10.10.10.50 --every 5 --session 30 --duration 90
 ```
+
+> 💡 **ප්‍රහාරය අවසන් වූ පසු C&C processes නැවැත්වීමට (Cleanup Commands):**
+> ```powershell
+> docker exec ids-lab-attack-server pkill -f "lab_server.py --role cnc"
+> docker exec ids-lab-camera pkill -f "camera_sim.py bot"
+> ```
+> *(සටහන: මෙය ස්වයංක්‍රීයව run කර Table 10 Markdown පරීක්ෂණ වාර්තාවක්ද සෑදීමට `.venv\Scripts\python.exe lab_virtual\lab.py scenario 4` භාවිත කළ හැක).*
+>
 
 **Dashboard එක දෙසට යොමු කරන්න:**
 
