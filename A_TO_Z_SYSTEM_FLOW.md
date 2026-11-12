@@ -670,6 +670,11 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 2. **රහස්‍ය SSH Keys ස්වයංක්‍රීයව සැකසීම (Automated Ed25519 Key Provisioning):**
    - අපගේ Python IDS Engine එකට Router Firewall එකේ (`nftables`) drop rules ඇතුළත් කිරීමට නම් Router එක වෙත Password නැතිව SSH මඟින් රහසිගතව Login වීමට අවශ්‍ය වේ.
    - ඒ සඳහා අවශ්‍ය Cryptographic Ed25519 SSH Keys (`lab_virtual/keys/router_admin`) සහ Dashboard Login Password (`dashboard_login.txt`) ස්වයංක්‍රීයව ජනනය කිරීම `lab.py setup` මඟින් සිදු වේ.
+   - 🔒 **මෙම Keys සහ Password run කරන වාරයක් පාසා වෙනස් වෙනවාද? (Are they Persistent?):**
+     - **නැත (NO)! මේවා run කරන වාරයක් පාසා වෙනස් නොවේ.**
+     - කේතය තුළ `if not (KEYS / name).exists():` සහ `if not LOGIN_FILE.exists():` යන කොන්දේසි පරීක්ෂා කෙරේ. එනම් එම ගොනු දැනටමත් පවතී නම්, ඒවා නැවත අලුතින් හදන්නේ හෝ overwrite කරන්නේ නැත.
+     - එබැවින් පරිගණකය restart කළද, lab එක stop/start කළද, නැතහොත් `lab.py setup` නැවත run කළද, ඔබගේ SSH Keys සහ Dashboard Password එක **ස්ථිරවම (Persistent & Stable)** පවතී.
+     - මෙය වෙනස් වන්නේ ඔබ විසින් හිතාමතාම `lab_virtual/keys/` ෆෝල්ඩරයේ ඇති ගොනු Delete කළහොත් පමණි.
 3. **Proposal Table 10 ප්‍රහාරක අවස්ථා 6 ස්වයංක්‍රීයව ධාවනය කිරීම (Automated Evaluation Scenarios):**
    - Supervisor ඉදිරියේ Proposal Table 10 හි සඳහන් Scenarios 1 සිට 6 දක්වා (Normal video, PortScan, DDoS Flood, C&C Botnet Beacons, Malware Download, Manual Block) අතින් commands දහස් ගණනක් ගසා පෙන්වීම වෙනුවට, එකම command එකකින් (`python lab.py scenario 4` ආදී වශයෙන්) සජීවීව ධාවනය කර Markdown Reports ජනනය කිරීමට මෙම controller script එක අප විසින් ගොඩනැගුවෙමු.
 
@@ -725,7 +730,16 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
    > - **පසුබිමින් සිදුවන දේ:**
    >   1. **Router SSH Keys සාදයි:** අපගේ IDS Engine එකට Router Firewall එක (`ids-lab-router`) ස්වයංක්‍රීයව පාලනය කර block rules දැමීමට අවශ්‍ය `router_admin` (Ed25519 Cryptographic SSH Key යුගලය) සහ `known_hosts` ගොනුව `lab_virtual/keys/` තුළ ස්වයංක්‍රීයව සාදයි (Windows OpenSSH permissions ද ආරක්ෂිතව සකස් කරයි).
    >   2. **Dashboard මුරපදය සාදයි:** ආරක්ෂිතව React Dashboard එකට Login වීම සඳහා අහඹු මුරපදයක් ජනනය කර `lab_virtual/keys/dashboard_login.txt` තුළ සුරකියි (Username: `labadmin`).
-   >   *(මෙම පියවර ක්‍රියාත්මක කරන්නේ පද්ධතිය මුලින්ම සකසන පළමු වතාවේ පමණි).*
+   >
+   > 💡 **විශේෂ පැහැදිලි කිරීම: මෙම Keys සහ Password සෑම run එකකදීම වෙනස් වෙනවාද? (Idempotence & Stability):**
+   >
+   > - **නැත! run කරන සෑම වාරයකදීම මේවා අලුතින් හැදෙන්නේ හෝ වෙනස් වන්නේ නැත.**
+   > - කේතය ක්‍රියාත්මක වීමේදී `lab_virtual/keys/router_admin` සහ `dashboard_login.txt` ගොනු දැනටමත් හැදී තිබේදැයි (`if not exists`) පරීක්ෂා කරයි. ගොනු දැනටමත් පවතී නම්, පවතින Keys සහ Password ඒ ආකාරයෙන්ම ආරක්ෂිතව තබාගෙන ඉදිරියට යයි.
+   > - **ඇයි මෙය මෙසේ ස්ථිරව (Persistent) තබාගෙන ඇත්තේ?**
+   >   - සෑම run එකකදීම SSH Keys වෙනස් වුවහොත් Router එක සමඟ ඇති cryptographic trust එක බිඳවැටී *"SSH Host Key Verification Failed"* දෝෂයක් ඇතිවිය හැක.
+   >   - සෑම run එකකදීම Dashboard Password වෙනස් වුවහොත් Admin ට Browser එකෙන් Dashboard එකට Login වීමට සෑම මොහොතකම අලුත් මුරපද සෙවීමට සිදුවේ.
+   >   - එබැවින් මෙය **Idempotent** (එනම් කී වතාවක් run කළද ආරක්ෂිත තත්ත්වය නොවෙනස්ව පවතින) ලෙස නිර්මාණය කර ඇත.
+   >   *(මෙම විධානය ධාවනය කිරීම අනිවාර්ය වන්නේ පද්ධතිය මුලින්ම සකසන පළමු වතාවේ පමණි. පසුව නැවත run කළද පවතින keys වලට කිසිදු හානියක් සිදු නොවේ).*
    >
 3. **තුන්වන පියවර: Virtual Lab උපාංග (Containers 10) ධාවනය කිරීම:**
 
