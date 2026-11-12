@@ -836,12 +836,30 @@ Supervisor ඉදිරියේ **`http://localhost:5000/overview`** සහ **`
 > **ඔප්පු කරන ආකාරය:** ජාලයේ ඇති උපාංග සොයාගැනීම සඳහා අනුමත පරාසය (`192.168.50.0/24`) තුළ පමණක් ක්‍රියාත්මක වන Nmap inventory scan එකක් දියත් කර, කැමරාව (`192.168.50.30`) සහ එහි Ports (80 Web, 554 RTSP) ස්වයංක්‍රීයව හඳුනාගෙන Dashboard එකේ Devices ලැයිස්තුවට ඇතුළත් වන බව පෙන්වීම.
 
 #### 💡 ඇයි මේ දේ කරන්නෙ? (Why We Are Doing This):
-ආරක්ෂක පද්ධතියක් ස්ථාපනය කළ විට, ජාලයේ තිබෙන නීත්‍යානුකූල උපාංග (Authorized Devices) මොනවාදැයි ස්වයංක්‍රීයව හඳුනාගත යුතුය (Asset Discovery). නමුත් ආරක්ෂක පද්ධතිය විසින් අදාළ නොවන වෙනත් ජාල වලට scan කර අනවශ්‍ය තදබදයක් ඇති නොකළ යුතුය. එබැවින් අනුමත subnet එක (`192.168.50.0/24`) තුළට පමණක් සීමා වූ Nmap inventory scan එකක් මඟින් කැමරාව සහ එහි services හඳුනාගත යුතුය.
+1. **ජාලයේ සිටින සැබෑ උපාංග මොනවාදැයි දැනගැනීම (Asset Discovery Baseline):** ආරක්ෂක පද්ධතියකට ජාලයක් ආරක්ෂා කිරීමට නම්, පළමුව එම ජාලය තුළ සැබවින්ම සම්බන්ධ වී ඇති නීත්‍යානුකූල උපාංග මොනවාදැයි දැනගත යුතුය (Network Baseline). එසේ නොවුනහොත් ජාලයට රහසින් සම්බන්ධ වන අනවසර උපාංග (Rogue / Hacker Devices) හඳුනාගත නොහැක.
+2. **ඇයි MAC, Hostname, Open Ports සහ Device Type හොයන්නේ?:**
+   - **MAC ලිපිනය සහ Vendor:** උපාංගය නිපදවූ සැබෑ සමාගම (උදා: Hikvision, Dahua, Axis කැමරා නිෂ්පාදකයින්) තහවුරු කරගැනීමට.
+   - **Hostnames:** ජාලයේ ඇති Server සහ Gateway උපාංග නමින් වෙන්කර හඳුනාගැනීමට (`ids-lab-router`, `ids-lab-nvr`, `ids-lab-camera`).
+   - **Open Ports (විශේෂයෙන් Port 80 සහ Port 554):** IP කැමරාවක ප්‍රධානම ලක්ෂණය වන්නේ **Port 554 (RTSP - Real-Time Streaming Protocol වීඩියෝ stream එක)** සහ **Port 80 (Web Video Interface)** විවෘතව පැවතීමයි. මෙම ports පරීක්ෂා කිරීමෙන් උපාංගය සාමාන්‍ය පරිගණකයක් නොව සැබෑ **IP Camera** එකක් බව විද්‍යාත්මක සාක්ෂි (Multi-Evidence) මඟින් සනාථ වේ.
+   - **Device Type වර්ගීකරණය (`ip_camera`, `nvr`, `gateway`, `workstation`):** NVR Recorder (`.20`) සහ Admin PC (`.10`) හඳුනාගෙන, ඒවා අපගේ **Protected Allowlist** එකට ඇතුළත් කර කිසිම ප්‍රහාරයකදී block නොවන බවට ආරක්ෂා කිරීමට.
+3. **ඇයි මේවා MongoDB එකේ තැන්පත් කරන්නේ (Database Persistence)?:**
+   - සෑම තත්පරයකම මුළු ජාලයම Nmap මඟින් scan කිරීමට ගියහොත් ජාලය අධික තදබදයකට (Network Overhead) ලක්වී කැමරා වීඩියෝ drop විය හැක. එබැවින් scan කර සොයාගත් විස්තර MongoDB හි `devices` collection එකේ ස්ථිරව තැන්පත් කර තබා ගනී.
+4. **ඇයි මේවා Dashboard Inventory එකට යවන්නේ?:**
+   - **SOC ආරක්ෂක නිලධාරියාට එකම තිරයකින් ජාලය පෙනීම (Single-Pane-of-Glass Visibility):** ආරක්ෂක නිලධාරියාට කළු තිරයේ Linux commands නොගසා, Web Dashboard එකේ **"Devices & Scans (`/devices`)"** පිටුව විවෘත කළ සැණින්:
+     - ජාලයේ ඇති කැමරා ගණන (Active Camera Count),
+     - ඒවායේ IP සහ MAC ලිපින,
+     - ඒවායේ විවෘත Ports (RTSP 554, HTTP 80),
+     - ඒවා සැබවින්ම Online ද සහ "Confirmed IP Camera" ද යන්න දෘශ්‍යමය වශයෙන් (Visually with Green Badges) තත්පරයකින් බලාගත හැක.
+   - **ප්‍රහාරයක් එල්ල වූ විට ක්ෂණිකව කැමරාව හඳුනාගැනීම (Incident Context):** Alert එකක් ආ විට "ආ මේ ප්‍රහාරය එන්නේ Lobby Camera 1 (`192.168.50.30`) වෙතයි" කියා නිලධාරියාට ක්ෂණිකව තේරුම් ගත හැක.
 
 #### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
-1. `/api/scans` වෙත POST request එකක් මඟින් subnet එක (`192.168.50.0/24`) ලබාදෙයි.
-2. Backend Scanner Service එක මඟින් background thread එකක් තුළ නිල Nmap binary එක ක්‍රියාත්මක කර subnets ARP sweep සහ port scan (80, 554) සිදුකරයි. (වෙනත් subnets ලබාදුනහොත් පද්ධතිය reject කරයි).
-3. සොයාගත් උපාංග වල MAC ලිපින, Hostnames, Open Ports සහ Device Type (ip_camera, nvr, gateway, workstation) MongoDB `devices` collection එකේ තැන්පත් කර Dashboard Inventory එකට ලබාදෙයි.
+1. `/api/scans` වෙත POST request එකක් මඟින් අනුමත subnet එක (`192.168.50.0/24`) ලබාදෙයි.
+2. Backend Scanner Service එක මඟින් background thread එකක් තුළ නිල Nmap binary එක ක්‍රියාත්මක කර subnets ARP sweep සහ port scan (80, 554) සිදුකරයි. (අනුමත නොකළ වෙනත් subnets ලබාදුනහොත් පද්ධතිය reject කරයි).
+3. Nmap මඟින් සොයාගත් ප්‍රතිඵල Python මඟින් parse කර:
+   - MAC OUI එකෙන් Vendor එක කියවයි,
+   - Port 554 (RTSP) සහ 80 (HTTP) තිබේදැයි බලා `device_type = 'ip_camera'` ලෙස තීරණය කරයි,
+   - එම සම්පූර්ණ Device Object එක MongoDB `devices` collection එකට upsert (insert or update) කරයි,
+   - Socket.IO මඟින් Dashboard එකට `device_update` event එකක් යවා Devices Inventory තිරය ක්ෂණිකව refresh කරයි.
 
 #### 💻 ධාවනය කරන Command එක (Terminal):
 
