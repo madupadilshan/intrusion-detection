@@ -169,10 +169,25 @@ table inet ids {
 
 ---
 
-> **බ්‍රවුසරය සූදානම් කරගැනීම:**  
-> Chrome හෝ Edge විවෘත කර **`http://localhost:5000`** වෙත ගොස් Login වන්න:  
-> - **Username:** `labadmin`  
-> - **Password:** `lab_virtual/keys/dashboard_login.txt` ගොනුවේ ඇති මුරපදය.
+#### 4. Web Dashboard එක බ්‍රවුසරයෙන් සූදානම් කරගැනීම සහ පිටු 7 හඳුන්වාදීම:
+
+##### 💡 ඇයි Dashboard එක භාවිතා කරන්නේ? (Why We Use the Web Dashboard):
+Terminal එකෙන් backend සහ ML algorithms ඔප්පු කරන අතරතුර, Supervisor හට පද්ධතියේ ක්‍රියාකාරිත්වය සජීවීව (Visually) නැරඹීමට හැකි වන්නේ අපගේ **React SOC (Security Operations Center) Web Dashboard** එක මඟිනි. මෙය Port 5000 න් ක්‍රියාත්මක වන තනි Flask + Socket.IO සේවාදායකයක් හරහා WebSocket push මඟින් page refresh කිරීමකින් තොරව (Zero Manual Refresh) තත්‍ය කාලීනව update වේ.
+
+##### 🌐 Dashboard එකට පිවිසීම (Login):
+Chrome හෝ Edge බ්‍රවුසරය විවෘත කර **`http://localhost:5000`** වෙත ගොස් Login වන්න:  
+- **Username:** `labadmin`  
+- **Password:** `lab_virtual/keys/dashboard_login.txt` ගොනුවේ ඇති මුරපදය (උදා: `idsadmin2026`).
+
+##### 📑 Dashboard එකේ ඇති ප්‍රධාන පිටු 7 (The 7 Main Navigation Tabs):
+Progress Meeting එකේදී Supervisor හට අවශ්‍ය අවශ්‍ය තැන් වලදී පෙන්වීමට මෙම පිටු 7 භාවිතා කරන්න:
+1. 🖥️ **Overview (`/overview`)**: පද්ධතියේ සමස්ත සෞඛ්‍යය (Pipeline Status: Running), තත්පරයට ගලායන flows ගණන (Throughput), සාමාන්‍ය ප්‍රමාදය (Median Latency ~112 ms), මුළු කැමරා සංඛ්‍යාව (4 Cameras), සක්‍රිය Blocks ගණන, සහ Class Distribution Bar Chart එක පෙන්වයි.
+2. 🚨 **Live Alerts (`/alerts`)**: ප්‍රහාරයක් සිදුවූ සැණින් Socket.IO හරහා තත්පර 0.11 කදී තිරයට push වන සජීවී Alerts (Attack Badges, Confidence %, Attacker/Victim IPs, Auto-Mitigation status).
+3. 📜 **Attack History (`/history`)**: MongoDB දත්ත ගබඩාවේ තැන්පත් වූ ඓතිහාසික ප්‍රහාරක සිදුවීම් පෙරහන් කර (Filter by class) කාලානුක්‍රමිකව බැලීමේ හැකියාව.
+4. 📷 **Devices & Scans (`/devices`)**: Subnet එකේ ඇති සියලුම උපාංග ලැයිස්තුව, තහවුරු කළ IP Cameras (192.168.50.30 - 33), විවෘත RTSP (554) සහ HTTP (80) ports, සහ අලුතින් Subnet Scan ආරම්භ කිරීමේ බොත්තම.
+5. 🛡️ **Blocklist / Mitigations (`/mitigations`)**: Router Linux nftables හි ක්‍රියාත්මක වන සක්‍රිය Dynamic IP Drop Rules, ඒවා ඉබේ ඉවත් වීමට ඇති Auto-Expiry Countdown Timers (උදා: 29m 45s...), සහ Manual Unblock බොත්තම්.
+6. ⚙️ **Settings (`/settings`)**: Model Confidence Sliders (70% threshold), Auto-Mitigation toggle (ON/OFF), සහ ආරක්ෂිත Management Allowlist (Admin PC, NVR).
+7. 📥 **Logs & Export (`/export`)**: නීතිමය සහ අධිකරණමය විගණන සඳහා RFC 4180 සම්මතය සහිත CSV හෝ JSON forensic log files බාගත කරගැනීමේ පහසුකම.
 
 ---
 
@@ -337,6 +352,14 @@ Schema Audit Results: Columns=True | Dtypes=True | Nulls=True | Ranges=True | In
 - `Nulls=True`: අනපේක්ෂිත null හෝ missing values කිසිවක් හමු නොවීය.
 - `Ranges=True`: අගයන්ගේ පරාසයන් (min/max bounds) එකිනෙක ගැළපේ.
 - `OVERALL=PASS`: Training-Serving Skew එක 0% කි! සජීවී flow එකක් කෙලින්ම ML model එකට ලබාදිය හැක.
+
+#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය (Dashboard Verification Steps):
+Supervisor ඉදිරියේ Browser එකේ **`http://localhost:5000/overview`** පිටුව විවෘත කරන්න:
+1. **"System Status" Card එක පෙන්වන්න:**
+   - **Pipeline Status:** `Running` ලෙස කොළ පැහැයෙන් දිස්වේ (Zeek sniffer එක සක්‍රිය බව තහවුරු කරයි).
+   - **Flows Processed:** Zeek sensor එක මඟින් ජාලයෙන් sniff කර සකස් කරන ලද මුළු connection flows සංඛ්‍යාව (උදා: `7,600+ flows`) සජීවීව update වන අයුරු පෙන්වන්න.
+   - **Throughput:** තත්පරයට flows 120,000+ කට අධික වේගයකින් packets කියවා process වන බව පෙන්වන්න.
+2. **Supervisor ට කියන වදන:** *"Sir, as shown on our Overview Dashboard, the live pipeline status is 'Running', and Zeek is actively capturing and streaming flows in real-time without packet loss."*
 
 #### Supervisor ට කියන Script එක (Spoken English):
 > *"Sir, to prove FR-01, our Zeek sensor passively sniffs the camera switch br-ids-lan in promiscuous mode. When I trigger a live HTTP request from our Admin PC, Zeek intercepts the exact 12 link-layer Ethernet frames within 1.5 milliseconds, recording the TCP state machine flags 'ShADadfF'. Furthermore, our automated schema audit on 20,929 live flows confirms a 100% schema match with IoT-23 with zero training-serving skew, satisfying both FR-01 and Research Question RQ3."*
@@ -717,6 +740,15 @@ Pipeline Storage Status   : running
 ##### 🔬 විද්‍යාත්මක සාක්ෂිය:
 MongoDB `traffic_summary` collection එක තුළ දින 7 ක TTL (Time-To-Live) index එකක් සහිතව benign flows 7,600+ ක් තැන්පත් වී ඇති අතර, security events වෙනම collection එකක සුරක්ෂිතව පවතී.
 
+#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය (Dashboard Verification Steps):
+Supervisor ඉදිරියේ පහත Dashboard පිටු දෙක පෙන්වන්න:
+1. **Attack History පිටුව (`http://localhost:5000/history`):**
+   - දත්ත ගබඩාවේ (MongoDB) ස්ථිරව තැන්පත් වී ඇති සියලුම ආරක්ෂක සිදුවීම් (Alerts) කාලානුක්‍රමිකව (Timestamp, Class, Source IP, Destination IP, Confidence %) ලැයිස්තුගත වී ඇති අයුරු පෙන්වන්න.
+   - ඉහළ ඇති Search / Filter බොත්තම් මඟින් ප්‍රහාරක වර්ගය අනුව (උදා: DDoS, PortScan, CnC) දත්ත පෙරහන් කර පෙන්විය හැක.
+2. **Overview පිටුවේ Benign Flows Card එක (`http://localhost:5000/overview`):**
+   - **"Benign Flows (24h)" Card** එක පෙන්වන්න. එහි MongoDB `traffic_summary` collection එකෙන් aggregate වී ඇති සාමාන්‍ය කැමරා වීඩියෝ flows ගණන (7,600+ flows) පෙන්වයි.
+3. **Supervisor ට කියන වදන:** *"Sir, our Attack History and Overview screens directly query MongoDB, providing complete forensic persistence of all benign camera traffic and security events."*
+
 #### Supervisor ට කියන Script එක (Spoken English):
 > *"Sir, for FR-03, our MongoDB database persistently stores all network events with TTL retention. Over 7,600 benign camera flows have been ingested without data loss, alongside security incidents and firewall actions, fully accessible through our authenticated management API."*
 
@@ -783,9 +815,15 @@ Zero Refresh Mechanism  : Socket.IO events (new_event, blocklist_update)
 - `Live WebSocket Push Latency (p50): 112.24 ms`: ප්‍රහාරයක් හඳුනාගත් මොහොතේ සිට බ්‍රවුසරයේ තිරයට alert එක push වීමට ගතවන්නේ මිලි තත්පර 112 ක් (තත්පර 0.11) පමණි. මෙය Proposal ඉලක්කය වන තත්පර 2.0 ට වඩා **18 ගුණයකින් වේගවත්ය**!
 - `Zero Refresh Mechanism: Socket.IO events`: පරිපාලකයාට page refresh කිරීමට අවශ්‍ය නොවන බවත්, Socket.IO මඟින් තත්‍ය කාලීනව web page එක update වන බවත් තහවුරු කරයි.
 
-#### Supervisor ට පෙන්වන Dashboard තිරය:
-> බ්‍රවුසරයේ **`http://localhost:5000/alerts`** පිටුව Supervisor ට පෙන්වන්න:  
-> *"Notice Sir, when an attack occurs, the red incident badge appears instantly via WebSockets without refreshing the page."*
+#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය (Dashboard Verification Steps):
+Supervisor ඉදිරියේ **`http://localhost:5000/overview`** සහ **`http://localhost:5000/alerts`** පිටු විවෘත කරන්න:
+1. **Header Real-Time Indicator (Zero Polling):**
+   - Dashboard Header එකේ ඉහළ දකුණු කෙළවරේ ඇති කොළ පැහැති තිත (`Connected / Live SOC`) පෙන්වන්න. මෙය Socket.IO WebSocket stream එකක් මඟින් සක්‍රියව සම්බන්ධ වී ඇති බවත්, frontend එක backend එකට නිරන්තරයෙන් polling request නොයවන බවත් තහවුරු කරයි.
+2. **Zero-Refresh Real-Time Alert Demonstration:**
+   - Supervisor ට බ්‍රවුසරයේ **Live Alerts (`/alerts`)** පිටුව පෙන්වමින් සිටින්න.
+   - Terminal එකෙන් කුඩා ප්‍රහාරයක් (උදා: Section 7 හි PortScan හෝ Scenario 4) run කළ සැණින්, **බ්‍රවුසරයේ Refresh බොත්තම කිසිසේත්ම නොඔබා**, තත්පර 0.11 කදී තිරයට අලුත්ම Alert card එකක් සජීවීව slide වී pop-up වන ආකාරය පෙන්වන්න!
+   - Alert card එකේ ප්‍රහාරක පන්තියේ badge එක (PortScan නම් කහ පැහැයෙන්, DDoS නම් රතු පැහැයෙන්, CnC නම් දම් පැහැයෙන්), Confidence ප්‍රතිශතය, Source/Destination IPs සහ Time ක්ෂණිකව බලාගත හැක.
+3. **Supervisor ට කියන වදන:** *"Sir, notice that without pressing the browser refresh button even once, the alert card pops up instantly via Socket.IO WebSockets within 112 milliseconds, satisfying both FR-04 and Objective O4."*
 
 #### Supervisor ට කියන Script එක (Spoken English):
 > *"Sir, this satisfies FR-04 and Objective O4. Access to our SOC dashboard requires cryptographic JWT authentication. The live pipeline achieves an empirical median latency of 112 milliseconds, utilizing Socket.IO WebSockets to push live security events directly to the browser with zero manual page refreshing."*
@@ -856,6 +894,13 @@ Total Approved Devices Found: 5
 ##### 🔬 විද්‍යාත්මක සාක්ෂිය:
 Scanner එක strictly bounded (`192.168.50.0/24`) වන අතර, අනුමත නොකළ IP ranges scan කිරීම ප්‍රතික්ෂේප කරයි. සොයාගත් කැමරාව සහ NVR එක Allowlist එකට සම්බන්ධ කරනු ලැබේ.
 
+#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය (Dashboard Verification Steps):
+Supervisor ඉදිරියේ **`http://localhost:5000/devices` (Devices & Scans)** පිටුව විවෘත කරන්න:
+1. **Camera Discovery Badge:** කැමරා 4 (`192.168.50.30 - 33`) සඳහා **"Confirmed Camera"** කොළ පැහැති Badge එක සහ Camera Icon එක දිස්වන අයුරු පෙන්වන්න.
+2. **Open Services & Ports:** එක් එක් කැමරාවේ Web Management (Port 80) සහ RTSP Video Streaming (Port 554) ports විවෘතව ඇති බව සහ ඒවායේ Vendor MAC ලිපින නිවැරදිව හඳුනාගෙන ඇති බව පෙන්වන්න.
+3. **Live Scan Trigger:** අවශ්‍ය නම් ඉහළ දකුණු කෙළවරේ ඇති **"Scan Subnet"** බොත්තම click කර, `192.168.50.0/24` subnet එක සඳහා සජීවීව Nmap scan එකක් trigger වන ආකාරය පෙන්වන්න.
+4. **Supervisor ට කියන වදන:** *"Sir, on our Devices & Scans page, our controlled Nmap scanner has discovered our IP cameras, verified open RTSP/HTTP ports, and cataloged them into our asset inventory."*
+
 #### Supervisor ට කියන Script එක (Spoken English):
 > *"Sir, to prove FR-05, our inventory discovery service runs strictly bounded Nmap sweeps over our authorized subnet 192.168.50.0/24. It identifies all active devices, flags our camera at .30 with open ports 80 and 554, and registers the verified camera into our management allowlist."*
 
@@ -924,6 +969,18 @@ table inet ids {
 ##### 🔬 විද්‍යාත්මක සාක්ෂිය:
 Linux `nftables` හි dynamic sets සමඟ timeout flags භාවිතය මඟින්, router reboot හෝ process failure වීමකදී පවා kernel invariants ආරක්ෂා වන අතර නීති auto-expire වේ.
 
+#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය (Dashboard Verification Steps):
+Supervisor ඉදිරියේ **`http://localhost:5000/mitigations` (Blocklist / Mitigations)** පිටුව විවෘත කරන්න:
+1. **Active Drop Rules Table:** Router Linux nftables හි ක්‍රියාත්මක වන Active Blocks table එක පෙන්වන්න.
+   - **Blocked IP:** ප්‍රහාරක IP එක (උදා: `10.10.10.50` C&C Server).
+   - **Action:** `DROP` (Traffic සම්පූර්ණයෙන්ම කපා හැරීම).
+   - **Target Type:** `Destination IP` (කැමරාව නොව පිටත C&C එක පමණක් block කර ඇති බව).
+2. **Auto-Expiry Countdown Timer:**
+   - **"TTL Remaining"** තීරුව පෙන්වන්න: මිනිත්තු 30 ක ටයිමරය තත්පරයෙන් තත්පරය (`29m 45s`, `29m 44s`...) අඩුවන ආකාරය සජීවීව පෙන්වන්න. ටයිමරය බිංදුව වූ විට නීතිය ඉබේම ඉවත් වන බව පැහැදිලි කරන්න.
+3. **Manual Override / Unblock Button:**
+   - පරිපාලකවරයාට අවශ්‍ය නම් වහාම නීතිය අවලංගු කළ හැකි **"Unblock"** බොත්තම පෙන්වන්න.
+4. **Supervisor ට කියන වදන:** *"Sir, on our Mitigations page, you can see the active router firewall block with its live auto-expiry countdown, matching the nftables kernel state."*
+
 #### Supervisor ට කියන Script එක (Spoken English):
 > *"Sir, this satisfies FR-06 and Objective O5. Our mitigation subsystem manages native Linux nftables in the router kernel. Notice the dynamic set 'block_dst' holding the attacker destination 10.10.10.50 with a strict 30-minute auto-expiry countdown, proving that firewall rules are enforced, listed, and automatically timed out directly in kernel memory."*
 
@@ -986,6 +1043,16 @@ Recent Tamper-Evident Audit Records:
 ##### 🔬 විද්‍යාත්මක සාක්ෂිය:
 Proposal Research Question RQ5 ("What safety rules do we need so that automatic response does not stop normal camera access?") සම්පූර්ණයෙන්ම විසඳී ඇති බව ඔප්පු වේ.
 
+#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය (Dashboard Verification Steps):
+Supervisor ඉදිරියේ **`http://localhost:5000/settings` (Settings)** පිටුව විවෘත කරන්න:
+1. **Dynamic Decision Threshold Sliders:**
+   - **Confidence Threshold Slider (0.70 / 70%):** පරිපාලකයාට අවශ්‍ය පරිදි Model එකේ තීරණාත්මක සීමාව වෙනස් කිරීමට ඇති Slider එක පෙන්වන්න.
+   - **Auto-Mitigation Switch (ON/OFF):** ස්වයංක්‍රීයව block වීම පාලනය කරන Toggle Switch එක පෙන්වන්න.
+   - මෙම අගයන් වෙනස් කර "Save Changes" කළ විට, Backend එක restart නොවී (Zero Downtime) RAM එක තුළ policy එක ක්ෂණිකව update වන බව පෙන්වන්න.
+2. **Protected Management Allowlist Section:**
+   - Settings පිටුවේ ඇති **"Protected Allowlist"** කොටස පෙන්වන්න: Admin PC (`192.168.50.10`) සහ NVR Recorder (`192.168.50.20`) කිසිම ප්‍රහාරයකදී block නොවන පරිදි ස්ථිරව ආරක්ෂා කර ඇති බව පෙන්වන්න.
+3. **Supervisor ට කියන වදන:** *"Sir, on our Settings dashboard, administrators can dynamically adjust decision thresholds and inspect the immutable allowlist protecting our camera management subnet."*
+
 #### Supervisor ට කියන Script එක (Spoken English):
 > *"Sir, to satisfy FR-07 and RQ5, our safety guardrails enforce an immutable allowlist that prevents our camera, NVR, and admin workstation from ever being blocked. Every administrative modification—including manual blocks and rollback events—is permanently logged in our audit trail with timestamps and user identities."*
 
@@ -1043,6 +1110,17 @@ timestamp,classification,source_ip,source_port,destination_ip,destination_port,c
 
 ##### 🔬 විද්‍යාත්මක සාක්ෂිය:
 RFC 4180 සම්මතය සහිත CSV structure එකක් ලැබෙන අතර, මෙය academic research reports සහ external SIEM මෙවලම් සමඟ 100% ක් අනුකූල වේ.
+
+#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය (Dashboard Verification Steps):
+Supervisor ඉදිරියේ **`http://localhost:5000/export` (Logs & Export)** පිටුව විවෘත කරන්න:
+1. **Date Range & Format Selection:**
+   - ආරම්භක සහ අවසාන දිනයන් (Date Range) තෝරන්න.
+   - අපනයන ආකෘතිය (Export Format) ලෙස **CSV** හෝ **JSON** තෝරන්න.
+2. **Instant Download & File Inspection:**
+   - **"Download Forensic Export"** බොත්තම click කරන්න.
+   - බ්‍රවුසරය මඟින් `security_events_export.csv` ගොනුව ක්ෂණිකව බාගත වන ආකාරය පෙන්වන්න.
+   - ගොනුව Excel හෝ Notepad මඟින් විවෘත කර, timestamp, 27 flow features, attack class, confidence %, සහ firewall mitigation actions සියල්ල නියමිත RFC 4180 format එකෙන් සුරක්ෂිතව සටහන්ව ඇති බව Supervisor ඉදිරියේ ඔප්පු කරන්න.
+3. **Supervisor ට කියන වදන:** *"Sir, on our Logs & Export dashboard, security analysts can filter and download complete cryptographic audit trails and forensic incident records in RFC 4180 CSV format with a single click."*
 
 #### Supervisor ට කියන Script එක (Spoken English):
 > *"Sir, this satisfies FR-08. Our export service allows administrators to filter forensic incident records and export them in standardized RFC 4180 CSV format for external analysis and academic compliance."*
@@ -1488,7 +1566,13 @@ PORT    STATE SERVICE
 554/tcp open  rtsp
 Nmap done: 1 IP address (1 host up) scanned in 0.79 seconds
 ```
-> **📊 Dashboard තිරය:** බ්‍රවුසරයේ Alerts tab එකේ `PortScan` (Confidence ~75%) රතු පැහැති badge එකක් ලෙස තත්පර 0.11 කදී ක්ෂණිකව දිස්වේ!
+
+#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය:
+1. **Live Alerts පිටුව (`http://localhost:5000/alerts`):**
+   - Terminal එකේ scan එක අවසන් වූ සැණින් (0.79s), **බ්‍රවුසරය refresh නොකරම**, තත්පර 0.11 කදී කහ පැහැති **`PortScan`** Alert card එකක් සජීවීව pop-up වේ.
+   - එහි Attacker IP (`10.10.10.50`), Target IP (`192.168.50.30`), සහ Decision Confidence (`92.78%`) පැහැදිලිව සටහන්ව ඇති බව Supervisor හට පෙන්වන්න.
+2. **Overview පිටුව (`http://localhost:5000/overview`):**
+   - Class Distribution Chart එකේ PortScan තීරුව ඉහළ ගොස් ඇති බව පෙන්වන්න.
 
 ---
 
@@ -1515,7 +1599,12 @@ docker exec ids-lab-attacker python -c "from scapy.all import IP, TCP, send; sen
 ```text
 DDoS SYN Flood Sent: 50 Raw SYN Packets
 ```
-> **📊 Dashboard තිරය:** Dashboard හි Rate Limit / DDoS Alert එක සහ packet counter එක තත්‍ය කාලීනව ඉහළ යයි!
+
+#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය:
+1. **Live Alerts පිටුව (`http://localhost:5000/alerts`):**
+   - SYN Flood එක එල්ල වූ සැණින් රතු පැහැති **`DDoS_DoS`** Alert badge එකක් සහ 100.00% confidence අගය සහිතව WebSocket alert එකක් තිරයට push වේ.
+2. **Overview පිටුව (`http://localhost:5000/overview`):**
+   - **"Total Attacks"** කවුන්ටරය සහ **"Rate Limit Events"** ඉහළ යන අයුරු පෙන්වන්න.
 
 ---
 
@@ -1563,6 +1652,14 @@ table inet ids {
 ##### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
 - `elements = { 10.10.10.50 timeout 30m expires 29m58s }`: C&C Server එකේ IP ලිපිනය (`10.10.10.50`) ක්ෂණිකව kernel drop set එකට ඇතුළත් වී ඇති බවත්, තත්පරයෙන් තත්පරය auto-expiry timer එක අඩුවන බවත් පෙන්වයි.
 - කැමරාවේ IP එක (`192.168.50.30`) කොහෙත්ම block වී නොමැති අතර, කැමරාවෙන් NVR එකට වීඩියෝ ගලායාම කිසිදු බාධාවකින් තොරව සිදුවේ!
+
+#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය:
+1. **Live Alerts පිටුව (`http://localhost:5000/alerts`):**
+   - දම් පැහැති **`CnC`** (Confidence 98.89%) Alert badge එක සහ Auto-Mitigation Action එක `DROP (block_dst)` ලෙස සටහන්ව ඇති ආකාරය පෙන්වන්න.
+2. **Blocklist / Mitigations පිටුව (`http://localhost:5000/mitigations`):**
+   - **Blocked IP:** `10.10.10.50` (C&C Server) ලැයිස්තුවේ සක්‍රියව පවතින බව පෙන්වන්න.
+   - **TTL Countdown:** මිනිත්තු 30 ක ටයිමරය තත්පරයෙන් තත්පරය අඩුවන ආකාරය සජීවීව බ්‍රවුසරයෙන් පෙන්වන්න.
+   - **කැමරාව සුරක්ෂිත බව:** කැමරාවේ IP එක (`192.168.50.30`) මෙම blocklist එකේ නොමැති බව පෙන්වා, සාමාන්‍ය වීඩියෝ දත්ත වලට කිසිදු හානියක් නොවූ බව සනාථ කරන්න.
 
 > 🎯 **Supervisor හට පෙන්වන අවසාන සාක්ෂිය:**  
 > *"Sir, look at the terminal! The instant our infected camera sent the C&C beacon, our Zeek sensor sniffed the flow, our Random Forest model classified it, our decision engine evaluated the safety invariants, and our router firewall autonomously injected '10.10.10.50' into kernel memory with a 30-minute auto-expiry countdown—all completed in just 112 milliseconds!"*
