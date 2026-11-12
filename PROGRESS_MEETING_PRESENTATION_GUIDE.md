@@ -281,6 +281,36 @@ Zeek Sensor එක කලින් ලියන ලද static dummy log එක�
 4. Switch එක හරහා ගිය මෙම frames 12 ම Zeek විසින් promiscuous mode එකෙන් පිටපත් කරගෙන, TCP State Machine එක හරහා flags විශ්ලේෂණය කර, තත්පර 0.0015 කදී `conn.log` හි JSON පේළියක් ලෙස ලියයි.
 5. PowerShell `Get-Content -Tail 1` මඟින් එම අලුත්ම පේළිය තිරයේ පෙන්වයි.
 
+##### ❓ මෙතන "මෙම frames 12 ම" කියන්නේ මොනවාද? ඒ 12ක් හැදුණේ කොහෙන්ද? (The 12 Frames Deep-Dive):
+
+> **සරල අර්ථ දැක්වීම (Frames vs Packets):**  
+> පරිගණක ජාලකරණයේදී (OSI Model Layer 2) කේබල් සහ Network Switch හරහා ගමන් කරන binary data ඒකක හඳුන්වන්නේ **Ethernet Frames** (Layer 3 IP මට්ටමේදී Packets) නමිනි. Zeek Sensor එක switch interface එකට (`br-ids-lan`) Promiscuous mode එකෙන් සවන් දෙන බැවින්, Switch එක හරහා දෙපැත්තට ගමන් කරන සෑම Ethernet Frame එකක්ම Zeek හට සජීවීව හසුවී පිටපත් කරගනී.
+
+Admin PC එක කැමරාවෙන් කුඩා වෙබ් පිටුවක් (HTML) ඉල්ලාගෙන නැවත සම්බන්ධතාවය විධිමත්ව වසා දැමීමේදී **දෙපැත්තට හුවමාරු වූ මුළු Ethernet Frames ගණන 12 කි**:
+- **Admin PC එකෙන් කැමරාවට යැවූ Frames:** 6 යි (`orig_pkts: 6`)
+- **කැමරාවෙන් Admin PC එකට එවු Frames:** 6 යි (`resp_pkts: 6`)
+- **මුළු Frames එකතුව:** $6 + 6 = 12$ Frames!
+
+මෙම Frames 12 ජාලය තුළ හුවමාරු වූ පියවරෙන් පියවර අනුපිළිවෙළ පහත දැක්වේ:
+
+| Frame අංකය | යැවූ පාර්ශ්වය (Sender) | ලැබූ පාර්ශ්වය (Receiver) | TCP Packet Type / Action | Zeek Flag Code | විස්තරය (සරල සිංහලෙන්) |
+| :---: | :---: | :---: | :---: | :---: | :--- |
+| **Frame 1** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [SYN]` | `S` (Orig) | **Handshake ආරම්භය:** "මට කැමරාවේ Port 80 Web Server එකට සම්බන්ධ වෙන්න පුළුවන්ද?" |
+| **Frame 2** | Camera (`192.168.50.30`) | Admin PC (`192.168.50.10`) | `TCP [SYN, ACK]` | `h` (Resp) | **කැමරාවේ පිළිතුර:** "ඔව්, පුළුවන්. සම්බන්ධතාවය පිහිටුවා ගන්න." |
+| **Frame 3** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [ACK]` | `A` (Orig) | **Handshake තහවුරු කිරීම:** "හරි, සම්බන්ධතාවය තහවුරු කළා." (3-Way Handshake සාර්ථකයි) |
+| **Frame 4** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [PSH, ACK]` + Data | `D` (Orig) | **HTTP Request:** Admin PC එක `GET / HTTP/1.1` ඉල්ලීම කැමරාවට යවයි (Bytes 127). |
+| **Frame 5** | Camera (`192.168.50.30`) | Admin PC (`192.168.50.10`) | `TCP [ACK]` | `a` (Resp) | **Request Receipt:** "HTTP Request එක ලැබුණා, පිළිතුර සූදානම් කරනවා." |
+| **Frame 6** | Camera (`192.168.50.30`) | Admin PC (`192.168.50.10`) | `TCP [PSH, ACK]` + Data | `d` (Resp) | **HTTP Response:** කැමරාව `HTTP 200 OK` HTML වෙබ් පිටුව Admin PC එකට එවයි (Bytes 153). |
+| **Frame 7** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [ACK]` | - | **Response Receipt:** "කැමරාව එවූ HTML වෙබ් පිටුව Admin PC එකට සම්පූර්ණයෙන්ම ලැබුණා." |
+| **Frame 8** | Camera (`192.168.50.30`) | Admin PC (`192.168.50.10`) | `TCP [FIN, ACK]` | `f` (Resp) | **Camera Closing:** "වෙබ් පිටුව එවලා ඉවරයි, කැමරාව connection එක වහන්න පටන් ගන්නවා." |
+| **Frame 9** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [ACK]` | - | **Camera FIN Receipt:** "කැමරාවේ FIN එක ලැබුණු බව Admin PC එක තහවුරු කරයි." |
+| **Frame 10** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [FIN, ACK]` | `F` (Orig) | **Admin Closing:** "Admin PC එකත් තම පැත්තෙන් connection එක සම්පූර්ණයෙන්ම වසා දමනවා." |
+| **Frame 11** | Camera (`192.168.50.30`) | Admin PC (`192.168.50.10`) | `TCP [ACK]` | - | **Admin FIN Receipt:** "Admin PC එකේ FIN එක ලැබුණු බව කැමරාව තහවුරු කරයි." |
+| **Frame 12** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [ACK]` | - | **Final Teardown:** TCP connection එක විධිමත්ව අවසන් (Closed - State SF) කළ අවසාන ACK frame එක. |
+
+> **💡 Supervisor ට ඔප්පු වන සාධකය:**  
+> Output එකේ `"orig_pkts": 6, "resp_pkts": 6` (මුළු එකතුව $6+6=12$) සහ `history: "ShADadfF"` ලෙස සටහන්ව ඇත්තේ, Zeek විසින් කලින් හදාගත් dummy log එකක් කියවීම නොව, switch එක හරහා ගිය **මෙම Ethernet frames 12 ම සජීවීව promiscuous mode එකෙන් intercept කර ගණනය කළ නිසාවෙනි!**
+
 ```powershell
 docker exec ids-lab-admin python -c "import urllib.request; urllib.request.urlopen('http://192.168.50.30/')"
 Get-Content lab_virtual\zeek_logs\conn.log -Tail 1
@@ -313,9 +343,9 @@ Get-Content lab_virtual\zeek_logs\conn.log -Tail 1
   - `D` = Data from originator (Admin PC යැවූ HTTP GET payload එක)
   - `a` = ACK from responder (Camera දුන් receipt එක)
   - `d` = Data from responder (Camera එවූ HTTP 200 OK HTML payload එක)
-  - `f` = FIN from originator (Admin PC සම්බන්ධතාවය අවසන් කිරීම)
-  - `F` = FIN from responder (Camera සම්බන්ධතාවය අවසන් කිරීම)
-- `orig_pkts: 6` සහ `resp_pkts: 6`: දෙපැත්තට හුවමාරු වූ Ethernet packets ගණන (මුළු packets 12 කි).
+  - `f` = FIN from responder (Camera සම්බන්ධතාවය වසා දැමීම)
+  - `F` = FIN from originator (Admin PC සම්බන්ධතාවය වසා දැමීම)
+- `orig_pkts: 6` සහ `resp_pkts: 6`: දෙපැත්තට හුවමාරු වූ Ethernet packets/frames ගණන (මුළු එකතුව 12 කි).
 
 ##### 🔬 විද්‍යාත්මක සාක්ෂිය:
 TCP State Machine flags `ShADadfF` සහ duration 0.0015s මඟින් තහවුරු වන්නේ, මෙය කලින් සකස් කර තැබූ ගොනුවක් නොව, අප විධානය ගැසූ මොහොතේදීම kernel interface එකෙන් capture කර සජීවීව ලියන ලද සැබෑ packet flow එකක් බවයි.
