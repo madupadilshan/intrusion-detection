@@ -685,10 +685,57 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 | **`python lab.py up`** | Docker Containers 10 සහ Virtual Switches/Bridges සියල්ල එකවර Boot up කරයි. | Lab එක පටන් ගන්නා විට. |
 | **`python lab.py ids-start`** | Port 5000 න් Python IDS Engine එක, Zeek Adapter එක, සහ Web Dashboard එක Background එකේ ධාවනය කරයි. | Lab එක On කළ පසු. |
 | **`python lab.py status`** | Containers 10, nftables Firewall Rules, Zeek `conn.log`, සහ AI Pipeline Latency තත්ත්වය එකවර පෙන්වයි. | පද්ධතිය පරීක්ෂා කිරීමට. |
-| **`python lab.py scenario N`** | Proposal Table 10 හි Scenarios 1–6 ස්වයංක්‍රීයව ධාවනය කර වාර්තා සාදයි (උදා: `scenario 4` = C&C). | Supervisor ට පරීක්ෂණ පෙන්වීමට. |
+| **`python lab.py scenario N`** | Proposal Table 10 හි Scenarios 1–6 ස්වයංක්‍රීයව ධාවනය කර Markdown පරීක්ෂණ වාර්තා සාදයි (පහත 2.1 බලන්න). | Supervisor ට පරීක්ෂණ පෙන්වීමට. |
 | **`python lab.py reset`** | Router Firewall එකේ සියලුම Blocks ඉවත් කර පද්ධතිය පිරිසිදු (Fresh state) තත්ත්වයට පත් කරයි. | ප්‍රහාරයක් අවසන් වූ පසු. |
 | **`python lab.py ids-stop`** | Background එකේ ධාවනය වන Python IDS Backend Server එක නවත්වයි. | වැඩ අවසන් වූ පසු. |
 | **`python lab.py down`** | Docker Containers 10 ම නවතා Memory සහ CPU නිදහස් කරයි. | සම්පූර්ණයෙන්ම Lab එක වසා දැමීමට. |
+
+---
+
+#### 2.1 "වාර්තා සාදයි" (Generates Test Reports) යනු කුමක්ද?
+
+`python lab.py scenario N` (උදා: `scenario 4`) විධානය ක්‍රියාත්මක කළ විට, පද්ධතිය හුදෙක් ප්‍රහාරයක් එල්ල කර නිකම්ම සිටින්නේ නැත. එය පරීක්ෂණය අවසන් වූ සැණින් **`reports/lab_tests/virtual/`** නමැති ෆෝල්ඩරය තුළ සම්පූර්ණ **විද්‍යාත්මක පරීක්ෂණ වාර්තාවක් (Automated Markdown Evaluation Report)** ස්වයංක්‍රීයව ලියා තැන්පත් කරයි (උදා: `scenario_4_20261111_143913.md`).
+
+##### මෙම වාර්තාවක අඩංගු වන්නේ මොනවාද?
+1. **පරීක්ෂණ පාරදත්ත (Test Metadata):** පරීක්ෂණය සිදුවූ වේලාව (UTC Start/End), Proposal Table 10 අනුව අපේක්ෂිත ප්‍රතිඵලය (Expected Outcome), සහ ආරක්ෂක ඉලක්කය (Safe Result Target).
+2. **පද්ධතිය ගත් ක්‍රියාමාර්ගය (What the system did - Telemetry Table):**
+   - හඳුනාගත් ප්‍රහාරක පන්තිය (Class - උදා: `CnC`), Source සහ Destination IP (`192.168.50.30` $\rightarrow$ `10.10.10.50`), හඳුනාගත් හේතුව (`CNC_PERSISTENT_BEACON`), ප්‍රතිචාරය (`blocked`), හසුකරගත් flows ගණන (Flows: 32), සහ Random Forest Model එක ලබාදුන් උපරිම විශ්වාසනීයත්වය (Max confidence: `0.91`).
+3. **Firewall නීති සහ ආරක්ෂිත උපාංග සත්‍යාපනය (Blocks & Rate-Limits):**
+   - MongoDB හි සටහන් වූ Blocklist තොරතුරු.
+   - සැබෑ Linux Router Firewall එකේ (`nftables`) ක්‍රියාත්මක වන sets (`block_dst: ['10.10.10.50 (ends in 1494s)']`).
+   - ආරක්ෂිත උපාංග (Camera, NVR, Admin PC) කිසිවක් block නොවී සුරක්ෂිතව පවතින බවට සහතිකය (`Protected devices blocked: none (correct)`).
+4. **Proposal Table 10 අනුකූලතා පරීක්ෂාව (Scientific Compliance Checks):**
+   - Proposal එකේ නියමිත ආරක්ෂක ඉලක්කය ඉටුවූයේද යන්න (`C&C destination 10.10.10.50 blocked: yes`).
+
+> 🎓 **මෙම වාර්තාවල ප්‍රයෝජනය:** Supervisor (Dr. Matheeh & Dr. Amarakeerthi) හට හෝ පර්යේෂණ නිබන්ධනයට (Thesis / Final Viva) සාක්ෂි ඉදිරිපත් කිරීමේදී, *"අපි Proposal Table 10 හි ප්‍රහාර 6 ම සැබෑ ලෙස ක්‍රියාත්මක කර පරීක්ෂා කළා, මෙන්න ඒ මොහොතේදීම පද්ධතිය විසින් සජීවීව ලියන ලද සැබෑ audit reports"* කියා පෙන්වීමට මෙය සෘජුවම උපකාරී වේ.
+
+---
+
+#### 2.2 `lab_virtual/lab.py` කේතයේ අභ්‍යන්තර ව්‍යුහය සරලව (Code Architecture Breakdown)
+
+අප විසින් ලියන ලද [`lab_virtual/lab.py`](lab_virtual/lab.py) කේතය (පේළි 382 ක්) ප්‍රධාන තාක්ෂණික කොටස් 5 කින් සමන්විත වේ:
+
+1. **නියතයන් සහ මාර්ග සැකසුම් (Paths & Constants - Lines 24–60):**
+   - පද්ධතියට අවශ්‍ය Directories (`KEYS`, `LOGS`, `REPORTS`), Docker Compose ගොනුවේ path එක, Database නම (`iot_ids_lab`), සහ Port 5000 API URL එක රඳවා ගනී.
+   - ජාලයේ ඇති උපාංග වල ස්ථාවර IP ලිපින අර්ථ දක්වයි (`CAMERA=192.168.50.30`, `ATTACKER=10.10.10.50`, `NVR=192.168.50.20`, `ADMIN=192.168.50.10`).
+2. **පද්ධති පාලන මෙවලම් (Subprocess & SSH Helpers - Lines 61–74):**
+   - `run(cmd)`: Python `subprocess` මඟින් Windows සහ Docker commands terminal එකේ ධාවනය කරයි.
+   - `router_ssh(command)`: Windows host එකේ සිට Router Container එක (`ids-lab-router`) වෙත Port 2222 හරහා `router_admin` SSH key එක භාවිතයෙන් password නොමැතිව ආරක්ෂිතව සම්බන්ධ වී Firewall විධාන ධාවනය කරයි (උදා: `nft list table inet ids`).
+3. **ජීවන චක්‍ර පාලකයන් (Lifecycle Commands - Lines 76–220):**
+   - `cmd_setup()`: Windows OpenSSH `ssh-keygen` භාවිතයෙන් Ed25519 SSH keys සාදයි.
+   - `cmd_up()`: `docker compose up -d --build` මඟින් Containers 10 සහ Bridges එකවර පණගන්වයි.
+   - `cmd_ids_start()`: Windows එක මත Port 5000 න් Unified IDS Server එක (`core_engine/app.py`) Background එකේ ධාවනය කරවයි.
+   - `cmd_status()`: Containers 10 ම ධාවනය වේද, Zeek `conn.log` ලියයිද, සහ AI Latency එක කොපමණද යන්න එකම screen එකක පෙන්වයි.
+   - `cmd_reset()`: Router එකේ `nft flush` මඟින් සියලු Drop blocks ඉවත් කර MongoDB දත්ත reset කරයි.
+   - `cmd_down()`: සියලු Containers නවතා Memory නිදහස් කරයි.
+4. **ප්‍රහාර මෙහෙයුම් එන්ජිම (Proposal Table 10 Scenarios Engine - Lines 221–366):**
+   - `SCENARIOS` ලැයිස්තුව: Proposal Table 10 හි සඳහන් අවස්ථා 6 ම මෙහි කේතනය කර ඇත.
+   - `dexec(container, *args)`: ඕනෑම Docker Container එකක් ඇතුළට ගොස් විධාන ධාවනය කරයි (`docker exec`).
+   - `reach(src, host, port)`: නියමිත port එකකට TCP socket සම්බන්ධතාවයක් විවෘත කළ හැකිදැයි පරීක්ෂා කර Firewall block එක සැබවින්ම ක්‍රියාත්මකදැයි තහවුරු කරයි.
+   - `run_scenario(n, wait)`: Attacker container එක ලවා Nmap scan, SYN flood, C&C beaconing, හෝ Malware download ප්‍රහාරයන් නියමිත කාලසීමාවට දියත් කරවයි.
+   - `cmd_scenario(args)`: ප්‍රහාරය ධාවනය කර, Zeek flows ගණන සහ AI alert logs එකතු කර, ඉහත සඳහන් කළ Markdown වාර්තාව (`reports/lab_tests/virtual/scenario_*.md`) ස්වයංක්‍රීයව ලියයි.
+5. **විධාන හඳුනාගැනීම (CLI Argument Parser - Lines 368–382):**
+   - Python `argparse` මඟින් පරිශීලකයා Terminal එකේ ගසන විධානය (`setup`, `up`, `status`, `scenario 4` ආදී) හඳුනාගෙන අදාළ Python function එක ක්ෂණිකව ක්‍රියාත්මක කරයි.
 
 ---
 
