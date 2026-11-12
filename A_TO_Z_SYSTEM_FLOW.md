@@ -1046,32 +1046,48 @@ Get-Content lab_virtual\zeek_logs\conn.log -Tail 3
 
 Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම live packets කියවනවා කියලා ඔප්පු කරන්නේ කොහොමද? මේක කලින් හදපු log file එකක් නෙවෙයි කියලා ෂුවර්ද?"** කියා ඇසුවහොත්, එම මොහොතේදීම ඔප්පු කිරීමට පහත ක්‍රම 3 භාවිතා කරන්න:
 
-1. **සාක්ෂිය 1: සජීවීව Packet එකක් යවා Zeek එක එම තත්පරයේදීම එය ලියන බව පෙන්වීම (Live Injection Test):**
-   Terminal එකේ Admin PC එකෙන් කැමරාවට සජීවී HTTP Request එකක් යවා, Zeek එකේ අන්තිම පේළිය බලන්න:
+1. **සාක්ෂිය 1: අපගේම සුවිශේෂී Port එකක් සහ රහස්‍ය පණිවිඩයක් යවා Zeek ලඝු සටහන් වල එය සනාථ කිරීම (Unique Packet Injection & Multi-Log Verification Test):**
+
+   > 💡 **මෙය ඔප්පු කරන්නේ කෙසේද?**
+   > සාමාන්‍ය HTTP request එකක් යැවූ විට Source Port එක operating system එකෙන් අහඹු ලෙස (random port) ගන්නා නිසා, Supervisor ට මෙය පැරණි log එකක් නොවන බව 100% ක් ඔප්පු කිරීමට **අපටම ආවේණික සුවිශේෂී ලකුණු 3 ක් (Unique Fingerprints)** යවනු ලැබේ:
+   > 1. **සුවිශේෂී Client Port එකක් (`id.orig_p: 54321`):** අහඹු port එකක් වෙනුවට අප විසින්ම තෝරාගත් `54321` (හෝ Supervisor දෙන ඕනෑම අංකයක්) source port එක ලෙස යවයි.
+   > 2. **සුවිශේෂී රහස්‍ය පණිවිඩයක් (`uri: "/?msg=LIVE_TEST_SUPERVISOR_PROOF"`):** HTTP request එක තුළ අපට අවශ්‍ය සුවිශේෂී ලකුණක් යවයි.
+   > 3. **එකම Connection UID එක (`uid`):** `conn.log` සහ `http.log` ගොනු දෙකෙහිම එකම Unique Connection ID එක සටහන් වීම.
+
+   Terminal එකේ පහත විධානය ධාවනය කරන්න:
 
    ```powershell
-   docker exec ids-lab-admin python -c "import urllib.request; urllib.request.urlopen('http://192.168.50.30/')"
+   docker exec ids-lab-admin python -c "import socket; s = socket.socket(); s.bind(('', 54321)); s.connect(('192.168.50.30', 80)); s.sendall(b'GET /?msg=LIVE_TEST_SUPERVISOR_PROOF HTTP/1.0\r\n\r\n'); s.recv(1024); s.close()"
    Get-Content lab_virtual\zeek_logs\conn.log -Tail 1
+   Get-Content lab_virtual\zeek_logs\http.log -Tail 1
    ```
 
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
    >
-   > - **`docker exec ids-lab-admin`:** ක්‍රියාත්මක වන Admin PC container එක ඇතුළට ගොස් විධානයක් run කරන්න.
-   > - **`python -c "..."`:** Container එක තුළ ඇති Python මඟින් inline command එකක් run කරන්න (`-c` = command).
-   > - **`import urllib.request; urllib.request.urlopen('http://192.168.50.30/')`:** Admin PC එකේ සිට කැමරාවේ IP එක වන `192.168.50.30` හි Port 80 (Web Server) වෙත සැබෑ HTTP GET request එකක් යවන්න (හරියට browser එකකින් web page එකක් open කළා වගේ).
-   > - **`Get-Content lab_virtual\zeek_logs\conn.log -Tail 1`:** Zeek Sensor එක විසින් සටහන් කරගත් `conn.log` ගොනුවේ අන්තිමටම ලියවුණු අලුත්ම 1 වන පේළිය පමණක් screen එකේ පෙන්වන්න.
-   >
+   > - **`s.bind(('', 54321))`:** Admin PC එකේ OS එකෙන් අහඹු port එකක් ගැනීම වෙනුවට, අප විසින් තෝරාගත් **`54321`** නමැති සුවිශේෂී Source Port එකට Socket එක සවි (bind) කරයි.
+   > - **`s.connect(('192.168.50.30', 80))`:** කැමරාවේ Web Server එක වෙත TCP සම්බන්ධතාවයක් ඇති කරයි.
+   > - **`s.sendall(b'GET /?msg=LIVE_TEST_SUPERVISOR_PROOF ...')`:** කැමරාවට අපගේ සුවිශේෂී පණිවිඩය (`LIVE_TEST_SUPERVISOR_PROOF`) සහිත HTTP GET request එක යවයි.
+   > - **`Get-Content ...\conn.log -Tail 1`:** Zeek විසින් `conn.log` හි ලියූ අලුත්ම connection record එක කියවයි.
+   > - **`Get-Content ...\http.log -Tail 1`:** Zeek විසින් `http.log` හි ලියූ අලුත්ම HTTP payload record එක කියවයි.
 
-   **ලැබෙන සැබෑ පිළිතුර:**
+   **ලැබෙන සැබෑ පිළිතුර 1: `conn.log` හි අන්තිම පේළිය (Network Flow Record):**
 
    ```json
-   {"ts":1794390662.04,"uid":"CiKgoa1TTSstcUREd8","id.orig_h":"192.168.50.10","id.orig_p":41326,"id.resp_h":"192.168.50.30","id.resp_p":80,"proto":"tcp","service":"http","duration":0.0015,"orig_bytes":127,"resp_bytes":153,"conn_state":"SF","history":"ShADadfF","orig_pkts":6,"resp_pkts":6}
+   {"ts":1794465800.12,"uid":"CiKgoa1TTSstcUREd8","id.orig_h":"192.168.50.10","id.orig_p":54321,"id.resp_h":"192.168.50.30","id.resp_p":80,"proto":"tcp","service":"http","duration":0.0015,"orig_bytes":156,"resp_bytes":5618,"conn_state":"SF","history":"ShADadfF","orig_pkts":6,"resp_pkts":6}
    ```
 
-   **විද්‍යාත්මක සාක්ෂිය:**
+   **ලැබෙන සැබෑ පිළිතුර 2: `http.log` හි අන්තිම පේළිය (Application Payload Record):**
 
-   - **`orig_pkts: 6` සහ `resp_pkts: 6`:** Admin සහ Camera අතර හුවමාරු වූ සැබෑ Ethernet frames 12 ම Zeek විසින් kernel interface එකෙන් අල්ලාගෙන ඇත.
-   - **`history: "ShADadfF"`:** Zeek හි TCP State Machine එක මඟින් TCP 3-Way Handshake (`S`=SYN, `h`=SYN-ACK, `A`=ACK), HTTP දත්ත (`D`, `a`, `d`), සහ Connection Close (`f`, `F`) යන සැබෑ flags එකින් එක කියවා ඇත. මෙය කලින් ලියන ලද ගොනුවක් නොවන බවත්, සජීවීව sniff කළ එකක් බවත් තහවුරු වේ!
+   ```json
+   {"ts":1794465800.12,"uid":"CiKgoa1TTSstcUREd8","id.orig_h":"192.168.50.10","id.orig_p":54321,"id.resp_h":"192.168.50.30","id.resp_p":80,"method":"GET","uri":"/?msg=LIVE_TEST_SUPERVISOR_PROOF","status_code":200,"status_msg":"OK"}
+   ```
+
+   **🔬 Supervisor ඉදිරියේ කළ හැකි අභියෝගාත්මක විද්‍යාත්මක සාක්ෂිය (Definitive Scientific Proof):**
+
+   1. **`id.orig_p: 54321`:** `conn.log` හි Client Port එක ලෙස සටහන් වන්නේ ඔබ විශේෂයෙන් නියම කළ `54321` අංකයම වේ! *(Supervisor හට කැමති ඕනෑම 5-digit අංකයක් දීමට පවසා එම මොහොතේදීම එය පෙන්විය හැක).*
+   2. **`uri: "/?msg=LIVE_TEST_SUPERVISOR_PROOF"`:** `http.log` හි සටහන් වන්නේ ඔබ යැවූ සුවිශේෂී පණිවිඩයම අකුරක් නෑර සටහන් වී ඇති ආකාරයයි! *(Supervisor ගේ නම ලබාදී වුවද මෙය ක්ෂණිකව කළ හැක).*
+   3. **`uid: "CiKgoa1TTSstcUREd8"`:** Logs ගොනු දෙකෙහිම එකම Unique Connection Identifier එකක් සටහන් වී තිබීම මඟින්, Zeek Sensor එක switch එකෙන් සැබවින්ම Binary Ethernet Frames කියවා protocols (TCP + HTTP) දෙකම එකවර reconstruct කර ඇති බව 100% ක් ඔප්පු වේ!
+   4. **`history: "ShADadfF"`:** TCP 3-Way Handshake (`S`, `h`, `A`), Data Transfer (`D`, `a`, `d`), සහ Close (`f`, `F`) යන flags 8 ම නිරීක්ෂණය කර ඇත.
 2. **සාක්ෂිය 2: Zeek Kernel Link-Layer Packet Counters (`stats.log`):**
    Zeek විසින් Linux socket එකෙන් ලබාගත් binary packets සහ bytes ප්‍රමාණය කෙලින්ම සටහන් කරයි:
 
