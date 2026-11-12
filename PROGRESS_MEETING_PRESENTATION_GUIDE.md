@@ -694,19 +694,9 @@ Calibrated Distribution across all 5 classes:
 ```
 
 📊 **Output එකෙන් කියවෙන්නේ කුමක්ද?**
-- `Predicted Class : Malware_Download`: Dynamic port එකක සිට binary transfer එකකට අදාළ staging flow එකක් ලෙස නිවැරදිව හඳුනාගෙන ඇත.
+- `Predicted Class : Malware_Download`: පිටත dynamic port එකක සිට binary transfer එකකට අදාළ staging flow එකක් ලෙස නිවැරදිව හඳුනාගෙන ඇත.
 - `Decision Confidence : 83.91%`: 83.91% ක විශ්වාසයකින් Malware_Download බව තහවුරු කරයි.
-Calibrated Distribution across all 5 classes:
-  - Benign            :   0.05%
-  - DDoS_DoS          :   0.02%
-  - PortScan          :  15.99%
-  - CnC               :   0.02%
-  - Malware_Download  :  83.91%
-```
-
-📊 **Output එකෙන් කියවෙන්නේ කුමක්ද?**
-- `Predicted Class : Malware_Download`: Dynamic port එකක සිට binary transfer එකකට අදාළ staging flow එකක් ලෙස නිවැරදිව හඳුනාගෙන ඇත.
-- `Decision Confidence : 83.91%`: 83.91% ක විශ්වාසයකින් Malware_Download බව තහවුරු කරයි.
+- `Calibrated Distribution`: පන්ති 5 ම සම්භාවිතා බෙදී ඇති ආකාරය (Benign 0.05%, DDoS 0.02%, PortScan 15.99%, CnC 0.02%, Malware 83.91%) පැහැදිලිව පෙන්වයි.
 
 ---
 
