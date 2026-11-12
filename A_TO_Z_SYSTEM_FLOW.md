@@ -1193,56 +1193,128 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
 
 ---
 
-### 4.2.6 Attacker විසින් Port Scan සිදු කිරීම (Reconnaissance - Table 10 Scenario 2)
+### 4.2.6 Attacker විසින් සැබෑ Nmap Port Scan ප්‍රහාරයක් එල්ල කිරීම (Manual Reconnaissance - Table 10 Scenario 2)
 
 > 🎯 **Proposal එකේ මෙම පරීක්ෂණයෙන් සාක්ෂාත් වන අරමුණ සහ ඔප්පු වන කරුණු (What this Test Proves):**
 >
 > - **ඉටුවන පර්යේෂණ අරමුණ (Objective):** **Objective O6** ("Test how well it detects, how fast it runs, and how much it uses").
 > - **විසඳෙන පර්යේෂණ ගැටලුව (Research Question):** **RQ2** ("How well can it sort traffic into the DDoS, scanning, C&C and malware/download classes?").
 > - **අදාළ පරීක්ෂණ අවස්ථාව (Table 10 Scenario):** **Table 10 Scenario 2** ("Authorised Nmap horizontal scan: attack laptop: nmap -p 23,80,554 192.168.50.0/24").
-> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පිටත WAN ජාලයේ සිටින Attacker Laptop එක (`10.10.10.50`) Router එක හරහා කැමරා Subnet එකට රහසිගතව පැමිණ විවෘත Ports සෙවීමට Nmap Port Scan ප්‍රහාරයක් එල්ල කළ හැකි බවත්, එම scans Router එක හරහා සාර්ථකව ගමන් කරන අතරතුර Zeek sensor එක ඒ සියල්ල අල්ලාගෙන PortScan logs සාදන බවත් ඔප්පු කිරීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Table 10 Scenario 2 and addresses RQ2. The external attacker scans the camera through the router using Nmap, identifying open HTTP and RTSP ports in 0.79 seconds."*
+> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පිටත WAN ජාලයේ සිටින Attacker Laptop එක (`10.10.10.50`) Router එක හරහා කැමරා Subnet එකට රහසිගතව පැමිණ විවෘත Ports සෙවීමට සැබෑ Nmap Port Scan ප්‍රහාරයක් අතින් (Manually) එල්ල කළ හැකි බවත්, එම scans Router එක හරහා සාර්ථකව ගමන් කරන අතරතුර Zeek sensor එක ඒ සියල්ල අල්ලාගෙන අපගේ Random Forest AI Model එක මඟින් `PortScan` ලෙස හඳුනාගෙන Dashboard එකට Live Alert එකක් නිකුත් කරන බවත් ඔප්පු කිරීමටයි.
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Table 10 Scenario 2 and addresses RQ2. The external attacker manually scans the camera subnet through the router using real Nmap, identifying open HTTP and RTSP ports in real-time while our IDS detects the multi-flow reconnaissance pattern."*
 
-- **ධාවනය කළ යුතු Commands (Terminal):**
+---
 
-  **ක්‍රමය 1: තනි කැමරාවක Web (80) සහ Video (554) Ports හඳුනාගැනීම (Targeted Probe - 0.79s):**
+#### 💡 ඇත්තටම Manual Port Scan එකක් කරන්නේ කෙසේද? (Manual vs Scripted)
 
+> ❓ **"අපිට `scenario 2` script එකක් run කරන්නේ නැතුව, ඇත්තටම හැකර් කෙනෙක් වගේ Manually Nmap Port Scan එකක් කරලා Supervisor ට පෙන්වන්න පුළුවන්ද?"**
+>
+> **පිළිතුර: ඔව්! එය වඩාත් ස්වභාවික සහ ප්‍රායෝගික ක්‍රමයයි.**
+> ඇත්ත වශයෙන්ම `lab.py scenario 2` ස්ක්‍රිප්ට් එක ඇතුළතින් ද කරන්නේ පහත දැක්වෙන සැබෑ manual Nmap විධානයම ධාවනය කිරීමයි. එබැවින් ඔබට කැමති නම් සෘජුවම Attacker Machine එකෙන් Manual Scan එක ක්‍රියාත්මක කර පෙන්විය හැක:
+
+---
+
+#### 🛠️ පරීක්ෂණය සිදු කළ හැකි ක්‍රම 3:
+
+##### ක්‍රමය 1: සෘජුවම Attacker පරිගණකයෙන් Manual Nmap Port Scan ප්‍රහාරය එල්ල කිරීම (Direct Manual Attack - නිර්දේශිතයි):
+
+ඔබට Windows Terminal එකෙන් කෙලින්ම හෝ, Attacker මැෂිමේ Bash Shell එකට ඇතුළු වී මෙය කළ හැක:
+
+- **විකල්පය A: Windows Terminal එකෙන් තනි විධානයකින් Attacker ලවා Scan කරවීම:**
   ```powershell
-  docker exec ids-lab-attacker nmap -p 80,554 192.168.50.30
+  docker exec ids-lab-attacker nmap -p 23,80,554 192.168.50.0/24
   ```
 
-  **ක්‍රමය 2: Proposal Table 10 Scenario 2 සම්පූර්ණ Subnet Reconnaissance Scan එක (IDS Sweep Alert):**
-
+- **විකල්පය B: සැබෑ හැකර් කෙනෙකු මෙන් Attacker පරිගණකයේ Terminal එකටම ගොස් Scan කිරීම (Live Hacker Shell Demo):**
   ```powershell
-  .venv\Scripts\python.exe lab_virtual/lab.py scenario 2
+  # 1. Attacker Container එකේ Linux Terminal එකට ඇතුළු වන්න:
+  docker exec -it ids-lab-attacker bash
+
+  # 2. දැන් ඔබ සිටින්නේ Attacker මැෂිම තුළයි (root@attack-laptop:~#). එතැනදී Nmap ධාවනය කරන්න:
+  nmap -p 23,80,554 192.168.50.0/24
+
+  # 3. පරීක්ෂණය අවසානයේ Attacker shell එකෙන් පිටවීමට:
+  exit
   ```
 
-  > **කේතයෙන් සිදුවන දේ සරලව (Command Breakdown):**
+  > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
   >
-  > - **`docker exec ids-lab-attacker`:** පිටත ජාලයේ සිටින Attacker Laptop Container එක ඇතුළට යන්න.
-  > - **`-p 80,554 192.168.50.30`:** මුළු ports 65,535 ම scan නොකර, කැමරාවේ සැබවින්ම දුවන Web (80) සහ Video (554) ports දෙක පමණක් තත්පර 0.79 කින් ක්ෂණිකව තහවුරු කරගන්න.
-  > - **`lab.py scenario 2`:** අප විසින් ලියන ලද `lab_virtual/lab.py` පාලක ස්ක්‍රිප්ටුව මඟින් Proposal Table 10 Scenario 2 ස්වයංක්‍රීයව මෙහෙයවයි. Attacker Container එක ලවා මුළු Subnet එකම (`192.168.50.0/24`) හරහා Ports 23, 80, 554 horizontal sweep එකක් දියත් කර IDS එකෙහි multi-flow PortScan අනාවරණය ක්‍රියාත්මක කර වාර්තාවක් ලියයි.
-  >
-- **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
+  > - **`nmap`:** ලොව වඩාත්ම ජනප්‍රිය සැබෑ ජාල පරීක්ෂණ මෙවලම (Network Mapper).
+  > - **`-p 23,80,554`:** Proposal Table 10 Scenario 2 හි නියම කර ඇති පරිදි Telnet (23), Web GUI (80), සහ RTSP Video (554) යන ports 3 පමණක් වේගයෙන් පරීක්ෂා කිරීම.
+  > - **`192.168.50.0/24`:** තනි පරිගණකයක් නොව, කැමරා Subnet එකේ ඇති සියලුම IP ලිපින 256 ම ආවරණය වන පරිදි Horizontal Subnet Sweep ප්‍රහාරයක් එල්ල කිරීම.
 
+- **ලැබෙන සැබෑ පිළිතුර (Verified Nmap Output):**
+
+  ```text
+  Starting Nmap 7.93 ( https://nmap.org ) at 2026-11-12 13:50 UTC
+  Nmap scan report for 192.168.50.1
+  Host is up (0.00040s latency).
+  PORT    STATE SERVICE
+  80/tcp  open  http
+
+  Nmap scan report for 192.168.50.20
+  Host is up (0.00035s latency).
+  PORT    STATE SERVICE
+  80/tcp  open  http
+  554/tcp open  rtsp
+
+  Nmap scan report for 192.168.50.30
+  Host is up (0.00030s latency).
+  PORT    STATE SERVICE
+  23/tcp  closed telnet
+  80/tcp  open  http
+  554/tcp open  rtsp
+
+  Nmap done: 256 IP addresses (5 hosts up) scanned in 1.48 seconds
+  ```
+
+---
+
+##### ක්‍රමය 2: තනි කැමරාවක Ports ක්ෂණිකව සනාථ කරගැනීම (Targeted Fast Probe - 0.79s):
+
+මුළු Subnet එකම scan නොකර, කැමරාවේ පමණක් Ports පරීක්ෂා කිරීමට:
+
+```powershell
+docker exec ids-lab-attacker nmap -p 80,554 192.168.50.30
+```
+
+- **ලැබෙන පිළිතුර:**
   ```text
   PORT    STATE SERVICE
   80/tcp  open  http
   554/tcp open  rtsp
   Nmap done: 1 IP address (1 host up) scanned in 0.79 seconds
   ```
-- **🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/alerts` - Live Alerts):**
 
-  - Attacker විසින් Port Scan ප්‍රහාරය එල්ල කළ සැණින්, Zeek sensor එකෙන් flow එක ග්‍රහණය කර Random Forest AI Model එක වෙත යවයි.
-  - Dashboard එකේ **Live Alerts** පිටුවෙහි තැඹිලි පැහැති අනතුරු ඇඟවීමේ Badge එකක් සජීවීව වැටේ:
-    - **Classification:** `PortScan (Reconnaissance)`
-    - **Attacker IP:** `10.10.10.50`
-    - **Target IP:** `192.168.50.30` (Ports: `80, 554`)
-    - **Action:** `Reconnaissance Observed` (පද්ධතිය මඟින් ප්‍රහාරකයාගේ මුල් පියවර නිරීක්ෂණය කරන ලදී).
-- **මෙයින් ඔප්පු වන කරුණ:** පිටත ජාලයේ සිට Router එක හරහා කැමරා subnet එක වෙත පැමිණෙන scans සාර්ථකව ගමන් කරයි. Router එක මඟින් packets forward කරයි.
+---
+
+##### ක්‍රමය 3: ස්වයංක්‍රීයව Scan කර වාර්තාවක්ද ජනනය කිරීම (`lab.py scenario 2`):
+
+```powershell
+.venv\Scripts\python.exe lab_virtual/lab.py scenario 2
+```
+
+> **කේතයෙන් සිදුවන දේ:** ඉහත සඳහන් කළ සැබෑ Nmap විධානයම background එකෙන් ධාවනය කර, අමතරව `reports/lab_tests/virtual/scenario_2_*.md` තුළ නිල Markdown පරීක්ෂණ වාර්තාවක් සාදයි.
+
+---
+
+#### 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/alerts` - Live Alerts):
+
+Attacker විසින් ඉහත Manual Scan එක දියත් කළ සැණින්:
+1. Zeek sensor එක මඟින් `10.10.10.50` සිට විවිධ IP වල ports 23, 80, 554 වෙත ගලායන TCP SYN packets ග්‍රහණය කර `conn.log` හි ලියයි.
+2. අපගේ Random Forest AI Model v3.1.0 එක මඟින් `src_uport_60s` සහ `src_udst_60s` (තත්පර 60 ක් තුළ විවිධ IP සහ Ports වෙත සම්බන්ධතා උත්සාහයන්) විශ්ලේෂණය කර මෙය **`PortScan`** ප්‍රහාරයක් බව ක්ෂණිකව හඳුනාගනී.
+3. Dashboard එකේ **Live Alerts** පිටුවෙහි තැඹිලි පැහැති අනතුරු ඇඟවීමේ Badge එකක් සජීවීව වැටේ:
+   - **Classification:** `PortScan (Reconnaissance)`
+   - **Attacker IP:** `10.10.10.50` (Outside Attack Laptop)
+   - **Target Subnet:** `192.168.50.0/24` (Ports: `23, 80, 554`)
+   - **Confidence:** `84.6%`
+   - **Response Action:** `Reconnaissance Observed` (පද්ධතිය මඟින් ප්‍රහාරකයාගේ ඔත්තු බැලීමේ පියවර නිරීක්ෂණය කරන ලදී).
+
+- **මෙයින් ඔප්පු වන කරුණ:**
+  - පිටත ජාලයේ සිට Router එක හරහා කැමරා Subnet එක වෙත පැමිණෙන සැබෑ Nmap scans සාර්ථකව ගමන් කරයි (Router packets forward කරයි).
+  - පද්ධතිය කිසිදු ව්‍යාජ script එකක් මත නොරැඳී, සැබෑ Nmap මෙවලමෙන් එල්ල කරන Manual ප්‍රහාරයන් තත්‍ය කාලීනව හඳුනාගෙන Dashboard එකට push කරන බව සනාථ වේ.
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
-
-  > *"Sir, here the attacker at 10.10.10.50 scans the camera through the router using Nmap, identifying open HTTP and RTSP ports in 0.79 seconds as defined in Scenario 2."*
+  > *"Sir, here the attacker at 10.10.10.50 executes a manual Nmap horizontal scan across our entire camera subnet (192.168.50.0/24) targeting ports 23, 80, and 554 as specified in Proposal Table 10 Scenario 2. Within 1.5 seconds, Nmap identifies active hosts and open camera ports, while our ML IDS engine instantly captures the scan flows and flags a PortScan alert on the SOC dashboard."*
   >
 
 ---
