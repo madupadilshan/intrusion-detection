@@ -664,8 +664,8 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 > **පිළිතුර: ඔව්! මෙය පිටතින් ගත් කිසිදු තෙවන පාර්ශවීය මෘදුකාංගයක් නොවේ. මෙය අපගේ පර්යේෂණ ව්‍යාපෘතිය සඳහා අප විසින්ම සම්පූර්ණයෙන්ම Python කේතයෙන් ලියන ලද ප්‍රධාන Virtual Lab Orchestrator & Test Controller ස්ක්‍රිප්ට් එකයි ([`lab_virtual/lab.py`](lab_virtual/lab.py)).**
 
 #### 1. මෙය අප විසින් නිර්මාණය කළේ ඇයි? (The Core Rationale Behind `lab.py`):
-1. **Docker Containers 10 සහ Dual Bridges ස්වයංක්‍රීයව පාලනය කිරීම:**
-   - අපගේ Virtual Lab එක තුළ Router, Camera, NVR, Admin PC, Sensor, Attacker ආදී Containers 10 ක් සහ `camlan` (192.168.50.0/24), `outside` (10.10.10.0/24) යන අතථ්‍ය ජාල 2 ක් ඇත.
+1. **Docker Containers සහ Dual Bridges ස්වයංක්‍රීයව පාලනය කිරීම:**
+   - අපගේ Virtual Lab එක තුළ Router, Camera, NVR, Admin PC, Sensor, Scanner, Attacker, Cloud ආදී Containers සහ `camlan` (192.168.50.0/24), `outside` (10.10.10.0/24) යන අතථ්‍ය ජාල 2 ක් ඇත.
    - සාමාන්‍යයෙන් මේවා එකින් එක terminal commands වලින් open කරමින් සිටීම අතිශය වෙහෙසකර බැවින්, ඒ සියල්ල තනි විධානයකින් එකවර build කර up/down කිරීමට `lab.py` නිර්මාණය කළෙමු.
 2. **රහස්‍ය SSH Keys ස්වයංක්‍රීයව සැකසීම (Automated Ed25519 Key Provisioning):**
    - අපගේ Python IDS Engine එකට Router Firewall එකේ (`nftables`) drop rules ඇතුළත් කිරීමට නම් Router එක වෙත Password නැතිව SSH මඟින් රහසිගතව Login වීමට අවශ්‍ය වේ.
@@ -682,13 +682,13 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 | විධානය (Command) | කරනු ලබන කාර්යය (What it Does) | කවදාද භාවිතා කරන්නේ? |
 | :--- | :--- | :--- |
 | **`python lab.py setup`** | Router SSH Keys (`router_admin`) සහ Dashboard Password (`dashboard_login.txt`) සාදයි. | පළමු වතාවේ පමණි (One-time). |
-| **`python lab.py up`** | Docker Containers 10 සහ Virtual Switches/Bridges සියල්ල එකවර Boot up කරයි. | Lab එක පටන් ගන්නා විට. |
+| **`python lab.py up`** | Virtual Lab Containers සහ Virtual Bridges සියල්ල එකවර Boot up කරයි. | Lab එක පටන් ගන්නා විට. |
 | **`python lab.py ids-start`** | Port 5000 න් Python IDS Engine එක, Zeek Adapter එක, සහ Web Dashboard එක Background එකේ ධාවනය කරයි. | Lab එක On කළ පසු. |
-| **`python lab.py status`** | Containers 10, nftables Firewall Rules, Zeek `conn.log`, සහ AI Pipeline Latency තත්ත්වය එකවර පෙන්වයි. | පද්ධතිය පරීක්ෂා කිරීමට. |
+| **`python lab.py status`** | Containers, nftables Firewall Rules, Zeek `conn.log`, සහ AI Pipeline Latency තත්ත්වය එකවර පෙන්වයි. | පද්ධතිය පරීක්ෂා කිරීමට. |
 | **`python lab.py scenario N`** | Proposal Table 10 හි Scenarios 1–6 ස්වයංක්‍රීයව ධාවනය කර Markdown පරීක්ෂණ වාර්තා සාදයි (පහත 2.1 බලන්න). | Supervisor ට පරීක්ෂණ පෙන්වීමට. |
 | **`python lab.py reset`** | Router Firewall එකේ සියලුම Blocks ඉවත් කර පද්ධතිය පිරිසිදු (Fresh state) තත්ත්වයට පත් කරයි. | ප්‍රහාරයක් අවසන් වූ පසු. |
 | **`python lab.py ids-stop`** | Background එකේ ධාවනය වන Python IDS Backend Server එක නවත්වයි. | වැඩ අවසන් වූ පසු. |
-| **`python lab.py down`** | Docker Containers 10 ම නවතා Memory සහ CPU නිදහස් කරයි. | සම්පූර්ණයෙන්ම Lab එක වසා දැමීමට. |
+| **`python lab.py down`** | සියලු Docker Containers නවතා Memory සහ CPU නිදහස් කරයි. | සම්පූර්ණයෙන්ම Lab එක වසා දැමීමට. |
 
 ---
 
@@ -751,7 +751,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 │  [2. lab.py setup]       ──► SSH Keys & Login File Created (One-Time)  │
 │            │                                                           │
 │            ▼                                                           │
-│  [3. lab.py up]          ──► 10 Containers & Virtual Bridges Spawned   │
+│  [3. lab.py up]          ──► Lab Containers & Dual Bridges Spawned     │
 │            │                                                           │
 │            ▼                                                           │
 │  [4. lab.py ids-start]   ──► Python IDS Backend Running on Port 5000   │
@@ -788,7 +788,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
    >   - එබැවින් මෙය **Idempotent** (එනම් කී වතාවක් run කළද ආරක්ෂිත තත්ත්වය නොවෙනස්ව පවතින) ලෙස නිර්මාණය කර ඇත.
    >   *(මෙම විධානය ධාවනය කිරීම අනිවාර්ය වන්නේ පද්ධතිය මුලින්ම සකසන පළමු වතාවේ පමණි. පසුව නැවත run කළද පවතින keys වලට කිසිදු හානියක් සිදු නොවේ).*
    >
-3. **තුන්වන පියවර: Virtual Lab උපාංග (Containers 10) ධාවනය කිරීම:**
+3. **තුන්වන පියවර: Virtual Lab උපාංග (Docker Containers) ධාවනය කිරීම:**
 
    ```powershell
    .venv\Scripts\python.exe lab_virtual\lab.py up
@@ -796,7 +796,28 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
    >
-   > - **`lab_virtual\lab.py up`:** අපගේ controller script එක මඟින් `docker-compose.yml` ක්‍රියාත්මක කර `camlan` (192.168.50.0/24) සහ `outside` (10.10.10.0/24) Virtual Bridges සාදමින්, Router, Camera, NVR, Admin PC, Cloud, Attacker, සහ Zeek Sensor යන Containers 10 ම එකවර ධාවනය (boot up) කරයි. Router එක SSH හරහා පිළිතුරු දෙන තෙක් බලා සිට status පෙන්වයි.
+   > - **`lab_virtual\lab.py up`:** අපගේ controller script එක මඟින් `docker-compose.yml` ක්‍රියාත්මක කර `camlan` (192.168.50.0/24) සහ `outside` (10.10.10.0/24) Virtual Bridges සාදමින්, පහත වගුවේ දැක්වෙන Virtual Lab Containers සියල්ල එකවර ධාවනය (boot up) කරයි. Router එක SSH හරහා සම්බන්ධ වන තෙක් රැඳී සිට තත්ත්වය තහවුරු කරයි.
+
+   #### 📦 `docker-compose.yml` මඟින් සජීවීව ධාවනය වන Containers ලැයිස්තුව (Complete Containers Specification):
+
+   Virtual Lab එක ක්‍රියාත්මක වීමේදී Proposal Topology එක (Figure 2) අනුව පහත සඳහන් Containers නිර්මාණය වේ:
+
+   | අංකය | Container නම (Name) | IP ලිපිනය & ජාලය | භූමිකාව සහ කාර්යභාරය (Role & Description) |
+   | :---: | :--- | :--- | :--- |
+   | 1 | **`ids-lab-router`** | `192.168.50.1` (LAN)<br>`10.10.10.1` (WAN) | **Core Linux Router & nftables Firewall:** ජාල 2 අතර දත්ත packets forward කරන සහ ප්‍රහාරක IP block/drop කරන kernel firewall එක. |
+   | 2 | **`ids-lab-sensor`** | Promiscuous Sniffer (`br-ids-lan`) | **Zeek Network Security Sensor:** Camera switch එකට (`br-ids-lan`) host mode එකෙන් සවන් දී binary packets වලින් `conn.log` ලියන sensor එක. |
+   | 3 | **`ids-lab-camera`** | `192.168.50.30` (`camlan`) | **IP Camera Simulation Service:** Port 80 (HTTP Web GUI) සහ Port 554 (RTSP Video Streaming) සපයන කැමරා යෙදුම. |
+   | 4 | **`ids-lab-camera-net`** | `192.168.50.30` (`camlan`) | **Camera Route Helper:** Python container තුළ `ip` command නැති බැවින් Router Gateway route එක (`default via 192.168.50.1`) රඳවා තබන Alpine helper එක. |
+   | 5 | **`ids-lab-nvr`** | `192.168.50.20` (`camlan`) | **Network Video Recorder (NVR):** කැමරාවෙන් නොකඩවා 58.6 MB වීඩියෝ කොටස් ලබාගෙන පටිගත කරන සේවාදායකය. |
+   | 6 | **`ids-lab-admin`** | `192.168.50.10` (`camlan`) | **Security Admin Workstation:** කැමරාවේ Web UI එක (Port 80) නිරීක්ෂණය කරන සහ කළමනාකරණය කරන පරිගණකය. |
+   | 7 | **`ids-lab-scanner`** | `192.168.50.5` (`camlan`) | **Sensor Management & Inventory Scanner:** Proposal FR-05 අනුව ජාලය තුළ අනුමත Nmap Asset Discovery scans ක්‍රියාත්මක කරන Sensor Management host එක. |
+   | 8 | **`ids-lab-attacker`** | `10.10.10.50` (`outside`) | **External Attacker Laptop:** පිටත WAN ජාලයේ සිට Nmap Port Scans සහ DDoS SYN Flood ප්‍රහාර එල්ල කරන හැකර් පරිගණකය. |
+   | 9 | **`ids-lab-attack-server`** | `10.10.10.50` (`outside`) | **Attacker Companion Server:** Attacker පරිගණකයේ background එකේ දුවන Command & Control (C&C IRC Port 6667) Server එක සහ Malware Download server එක. |
+   | 10 | **`ids-lab-cloud`** | `10.10.10.123` (`outside`) | **Vendor Cloud Server:** කැමරාව විසින් අන්තර්ජාලය හරහා telemetry දත්ත යවන බාහිර නිෂ්පාදක Cloud සේවාව. |
+   | 11 | **`ids-lab-cloud-net`** | `10.10.10.123` (`outside`) | **Cloud Route Helper:** Cloud සේවාව සඳහා Router Gateway route එක (`192.168.50.0/24 via 10.10.10.1`) රඳවා තබන Alpine helper එක. |
+
+   > 💡 **සටහන (Architectural Note):** 
+   > - අපගේ Virtual Lab එකෙහි ප්‍රධාන තාක්ෂණික භූමිකාවන් 7 ක් (Router, Sensor, Camera, NVR, Admin PC, Attacker, Cloud) පවතින අතර, Linux networking සහ routing නිවැරදිව පවත්වා ගැනීමට සහ සේවාවන් වෙන් කර තැබීමට Docker containers 11 ක් ලෙස ක්‍රියාත්මක වේ.
    >
 4. **හතරවන පියවර: Python IDS Backend එක සහ Dashboard Server එක Start කිරීම:**
 
