@@ -61,18 +61,23 @@ Supervisor ඉදිරියේ තිරය Share කිරීමට මින
 ##### 💡 ඇයි මේ දේ කරන්නෙ? (Why We Are Doing This):
 අපගේ Research Proposal එකේ Section 5.1 හි නිල වශයෙන් දක්වා ඇති Virtual Lab Topology එක (උපාංග 11 ක් සහ Virtual Subnets 2 ක්) සජීවීව ක්‍රියාත්මක තත්ත්වයට ගෙන ඒම සඳහාය.
 
+> [!IMPORTANT]
+> **පූර්ව අවශ්‍යතාවය (Prerequisite):** පරිගණකයේ **Docker Desktop** මෘදුකාංගය Open කර තිබිය යුතුය! Windows Start Menu එකෙන් `Docker Desktop` open කර, System Tray / Taskbar එකේ Docker අයිකනය (තල්මසා) කොළ පැහැ ගැන්වී "Docker Desktop is running" කියා පෙන්වන තුරු තත්පර කිහිපයක් රැඳී සිටින්න. (Docker Desktop ක්‍රියාත්මක නොමැති විට `failed to connect to the docker API at npipe:...` දෝෂය ඇතිවේ).
+
 ##### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
 Docker daemon එක විසින් `lab_virtual/docker-compose.yml` කියවා, Linux bridge networks දෙක (`camlan` 192.168.50.0/24 සහ `outside` 10.10.10.0/24) නිර්මාණය කර, Router, IP Camera, NVR, Admin PC, Attacker, Zeek Sensor ආදී containers 11 ම memory එක තුළ isolated processes ලෙස පණගන්වයි.
 
 ```powershell
+# විකල්පය 1: ව්‍යාපෘතියේ නිල Lab CLI එක මඟින් (Recommended)
+.venv\Scripts\python.exe lab_virtual\lab.py up
+
+# විකල්පය 2: සෘජුවම docker compose මඟින්
 docker compose -f lab_virtual\docker-compose.yml up -d
 ```
 
 ##### 🔍 කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):
-- `docker compose`: බහුවිධ Docker containers සහ virtual networks එකවර කළමනාකරණය කරන Docker මෙවලම කැඳවීම.
-- `-f lab_virtual\docker-compose.yml`: Virtual Lab එකේ topology එක (IPs, subnets, bridges, volumes) අර්ථ දක්වා ඇති compose configuration ගොනුව පෙන්වා දීම.
-- `up`: ගොනුවේ ඇති containers 11 ම සාදා (create) එකවර ධාවනය (start) කරන්න.
-- `-d` (detached mode): Terminal එක block නොවී containers සියල්ල background එකේ දිගටම ධාවනය වීමට ඉඩහැරීම.
+- `.venv\Scripts\python.exe lab_virtual\lab.py up`: ව්‍යාපෘතිය සඳහා සැකසූ නිල automator එක මඟින් Docker containers 11 ම නිර්මාණය කර ක්‍රියාත්මක කිරීම.
+- `docker compose -f lab_virtual\docker-compose.yml up -d`: Virtual Lab එකේ topology එක (IPs, subnets, bridges, volumes) අර්ථ දක්වා ඇති compose configuration ගොනුව මඟින් detached mode (`-d`) එකෙන් containers run කිරීම.
 
 ##### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 ```text
@@ -103,21 +108,31 @@ docker compose -f lab_virtual\docker-compose.yml up -d
 ##### 💡 ඇයි මේ දේ කරන්නෙ? (Why We Are Doing This):
 Zeek logs කියවන Streaming Pipeline එක, Random Forest Classifier එක, Router Firewall Controller එක, සහ React Dashboard එකට දත්ත සපයන Flask REST API සහ Socket.IO WebSockets එකවර background එකේ ධාවනය කරවීම සඳහාය.
 
+> [!NOTE]
+> Windows PowerShell 5.1 (සාමාන්‍ය නිල් පැහැති PowerShell) හි `Start-Process` cmdlet සඳහා `-Environment` parameter එක සහය නොදක්වයි. එබැවින් පහත දැක්වෙන **නිර්දේශිත ක්‍රමය (Recommended)** භාවිතා කරන්න. එය background logging, environment variables, health checks, සහ streaming pipeline එකද එකවර සක්‍රිය කර දෙයි.
+
 ##### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
 Python interpreter එක මඟින් `core_engine/app.py` ධාවනය කරයි. එය ආරම්භයේදීම `ml_engine/models/ids_bundle_v3.joblib` ගොනුවෙන් AI Model එක මතකයට (RAM) පටවා ගනී, MongoDB දත්ත ගබඩාවට සම්බන්ධ වේ, Zeek log tailer thread එක පණගන්වයි, සහ Port 5000 න් HTTP/WebSocket requests භාරගැනීමට සූදානම් වේ.
 
 ```powershell
-Start-Process .venv\Scripts\python.exe -ArgumentList "-m core_engine.app" -Environment @{IDS_SETTINGS_FILE="lab_virtual/settings.lab.yaml"; DB_NAME="iot_ids_lab"; PORT="5000"; HOST="127.0.0.1"}
+# ක්‍රමය 1: නිල Lab CLI එක මඟින් Background එකේ Run කරවීම (Recommended - All PowerShell versions supported)
+.venv\Scripts\python.exe lab_virtual\lab.py ids-start
+
+# ක්‍රමය 2: Windows PowerShell 5.1 මඟින් සෘජුවම Background එකේ Run කරන්නේ නම්
+$env:IDS_SETTINGS_FILE="lab_virtual/settings.lab.yaml"; $env:DB_NAME="iot_ids_lab"; $env:PORT="5000"; $env:HOST="127.0.0.1"
+Start-Process .venv\Scripts\python.exe -ArgumentList "-m core_engine.app"
 ```
 
 ##### 🔍 කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):
-- `Start-Process`: PowerShell මඟින් අලුත් background process එකක් ආරම්භ කිරීම (terminal එක block නොවීමට).
-- `.venv\Scripts\python.exe`: අපගේ ව්‍යාපෘතියේ virtual environment එක තුළ ඇති Python interpreter එක භාවිතා කරන්න.
-- `-ArgumentList "-m core_engine.app"`: `core_engine/app.py` මොඩියුලය main application එක ලෙස ධාවනය කරන්න.
-- `-Environment @{...}`: Backend එක ක්‍රියාත්මක වීමට අවශ්‍ය Settings dictionary එක පරිසර විචල්‍යයන් (Environment Variables) ලෙස ලබාදීම:
-  - `IDS_SETTINGS_FILE="lab_virtual/settings.lab.yaml"`: Lab එකට අදාළ IP පරාස, thresholds, සහ router SSH යතුරු අඩංගු ගොනුව.
-  - `DB_NAME="iot_ids_lab"`: සිදුවීම් සහ logs තැන්පත් කරන MongoDB database එකේ නම.
-  - `PORT="5000"` සහ `HOST="127.0.0.1"`: Dashboard එක සඳහා Web server එක සවන්දෙන port එක සහ localhost ලිපිනය.
+- `lab_virtual\lab.py ids-start`: පරිසර විචල්‍යයන් (`IDS_SETTINGS_FILE`, `DB_NAME`, `PORT`) නිවැරදිව සකසා, log ගොනුවට ලියමින් backend එක background ධාවනය කර, Port 5000 සූදානම් වූ සැණින් `/api/v1/pipeline/start` මඟින් streaming pipeline එකද ආරම්භ කර දෙයි.
+- `$env:...`: Windows PowerShell පරිසර විචල්‍යයන් සැකසීම.
+- `Start-Process ... -ArgumentList "-m core_engine.app"`: `core_engine/app.py` මොඩියුලය main application එක ලෙස background process එකක් ලෙස ධාවනය කිරීම.
+
+##### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
+```text
+IDS backend running (pid 14328), database iot_ids_lab; pipeline start: 200 running
+Dashboard: http://localhost:5000 (served by the backend)  login in lab_virtual\keys\dashboard_login.txt
+```
 
 ---
 
