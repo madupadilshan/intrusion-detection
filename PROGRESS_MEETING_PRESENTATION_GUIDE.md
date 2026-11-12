@@ -63,6 +63,36 @@ docker exec ids-lab-router nft list table inet ids
 
 ---
 
+### 💡 Supervisor ට ආරම්භයේදීම පැහැදිලි කළ යුතු කරුණ: අප මෙසේ Virtual Lab පරිසරයක් සකස් කරගත්තේ ඇයි? (Why We Built This Virtual Testbed)
+
+Supervisor විසින් ඔබෙන්: **"මේ ඔයාලා කරන්නේ Virtual විදියටද? මොකක්ද මේ Lab එක?"** කියා විමසූ විට, හෝ රැස්වීම ආරම්භයේදීම Supervisor හට පැහැදිලි කිරීමට පහත කරුණු සහ English Script එක භාවිතා කරන්න:
+
+#### 1. මෙය සිදු කළේ ඇයි? (Core Rationale per Proposal Section 5.1):
+* අපගේ Research Proposal එකේ Section 5.1 හි නිල වශයෙන් අනුමත කර ඇති පරිදි, **සැබෑ භෞතික උපාංග (Hardware Lab) වෙත යාමට පෙර**, පද්ධතියේ End-to-End ගෘහ නිර්මාණ ශිල්පය (Zeek Sniffer, Random Forest AI Model, Linux nftables Router Firewall, සහ React Dashboard) නිවැරදිව ක්‍රියාත්මක වේදැයි ආරක්ෂිතව සත්‍යාපනය කරගැනීම සඳහා මෙම **Realistic Docker Virtual Testbed** එක අප විසින් නිර්මාණය කරගන්නා ලදී.
+* සැබෑ භෞතික කැමරාවකට හානි නොවී සහ ජාලයට බාධා නොවී, තත්පරයට packets 1,000 ක DDoS SYN Flood, C&C Outbound Beacons, සහ Port Scans වැනි අධිවේගී ප්‍රහාර පාලිත පරිසරයක පරීක්ෂා කිරීමට මෙම අතථ්‍ය පරිසරය උපකාරී වේ.
+
+#### 2. මෙහි ඇති සැබෑ දේ (What is 100% Real) සහ Virtual දේ (What is Simulated):
+* **මෙහි සැබෑ දේ (100% Real Components):**
+  - **සැබෑ Network Packets:** Linux Bridge networks (`br-ids-lan`, `br-ids-out`) හරහා ගමන් කරන සැබෑ Ethernet frames.
+  - **සැබෑ Zeek Security Sensor:** Switch interface එකෙන් promiscuous mode එකෙන් සවන් දී binary packets වලින් live `conn.log` සහ `http.log` ලියන සැබෑ Zeek sensor එක.
+  - **සැබෑ Machine Learning Model (v3.1.0):** Stratosphere IoT-23 මත පුහුණු කරන ලද සැබෑ 100-tree Random Forest ආකෘතිය (27 features කියවා සැබෑ inference සිදු කරයි).
+  - **සැබෑ Linux nftables Router Firewall:** Router එකේ සැබෑ Linux kernel එක තුළ dynamic drop sets (`block_dst`, `block_src`) සහ timeout timers ක්‍රියාත්මක වේ.
+  - **සැබෑ React SOC Dashboard & WebSockets:** Port 5000 න් සජීවීව update වන සැබෑ පරිපාලන අතුරුමුහුණත.
+  - **සැබෑ Nmap Scanner:** නියම Nmap binary එක මඟින් සැබවින්ම දුවන scans.
+* **මෙහි Virtual / Simulated දේ (Simulated Network Entities):**
+  - ජාලය තුළ සිටින **උපාංග (Devices):**
+    - **IP Camera (`ids-lab-camera` / `192.168.50.30`):** සැබෑ කැමරාවක් වෙනුවට Port 80 (HTTP Web GUI) සහ Port 554 (RTSP Video Streaming ~200 KB/s) සපයන Dockerized Camera Service එකක්.
+    - **NVR Recorder (`ids-lab-nvr` / `192.168.50.20`):** කැමරාවේ වීඩියෝ ලබාගෙන මිනිත්තු 5 කට වරක් 58.6 MB chunks පටිගත කරන සේවාදායකය.
+    - **Admin Workstation (`ids-lab-admin` / `192.168.50.10`):** කැමරාව කළමනාකරණය කරන පරිගණකය.
+    - **Attacker Laptop (`ids-lab-attacker` / `10.10.10.50`):** පිටත WAN ජාලයේ සිට Nmap scans, DDoS flood, සහ C&C සේවාදායකය දුවන හැකර් මැෂිම.
+
+#### 3. Supervisor හට ආරම්භයේදීම කියන Spoken English Speech (Opening Statement):
+> *"Good morning Sir. Before demonstrating our live intrusion detection and autonomous response, I would like to clarify our testbed setup."*  
+> *"As formally approved in our research proposal Section 5.1, we have implemented the complete end-to-end architecture inside a realistic Docker virtual testbed."*  
+> *"Sir, in this testbed: the network packets, Zeek sensor, Random Forest ML classifier (v3.1.0), Linux nftables router firewall, and the React dashboard are all 100% REAL. The network endpoints—our IP camera, NVR recorder, and outside attacker—are containerized simulations so we can safely evaluate high-rate attacks without risking physical hardware damage. Final physical camera validation will be conducted in the hardware lab as per our proposal timeline."*
+
+---
+
 # 2. කොටස 1: ක්‍රියාකාරී අවශ්‍යතා සනාථ කිරීම (FR-01 to FR-08)
 
 Supervisor ඉදිරියේ **[`docs/requirements_checklist.md`](docs/requirements_checklist.md)** හි Section 1 විවෘත කර, පහත අනුපිළිවෙලට එකින් එක ඔප්පු කරන්න:
