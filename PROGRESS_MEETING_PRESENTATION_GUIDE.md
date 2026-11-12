@@ -384,6 +384,12 @@ Supervisor ඉදිරියේ Browser එකේ **`http://localhost:5000/over
 #### [පරීක්ෂාව 2.1] සාමාන්‍ය කැමරා වීඩියෝ දත්ත පරීක්ෂාව (Benign Camera Video Flow):
 💡 **අරමුණ:** සාමාන්‍ය කැමරා වීඩියෝ පැකට් (UDP streaming, සාමාන්‍ය packet sizes) Model එකට දුන් විට එය අනවශ්‍ය ලෙස ප්‍රහාරයක් ලෙස වරදවා වටහා නොගෙන (Zero False Alarm), 99.54% කින් 'Benign' ලෙස නිවැරදිව හඳුනාගන්නා බව පෙන්වීම.
 
+🔍 **මෙය සාමාන්‍ය කැමරා වීඩියෝ බව ඔප්පු කරන ප්‍රධාන සාධක (Key Forensic Evidence):**
+- `proto: 'udp'` & `resp_port_cat: 'well_known'`: කැමරාවෙන් NVR Recorder එකට වීඩියෝ stream එක යන්නේ UDP protocols (RTP / RTSP over UDP) හරහාය.
+- `orig_ip_bytes: 540.0`: වීඩියෝ streaming packet එකක නියමිත ප්‍රමාණය (MTU-safe video payload).
+- `pair_fail_1h: 0.0`: පසුගිය පැය තුළ connection failures බිංදුවයි (0)! කිසිදු දෝෂයක් නොමැති නිරවුල් සාමාන්‍ය වීඩියෝ සම්බන්ධතාවයකි.
+- `src_udst_ratio: 1.0`: නියමිත NVR destination එකට පමණක් දත්ත යැවීම (කිසිදු reconnaissance හෝ port scanning එකක් නැත).
+
 💻 **ධාවනය කරන Command එක (Terminal):**
 ```powershell
 .venv\Scripts\python.exe -c "
@@ -398,6 +404,12 @@ probs = pipe.predict_proba(df)[0]
 p_idx = probs.argmax()
 
 print('=== FR-02 [TEST 1/5]: BENIGN CAMERA VIDEO FLOW ===')
+print('Key Forensic Evidence (මෙය සාමාන්‍ය කැමරා වීඩියෝ බව ඔප්පු වන සාධක):')
+print('  * proto           : {} (UDP - සාමාන්‍ය කැමරා RTP/RTSP වීඩියෝ stream)'.format(flow['proto']))
+print('  * orig_ip_bytes   : {:.0f} bytes (සාමාන්‍ය කැමරා වීඩියෝ packet chunk)'.format(flow['orig_ip_bytes']))
+print('  * pair_fail_1h    : {:.0f} failed connections (කිසිදු connection බිඳවැටීමක් නැත - 100% සාමාන්‍යයි)'.format(flow['pair_fail_1h']))
+print('  * src_udst_ratio  : {:.1f} (තනි destination එකකට පමණක් දත්ත යැවීම - port scanning නැත)'.format(flow['src_udst_ratio']))
+print('')
 print('Model Version      :', meta['bundle_version'], '(' + meta['bundle_name'] + ')')
 print('Predicted Class    :', classes[p_idx])
 print('Decision Confidence: {:.2f}%'.format(probs[p_idx] * 100.0))
@@ -410,6 +422,12 @@ for c, p in zip(classes, probs):
 📋 **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
 ```text
 === FR-02 [TEST 1/5]: BENIGN CAMERA VIDEO FLOW ===
+Key Forensic Evidence (මෙය සාමාන්‍ය කැමරා වීඩියෝ බව ඔප්පු වන සාධක):
+  * proto           : udp (UDP - සාමාන්‍ය කැමරා RTP/RTSP වීඩියෝ stream)
+  * orig_ip_bytes   : 540 bytes (සාමාන්‍ය කැමරා වීඩියෝ packet chunk)
+  * pair_fail_1h    : 0 failed connections (කිසිදු connection බිඳවැටීමක් නැත - 100% සාමාන්‍යයි)
+  * src_udst_ratio  : 1.0 (තනි destination එකකට පමණක් දත්ත යැවීම - port scanning නැත)
+
 Model Version      : v3.1.0 (iot_camera_ids_bundle)
 Predicted Class    : Benign
 Decision Confidence: 99.54%
@@ -431,6 +449,12 @@ Calibrated Distribution across all 5 classes:
 #### [පරීක්ෂාව 2.2] DDoS / DoS SYN Flood ප්‍රහාරක Flow එක පරීක්ෂාව:
 💡 **අරමුණ:** කැමරාව අඩපණ කිරීමට එවන අතිවිශාල SYN packets ගංවතුරක් සහ failed connections අධික ප්‍රමාණයක් සහිත flow එකක් Model එකට දුන් විට, එය 100.00% ක පූර්ණ නිරවද්‍යතාවයකින් 'DDoS_DoS' ලෙස හඳුනාගන්නා බව පෙන්වීම.
 
+🔍 **මෙය DDoS SYN Flood බව ඔප්පු කරන ප්‍රධාන සාධක (Key Forensic Evidence):**
+- `pair_fail_1h: 868,793.0`: **පසුගිය පැය තුළ failed connections 868,793 ක් (ලක්ෂ 8.6 ක්!)** එකම IP pair එකෙන් එවා ඇත. කිසිදු සාමාන්‍ය කැමරාවක මෙවන් බිඳවැටීම් සිදු නොවේ.
+- `orig_bytes: 2.67e10`: **Bytes බිලියන 26.7 ක් (26.7 Gigabytes!)** අතිවිශාල data volume එකක් flood කර ඇත.
+- `src_conn_60s: 12,236.0`: තත්පර 60 ක් තුළ connections 12,236 ක් (තත්පරයට connections 200 කට වඩා) අධිවේගයෙන් එවා ඇත.
+- `conn_state: 'OTH'` & `history: 'DTT'`: සාමාන්‍ය 3-way handshake සම්පූර්ණ නොවූ අඩපණ SYN flood එකක් බව kernel මට්ටමින් පෙන්වයි.
+
 💻 **ධාවනය කරන Command එක (Terminal):**
 ```powershell
 .venv\Scripts\python.exe -c "
@@ -445,6 +469,12 @@ probs = pipe.predict_proba(df)[0]
 p_idx = probs.argmax()
 
 print('=== FR-02 [TEST 2/5]: DDOS_DOS SYN FLOOD FLOW ===')
+print('Key Forensic Evidence (මෙය DDoS බව ඔප්පු වන සාධක):')
+print('  * pair_fail_1h    : {:,.0f} failed connections in last hour (අධික connection බිඳවැටීම්)'.format(flow['pair_fail_1h']))
+print('  * orig_bytes      : {:.1f} GB sent in flood (අතිවිශාල data ප්‍රමාණයක්)'.format(flow['orig_bytes'] / 1e9))
+print('  * src_conn_60s    : {:,.0f} connections in 60 seconds (තත්පරයට connections 200+)'.format(flow['src_conn_60s']))
+print('  * conn_state      : {} (Non-established SYN/OTH flood)'.format(flow['conn_state']))
+print('')
 print('Model Version      :', meta['bundle_version'], '(' + meta['bundle_name'] + ')')
 print('Predicted Class    :', classes[p_idx])
 print('Decision Confidence: {:.2f}%'.format(probs[p_idx] * 100.0))
@@ -457,6 +487,12 @@ for c, p in zip(classes, probs):
 📋 **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
 ```text
 === FR-02 [TEST 2/5]: DDOS_DOS SYN FLOOD FLOW ===
+Key Forensic Evidence (මෙය DDoS බව ඔප්පු වන සාධක):
+  * pair_fail_1h    : 868,793 failed connections in last hour (අධික connection බිඳවැටීම්)
+  * orig_bytes      : 26.7 GB sent in flood (අතිවිශාල data ප්‍රමාණයක්)
+  * src_conn_60s    : 12,236 connections in 60 seconds (තත්පරයට connections 200+)
+  * conn_state      : OTH (Non-established SYN/OTH flood)
+
 Model Version      : v3.1.0 (iot_camera_ids_bundle)
 Predicted Class    : DDoS_DoS
 Decision Confidence: 100.00%
@@ -469,13 +505,19 @@ Calibrated Distribution across all 5 classes:
 ```
 
 📊 **Output එකෙන් කියවෙන්නේ කුමක්ද?**
-- `Predicted Class : DDoS_DoS`: තත්පර 99 තුළ bytes බිලියන 26 ක් සහ පැයකට fail connections 868,793 ක් ආ ආන්තික ලක්ෂණ කියවා ආකෘතිය මෙය DDoS ලෙස හඳුනාගෙන ඇත.
-- `Decision Confidence : 100.00%`: උපරිම 100% ක නිරවද්‍යතාවයකින් යුතුව DDoS බව තහවුරු කරයි.
+- `Predicted Class : DDoS_DoS`: පැයකට failed connections 868,793 ක් සහ bytes බිලියන 26 ක් එවන අතිවිශාල SYN flood එකක් බව model එක විසින් 100.00% ක පූර්ණ නිරවද්‍යතාවයකින් හඳුනාගෙන ඇත.
+- `Decision Confidence : 100.00%`: ආකෘතියට කිසිදු සැකයක් නොමැතිව පූර්ණ විශ්වාසයකින් DDoS ලෙස වර්ගීකරණය කර ඇත.
 
 ---
 
 #### [පරීක්ෂාව 2.3] Nmap PortScan Reconnaissance Flow එක පරීක්ෂාව:
 💡 **අරමුණ:** විවෘත ports සෙවීමට තත්පරයකින් ඉතා කුඩා කොටසක් තුළ (micro-duration) ports ගණනාවකට probes එවන PortScan reconnaissance flow එකක් දුන් විට, එය 92.78% ක විශ්වාසයකින් 'PortScan' ලෙස හඳුනාගන්නා බව පෙන්වීම.
+
+🔍 **මෙය PortScan බව ඔප්පු කරන ප්‍රධාන සාධක (Key Forensic Evidence):**
+- `duration: 0.000005 s` (5 microseconds!): ක්ෂුද්‍ර තත්පර 5 ක අතිශය කෙටි කාලයක්. (Nmap port scanner එකක් ඉක්මනින් ports probe කර ප්‍රතිචාර බලාපොරොත්තු නොවේ).
+- `src_udst_60s: 6685.0`: **තත්පර 60 ක් තුළ වෙනස් ports 6,685 ක් probe කර ඇත!** සාමාන්‍ය පරිගණකයක් තත්පර 60 කදී ports 6000 කට කතා කරන්නේ නැත—මේ Nmap horizontal port scan එකක ලක්ෂණයයි.
+- `src_udst_ratio: 0.999`: සෑම connection එකක්ම පාහේ අලුත්ම destination port එකකට යැවීම (99.9% distinct ports ratio).
+- `orig_pkts: 2.0`, `orig_ip_bytes: 80.0`: එක් port එකකට එවා ඇත්තේ bytes 40 බැගින් වූ SYN probes 2 ක් පමණි.
 
 💻 **ධාවනය කරන Command එක (Terminal):**
 ```powershell
@@ -491,6 +533,12 @@ probs = pipe.predict_proba(df)[0]
 p_idx = probs.argmax()
 
 print('=== FR-02 [TEST 3/5]: PORTSCAN NMAP PROBE FLOW ===')
+print('Key Forensic Evidence (මෙය PortScan බව ඔප්පු වන සාධක):')
+print('  * duration        : {:.6f} s (ක්ෂුද්‍ර තත්පර 5 ක අකුණු reconnaissance probe)'.format(flow['duration']))
+print('  * src_udst_60s    : {:,.0f} distinct ports probed in 60s (තත්පර 60 කදී වෙනස් ports 6,685 ක්!)'.format(flow['src_udst_60s']))
+print('  * src_udst_ratio  : {:.3f} (සෑම connection එකක්ම අලුත් port එකකට යැවීම - 99.9% distinct ports)'.format(flow['src_udst_ratio']))
+print('  * orig_pkts/bytes : {:.0f} pkts ({:.0f} bytes) per port (Port එක විවෘතද බැලීමට එවන SYN probes)'.format(flow['orig_pkts'], flow['orig_ip_bytes']))
+print('')
 print('Model Version      :', meta['bundle_version'], '(' + meta['bundle_name'] + ')')
 print('Predicted Class    :', classes[p_idx])
 print('Decision Confidence: {:.2f}%'.format(probs[p_idx] * 100.0))
@@ -503,6 +551,12 @@ for c, p in zip(classes, probs):
 📋 **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
 ```text
 === FR-02 [TEST 3/5]: PORTSCAN NMAP PROBE FLOW ===
+Key Forensic Evidence (මෙය PortScan බව ඔප්පු වන සාධක):
+  * duration        : 0.000005 s (ක්ෂුද්‍ර තත්පර 5 ක අකුණු reconnaissance probe)
+  * src_udst_60s    : 6,685 distinct ports probed in 60s (තත්පර 60 කදී වෙනස් ports 6,685 ක්!)
+  * src_udst_ratio  : 0.999 (සෑම connection එකක්ම අලුත් port එකකට යැවීම - 99.9% distinct ports)
+  * orig_pkts/bytes : 2 pkts (80 bytes) per port (Port එක විවෘතද බැලීමට එවන SYN probes)
+
 Model Version      : v3.1.0 (iot_camera_ids_bundle)
 Predicted Class    : PortScan
 Decision Confidence: 92.78%
@@ -523,6 +577,12 @@ Calibrated Distribution across all 5 classes:
 #### [පරීක්ෂාව 2.4] Botnet C&C (Command & Control) Outbound Beacon Flow එක පරීක්ෂාව:
 💡 **අරමුණ:** ආසාදිත කැමරාවකින් පිටත Master Hacker Server එකට තත්පර 3-4 ක ස්ථාවර කාල පරතරයකින් (Periodic Beaconing) යවන C&C communication flow එකක් දුන් විට, එය 98.89% ක විශ්වාසයකින් 'CnC' ලෙස හඳුනාගන්නා බව පෙන්වීම.
 
+🔍 **මෙය C&C Botnet බව ඔප්පු කරන ප්‍රධාන සාධක (Key Forensic Evidence):**
+- `pair_gap: 3.82 s` & `pair_gap_change: 3.36 s`: **තත්පර 3.82 ක ස්ථාවර කාල පරතරයකින් (Regular Periodic Interval)** වරින් වර පිටතට beacons යවයි. (Botnet malware එකක් Master Server එකට "මම online ඉන්නවා" කියා check-in වන ආකාරයයි).
+- `resp_port_cat: 'dynamic'`: සම්බන්ධ වන්නේ standard web/rtsp port එකකට නොව, හැකර් විසින් විවෘත කළ high dynamic port එකකටය (උදා: Port 6667 IRC / custom C&C).
+- `pair_fail_1h: 588.0`: පැය තුළ වාර 588 ක් C&C server එකට සම්බන්ධ වීමට උත්සාහ කර ඇත.
+- `orig_pkts: 3.0`, `orig_ip_bytes: 180.0`: කුඩා heartbeat beacon packets 3 ක් (bytes 60 බැගින්).
+
 💻 **ධාවනය කරන Command එක (Terminal):**
 ```powershell
 .venv\Scripts\python.exe -c "
@@ -537,6 +597,12 @@ probs = pipe.predict_proba(df)[0]
 p_idx = probs.argmax()
 
 print('=== FR-02 [TEST 4/5]: CNC BOTNET BEACON FLOW ===')
+print('Key Forensic Evidence (මෙය C&C Botnet බව ඔප්පු වන සාධක):')
+print('  * pair_gap        : {:.2f} s (තත්පර 3-4 ක ස්ථාවර පරතරයකින් පිටතට යන Periodic Beacons)'.format(flow['pair_gap']))
+print('  * resp_port_cat   : {} (සාමාන්‍ය web port නොව හැකර්ගේ C&C dynamic high port)'.format(flow['resp_port_cat']))
+print('  * pair_fail_1h    : {:.0f} outbound attempts (දිනකට සිය ගණනක් පිටත Master Server එකට check-in වීම්)'.format(flow['pair_fail_1h']))
+print('  * orig_pkts/bytes : {:.0f} pkts ({:.0f} bytes) (කුඩා Botnet keep-alive heartbeat packets)'.format(flow['orig_pkts'], flow['orig_ip_bytes']))
+print('')
 print('Model Version      :', meta['bundle_version'], '(' + meta['bundle_name'] + ')')
 print('Predicted Class    :', classes[p_idx])
 print('Decision Confidence: {:.2f}%'.format(probs[p_idx] * 100.0))
@@ -549,6 +615,12 @@ for c, p in zip(classes, probs):
 📋 **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
 ```text
 === FR-02 [TEST 4/5]: CNC BOTNET BEACON FLOW ===
+Key Forensic Evidence (මෙය C&C Botnet බව ඔප්පු වන සාධක):
+  * pair_gap        : 3.82 s (තත්පර 3-4 ක ස්ථාවර පරතරයකින් පිටතට යන Periodic Beacons)
+  * resp_port_cat   : dynamic (සාමාන්‍ය web port නොව හැකර්ගේ C&C dynamic high port)
+  * pair_fail_1h    : 588 outbound attempts (දිනකට සිය ගණනක් පිටත Master Server එකට check-in වීම්)
+  * orig_pkts/bytes : 3 pkts (180 bytes) (කුඩා Botnet keep-alive heartbeat packets)
+
 Model Version      : v3.1.0 (iot_camera_ids_bundle)
 Predicted Class    : CnC
 Decision Confidence: 98.89%
@@ -569,6 +641,11 @@ Calibrated Distribution across all 5 classes:
 #### [පරීක්ෂාව 2.5] Malware Download / Staging Flow එක පරීක්ෂාව:
 💡 **අරමුණ:** පිටත server එකක සිට කැමරාව තුළට malicious binary payload එකක් transfer කිරීමට උත්සාහ කරන staging flow එකක් දුන් විට, එය 83.91% ක විශ්වාසයකින් 'Malware_Download' ලෙස හඳුනාගන්නා බව පෙන්වීම.
 
+🔍 **මෙය Malware Staging බව ඔප්පු කරන ප්‍රධාන සාධක (Key Forensic Evidence):**
+- `src_conn_60s: 699,634.0`: තත්පර 60 ක් තුළ connections 699,634 ක් (ලක්ෂ 7 ක්!) සම්බන්ධ වූ staging source එකක්.
+- `orig_port_cat: 'dynamic'` & `resp_port_cat: 'registered'`: පිටත அසාමාන්‍ය dynamic port එකක සිට කැමරාව තුළට binary file download එකක් stage කිරීමට ගත් උත්සාහය.
+- `is_incomplete_flow: 1` & `conn_state: 'S0'`: පිටත server එකෙන් SYN එවා payload එක push කිරීමට ගත් උත්සාහයක් (`history: 'S'`).
+
 💻 **ධාවනය කරන Command එක (Terminal):**
 ```powershell
 .venv\Scripts\python.exe -c "
@@ -583,6 +660,11 @@ probs = pipe.predict_proba(df)[0]
 p_idx = probs.argmax()
 
 print('=== FR-02 [TEST 5/5]: MALWARE STAGING DOWNLOAD FLOW ===')
+print('Key Forensic Evidence (මෙය Malware Staging බව ඔප්පු වන සාධක):')
+print('  * src_conn_60s    : {:,.0f} staging attempts in 60s (තත්පර 60 තුළ connections ලක්ෂ 7 කින් push කිරීමට උත්සාහය)'.format(flow['src_conn_60s']))
+print('  * orig/resp_port  : {} -> {} (පිටත dynamic port එකකින් කැමරාවට payload stage කිරීම)'.format(flow['orig_port_cat'], flow['resp_port_cat']))
+print('  * conn_state      : {} | incomplete: {} (Incomplete inbound binary staging flow)'.format(flow['conn_state'], flow['is_incomplete_flow']))
+print('')
 print('Model Version      :', meta['bundle_version'], '(' + meta['bundle_name'] + ')')
 print('Predicted Class    :', classes[p_idx])
 print('Decision Confidence: {:.2f}%'.format(probs[p_idx] * 100.0))
@@ -595,9 +677,25 @@ for c, p in zip(classes, probs):
 📋 **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
 ```text
 === FR-02 [TEST 5/5]: MALWARE STAGING DOWNLOAD FLOW ===
+Key Forensic Evidence (මෙය Malware Staging බව ඔප්පු වන සාධක):
+  * src_conn_60s    : 699,634 staging attempts in 60s (තත්පර 60 තුළ connections ලක්ෂ 7 කින් push කිරීමට උත්සාහය)
+  * orig/resp_port  : dynamic -> registered (පිටත dynamic port එකකින් කැමරාවට payload stage කිරීම)
+  * conn_state      : S0 | incomplete: 1 (Incomplete inbound binary staging flow)
+
 Model Version      : v3.1.0 (iot_camera_ids_bundle)
 Predicted Class    : Malware_Download
 Decision Confidence: 83.91%
+Calibrated Distribution across all 5 classes:
+  - Benign            :   0.05%
+  - DDoS_DoS          :   0.02%
+  - PortScan          :  15.99%
+  - CnC               :   0.02%
+  - Malware_Download  :  83.91%
+```
+
+📊 **Output එකෙන් කියවෙන්නේ කුමක්ද?**
+- `Predicted Class : Malware_Download`: Dynamic port එකක සිට binary transfer එකකට අදාළ staging flow එකක් ලෙස නිවැරදිව හඳුනාගෙන ඇත.
+- `Decision Confidence : 83.91%`: 83.91% ක විශ්වාසයකින් Malware_Download බව තහවුරු කරයි.
 Calibrated Distribution across all 5 classes:
   - Benign            :   0.05%
   - DDoS_DoS          :   0.02%
