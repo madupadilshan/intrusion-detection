@@ -74,6 +74,15 @@ Supervisor ඉදිරියේ **[`docs/requirements_checklist.md`](docs/requi
 > **Proposal Requirement:** "Capture mirrored or inline traffic, and make connection flows from it."  
 > **ඔප්පු කරන ආකාරය:** Zeek Sensor එක Promiscuous Sniffing මඟින් switch එකෙන් packets කියවන බවත්, Admin PC එකෙන් සජීවී packet එකක් යැවූ සැණින් Zeek විසින් `conn.log` හි TCP state machine flags සමඟ ලියන බවත්, සජීවී flows 20,929 ක් offline IoT-23 schema එක සමඟ 100% ක් ගැලපෙන බවත් පෙන්වීම.
 
+> 💡 **සරල පැහැදිලි කිරීම: "Promiscuous Mode" යනු කුමක්ද? (What is Promiscuous Mode?):**
+> 
+> - **සාමාන්‍ය තත්ත්වය (Normal Mode):** සාමාන්‍යයෙන් ඕනෑම පරිගණකයක Network Card (NIC) එකක් තමන්ගේම MAC ලිපිනයට (තමන්ගේ නමට) එවන දත්ත පැකට් පමණක් බාරගෙන කියවයි. වෙනත් උපාංග දෙකක් අතර හුවමාරු වන පැකට් තමන්ට අදාළ නැති බැවින් නිකන්ම Ignore (drop) කරයි.
+> - **Promiscuous Mode ("සියල්ලටම සවන්දෙන" විවෘත තත්ත්වය):** Network Card එකේ ඇති MAC address filtering එක සම්පූර්ණයෙන්ම අක්‍රිය කර, එම Network Switch එක හෝ Cable එක හරහා ගමන් කරන **ඕනෑම උපාංගයකට අයිති සෑම packet එකක්ම (Every raw Ethernet frame)** තමන් වෙත ඇදගෙන කියවීමට ඉඩදීමයි (Sniffing all traffic).
+> - **අපගේ Project එකට මෙය වැදගත් වන්නේ ඇයි?**
+>   - අපගේ IP Camera (`192.168.50.30`) සහ NVR Recorder (`192.168.50.20`) අතර වීඩියෝ ගමන් කරයි. Attacker (`10.10.10.50`) සහ Camera අතර ප්‍රහාරක packets ගමන් කරයි.
+>   - මෙම packets යන්නේ Zeek Sensor එක වෙත නොවේ (Zeek එකට තමන්ගේම IP ලිපිනයක්වත් නැත - එය Passive Listener එකකි).
+>   - නමුත් Zeek Sensor එක Camera Switch එකට (`br-ids-lan`) **Promiscuous Mode** එකෙන් සම්බන්ධ කර ඇති බැවින්, ජාලයේ ගමන් කරන කිසිදු දත්තයකට බාධාවක් හෝ පමාවක් නොකර (Zero latency impact / Zero packet drop), කැමරාවේ සියලුම සැබෑ Video සහ ප්‍රහාරක Packets පිටපත් කරගෙන විශ්ලේෂණය කිරීමට Zeek හට හැකියාව ලැබේ! *(සැබෑ Hardware Lab එකේදී මෙය Switch එකේ Port Mirroring / SPAN Port මඟින් සිදු කෙරේ).*
+
 #### ධාවනය කරන Commands (Terminal):
 
 ```powershell

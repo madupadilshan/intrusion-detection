@@ -1076,6 +1076,15 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 > - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පද්ධතිය කිසිදු ව්‍යාජ (dummy) හෝ කලින් හදන ලද static logs කියවන්නේ නැති බවත්, Zeek Sensor එක කිසිදු IP එකක් නැතිව switch එකට Promiscuous mode එකෙන් සවන් දී සැබෑ binary packets කියවන බවත්, එම සජීවී දත්ත අපේ AI Model එක පුහුණු කළ IoT-23 dataset හි schema එක සමඟ 100% ක් සමාන බවත් (Zero Training-Serving Skew) ඔප්පු කිරීමටයි.
 > - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O3, Table 7 FR-01, and Research Question RQ3. Through live packet injection, Zeek's TCP state machine flags, and our automated schema audit on 20,929 live flows, we conclusively prove real-time packet capture and flow extraction."*
 
+> 💡 **සරල පැහැදිලි කිරීම: "Promiscuous Mode" යනු කුමක්ද? (What is Promiscuous Mode?):**
+> 
+> - **සාමාන්‍ය තත්ත්වය (Normal Mode):** සාමාන්‍යයෙන් ඕනෑම පරිගණකයක Network Card (NIC) එකක් තමන්ගේම MAC ලිපිනයට (තමන්ගේ නමට) එවන දත්ත පැකට් පමණක් බාරගෙන කියවයි. වෙනත් උපාංග දෙකක් අතර හුවමාරු වන පැකට් තමන්ට අදාළ නැති බැවින් නිකන්ම Ignore (drop) කරයි.
+> - **Promiscuous Mode ("සියල්ලටම සවන්දෙන" විවෘත තත්ත්වය):** Network Card එකේ ඇති MAC address filtering එක සම්පූර්ණයෙන්ම අක්‍රිය කර, එම Network Switch එක හෝ Cable එක හරහා ගමන් කරන **ඕනෑම උපාංගයකට අයිති සෑම packet එකක්ම (Every raw Ethernet frame)** තමන් වෙත ඇදගෙන කියවීමට ඉඩදීමයි (Sniffing all traffic).
+> - **අපගේ Project එකට මෙය වැදගත් වන්නේ ඇයි?**
+>   - අපගේ IP Camera (`192.168.50.30`) සහ NVR Recorder (`192.168.50.20`) අතර වීඩියෝ ගමන් කරයි. Attacker (`10.10.10.50`) සහ Camera අතර ප්‍රහාරක packets ගමන් කරයි.
+>   - මෙම packets යන්නේ Zeek Sensor එක වෙත නොවේ (Zeek එකට තමන්ගේම IP ලිපිනයක්වත් නැත - එය Passive Listener එකකි).
+>   - නමුත් Zeek Sensor එක Camera Switch එකට (`br-ids-lan`) **Promiscuous Mode** එකෙන් සම්බන්ධ කර ඇති බැවින්, ජාලයේ ගමන් කරන කිසිදු දත්තයකට බාධාවක් හෝ පමාවක් නොකර (Zero latency impact / Zero packet drop), කැමරාවේ සියලුම සැබෑ Video සහ ප්‍රහාරක Packets පිටපත් කරගෙන විශ්ලේෂණය කිරීමට Zeek හට හැකියාව ලැබේ! *(සැබෑ Hardware Lab එකේදී මෙය Switch එකේ Port Mirroring / SPAN Port මඟින් සිදු කෙරේ).*
+
 #### අ) Sensor තත්ත්වය බැලීම:
 
 ```powershell
