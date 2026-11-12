@@ -764,7 +764,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 │  [2. lab.py setup]       ──► SSH Keys & Login File Created (One-Time)  │
 │            │                                                           │
 │            ▼                                                           │
-│  [3. lab.py up]          ──► 10 Containers & Virtual Bridges Spawned   │
+│  [3. lab.py up]          ──► 11 Containers & Virtual Bridges Spawned   │
 │            │                                                           │
 │            ▼                                                           │
 │  [4. lab.py ids-start]   ──► Python IDS Backend Running on Port 5000   │
@@ -779,14 +779,28 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
    - ඔබගේ Windows පරිගණකයේ **Docker Desktop** මෘදුකාංගය Open කර Engine එක ධාවනය වන බව (Green icon) තහවුරු කරගන්න.
 2. **දෙවන පියවර: මූලික Setup කිරීම (පළමු වතාවේ පමණක් / One-Time):**
 
-   - PowerShell Terminal එක විවෘත කර ධාවනය කරන්න:
+   - **ක්‍රමය A: පහසු ස්වයංක්‍රීය Controller විධානය (Recommended One-Click Setup):**
      ```powershell
      .venv\Scripts\python.exe lab_virtual\lab.py setup
      ```
 
+   - **ක්‍රමය B: කෙලින්ම ගසන සැබෑ විධානයන් (Direct Raw Commands):**
+     ඔබට `lab.py` නැතිව සෘජුවම මෙය සිදු කිරීමට අවශ්‍ය නම් Terminal එකේ පහත විධාන ධාවනය කළ හැක:
+     ```powershell
+     # 1. Router SSH Keys (Ed25519) සාදා lab_virtual/keys හි තැන්පත් කිරීම:
+     ssh-keygen -q -t ed25519 -N "" -C "ids-lab-sensor" -f lab_virtual/keys/router_admin
+     ssh-keygen -q -t ed25519 -N "" -C "ids-lab-router-host" -f lab_virtual/keys/router_host_ed25519
+
+     # 2. Router එකේ SSH host key එක known_hosts ගොනුවට දැමීම:
+     Get-Content lab_virtual\keys\router_host_ed25519.pub | ForEach-Object { "[127.0.0.1]:2222 " + $_.Split()[0] + " " + $_.Split()[1] } | Set-Content lab_virtual\keys\known_hosts
+
+     # 3. Dashboard Admin පරිශීලකයා සෑදීම (Username: labadmin):
+     .venv\Scripts\python.exe tools/create_admin.py --db-name iot_ids_lab -u labadmin -p Admin123! --force
+     ```
+
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
    >
-   > - **`lab_virtual\lab.py setup`:** අප විසින් ලියන ලද `lab.py` Controller ස්ක්‍රිප්ට් එකේ `setup` විධානය ක්‍රියාත්මක කරයි.
+   > - **`lab_virtual\lab.py setup`:** අප විසින් ලියන ලද `lab.py` Controller ස්ක්‍රිප්ට් එකේ `setup` විධානය මඟින් ඉහත පියවර 3 ම තනි ක්ලික් එකකින් සිදු කරයි.
    > - **පසුබිමින් සිදුවන දේ:**
    >   1. **Router SSH Keys සාදයි:** අපගේ IDS Engine එකට Router Firewall එක (`ids-lab-router`) ස්වයංක්‍රීයව පාලනය කර block rules දැමීමට අවශ්‍ය `router_admin` (Ed25519 Cryptographic SSH Key යුගලය) සහ `known_hosts` ගොනුව `lab_virtual/keys/` තුළ ස්වයංක්‍රීයව සාදයි (Windows OpenSSH permissions ද ආරක්ෂිතව සකස් කරයි).
    >   2. **Dashboard මුරපදය සාදයි:** ආරක්ෂිතව React Dashboard එකට Login වීම සඳහා අහඹු මුරපදයක් ජනනය කර `lab_virtual/keys/dashboard_login.txt` තුළ සුරකියි (Username: `labadmin`).
@@ -801,15 +815,26 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
    >   - එබැවින් මෙය **Idempotent** (එනම් කී වතාවක් run කළද ආරක්ෂිත තත්ත්වය නොවෙනස්ව පවතින) ලෙස නිර්මාණය කර ඇත.
    >   *(මෙම විධානය ධාවනය කිරීම අනිවාර්ය වන්නේ පද්ධතිය මුලින්ම සකසන පළමු වතාවේ පමණි. පසුව නැවත run කළද පවතින keys වලට කිසිදු හානියක් සිදු නොවේ).*
    >
-3. **තුන්වන පියවර: Virtual Lab උපාංග (Docker Containers) ධාවනය කිරීම:**
+3. **තුන්වන පියවර: Virtual Lab උපාංග (Docker Containers 11) ධාවනය කිරීම:**
 
-   ```powershell
-   .venv\Scripts\python.exe lab_virtual\lab.py up
-   ```
+   - **ක්‍රමය A: සෘජු Docker Compose විධානය (Direct Raw Command):**
+     ```powershell
+     docker compose -f lab_virtual\docker-compose.yml up -d
+     ```
+     Router එක පණගැන්වී nftables firewall table එක සූදානම් දැයි කෙලින්ම තහවුරු කිරීම:
+     ```powershell
+     docker exec ids-lab-router nft list table inet ids
+     ```
+
+   - **ක්‍රමය B: පහසු Controller කෙටි විධානය (Convenient Shortcut):**
+     ```powershell
+     .venv\Scripts\python.exe lab_virtual\lab.py up
+     ```
+     *(මෙමඟින් ඉහත `docker compose ... up -d` විධානය ක්‍රියාත්මක කර Router එක SSH පිළිතුරු දෙන තෙක් බලා සිට තත්ත්වය තහවුරු කරයි).*
 
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
    >
-   > - **`lab_virtual\lab.py up`:** අපගේ controller script එක මඟින් `docker-compose.yml` ක්‍රියාත්මක කර `camlan` (192.168.50.0/24) සහ `outside` (10.10.10.0/24) Virtual Bridges සාදමින්, පහත වගුවේ දැක්වෙන Virtual Lab Containers සියල්ල එකවර ධාවනය (boot up) කරයි. Router එක SSH හරහා සම්බන්ධ වන තෙක් රැඳී සිට තත්ත්වය තහවුරු කරයි.
+   > - **`docker compose ... up -d`:** `docker-compose.yml` ක්‍රියාත්මක කර `camlan` (192.168.50.0/24) සහ `outside` (10.10.10.0/24) Virtual Bridges සාදමින්, පහත වගුවේ දැක්වෙන Virtual Lab Containers 11 ම එකවර Background එකේ (`-d`) ධාවනය (boot up) කරයි. Router එක SSH හරහා සම්බන්ධ වන තෙක් රැඳී සිට තත්ත්වය තහවුරු කරයි.
 
    #### 📦 `docker-compose.yml` මඟින් සජීවීව ධාවනය වන Containers ලැයිස්තුව (Complete Containers Specification):
 
@@ -834,24 +859,40 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
    >
 4. **හතරවන පියවර: Python IDS Backend එක සහ Dashboard Server එක Start කිරීම:**
 
-   ```powershell
-   .venv\Scripts\python.exe lab_virtual\lab.py ids-start
-   ```
+   - **ක්‍රමය A: සෘජු Environment Command එක (Direct Raw Execution):**
+     PowerShell එකේ Environment Variables සකසා Backend Server එක Port 5000 න් සෘජුවම ආරම්භ කරන්න:
+     ```powershell
+     $env:IDS_SETTINGS_FILE="lab_virtual/settings.lab.yaml"; $env:DB_NAME="iot_ids_lab"; $env:PORT="5000"; $env:HOST="127.0.0.1"; .venv\Scripts\python.exe -m core_engine.app
+     ```
+     *(Background එකේ ධාවනය කිරීමට අවශ්‍ය නම්: `Start-Process .venv\Scripts\python.exe -ArgumentList "-m core_engine.app" -Environment @{IDS_SETTINGS_FILE="lab_virtual/settings.lab.yaml"; DB_NAME="iot_ids_lab"; PORT="5000"; HOST="127.0.0.1"}`)*
+
+   - **ක්‍රමය B: පහසු Controller කෙටි විධානය (Convenient Shortcut):**
+     ```powershell
+     .venv\Scripts\python.exe lab_virtual\lab.py ids-start
+     ```
 
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
    >
-   > - **`lab_virtual\lab.py ids-start`:** අපගේ controller script එක මඟින් Windows Host එක මත Port 5000 න් Unified Server එක (`core_engine/app.py`), Zeek log කියවන Live Pipeline Runner එක, සහ Auto-Expiry Worker එක Background එකේ ධාවනය කරවයි (PID file එකක් මඟින් process එක trace කරයි).
+   > - Windows Host එක මත Port 5000 න් Unified Server එක (`core_engine/app.py`), Zeek log කියවන Live Pipeline Runner එක, සහ Auto-Expiry Worker එක Background එකේ ධාවනය කරවයි. Dashboard එක `http://localhost:5000` හි විවෘත වේ.
    >
 5. **පස්වන පියවර: පද්ධතියේ සජීවී තත්ත්වය එකවර පරීක්ෂා කිරීම (Status Check):**
 
-   ```powershell
-   .venv\Scripts\python.exe lab_virtual\lab.py status
-   ```
+   - **ක්‍රමය A: කෙලින්ම ගසන සෘජු විධානයන් (Direct Component-by-Component Checks):**
+     ```powershell
+     # 1. Containers සියල්ල Running තත්ත්වයේ ඇත්දැයි බැලීම:
+     docker compose -f lab_virtual\docker-compose.yml ps
 
-   > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
-   >
-   > - **`lab_virtual\lab.py status`:** අපගේ controller script එක මඟින් Containers 10 ම ධාවනය වේද, Router එකේ Blocks තිබේද, Zeek එක `conn.log` ලියයිද, සහ Python IDS Pipeline එක ක්‍රියාත්මකද යන්න එකම screen එකක සාරාංශයක් ලෙස පෙන්වයි.
-   >
+     # 2. Router Firewall නීති සහ Drop Sets පරීක්ෂා කිරීම:
+     docker exec ids-lab-router nft list table inet ids
+
+     # 3. Zeek Sensor එක විසින් සටහන් කරගත් flows පේළි ගණන බැලීම:
+     (Get-Content lab_virtual\zeek_logs\conn.log).Count
+     ```
+
+   - **ක්‍රමය B: පහසු Controller කෙටි විධානය (Convenient Status Summary):**
+     ```powershell
+     .venv\Scripts\python.exe lab_virtual\lab.py status
+     ```
 
    - **ලැබෙන පිළිතුර (Verified Output):**
      ```text
@@ -868,7 +909,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
      IDS pipeline: running latency_ms_p50: 112.24 ms
      ```
 
-   *(සියලුම Containers 10 ක් සාර්ථකව ධාවනය වන බවත්, Zeek sensor එක ලඝු සටහන් ලියන බවත්, AI Pipeline එක තත්පර 0.1 ක latency එකකින් ක්‍රියාත්මක වන බවත් තහවුරු වේ).*
+   *(සියලුම Containers 11 ක් සාර්ථකව ධාවනය වන බවත්, Zeek sensor එක ලඝු සටහන් ලියන බවත්, AI Pipeline එක තත්පර 0.1 ක latency එකකින් ක්‍රියාත්මක වන බවත් තහවුරු වේ).*
 
 ---
 
@@ -876,23 +917,36 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 
 - **ප්‍රහාරයකින් පසු සියලු Blocks ඉවත් කර පද්ධතිය Reset කිරීමට:**
 
-  ```powershell
-  .venv\Scripts\python.exe lab_virtual\lab.py reset
-  ```
+  - **ක්‍රමය A: සෘජු Router Firewall Reset විධානය (Direct Raw Command):**
+    ```powershell
+    # Router Kernel Drop සහ Rate-Limit Sets සියල්ල ක්ෂණිකව හිස් කර පිරිසිදු කිරීම:
+    docker exec ids-lab-router nft flush set inet ids block_src
+    docker exec ids-lab-router nft flush set inet ids block_dst
+    docker exec ids-lab-router nft flush set inet ids limit_src
+    ```
 
-  > **කේතයෙන් සිදුවන දේ සරලව:** අපගේ controller script එක මඟින් Router එකේ ඇති සියලුම `block_dst`, `block_src`, සහ `limit_src` නීති මකා දමා MongoDB blocklist reset කර පද්ධතිය මුල් පිරිසිදු තත්ත්වයට පත් කරයි.
-  >
+  - **ක්‍රමය B: පහසු Controller කෙටි විධානය (Convenient Reset Shortcut):**
+    ```powershell
+    .venv\Scripts\python.exe lab_virtual\lab.py reset
+    ```
+    *(මෙමඟින් Router එකේ ඇති සියලුම Drop Sets හිස් කර Dashboard Database එකේ active blocks ද reset කර පද්ධතිය මුල් පිරිසිදු තත්ත්වයට පත් කරයි).*
+
 - **පරීක්ෂණ අවසානයේ සියල්ල සම්පූර්ණයෙන්ම Stop කිරීමට:**
 
-  ```powershell
-  .venv\Scripts\python.exe lab_virtual\lab.py ids-stop   # Backend server එක නවත්වයි
-  .venv\Scripts\python.exe lab_virtual\lab.py down       # Containers 10 ම නවතා ඉවත් කරයි
-  ```
+  - **ක්‍රමය A: සෘජු විධානයන් (Direct Raw Commands):**
+    ```powershell
+    # 1. Background එකේ දුවන Backend Server process එක නැවැත්වීම:
+    Get-Process -Name python -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*core_engine.app*" } | Stop-Process -Force
 
-  > **කේතයෙන් සිදුවන දේ සරලව:**
-  >
-  > - **`ids-stop`:** Windows එකේ Background එකේ දුවන Python IDS server එක සහ socket processes නවත්වයි.
-  > - **`down`:** Docker Containers 10 සහ සාදන ලද Virtual Bridges සම්පූර්ණයෙන්ම නවතා Memory නිදහස් කරයි.
+    # 2. Docker Containers සහ Virtual Bridges සියල්ල සම්පූර්ණයෙන්ම වසා Memory නිදහස් කිරීම:
+    docker compose -f lab_virtual\docker-compose.yml down
+    ```
+
+  - **ක්‍රමය B: පහසු Controller කෙටි විධානය (Convenient Stop Shortcuts):**
+    ```powershell
+    .venv\Scripts\python.exe lab_virtual\lab.py ids-stop   # Backend server එක නවත්වයි
+    .venv\Scripts\python.exe lab_virtual\lab.py down       # Containers 11 ම නවතා ඉවත් කරයි
+    ```
   >
 
 ---
