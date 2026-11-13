@@ -8,7 +8,7 @@
 
 ---
 
-> 🌐 **භාෂාව:** සිංහල (Sinhala) | [**English Presentation Guide Available Here (ඉංග්‍රීසි පිටපත)**](PROGRESS_MEETING_PRESENTATION_GUIDE.md)
+> 🌐 **භාෂාව:** සිංහල (Sinhala) | [**English Presentation Guide Available Here (ඉංග්‍රීසි පිටපත)**](PROGRESS_MEETING_PRESENTATION_GUIDE_EN.md)
 
 > 🎯 **මෙම ලේඛනයේ අරමුණ (Purpose of this Guide):**  
 > Supervisor (Dr. Matheeh & Dr. Amarakeerthi) සමඟ පැවැත්වෙන Progress Meeting එකේදී, අපගේ Research Proposal එකේ සඳහන් කර ඇති සියලුම **ක්‍රියාකාරී අවශ්‍යතා (Functional Requirements FR-01 සිට FR-08)**, **පිළිගැනීමේ ඉලක්ක (Proposal Table 9 Targets)**, **පර්යේෂණ අරමුණු (Objectives O1 සිට O6)**, සහ **පර්යේෂණ ගැටලු (RQ1 සිට RQ5 & Hypothesis H1)** අප ව්‍යාපෘතිය මඟින් 100% ක් ප්‍රායෝගිකව සාක්ෂාත් කර ඇති බව **[`docs/requirements_checklist.md`](docs/requirements_checklist.md) හි අනුපිළිවෙලටම** එකින් එක සජීවීව Terminal Commands ගසා ඔප්පු කිරීම සඳහා මෙම මාර්ගෝපදේශය සකස් කර ඇත.
