@@ -59,10 +59,10 @@
 | Item | State on 13 Nov 2026 | Evidence |
 | :--- | :--- | :--- |
 | FR-01 to FR-08 | **Built and shown on real packets in the virtual lab.** FR-05 uses the real Nmap binary on the lab network. | Part 1 of this guide; `reports/fr_tests/` |
-| Table 9 — Classification | **Met on the classes present:** macro-F1 0.8595 on held-out 34-1. **But 34-1 is not a clean test** (it was opened and studied before). 5-class macro-F1 0.6876. | `reports/experiments/model_card.md` |
+| Table 9 — Classification | **Met on the classes present:** macro-F1 **0.8777** on held-out 34-1 (model **v3.2.0**, in use). **But 34-1 is not a clean test** (it was opened and studied before). 5-class macro-F1 0.7022. | Target 1; `ml_engine/retrain_with_lab.py` |
 | Table 9 — Benign safety | **Partly.** Camera, NVR and admin PC were never blocked; NVR recording kept going. **FPR on real camera traffic is not measured yet** (needs the hardware lab, Step 20). | Target 2 |
 | Table 9 — Latency | **Met in the virtual lab** for "Zeek line → dashboard" (median 0.141 s, 95% 0.636 s, Step 37 report). The wait for Zeek to finish a long flow is extra and is reported. | `reports/performance/virtual/` |
-| Table 9 — Throughput | **Enough for the virtual lab** (model about 14,000–23,000 flows/s in a batch; lab peak 500 flows/s). Zeek capture loss **0.0%** since the snap-length fix (D-058). | Target 4 |
+| Table 9 — Throughput | **Enough for the virtual lab** (model about 14,000–36,000 flows/s in a batch (varies with PC load); lab peak 500 flows/s). Zeek capture loss **0.0%** since the snap-length fix (D-058). | Target 4 |
 | Table 9 — Reliability | **Backend restart recovery shown.** Full Step 38 tests (router reboot, power loss) not done. | Target 5 |
 | Table 9 — Usability / audit | **Manual block, unblock and audit shown.** The formal admin task test (Step 39) not done. | Target 6 |
 | H1 | **Not confirmed yet.** Part 1 met on the classes-present number (with the 34-1 warning); Part 2 (FPR ≤ 5% on our camera) not tested. | Part 4 |
@@ -176,7 +176,7 @@ router sets now: {'block_src': [], 'block_dst': [], 'limit_src': []}
 
 #### 3b. Fresh Backend Start After Any Rehearsal (very important for FR-02):
 
-> 1. **💡 Why:** The model's window features remember what each source did in the **last 60 minutes** (for example `pair_fail_1h` = failed tries from the same source to the same address). Every rehearsal from the attacker `10.10.10.50` adds to this memory. After several floods and scans in the same hour, a new scan can look like C&C. On 13 Nov 2026 the same subnet sweep gave **CnC 0.52 and a block** after about an hour of repeated tests, and **PortScan 0.84** right after a backend restart. `lab.py reset` clears the firewall, **not** this memory.
+> 1. **💡 Why:** The model's window features remember what each source did in the **last 60 minutes** (for example `pair_fail_1h` = failed tries from the same source to the same address). Every rehearsal from the attacker `10.10.10.50` adds to this memory. After several floods and scans in the same hour, the model can read a new scan as **C&C** instead of PortScan. This no longer causes a wrong block (an incoming C&C-looking flow is alert only, issue 43 fixed), but the class on the card is clearer after a restart: on 13 Nov 2026 the same subnet sweep read as CnC 0.52 after an hour of tests, and as **PortScan 0.84** right after a backend restart. `lab.py reset` clears the firewall, **not** this memory.
 
 > 2. **⚙️ Under the hood:** the window memory (`WindowState`) and the policy's repeat counter live only in the backend's memory, so a restart starts them empty (issue 41). The database and the router are not changed by the restart; startup recovery keeps them in step.
 
@@ -263,7 +263,7 @@ Open **`http://localhost:5000`** in Chrome or Edge:
 
 | Page | Address | What to show (real labels) |
 | :--- | :--- | :--- |
-| 🖥️ Overview | `/overview` | **SYSTEM STATUS (MEASURED)** card: pipeline status, model version **v3.1.0**, **MONITORED FLOWS**, "Time per flow, Zeek line to dashboard (median / 95%)"; **ATTACK CLASS DISTRIBUTION** chart |
+| 🖥️ Overview | `/overview` | **SYSTEM STATUS (MEASURED)** card: pipeline status, model version **v3.2.0**, **MONITORED FLOWS**, "Time per flow, Zeek line to dashboard (median / 95%)"; **ATTACK CLASS DISTRIBUTION** chart |
 | 🚨 Live Alerts | `/alerts` | New alert cards arrive without refresh; badge **MODEL PREDICTION**; class, confidence, response status; **CONFIRM INCIDENT** button |
 | 📜 Attack History | `/history` | Saved events from MongoDB, with class filter |
 | 📷 Devices & Scans | `/devices` | **TRIGGER NMAP** button; IP, MAC / vendor, open ports, camera heuristic, **MARK CAMERA** |
@@ -287,7 +287,7 @@ If the supervisor asks: **"Is this purely simulated?"**
 * **Real:**
   - **Network packets** on Linux bridges (`br-ids-lan`, `br-ids-out`).
   - **Zeek** capturing those packets and writing `conn.log`, `files.log`, `http.log`.
-  - **The Random Forest model v3.1.0** (trained on IoT-23) making live predictions.
+  - **The Random Forest model v3.2.0** (trained on IoT-23, then retrained with our own lab download flows; see Target 1) making live predictions.
   - **Linux `nftables`** in the router container, changed over SSH.
   - **The React dashboard** with Socket.IO on port 5000, and **MongoDB**.
   - **Nmap / nping / netcat / curl** binaries.
@@ -297,7 +297,7 @@ If the supervisor asks: **"Is this purely simulated?"**
   - **No IoT-23 benign device is an IP camera** (proposal 2.3), and the camera here is a simulator. So the benign false-positive rate on **real camera traffic** must still be measured in the hardware lab (Step 20).
 
 #### 3. Opening Statement:
-> *"Good morning Sir. Before the demonstration I would like to explain our test setup. As planned in proposal Section 5.1, we built the complete system in a Docker virtual lab. The packets, the Zeek sensor, the Random Forest model v3.1.0, the nftables router firewall, MongoDB and the dashboard are real. The camera, NVR, admin PC and attacker are simulated containers, so we can run attacks safely. The real-camera tests, including the benign false-positive rate, will be done in the hardware lab as planned."*
+> *"Good morning Sir. Before the demonstration I would like to explain our test setup. As planned in proposal Section 5.1, we built the complete system in a Docker virtual lab. The packets, the Zeek sensor, the Random Forest model v3.2.0, the nftables router firewall, MongoDB and the dashboard are real. The camera, NVR, admin PC and attacker are simulated containers, so we can run attacks safely. The real-camera tests, including the benign false-positive rate, will be done in the hardware lab as planned."*
 
 ---
 
@@ -443,7 +443,8 @@ Open **`/overview`** → **SYSTEM STATUS (MEASURED)**: the pipeline is running a
    - the target is not on the allowlist and is not a camera-LAN device;
    - **3 alerts of the same class for the same target within 60 s**;
    - a rule time of at most 30 minutes.
-3. A program download is found by a **file-type rule** on Zeek's `files.log` (`core_engine/file_check.py`), not by the model. IoT-23 has only about 84 real download flows, too few to learn from (model card, section 6).
+3. A program download is found **two ways**: a **file-type rule** on Zeek's `files.log` (`core_engine/file_check.py`) catches every download, and the **model** (v3.2.0, retrained with our own lab download flows) catches a run of downloads — the realistic dropper pattern — as `Malware_Download`. So Test 2.5 shows two alerts. (IoT-23 itself has only about 84 real download flows, too few on their own, so v3.1.0 missed them — the lab rows fixed this.)
+4. An incoming flow from outside that looks like C&C (for example the first flows of a flood or a scan) is **alert only** — the policy blocks only the outside **destination** of an outbound C&C call, never an outside source (proposal Table 5). This closed open issue 43.
 
 #### ⚙️ Command to read the alerts (use after each test, or show the Live Alerts page):
 The **Live Alerts** page (`/alerts`) shows each alert as it arrives. In the terminal, the newest events can be read with:
@@ -461,7 +462,11 @@ for e in ev:
 ```
 - The times are UTC.
 
-> ⚠️ Run `.venv\Scripts\python.exe lab_virtual\lab.py reset` **between the tests**. A block from one test stops the next one.
+> ⚠️ **Demo Rules & Cleanup Procedures (Essential for Reliable Results):**
+> 1. **Between each test:** Run `.venv\Scripts\python.exe lab_virtual\lab.py reset` to clear router firewall sets (`limit_src`, `block_dst`). If old blocks remain, the next attack's traffic will be dropped or throttled at the router and won't reach the sensor. This reset does not restart the backend, so your dashboard stays connected without blinking.
+> 2. **Before the demo (or after rehearsals):** Run a **Fresh Backend Start** (`lab.py ids-stop`, `lab.py ids-start`, `lab.py reset`) to clear the model's 60-minute window state (`pair_fail_1h`, failed tries). Without this, repeated rehearsal attacks from `10.10.10.50` accumulate in memory and can bias a subsequent PortScan toward C&C.
+> 3. **Attack Order:** Follow the verified order: **Benign (2.1) → PortScan (2.2) → DDoS (2.3) → C&C (2.4) → Malware Download (2.5)**. Running PortScan before DDoS ensures the SYN flood's thousands of flows do not distort the scan.
+> 4. **After the C&C Test (2.4):** Always **wait 30 seconds** before running `lab.py reset` because Zeek writes the final C&C logs with a slight delay. Resetting prematurely can cause a late-arriving log to re-trigger the block.
 
 ---
 
@@ -491,6 +496,11 @@ docker exec ids-lab-admin curl -s http://192.168.50.30/ | Select-String "Lab IP 
 - **Overview:** **MONITORED FLOWS** grows.
 - **Router:** `block_src`, `block_dst`, `limit_src` stay empty.
 - Background evidence (entry 3.78): about 6 hours of normal traffic (12 Nov 18:05 to 13 Nov 00:09 UTC) gave no alert for the camera, NVR or admin PC.
+
+##### 🧹 Cleanup Before Next Test:
+```powershell
+.venv\Scripts\python.exe lab_virtual\lab.py reset
+```
 
 ---
 
@@ -532,7 +542,12 @@ Nmap done: 256 IP addresses (6 hosts up) scanned in 4.31 seconds
 
 > ⚠️ **Do not use a scan of one host for this demo.** `nmap -sS -p 23,80,554 192.168.50.30` (one host, 3 ports) gave **one CnC alert (0.48), not PortScan**, on 13 Nov. Too few flows for the window features (see Part 7, issues 43 and 46).
 
-> ⚠️ **Run this test soon after a fresh backend start (Section 1, step 3b).** After about an hour of repeated floods and scans from `10.10.10.50`, the same sweep gave **CnC 0.52** and the attacker was blocked (`AUTO_CNC_DEST_BLOCK`). Right after a restart it gave PortScan 0.84 again.
+> ⚠️ **Run this test soon after a fresh backend start (Section 1, step 3b).** After about an hour of repeated floods and scans from `10.10.10.50`, the model read the same sweep as **CnC 0.52** (alert only — no block, since issue 43 was fixed). Right after a restart it gave PortScan 0.84 again, which is clearer for the demo.
+
+##### 🧹 Cleanup Before Next Test:
+```powershell
+.venv\Scripts\python.exe lab_virtual\lab.py reset
+```
 
 ---
 
@@ -576,10 +591,13 @@ block_src:  (no elements line = empty)
 
 📊 **What to say honestly:**
 - The DDoS_DoS class was found and the source was **rate-limited** (not blocked) as planned in D-055. The response action `rate_limit AUTO_DDOS_RATELIMIT` is saved in MongoDB (fixed on 13 Nov 2026, D-058).
-- In **one of three** runs on 13 Nov (07:48 UTC), the first flood flows were also predicted **CnC (0.63)**, so the attacker was **also fully blocked** in `block_src` under the C&C reason. This is our known **open issue 43** (repeated failed connections to one address can look like C&C). If it happens in the demo, say so.
+- Some flood flows are still predicted **CnC** inside the model, but the attacker is **not** blocked as a C&C source any more: the policy blocks only the outside **destination** of an outbound C&C call (proposal Table 5), so an incoming flood/scan that looks like C&C is alert only. `block_src` stays empty (this closed open issue 43, 13 Nov 2026). Verified over two back-to-back flood+scan rounds: only `limit_src`, never `block_src`.
 - The camera itself was never blocked.
 
-> After this test: `.venv\Scripts\python.exe lab_virtual\lab.py reset`
+##### 🧹 Cleanup Before Next Test:
+```powershell
+.venv\Scripts\python.exe lab_virtual\lab.py reset
+```
 
 ---
 
@@ -617,7 +635,7 @@ try 18 exit=1
 ```text
 07:51:57 CnC 0.76 192.168.50.30 -> 10.10.10.50:6667  flows 16 | response blocked AUTO_CNC_DEST_BLOCK
 ```
-- Three runs on 13 Nov: CnC 0.76, 0.74 and 0.68 — blocked every time.
+- Several runs on 13 Nov (v3.1.0 and v3.2.0): CnC 0.63–0.82 — blocked every time.
 
 🛡️ **Router:**
 ```powershell
@@ -640,27 +658,32 @@ table inet ids {
 
 > ❗ **Why not `nc -lp 6667` as a C&C server?** If a server answers, the camera's connections succeed. Short **successful** connections gave **no alert** on 13 Nov (18 tries, 0 alerts). The model learned from IoT-23, where C&C traffic usually starts with many failed tries. Also, a leftover `lab_server.py --role cnc` stops `nc -lp 6667` from opening the port.
 
-> After this test: **wait 30 seconds**, then `.venv\Scripts\python.exe lab_virtual\lab.py reset` (the block also stops the next download test).
-> - Why wait: Zeek writes the last refused tries a few seconds after the loop ends. An unblock clears the block but keeps the policy's count of recent alerts (by design: after an unblock, the next alert may block again, `tests/unit/test_auto_response.py`). If a late try arrives **after** the reset, the address is blocked again at once. This happened once on 13 Nov 2026 (reset 10 s after the loop). Check that `block_dst` is empty before Test 2.5.
+##### 🧹 Cleanup Before Next Test (Wait 30s for Zeek logs to settle, then clear blocks):
+```powershell
+Start-Sleep -Seconds 30
+.venv\Scripts\python.exe lab_virtual\lab.py reset
+```
+> - **Why wait 30 seconds:** Zeek writes the last refused tries a few seconds after the loop ends. An unblock clears the block but keeps the policy's count of recent alerts (by design: after an unblock, the next alert may block again, `tests/unit/test_auto_response.py`). If a late try arrives **after** the reset, the address is blocked again at once. This happened once on 13 Nov 2026 (reset 10 s after the loop). Check that `block_dst` is empty before Test 2.5.
 
 ---
 
 #### [Test 2.5] Program Download: Camera Downloads a Linux Program (`curl`)
 
-💡 **Objective:** The camera downloading a Linux program from outside raises a **Malware_Download** alert from the file-type rule (Table 10 row 5: alert and evidence only, no block).
+💡 **Objective:** The camera downloading a Linux program from outside raises a **Malware_Download** alert. Real malware droppers pull their payload **repeatedly**, so we download a few times; this is caught by **both** the model (v3.2.0) and the Zeek file-type rule (Table 10 row 5: alert and evidence only, no block).
 
-⚙️ **Under the hood:** The attack web server offers `/bins/lab_test.x86`, a **harmless** copy of the Linux `true` program (43,432 bytes). Zeek's file analysis puts the file type `application/x-sharedlib` (a Linux ELF program) in `files.log`; `core_engine/file_check.py` reads it and raises the alert with reason `RULE_EXECUTABLE_DOWNLOAD`.
+⚙️ **Under the hood:** The attack web server offers `/bins/lab_test.x86`, a **harmless** copy of the Linux `true` program (43,432 bytes). Zeek's file analysis puts the file type `application/x-sharedlib` (a Linux ELF program) in `files.log`; `core_engine/file_check.py` reads it and raises a `RULE_EXECUTABLE_DOWNLOAD` alert for **each** download. The model reads the download **request** flows; with several downloads in a short time, the window features rise and the model classifies them as Malware_Download (`MALWARE_STAGING_TRANSFER`).
 
-💻 **Command:**
+💻 **Command** (six downloads, three seconds apart — the dropper pattern):
 ```powershell
-docker exec ids-lab-camera curl -s -o /tmp/downloaded_malware.x86 -w "downloaded %{size_download} bytes, HTTP %{http_code}" http://10.10.10.50/bins/lab_test.x86
+docker exec ids-lab-camera python /lab/camera_sim.py download --url http://10.10.10.50/bins/lab_test.x86 --count 6 --every 3
 ```
-- `-o /tmp/downloaded_malware.x86`: save the file in the camera.
-- `-w "..."`: print the size and the HTTP status.
+- A single `curl` (`docker exec ids-lab-camera curl -s -o /tmp/x.x86 http://10.10.10.50/bins/lab_test.x86`) also works, but a single isolated download is caught by the **file rule only**; the model needs a few downloads to flag it (see the note below).
 
 📋 **Real Output:**
 ```text
-downloaded 43432 bytes, HTTP 200
+11:42:14 download 1: 43432 bytes from http://10.10.10.50/bins/lab_test.x86
+11:42:17 download 2: 43432 bytes from http://10.10.10.50/bins/lab_test.x86
+... (6 downloads)
 ```
 
 🕵️ **Zeek `files.log`** (`Get-Content lab_virtual\zeek_logs\files.log | Select-String "x-sharedlib" | Select-Object -Last 1`):
@@ -668,14 +691,23 @@ downloaded 43432 bytes, HTTP 200
 {"id.orig_h":"192.168.50.30","id.orig_p":55466,"id.resp_h":"10.10.10.50","id.resp_p":80,"source":"HTTP","mime_type":"application/x-sharedlib","seen_bytes":43432,"total_bytes":43432,"missing_bytes":0}
 ```
 - `mime_type: application/x-sharedlib`: Zeek found a Linux program from the file's first bytes.
-- `seen_bytes: 43432`, `missing_bytes: 0`: Zeek saw the whole file. (Before the snap-length fix of 13 Nov 2026, D-058, Zeek saw only 14,480–18,816 bytes of it.)
+- `seen_bytes: 43432`, `missing_bytes: 0`: Zeek saw the whole file. (Before the snap-length fix of 13 Nov 2026, D-058, Zeek saw only part of it.)
 
-🚨 **Alert (real, 13 Nov 2026, 09:06 UTC):**
+🚨 **Alerts (real, 13 Nov 2026):** two Malware_Download alerts:
 ```text
-09:06:51 Malware_Download 1.0 10.10.10.50 -> 192.168.50.30:55466 flows 1 | response none | model rule:files.log
+11:41:21 Malware_Download 1.00 10.10.10.50   -> 192.168.50.30     flows 7 | response none | model rule:files.log  | RULE_EXECUTABLE_DOWNLOAD
+11:42:25 Malware_Download 0.56 192.168.50.30 -> 10.10.10.50:80    flows 4 | response none | model v3.2.0          | MALWARE_STAGING_TRANSFER
 ```
-- Evidence: `File-type check: 192.168.50.30 downloaded a program/script file (type application/x-sharedlib, ... over http) from 10.10.10.50.`
-- `model rule:files.log` and confidence 1.0: this alert comes from the **rule**, not the Random Forest.
+- `model rule:files.log` (confidence 1.0): the **file-type rule**, one alert covering the downloaded files (`File-type check: 192.168.50.30 downloaded a program/script file (type application/x-sharedlib ...) from 10.10.10.50.`).
+- `model v3.2.0` (confidence ~0.5–0.7): the **Random Forest itself** now classifies the download request flow as Malware_Download. v3.1.0 called a download Benign; v3.2.0 was retrained with our own lab download flows (see Target 1).
+- Both are alert only (Malware_Download has no block threshold; Table 10 row 5). The camera is never blocked.
+
+> ⚠️ **Honest note for the demo:** a **single** isolated download fires the **file rule** reliably (confidence 1.0), but the **model** flags it only when a few downloads come close together (as above and as in the training data). So to show the model catching it, use the six-download command. For a single `curl` the file rule is the catch.
+
+##### 🧹 Cleanup After Attack Suite:
+```powershell
+.venv\Scripts\python.exe lab_virtual\lab.py reset
+```
 
 ---
 
@@ -685,12 +717,14 @@ downloaded 43432 bytes, HTTP 200
 |---|---|---|---|---|---|
 | 2.1 | Benign | `curl` admin → camera page | `SF`, `ShADadfF` | none | none |
 | 2.2 | PortScan | `nmap -sS -p 23,80,554 192.168.50.0/24` | many `S0` / `REJ` | PortScan 0.49–0.88 | none (block needs ≥ 0.88 and 3 in 60 s) |
-| 2.3 | DDoS_DoS | `nping --tcp -p 80 --flags syn --rate 1000 -c 5000` | thousands of half-open flows | DDoS_DoS 0.38–0.45 (once also CnC 0.63, issue 43) | `limit_src` (that once also `block_src`) |
-| 2.4 | CnC | `nc -z` loop, every 5 s, port 6667 refused | `REJ` then `S0` | CnC 0.68–0.76 | `block_dst` 10.10.10.50, 30 min |
-| 2.5 | Malware_Download | `curl` camera → `/bins/lab_test.x86` | `files.log` `application/x-sharedlib` | Malware_Download 1.0 (rule) | none (alert only, Table 10 row 5) |
+| 2.3 | DDoS_DoS | `nping --tcp -p 80 --flags syn --rate 1000 -c 5000` | thousands of half-open flows | DDoS_DoS 0.37–0.45 | `limit_src` only (never `block_src`; issue 43 fixed) |
+| 2.4 | CnC | `nc -z` loop, every 5 s, port 6667 refused | `REJ` then `S0` | CnC 0.63–0.82 | `block_dst` 10.10.10.50, 30 min |
+| 2.5 | Malware_Download | `camera_sim.py download --count 6` (dropper pattern) | `files.log` `application/x-sharedlib` | Malware_Download 1.0 (rule) **and** ~0.56 (model v3.2.0) | none (alert only, Table 10 row 5) |
+
+All alerts carry the model version (**v3.2.0**, or `rule:files.log` for the file-type rule) and reach the dashboard Live Alerts page within about 0.1 s of the Zeek line being read.
 
 #### 🗣️ Spoken Script:
-> *"Sir, for FR-02 we used standard tools. Normal admin access with curl gave no alert. A subnet scan with nmap gave PortScan alerts, but no block, because a PortScan block needs 0.88 confidence three times in one minute. An nping SYN flood was found as DDoS and the router rate-limited the attacker. In one of our three runs the first flood flows were also predicted as C&C, so the attacker was blocked as well; this is our open issue 43. When the camera kept trying to reach a C&C server with netcat, the model found C&C and the router blocked the outside server in block_dst. The camera itself was never blocked. A program download was found by our file-type rule on Zeek's files.log, as alert only, as Table 10 asks. Every alert carries the class, the confidence and the model version v3.1.0."*
+> *"Sir, for FR-02 we used standard tools, and the model recognises all four attack types. Normal admin access with curl gave no alert. A subnet scan with nmap gave PortScan alerts, but no block, because a PortScan block needs 0.88 confidence three times in one minute. An nping SYN flood was found as DDoS and the router rate-limited the attacker. When the camera kept trying to reach a C&C server with netcat, the model found C&C and the router blocked the outside server in block_dst — the camera itself was never blocked. A repeated program download, as real droppers do, is now caught by the model itself as Malware_Download, and every download is also caught by our file-type rule on Zeek's files.log; both are alert only, as Table 10 asks. Every alert carries the class, the confidence and the model version v3.2.0, and reaches the dashboard within about a tenth of a second."*
 
 ---
 
@@ -743,7 +777,7 @@ Attack flows saved (all time)  : 20677 in 101 incidents
 Incidents by class             : {'CnC': 56, 'DDoS_DoS': 24, 'Malware_Download': 7, 'PortScan': 14}
 Response actions saved         : 21 block/rate-limit records (active and ended)
 Active blocks / rate-limits    : 0 / 0
-Pipeline status / model        : running / v3.1.0
+Pipeline status / model        : running / v3.2.0
 ```
 
 #### 📊 Output Breakdown:
@@ -1048,9 +1082,9 @@ for x in rows:
 ```text
 HTTP 200 | attachment; filename=ids_attack_logs_20261113_075617.csv
 Columns (20): event_id,timestamp,direction,src_ip,src_port,dst_ip,dst_port,proto,service,predicted_class,confidence,severity,status,response_status,is_allowlisted,reason_code,flow_count,evidence_note,model_version,pipeline_latency_ms
-2026-11-13T07:55:15 CnC 0.4446 192.168.50.5 -> 192.168.50.254:8899 allowlist_protected v3.1.0
-2026-11-13T07:55:15 CnC 0.4467 192.168.50.5 -> 192.168.50.20:8899 allowlist_protected v3.1.0
-2026-11-13T07:55:15 CnC 0.4467 192.168.50.5 -> 192.168.50.10:8899 allowlist_protected v3.1.0
+2026-11-13T07:55:15 CnC 0.4446 192.168.50.5 -> 192.168.50.254:8899 allowlist_protected v3.2.0
+2026-11-13T07:55:15 CnC 0.4467 192.168.50.5 -> 192.168.50.20:8899 allowlist_protected v3.2.0
+2026-11-13T07:55:15 CnC 0.4467 192.168.50.5 -> 192.168.50.10:8899 allowlist_protected v3.2.0
 ```
 
 #### 📊 Output Breakdown:
@@ -1073,7 +1107,7 @@ Section 2 of [`docs/requirements_checklist.md`](docs/requirements_checklist.md):
 
 | # | Table 9 target | What we have now (13 Nov 2026) | State |
 | :---: | :--- | :--- | :--- |
-| 1 | Macro-F1 ≥ 0.85 on the left-out scenario | **0.8595** over the classes present on 34-1; 0.6876 over 5 classes. 34-1 was seen before → not a clean test. | **Met on the H1 number, with a warning** |
+| 1 | Macro-F1 ≥ 0.85 on the left-out scenario | **0.8777** over the classes present on 34-1 (model v3.2.0); 0.7022 over 5 classes. 34-1 was seen before → not a clean test. | **Met on the H1 number, with a warning** |
 | 2 | FPR ≤ 5% on local camera traffic; no blocks on management PC or NVR | No camera / NVR / admin block in any test; NVR recorded 58.6 MB every 5 minutes. **FPR on real camera traffic not measured.** | **Partly** |
 | 3 | Median decision < 2 s; 95% < 5 s | Zeek line → dashboard: median 0.141 s, 95% 0.636 s (Step 37 virtual report); live 152 / 620 ms now | **Met in the virtual lab** |
 | 4 | Keeps up with lab traffic; no important event lost | Model ~23,000 flows/s; lab peak 500 flows/s; every attack test raised alerts. Capture-loss numbers need care. | **Enough for the virtual lab** |
@@ -1088,50 +1122,51 @@ Section 2 of [`docs/requirements_checklist.md`](docs/requirements_checklist.md):
 Proposal H1 part 1 and Table 9 need macro-F1 ≥ 0.85 on a scenario left out of training (no scenario leakage).
 
 #### ⚙️ Under the hood:
-Reads the numbers that Step 16/17 saved in the model bundle `ml_engine/models/ids_bundle_v3.joblib` (they were computed on `CTU-IoT-Malware-Capture-34-1`, 23,145 flows).
+Reads the numbers saved in the model bundle **in use** (`ml_engine/models/ids_bundle_v3_2.joblib`, the model `lab_virtual/settings.lab.yaml` loads), computed on `CTU-IoT-Malware-Capture-34-1`, 23,145 flows. **v3.2.0** is v3.1.0 **retrained with our own lab download flows** (`ml_engine/retrain_with_lab.py`), so the model itself now recognises program downloads (see Test 2.5); everything else (features, hyperparameters, thresholds, the "no calibration" choice) is unchanged.
 
 #### 💻 Command:
 ```powershell
 .venv\Scripts\python.exe -c "
 import joblib
-m = joblib.load('ml_engine/models/ids_bundle_v3.joblib')['metadata']
-print('=== TABLE 9 CLASSIFICATION TARGET (saved in the model bundle) ===')
-print('Model                     :', m['bundle_name'], m['bundle_version'])
+m = joblib.load('ml_engine/models/ids_bundle_v3_2.joblib')['metadata']
+print('=== TABLE 9 CLASSIFICATION TARGET (saved in the model bundle in use) ===')
+print('Model                     :', m['bundle_name'], m['bundle_version'], '(=', m['based_on'], '+ lab download rows)')
 print('Held-out scenario         :', m['level_2_heldout_scenario'], '({:,} flows)'.format(m['level_2_heldout_flows']))
 print('Macro-F1, classes present :', '{:.2f}%'.format(m['level_2_macro_f1_present'] * 100), '(target >= 85%)')
 print('Macro-F1, all 5 classes   :', '{:.2f}%'.format(m['level_2_macro_f1_5class'] * 100), '(34-1 has no Malware_Download flows)')
 print('Accuracy / weighted F1    :', '{:.2f}% / {:.2f}%'.format(m['level_2_accuracy'] * 100, m['level_2_weighted_f1'] * 100))
-print('Grouped CV out-of-fold F1 :', '{:.2f}%'.format(m['level_1_oof_macro_f1'] * 100), '(22 training scenarios)')
+print('Grouped CV out-of-fold F1 :', '{:.2f}%'.format(m['level_1_oof_macro_f1'] * 100), '(22 training scenarios, from v3.1.0)')
 print('Benign predicted attack   :', '{:.2f}%'.format(m['level_2_benign_fpr_argmax'] * 100), '(IoT-23 benign flows of 34-1)')
 "
 ```
 - Only single quotes inside the Python code, and `'...'.format(...)` instead of f-strings with double quotes (PowerShell 5.1 breaks inner double quotes).
+- To compare with the previous model, load `ml_engine/models/ids_bundle_v3.joblib` instead (v3.1.0: 85.95% present, 68.76% 5-class, 93.22% accuracy).
 
 #### 📋 Real Output:
 ```text
-=== TABLE 9 CLASSIFICATION TARGET (saved in the model bundle) ===
-Model                     : iot_camera_ids_bundle v3.1.0
+=== TABLE 9 CLASSIFICATION TARGET (saved in the model bundle in use) ===
+Model                     : iot_camera_ids_bundle v3.2.0 (= v3.1.0 + lab download rows)
 Held-out scenario         : CTU-IoT-Malware-Capture-34-1 (23,145 flows)
-Macro-F1, classes present : 85.95% (target >= 85%)
-Macro-F1, all 5 classes   : 68.76% (34-1 has no Malware_Download flows)
-Accuracy / weighted F1    : 93.22% / 93.67%
-Grouped CV out-of-fold F1 : 70.97% (22 training scenarios)
-Benign predicted attack   : 5.62% (IoT-23 benign flows of 34-1)
+Macro-F1, classes present : 87.77% (target >= 85%)
+Macro-F1, all 5 classes   : 70.22% (34-1 has no Malware_Download flows)
+Accuracy / weighted F1    : 96.25% / 96.41%
+Grouped CV out-of-fold F1 : 70.97% (22 training scenarios, from v3.1.0)
+Benign predicted attack   : 5.72% (IoT-23 benign flows of 34-1)
 ```
 
 #### 📊 Output Breakdown:
-- `Macro-F1, classes present 85.95%`: the H1 number (decision D-054: 34-1 has only 4 of the 5 classes).
-- `Macro-F1, all 5 classes 68.76%`: with an empty Malware_Download class, this number can be at most 80%.
-- `Accuracy 93.22%`: high partly because DDoS flows are 62% of 34-1; this is why macro-F1 is the main measure (proposal 3.4).
-- `Grouped CV out-of-fold 70.97%`: the score over the 22 training scenarios, each left out once.
-- `Benign predicted attack 5.62%`: on IoT-23 benign flows (not camera traffic); not the H1 measure.
-- Per class on 34-1 (model card): DDoS_DoS F1 0.995, CnC 0.876, PortScan 0.846, Benign 0.721.
+- `Macro-F1, classes present 87.77%`: the H1 number (decision D-054: 34-1 has only 4 of the 5 classes). It rose from 85.95% (v3.1.0) after the lab rows were added — the retrain did not hurt the held-out score.
+- `Macro-F1, all 5 classes 70.22%`: with an empty Malware_Download class in 34-1, this number can be at most 80%.
+- `Accuracy 96.25%`: high partly because DDoS flows are 62% of 34-1; this is why macro-F1 is the main measure (proposal 3.4).
+- `Grouped CV out-of-fold 70.97%`: from the v3.1.0 grouped cross-validation (not re-run for v3.2.0).
+- `Benign predicted attack 5.72%`: on IoT-23 benign flows (not camera traffic); not the H1 measure. Normal lab camera traffic still reads 100% Benign.
+- Per class on 34-1 (v3.2.0): DDoS_DoS F1 0.995, CnC 0.936, PortScan 0.733, Benign 0.847 (Malware_Download has no flows in 34-1).
 
 ##### 🔬 Honest warning (say it):
-**34-1 is not a clean test any more.** It was opened in Step 16 for v1 and v2, used in the PC demonstrations, and studied (progress entry 3.71) before the D-052 changes. The clean test is the lab (Steps 20 and 35). Also: on the same rows, HistGradientBoosting scored higher out-of-fold than the Random Forest (0.7391 vs 0.7097, issue 49); the Random Forest stays the main model as in the proposal.
+**34-1 is not a clean test any more.** It was opened in Step 16 for v1 and v2, used in the PC demonstrations, and studied (progress entry 3.71) before the D-052 changes. The clean test is the lab (Steps 20 and 35). Also: the lab download flows added for v3.2.0 were captured in this virtual lab; a clean evaluation of the download class needs a fresh capture in the hardware lab (Step 20), which is still to do.
 
 #### 🗣️ Spoken Script:
-> *"Sir, on the held-out scenario 34-1, model v3.1.0 reaches a macro-F1 of 0.8595 over the classes present, which meets our 0.85 target, and 0.6876 over all five classes, because 34-1 has no download flows. I must add that 34-1 is no longer a clean test: we opened and studied it during development. So we treat this as a good sign, and the hardware lab test as the real check."*
+> *"Sir, the model in use is v3.2.0 — our v3.1.0 Random Forest retrained with our own lab download flows, so that the model itself recognises program downloads. On the held-out scenario 34-1 it reaches a macro-F1 of 0.8777 over the classes present, which meets our 0.85 target and is slightly higher than v3.1.0's 0.8595, and 0.7022 over all five classes, because 34-1 has no download flows. I must add that 34-1 is no longer a clean test: we opened and studied it during development, and the download flows were captured in this lab. So we treat this as a good sign, and the hardware lab test as the real check."*
 
 ---
 
@@ -1200,7 +1235,7 @@ Table 9 and RQ4: the decision must be fast enough to act during an attack.
 ```powershell
 .venv\Scripts\python.exe -c "
 import time, joblib, pandas as pd
-b = joblib.load('ml_engine/models/ids_bundle_v3.joblib')
+b = joblib.load('ml_engine/models/ids_bundle_v3_2.joblib')
 model, classes = b['calibrated_model'], b['class_names']
 flow = {'proto':'tcp','service':'unknown','conn_state':'S0','history':'S','orig_port_cat':'registered','resp_port_cat':'dynamic','duration':3.14,'orig_bytes':0.0,'resp_bytes':0.0,'missed_bytes':0.0,'orig_pkts':3.0,'orig_ip_bytes':180.0,'resp_pkts':0.0,'resp_ip_bytes':0.0,'orig_bytes_per_pkt':0.0,'resp_bytes_per_pkt':0.0,'byte_ratio':0.0,'pkt_ratio':1.0,'is_incomplete_flow':1,'src_conn_60s':1.0,'src_udst_60s':1.0,'src_uport_60s':1.0,'src_udst_ratio':1.0,'pair_conn_60s':1.0,'pair_gap':3.82,'pair_gap_change':3.36,'pair_fail_1h':588.0}
 one = pd.DataFrame([flow])
@@ -1215,21 +1250,21 @@ print('Time for 1,000 flows        : {:.1f} ms = {:,.0f} flows per second'.forma
 print('Saved training benchmark    : {:.2f} us per flow ({:,.0f} flows/s, measured in Step 14)'.format(b['metadata']['inference_latency_us_flow'], b['metadata']['inference_throughput_fps']))
 "
 ```
-- `b['calibrated_model']`: the model the live detector uses (in v3.1.0 it gives the raw Random Forest probabilities; Step 17a chose "no calibration").
+- `b['calibrated_model']`: the model the live detector uses (v3.2.0 gives the raw Random Forest probabilities; Step 17a chose "no calibration", inherited from v3.1.0).
 
 ##### 📋 Real Output:
 ```text
 === MODEL STEP TIME (one hand-made C&C-like flow) ===
-Predicted class / confidence : CnC 98.89%
-Time for 1 flow             : 31.1 ms
-Time for 1,000 flows        : 42.7 ms = 23,416 flows per second
+Predicted class / confidence : CnC 96.77%
+Time for 1 flow             : 31.9 ms
+Time for 1,000 flows        : 43.2 ms = 23,156 flows per second
 Saved training benchmark    : 7.96 us per flow (125,599 flows/s, measured in Step 14)
 ```
 
 ##### 📊 Output Breakdown:
-- `CnC 98.89%`: the model's answer **for this hand-made flow** (not a live alert).
-- `31.1 ms for 1 flow`: most of this is fixed overhead of one call (pandas, 100 trees); it is the same for 1 flow or 100.
-- `23,416 flows per second` for a batch: the live adapter sends flows in batches. This number depends on how busy the PC is (another run the same day: 70.9 ms = 14,108 flows per second).
+- `CnC 96.77%`: the model's answer **for this hand-made flow** (not a live alert).
+- `31.9 ms for 1 flow`: most of this is fixed overhead of one call (pandas, 100 trees); it is the same for 1 flow or 100.
+- `23,156 flows per second` for a batch: the live adapter sends flows in batches. This number depends on how busy the PC is (14,000–36,000 flows/s across runs).
 - `7.96 µs / 125,599 flows/s`: the Step 14 benchmark saved in the bundle, measured differently during training. It does **not** match this command's result, so do not quote it as the live speed.
 
 #### 🧪 Method 2: Live System Time (Table 9 measure)
@@ -1259,7 +1294,7 @@ Use the FR-04 command; it prints the live median and 95th percentile. The full S
 During a flood, thousands of flows arrive. The system must keep up and not lose important events.
 
 #### 📋 What we measured:
-- **Model capacity:** about 14,000–23,000 flows per second in a batch (Target 3, Method 1; depends on PC load).
+- **Model capacity:** about 14,000–36,000 flows per second in a batch (Target 3, Method 1; depends on PC load).
 - **Lab load:** the Step 37 run had a peak of **500 flows per second**, and 19,024 flows in total. The backend used at most 78.5% of one CPU and 128 MB of memory.
 - **No attack lost:** every attack test (2.2–2.5) raised alerts; Zeek's `stats.log` shows 0 packets dropped.
 - **No data lost by Zeek:** `capture_loss.log` shows 0.0% since the snap-length fix (D-058).
@@ -1282,7 +1317,7 @@ Get-Content lab_virtual\zeek_logs\stats.log -Tail 1 | Select-String -Pattern '"p
 Zeek keeps only the first 9,216 bytes of each packet by default. The Docker network joins many small packets into large ones (up to 64 KB, "offloading"), so Zeek cut off the rest. Result: `capture_loss.log` about 98%, the NVR stream about 58.5 MB of `missed_bytes` per 5-minute segment, and only part of the test download seen. `sensor/local.zeek` now sets `redef Pcap::snaplen = 65535;`. After the fix the NVR flow shows `"missed_bytes":0`.
 
 #### 🗣️ Spoken Script:
-> *"Sir, the model can classify roughly 14 to 23 thousand flows per second, while our virtual lab's peak was 500 flows per second, and every attack was detected. Zeek reports zero dropped packets and zero capture loss. Earlier today it showed high capture loss; we found that Zeek was cutting the large joined packets of the virtual network, fixed the snap length, and measured again."*
+> *"Sir, the model can classify tens of thousands of flows per second, while our virtual lab's peak was 500 flows per second, and every attack was detected. Zeek reports zero dropped packets and zero capture loss. Earlier today it showed high capture loss; we found that Zeek was cutting the large joined packets of the virtual network, fixed the snap length, and measured again."*
 
 ---
 
@@ -1426,7 +1461,7 @@ The formal usability test with set admin tasks (Step 39, `docs/usability_tasks.m
 Section 3 of [`docs/requirements_checklist.md`](docs/requirements_checklist.md):
 
 1. **O1 — Repeatable IoT-23 preprocessing and label mapping: Done.** All 23 scenarios (325.3 million flows) checked against the official files (`reports/iot23_copy_verification.md`), SHA-256 manifest, frozen label mapping (`config/label_mapping.yaml`), data-quality report. Training sample: 1,182,984 flows from 22 scenarios (variant WCD).
-2. **O2 — Multi-class Random Forest with no scenario leakage: Done (method).** Grouped cross-validation by scenario (out-of-fold macro-F1 0.7097) and a left-out scenario (34-1: 0.8595 classes present, 0.6876 all 5). 34-1 is not a clean test any more.
+2. **O2 — Multi-class Random Forest with no scenario leakage: Done (method).** Grouped cross-validation by scenario (out-of-fold macro-F1 0.7097, v3.1.0) and a left-out scenario (34-1, model v3.2.0: 0.8777 classes present, 0.7022 all 5). 34-1 is not a clean test any more.
 3. **O3 — Live features that match the dataset: Shown in the virtual lab.** Same 27 columns, types and ranges on live Zeek flows (format PASS); 14 of 27 features shifted. Final answer on real camera traffic (Steps 19, 20, 22).
 4. **O4 — Monitoring, dashboard, storage and alerts joined: Built and working.** Zeek → adapter → model → decision engine → MongoDB → Socket.IO dashboard, on real packets (FR-01 to FR-04, Step 36 report).
 5. **O5 — Policy-based IP blocking with manual undo: Built and shown.** Automatic C&C destination block, DDoS rate-limit, manual block/unblock, expiry, startup recovery (FR-02, FR-06, Targets 5–6). Hardware-lab test pending.
@@ -1437,11 +1472,11 @@ Section 3 of [`docs/requirements_checklist.md`](docs/requirements_checklist.md):
 # 5. Part 4: Hypothesis H1 and Research Questions RQ1 to RQ5
 
 * **H1:** *"Macro-F1 ≥ 0.85 on held-out scenarios, while keeping the benign false-positive rate ≤ 5% on the local IP-camera traffic we control."*
-  - **Part 1:** 0.8595 over the classes present on 34-1 (D-054) — meets the number, but 34-1 is not a clean test.
+  - **Part 1:** 0.8777 over the classes present on 34-1 (model v3.2.0; D-054) — meets the number, but 34-1 is not a clean test.
   - **Part 2:** **not tested yet** (needs real camera traffic, Step 20).
   - **So H1 is not confirmed yet.** The lab results will decide it.
-* **RQ1 (benign vs. malicious under scenario-aware validation):** offline answer available — grouped CV out-of-fold macro-F1 0.7097 over 22 scenarios; on 34-1 accuracy 0.9322 and Benign F1 0.721 (many 34-1 "benign" flows look like failed attack tries; D-051).
-* **RQ2 (sorting into DDoS, scanning, C&C, malware/download):** per-class F1, grouped out-of-fold (22 scenarios): DDoS_DoS 0.764, CnC 0.769, PortScan 0.631, Malware_Download 0.644. On 34-1: DDoS_DoS 0.995, CnC 0.876, PortScan 0.846 (no Malware_Download flows in 34-1). Most C&C *conversations* are still missed (366 of 1,640, issue 48). Program downloads are found by the file-type rule, not the model.
+* **RQ1 (benign vs. malicious under scenario-aware validation):** offline answer available — grouped CV out-of-fold macro-F1 0.7097 over 22 scenarios (v3.1.0); on 34-1 (v3.2.0) accuracy 0.9625 and Benign F1 0.847 (many 34-1 "benign" flows look like failed attack tries; D-051).
+* **RQ2 (sorting into DDoS, scanning, C&C, malware/download):** on held-out 34-1 the model (v3.2.0) scores per-class F1 DDoS_DoS 0.995, CnC 0.936, PortScan 0.733, Benign 0.847 (34-1 has no Malware_Download flows). Grouped out-of-fold on the 22 training scenarios (v3.1.0): DDoS_DoS 0.764, CnC 0.769, PortScan 0.631, Malware_Download 0.644. Program downloads are now caught by the model itself (v3.2.0, after retraining with lab download flows) **and** by the Zeek file-type rule. Most C&C *conversations* on 34-1 are still missed (issue 48).
 * **RQ3 (features available and stable in IoT-23 and live Zeek):** all 27 features are available with the same format in live Zeek output; 14 of 27 have a different distribution in the virtual lab. Final answer on real camera traffic (Step 22).
 * **RQ4 (time from detection to dashboard, alert and block):** virtual lab, Step 37: Zeek line → dashboard median 0.141 s, 95% 0.636 s; first alert → router rule median 0.159 s. Plus Zeek's own wait until a flow ends (reported separately). Hardware-lab measurement pending.
 * **RQ5 (safety rules so that automatic response does not stop camera access):** designed and built (`docs/response_policy.md`): allowlist, camera-LAN protection, class thresholds, 3 repeats in 60 s, 30-minute limit, audit. In every virtual-lab test the camera, NVR and admin PC were never blocked. Open: manual camera block (issue 52) and camera cloud retries that could look like C&C (issue 39). Hardware-lab evidence pending (Step 35).
@@ -1491,7 +1526,7 @@ docker exec ids-lab-attacker nping --tcp -p 80 --flags syn --rate 1000 -c 5000 1
 docker exec ids-lab-router nft list set inet ids limit_src
 ```
 - Show the **DDoS_DoS** card (red) and `10.10.10.50` in `limit_src`.
-- If a CnC card and a `block_src` entry also appear, say that this is open issue 43.
+- `block_src` stays empty: an incoming flood that looks like C&C is alert only, never a source block (issue 43 fixed 13 Nov 2026).
 
 ### Attack 3: C&C Calls and Router Block (`nc`) — FR-02 Test 2.4
 
@@ -1537,9 +1572,10 @@ Wait 30 seconds after the last C&C try (see Test 2.4), then:
 | :--- | :--- |
 | "Is 34-1 really unseen?" | No. It was opened and studied during development (model card section 6, D-054). The clean test is the hardware lab. |
 | "Why is the confidence for DDoS only about 0.45?" | The live flood looks different from IoT-23 floods (14 shifted features). It is still the top class of the five, and the DDoS rate-limit threshold (0.30) was chosen from training data only, before the lab test. |
-| "Why did the flood also cause a C&C block?" | Many failed connections from one source to one address can look like C&C (issue 43). We record it and will check it in the hardware lab. |
+| "Does the flood also cause a C&C block?" | No longer. The model may still read some flood/scan flows as C&C, but the policy blocks only the outside **destination** of an outbound C&C call (proposal Table 5), so an incoming flood/scan is alert only and `block_src` stays empty (issue 43 fixed 13 Nov 2026). |
+| "Can the model tell all four attacks apart?" | Yes: PortScan, DDoS_DoS and CnC are caught by the Random Forest directly; a run of program downloads (the dropper pattern) is caught by the model (v3.2.0, retrained with lab download flows), and every single download is also caught by the Zeek file-type rule. All four reach the dashboard live. |
 | "Why does a single-host scan not give PortScan?" | Too few flows for the 60-second window features (issues 38, 46). A subnet sweep gives PortScan. |
-| "Why do you restart the backend before the demo?" | The window features remember the last hour of each source. After many rehearsals from the same attacker address, a scan looked like C&C (it has many earlier failed tries). This is the same weakness as issue 43; the restart starts the memory empty, like a new attacker. In the hardware lab we will record how often this happens with real traffic. |
+| "Why do you restart the backend before the demo?" | The window features remember the last hour of each source. After many rehearsals from the same attacker address, the model can read a scan as C&C (it has many earlier failed tries). It no longer causes a wrong block (issue 43 fixed — an incoming C&C-looking flow is alert only), but the class on the card is clearer after a restart, which starts the memory empty like a new attacker. In the hardware lab we will record how often this happens with real traffic. |
 | "Is the model calibrated?" | Step 17a compared methods by a rule written first; it chose no calibration (raw Random Forest probabilities, D-044/D-045). |
 | "Is Random Forest the best model?" | On the same rows, HistGradientBoosting has a slightly higher out-of-fold macro-F1 (0.7391 vs 0.7097, issue 49). We keep Random Forest as planned in the proposal and report both. |
 | "Does Zeek lose packets?" | No: `stats.log` shows 0 dropped and `capture_loss.log` 0.0%. Earlier the capture loss was about 98% because Zeek cut the large joined packets of the virtual network at 9,216 bytes; fixed with a larger snap length (D-058). We will measure again on the real sensor. |
