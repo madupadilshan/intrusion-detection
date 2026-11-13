@@ -159,22 +159,31 @@ docker exec ids-lab-router nft list table inet ids
 table inet ids {
     set allow {
         type ipv4_addr
-        elements = { 192.168.50.10, 192.168.50.20 }
+        elements = { 192.168.50.1, 192.168.50.5,
+                     192.168.50.10, 192.168.50.20 }
     }
-    set block_dst {
-        type ipv4_addr
-        flags timeout
-    }
+
     set block_src {
         type ipv4_addr
         flags timeout
     }
+
+    set block_dst {
+        type ipv4_addr
+        flags timeout
+    }
+
+    set limit_src {
+        type ipv4_addr
+        flags timeout
+    }
+
     chain forward {
         type filter hook forward priority filter; policy accept;
         ip saddr @allow accept
-        ip daddr @allow accept
-        ip daddr @block_dst drop
         ip saddr @block_src drop
+        ip daddr @block_dst drop
+        ip saddr @limit_src limit rate over 200/second burst 5 packets drop
     }
 }
 ```
@@ -1116,7 +1125,8 @@ docker exec ids-lab-router nft list set inet ids block_dst
 table inet ids {
     set allow {
         type ipv4_addr
-        elements = { 192.168.50.10, 192.168.50.20 }
+        elements = { 192.168.50.1, 192.168.50.5,
+                     192.168.50.10, 192.168.50.20 }
     }
     set block_dst {
         type ipv4_addr
@@ -1135,7 +1145,7 @@ table inet ids {
 ```
 
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
-- `set allow { 192.168.50.10, 192.168.50.20 }`: Admin PC එක සහ NVR එක immutable allowlist එකේ ඇති බැවින් කිසිසේත්ම block නොවන බවට ආරක්ෂක සහතිකය ලබාදෙයි.
+- `set allow { 192.168.50.1, 192.168.50.5, 192.168.50.10, 192.168.50.20 }`: Router එක (.1), Scanner එක (.5), Admin PC එක (.10) සහ NVR එක (.20) immutable allowlist එකේ ඇති බැවින් කිසිසේත්ම block නොවන බවට ආරක්ෂක සහතිකය ලබාදෙයි.
 - `set block_dst`: C&C සේවාදායකයේ පිටත Destination IP එක (`10.10.10.50`) අවහිර කර ඇති බව පෙන්වයි.
 - `timeout 30m expires 29m42s`: මිනිත්තු 30 කින් මෙම block එක ස්වයංක්‍රීයව ඉවත්වීමට නියමිත බවත්, දැනට මිනිත්තු 29 යි තත්පර 42 ක් ඉතිරිව ඇති බවත් kernel මට්ටමින් ඔප්පු කරයි.
 - කැමරාවේ IP එක (`192.168.50.30`) මෙහි කොතැනකවත් නොමැති බැවින්, කැමරාව නොව පිටත C&C Server එක පමණක් block වී ඇති බව තහවුරු වේ!

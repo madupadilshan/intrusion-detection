@@ -159,22 +159,31 @@ docker exec ids-lab-router nft list table inet ids
 table inet ids {
     set allow {
         type ipv4_addr
-        elements = { 192.168.50.10, 192.168.50.20 }
+        elements = { 192.168.50.1, 192.168.50.5,
+                     192.168.50.10, 192.168.50.20 }
     }
-    set block_dst {
-        type ipv4_addr
-        flags timeout
-    }
+
     set block_src {
         type ipv4_addr
         flags timeout
     }
+
+    set block_dst {
+        type ipv4_addr
+        flags timeout
+    }
+
+    set limit_src {
+        type ipv4_addr
+        flags timeout
+    }
+
     chain forward {
         type filter hook forward priority filter; policy accept;
         ip saddr @allow accept
-        ip daddr @allow accept
-        ip daddr @block_dst drop
         ip saddr @block_src drop
+        ip daddr @block_dst drop
+        ip saddr @limit_src limit rate over 200/second burst 5 packets drop
     }
 }
 ```
@@ -1116,7 +1125,8 @@ docker exec ids-lab-router nft list set inet ids block_dst
 table inet ids {
     set allow {
         type ipv4_addr
-        elements = { 192.168.50.10, 192.168.50.20 }
+        elements = { 192.168.50.1, 192.168.50.5,
+                     192.168.50.10, 192.168.50.20 }
     }
     set block_dst {
         type ipv4_addr
@@ -1135,7 +1145,7 @@ table inet ids {
 ```
 
 #### 📊 Output Breakdown:
-- `set allow { 192.168.50.10, 192.168.50.20 }`: Provides security guarantee that Admin PC and NVR are in immutable allowlist and will never be blocked.
+- `set allow { 192.168.50.1, 192.168.50.5, 192.168.50.10, 192.168.50.20 }`: Provides security guarantee that Router (.1), Scanner (.5), Admin PC (.10), and NVR (.20) are on immutable allowlist and will never be blocked.
 - `set block_dst`: Shows that the external Destination IP of the C&C server (`10.10.10.50`) is blocked.
 - `timeout 30m expires 29m42s`: Proves at kernel level that this block will auto-expire in 30 minutes, with 29m 42s currently remaining.
 - Because the camera IP (`192.168.50.30`) is absent from this table, it confirms that only the external C&C Server is blocked, NOT the camera!
