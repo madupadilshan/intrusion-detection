@@ -1392,7 +1392,7 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
   - Container count 10 → 11; table of contents fixed (4 broken links, 3 of them older).
 - **Files changed:** `A_TO_Z_SYSTEM_FLOW.md`, `my-app/src/pages/LogExport.js`, `my-app/src/pages/AttackHistory.js`, `PROJECT_PROGRESS_AND_CHALLENGES.md`.
 - **New open issue:** 52 (the camera can be blocked by hand).
-- **Commit:** none yet (waiting for the owner).
+- **Commit:** `51351cb` (docs & fix: update A_TO_Z_SYSTEM_FLOW with verified lab outputs and fix dashboard DDoS_DoS filter).
 
 **3.77 End-to-end presentation manual and live lab proof guide (11 November 2026)**
 
