@@ -8,6 +8,8 @@
 
 ---
 
+> 🌐 **Language:** English | [**සිංහල මාර්ගෝපදේශය (Sinhala Version) මෙතැනින් බලන්න**](PROGRESS_MEETING_PRESENTATION_GUIDE_SI.md)
+
 > 🎯 **Purpose of this Guide:**  
 > During the Progress Meeting with the supervisors (Dr. A.A.M. Matheeh & Dr. Senaka Amarakeerthi), this guide provides the exact terminal commands, verified outputs, and presentation scripts to prove that all **Functional Requirements (FR-01 to FR-08)**, **Proposal Table 9 Acceptance Targets**, **Research Objectives (O1 to O6)**, and **Research Questions (RQ1 to RQ5 & Hypothesis H1)** are 100% practically achieved, **following the exact sequence of [`docs/requirements_checklist.md`](docs/requirements_checklist.md)**.
 >
