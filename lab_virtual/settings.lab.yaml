@@ -46,7 +46,7 @@ zeek:
   files_log_path: lab_virtual/zeek_logs/files.log
 
 model:
-  bundle_path: ml_engine/models/ids_bundle_v3.joblib
+  bundle_path: ml_engine/models/ids_bundle_v3_2.joblib   # v3.2.0: v3.1.0 retrained with lab rows (ml_engine/retrain_with_lab.py); v3.1.0 = ids_bundle_v3.joblib
   random_seed: 42
 
 retention_days:

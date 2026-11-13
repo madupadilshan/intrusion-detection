@@ -46,3 +46,12 @@ redef ignore_checksums = T;
 @load policy/misc/stats
 redef CaptureLoss::watch_interval = 1 min;
 redef Stats::report_interval = 1 min;
+
+# 6. Snap length (13 Nov 2026, D-058): capture whole packets.
+#    Zeek's default keeps only the first 9,216 bytes of each packet. Virtual networks (Docker) and
+#    network cards with offloading (GRO/LRO) hand Zeek joined packets of up to 64 KB, so the rest was
+#    cut off: the NVR stream showed ~58.5 MB of missed_bytes per segment, files.log saw only part of a
+#    download, and capture_loss.log reported ~98%. 65,535 bytes holds the largest joined packet.
+#    missed_bytes is one of the model's 27 features (almost always 0 in IoT-23), so this also keeps
+#    the live input closer to the training data.
+redef Pcap::snaplen = 65535;

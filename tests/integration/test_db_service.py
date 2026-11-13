@@ -390,6 +390,31 @@ def test_response_action_logging(db_service):
         db_service.log_response_action(invalid_act)
 
 
+def test_rate_limit_response_action_is_saved(db_service):
+    """The automatic DDoS rate-limit (D-055) writes action 'rate_limit'; it must be saved (fixed 13 Nov 2026)."""
+    for spelling in ("rate_limit", "rate-limit"):
+        ip = "10.10.10.51" if spelling == "rate_limit" else "10.10.10.52"
+        action_id = db_service.log_response_action({
+            "action": spelling,
+            "target_ip": ip,
+            "direction": "src",
+            "reason": "AUTO_DDOS_RATELIMIT",
+            "actor": "autonomous_policy",
+            "status": "active",
+        })
+        assert action_id is not None
+        saved = db_service.get_response_actions(target_ip=ip)
+        assert len(saved) == 1
+        assert saved[0]["action"] == "rate_limit"
+
+    # the rule expiry worker writes "expire" (core_engine/rule_worker.py)
+    assert db_service.log_response_action({
+        "action": "expire", "target_ip": "10.10.10.53", "reason_code": "RULE_TIMEOUT_EXPIRED",
+        "actor": "system_auto", "status": "applied",
+    }) is not None
+    assert db_service.get_response_actions(target_ip="10.10.10.53")[0]["action"] == "expire"
+
+
 # =============================================================================
 # 6. System Logs (Figure 4, FR-07, FR-08)
 # =============================================================================

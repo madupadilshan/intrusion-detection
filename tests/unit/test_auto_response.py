@@ -116,6 +116,13 @@ def test_local_networks_decide_what_is_protected():
     d_cnc = p_lab.evaluate({"predicted_class": "CnC", "confidence": 0.99, "src_ip": "192.168.50.30",
                             "dst_ip": "10.10.10.50"})
     assert d_cnc.should_act is True and d_cnc.target_ip == "10.10.10.50" and d_cnc.direction == "outbound"
+    # An incoming flow from outside predicted as C&C (first flood or scan flows, issue 43) never
+    # blocks the outside source; its destination is a local device, so it is alert only.
+    for _ in range(3):
+        d_in = p_lab.evaluate({"predicted_class": "CnC", "confidence": 0.99, "src_ip": "10.10.10.50",
+                               "dst_ip": "192.168.50.30"})
+    assert d_in.should_act is False and d_in.reason_code == REASON_SKIP_PRIVATE_TARGET
+    assert d_in.target_ip == "192.168.50.30"
 
 
 def test_policy_auto_response_default_is_off():

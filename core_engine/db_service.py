@@ -906,8 +906,13 @@ class DatabaseService:
 
         if not target_ip:
             raise ValueError("Response action requires a valid 'target_ip'.")
-        if not action or action not in ("block", "rate-limit", "isolate", "unblock"):
-            raise ValueError(f"Invalid action '{action}'. Must be one of: block, rate-limit, isolate, unblock.")
+        # The policy and the blocklist write "rate_limit" (D-055), and the rule expiry worker writes
+        # "expire". Until 13 Nov 2026 only "rate-limit" was accepted here and "expire" was refused, so
+        # every automatic DDoS rate-limit and every rule expiry lost its response-action record.
+        if isinstance(action, str) and action.strip().lower() == "rate-limit":
+            action = "rate_limit"
+        if not action or action not in ("block", "rate_limit", "isolate", "unblock", "expire"):
+            raise ValueError(f"Invalid action '{action}'. Must be one of: block, rate_limit, isolate, unblock, expire.")
 
         action_id = action_data.get("action_id") or str(uuid.uuid4())
         now = datetime.now(timezone.utc)

@@ -37,6 +37,8 @@ def test_zeek_local_config_file():
     assert "redef Log::default_rotation_interval = 0 sec;" in content, "Must disable rotation for continuous tailing"
     assert "redef ignore_checksums = T;" in content, "Must ignore checksums for port mirror traffic"
     assert "@load base/protocols/conn" in content, "Must load base connection protocol"
+    # D-058: whole packets; the 9,216-byte default cut joined (offloaded) packets and made missed_bytes
+    assert "redef Pcap::snaplen = 65535;" in content, "Must capture whole joined packets (D-058)"
 
 
 def test_zeek_run_sh_script():

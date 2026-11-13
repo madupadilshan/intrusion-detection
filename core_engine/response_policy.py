@@ -326,9 +326,13 @@ class ResponsePolicy:
                 action_type = "rate_limit"
                 default_reason = REASON_AUTO_DDOS_RATELIMIT
         elif p_class == "CnC":
-            # Table 5: a local device talking to the outside -> block the outside destination
-            target_ip = dst_ip if self.is_local(src_ip) else src_ip
-            action_direction = "outbound" if target_ip == dst_ip else "inbound"
+            # Table 5: a local device talking to the outside -> block the outside destination.
+            # The target is always the destination, as in the Step 17 replay that chose the CnC
+            # threshold (ml_engine/response_replay.py TARGET_FIELD). An incoming flow from outside
+            # that looks like C&C (for example the first flows of a flood or a scan, issue 43) has
+            # a local destination, so the local-network check below stops the block: alert only.
+            target_ip = dst_ip
+            action_direction = "outbound"
             default_reason = REASON_AUTO_CNC_DEST_BLOCK
             requested_duration = 60
         elif p_class == "Malware_Download":

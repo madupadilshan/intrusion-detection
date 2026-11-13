@@ -1084,3 +1084,16 @@ Every important project decision is written here: the date, the decision, the re
 - **Also fixed here:** the Devices page now shows the stored services (it read a field name that does not exist). `ml_engine/evaluate.py` now judges H1 with the classes-present number of D-054, and still reports both.
 - **Who agreed:** project owner (11 Nov 2026, asked for all problems of the check to be fixed).
 - **Proposal link:** Section 3.7 (Nmap only on the approved subnet; evidence, not one port), Table 7 FR-05, guide Part E.
+
+## D-058 — 2026-11-13 — Zeek captures whole packets (snap length 65,535); response actions "rate_limit" and "expire" are saved
+- **Why:** the run-through of `PROGRESS_MEETING_PRESENTATION_GUIDE_EN.md` on 13 Nov 2026 (progress entry 3.80) found two faults:
+  1. **Zeek cut packets.** Zeek keeps only the first 9,216 bytes of a packet by default (`Pcap::snaplen`). The Docker network (and a network card with offloading) hands Zeek joined packets of up to 64 KB (`stats.log`: about 1,500 packets carried about 11.9 MB per minute). So the NVR stream showed about 58.5 MB of `missed_bytes` in every 5-minute segment, `files.log` saw only 14,480–18,816 of the 43,432 bytes of the test download, and `capture_loss.log` reported about 98% while `stats.log` showed 0 dropped packets. `missed_bytes` is one of the 27 model features (almost always 0 in IoT-23).
+  2. **Response actions were lost.** `db_service.log_response_action()` accepted only `rate-limit`, but the policy and the blocklist write `rate_limit` (D-055), and the rule expiry worker writes `expire`. Every automatic DDoS rate-limit and every rule expiry was refused (9 and 2 errors in the backend log); the blocklist itself was correct.
+- **Decisions:**
+  1. `sensor/local.zeek`: `redef Pcap::snaplen = 65535;` (the virtual lab and the hardware sensor use the same file). This is a capture setting, not a model or threshold change.
+  2. `core_engine/db_service.py`: accept `rate_limit` (and the old spelling `rate-limit`, stored as `rate_limit`) and `expire`.
+  3. Tests: `tests/unit/test_zeek_config.py` checks the snap length; `tests/integration/test_db_service.py` checks that `rate_limit` and `expire` actions are saved.
+- **Result (virtual lab, 13 Nov 2026, after restarting the sensor container):** `capture_loss.log` 0.0% (0 gaps); the download fully seen (`seen_bytes` 43,432, `missing_bytes` 0); the NVR stream `missed_bytes` 0; the DDoS rate-limit saved as a `rate_limit` response action; PortScan, DDoS rate-limit, C&C `block_dst` and the download rule still work; schema format check PASS; 314 tests pass.
+- **Not changed:** model, thresholds and policy (they stay as chosen before the lab results, D-046, D-054, D-055).
+- **Who agreed:** project owner (13 Nov 2026, asked for all problems found in the run-through to be fixed).
+- **Proposal link:** Section 3.5 (live features must match the dataset), Table 7 FR-01, FR-03, FR-06; Table 9 ("how many events are dropped").

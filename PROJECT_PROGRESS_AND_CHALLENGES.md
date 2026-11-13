@@ -4,7 +4,7 @@
 **Team:** Group 03 — University of Sri Jayewardenepura
 **Local folder:** `D:\intrusion detection`
 **GitHub:** https://github.com/madupadilshan/intrusion-detection (branch `main`)
-**Last updated:** 11 November 2026
+**Last updated:** 13 November 2026
 
 > **How this file is kept:** this file is updated **after every piece of work** on the project. Each piece of work gets a dated entry in Section 3 (Work log), and the tables in Sections 1, 2, 5 and 6 are updated at the same time. Use this file to answer "what has been done from the beginning?"
 
@@ -1407,6 +1407,43 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
   - Strictly virtual testbed focus: 100% focused on Docker containers, virtual bridges (`br-ids-lan`, `br-ids-out`), and host bindings with zero physical hardware comparisons or mentions.
   - Walkthroughs for normal video streaming vs. C&C beaconing (Scenario 4) and word-for-word presentation script for supervisors.
   - Enhanced camera simulator web server in `tests/lab_scenarios/camera_sim.py` to return a styled dark-mode IP Camera Web Management portal with live video status viewport and network properties, viewable directly in Chrome/Edge via Admin container export.
+
+### 13 November 2026
+
+**3.79 Check and rewrite of `PROGRESS_MEETING_PRESENTATION_GUIDE_EN.md` against the running virtual lab (13 November 2026)**
+
+- **What was done:** every command in the English presentation guide was read against the code and run in Windows PowerShell 5.1 on the virtual lab. The guide was rewritten with the real outputs. The native tools (`curl`, `nmap`, `nping`, `nc`) were kept where they work.
+- **Errors found in the old guide (the same kind that entry 3.78 had fixed in `A_TO_Z_SYSTEM_FLOW.md`):**
+  - Commands that failed: FR-07 used `/api/v1/audit/logs` (404); Target 6 used `/api/v1/mitigation/block|unblock` (404); Target 5 used `paramiko` (not installed) and a key `id_ed25519` that does not exist; FR-03 read keys at the wrong level (printed `None`); Target 1 and FR-05 had inner double quotes that break in PowerShell 5.1.
+  - Invented or wrong outputs: camera2/3/4 containers, NVR `camera_chunk_004.mp4` lines, FR-05 device list, FR-08 CSV header, weighted F1 92.48% (real 93.67%), throughput 125,599 flows/s shown as this command's result (real ~23,000), DDoS 100%, PortScan 92.78%, "P ≥ 0.85" gate, TTL countdown, "zero packet loss", "unseen / zero leakage", every Table 9 target "PASS".
+- **Real results on 13 Nov 2026:**
+  - Subnet `nmap -sS` sweep: PortScan 0.49–0.86, no block. A single-host scan gave **CnC 0.48** (not PortScan).
+  - `nping` SYN flood: DDoS_DoS 0.45 → `limit_src`; the first flows were CnC 0.63 → also `block_src` (issue 43).
+  - `nc -z` loop to a closed port 6667 (every 5 s): CnC 0.76, `block_dst` 10.10.10.50 after about 25–30 s; camera never blocked.
+  - A `lab_server.py --role cnc` started at 05:39 was still running and made every `nc` try succeed: 18 successful short connections gave **no alert**. The guide now stops old C&C servers before the demo.
+  - `curl` program download: Malware_Download 1.0 from the file-type rule; Zeek saw 18,816 of 43,432 bytes.
+  - Device scan: 202, completed in about 27 s, 6 addresses, only the camera is a possible camera. The scanner's own flows from `.5` were predicted CnC 0.44 and were `allowlist_protected`.
+  - Backend restart with the router rule wiped: `STARTUP_RULE_RESTORED SUCCESS` for 10.10.10.99.
+  - Schema check: format PASS on 10,674 live flows; 14 of 27 features shifted.
+  - Zeek `capture_loss.log`: median about 98% while `stats.log` shows 0 drops (most likely Docker offloading; to be measured on the real sensor).
+  - Test suite: 313 passed.
+- **Also seen:** two `STARTUP_RECOVERY_COMPLETE` audit records at the same second (07:59:23). **Checked in 3.80: not a bug** — a controlled restart writes one record; the two came from two backend processes that overlapped during the restart test.
+- **Not done:** the Sinhala guide `PROGRESS_MEETING_PRESENTATION_GUIDE_SI.md` was **not** updated and still has the old errors.
+- **Files changed:** `PROGRESS_MEETING_PRESENTATION_GUIDE_EN.md`, `PROJECT_PROGRESS_AND_CHALLENGES.md`.
+
+**3.80 Full run-through of the presentation guide; two faults fixed (13 November 2026, D-058)**
+
+- **What was done:** all 35 PowerShell blocks of `PROGRESS_MEETING_PRESENTATION_GUIDE_EN.md` were taken out of the file and run unchanged in a new Windows PowerShell 5.1, in the guide's order. Every block finished with exit code 0. The backend log was searched for repeated errors.
+- **Faults found and fixed (D-058):**
+  1. **Zeek cut packets at 9,216 bytes** (default snap length). The Docker network joins packets up to 64 KB, so the NVR stream had ~58.5 MB `missed_bytes` per segment, the test download was only partly seen, and `capture_loss.log` showed ~98%. Fix: `redef Pcap::snaplen = 65535;` in `sensor/local.zeek`, then `docker restart ids-lab-sensor`. After: capture loss 0.0% (0 gaps), download fully seen (43,432 of 43,432 bytes), NVR `missed_bytes` 0. The backend noticed the new `conn.log` by itself ("Log truncation detected").
+  2. **Response actions `rate_limit` and `expire` were refused** by `db_service.log_response_action()` (it accepted only `rate-limit`): 9 + 2 errors in the backend log. Every automatic DDoS rate-limit and every rule expiry lost its response-action record (the blocklist was correct). Fix in `core_engine/db_service.py`; after: `rate_limit AUTO_DDOS_RATELIMIT` saved.
+  - Tests added: snap length (`tests/unit/test_zeek_config.py`), `rate_limit` and `expire` saved (`tests/integration/test_db_service.py`). **314 passed.**
+- **Found, not a code fault (demo rule added to the guide):** the 60-minute window features remember each source. After about an hour of repeated floods and scans from `10.10.10.50`, the subnet sweep gave **CnC 0.52 and a block**; right after a backend restart it gave **PortScan 0.84**. Same weakness as issue 43. The guide now asks for a fresh backend start after rehearsals and one run of each test in the order 2.1 → 2.5. Model, thresholds and policy were **not** changed (D-046, D-054).
+- **Found, demo step changed (not code):** once, `lab.py reset` ran 10 s after the C&C loop; Zeek wrote the last refused try after that, and `10.10.10.50` was blocked again at once. An unblock keeps the policy's count of recent alerts, so the next alert may block again — this is the designed behaviour (`tests/unit/test_auto_response.py::test_same_ip_is_not_blocked_again_while_rule_is_active`), so it was not changed. The guide now waits 30 s before the reset; checked: `block_dst` stayed empty 60 s after the reset and the download test worked. **For the supervisor:** should an admin unblock also clear the count of earlier alerts?
+- **Final in-order run after a fresh start:** benign no alert; PortScan 0.84 no block; DDoS_DoS 0.39 rate-limit only; CnC → `block_dst` 10.10.10.50; download → Malware_Download 1.0 (rule); camera and NVR never blocked; NVR 58.6 MB every 5 minutes.
+- **Results across the day (ranges now in the guide):** PortScan 0.49–0.88; DDoS_DoS 0.38–0.45 (in 1 of 3 runs also CnC 0.63 → `block_src`, issue 43); CnC 0.68–0.82, blocked every time; model batch speed 14,000–23,000 flows/s; live latency median 112–277 ms, 95% 115–715 ms.
+- **Still not updated:** the Sinhala guide `PROGRESS_MEETING_PRESENTATION_GUIDE_SI.md`.
+- **Files changed:** `sensor/local.zeek`, `core_engine/db_service.py`, `tests/unit/test_zeek_config.py`, `tests/integration/test_db_service.py`, `docs/decision_log.md` (D-058), `PROGRESS_MEETING_PRESENTATION_GUIDE_EN.md`, `PROJECT_PROGRESS_AND_CHALLENGES.md`.
 
 ---
 
