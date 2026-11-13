@@ -345,14 +345,14 @@ The exact sequential breakdown of all 12 Ethernet frames is detailed below:
 
 ```powershell
 docker exec ids-lab-admin python -c "import urllib.request; urllib.request.urlopen('http://192.168.50.30/')"
-Get-Content lab_virtual\zeek_logs\conn.log -Tail 1
+Get-Content lab_virtual\zeek_logs\conn.log | Select-String "192.168.50.10" | Select-Object -Last 1
 ```
 
 ##### 🔍 Line-by-Line Breakdown:
 - `docker exec ids-lab-admin`: Executes a shell command inside the running Admin PC container.
 - `python -c "..."`: Executes an inline Python command inside the container (`-c` = command).
 - `import urllib.request; urllib.request.urlopen('http://192.168.50.30/')`: Sends an authentic HTTP GET request from Admin PC to the camera Web Server (`192.168.50.30:80`).
-- `Get-Content lab_virtual\zeek_logs\conn.log -Tail 1`: Reads and prints the single latest connection record written to `conn.log` by the Zeek sensor.
+- `Get-Content lab_virtual\zeek_logs\conn.log | Select-String "192.168.50.10" | Select-Object -Last 1`: Reads and prints the latest connection record originated by Admin PC (`192.168.50.10`). *(Filtering by `"192.168.50.10"` isolates the Admin PC HTTP request, ignoring concurrent benign background traffic such as camera cloud sync pings on port 443).*
 
 ##### 📋 Verified Output:
 ```json

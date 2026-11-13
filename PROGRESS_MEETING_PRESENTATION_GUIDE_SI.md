@@ -345,14 +345,14 @@ Admin PC එක කැමරාවෙන් කුඩා වෙබ් පිට�
 
 ```powershell
 docker exec ids-lab-admin python -c "import urllib.request; urllib.request.urlopen('http://192.168.50.30/')"
-Get-Content lab_virtual\zeek_logs\conn.log -Tail 1
+Get-Content lab_virtual\zeek_logs\conn.log | Select-String "192.168.50.10" | Select-Object -Last 1
 ```
 
 ##### 🔍 කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):
 - `docker exec ids-lab-admin`: ක්‍රියාත්මක වන Admin PC container එක ඇතුළට ගොස් විධානයක් run කරන්න.
 - `python -c "..."`: Container එක තුළ ඇති Python මඟින් inline command එකක් run කරන්න (-c = command).
 - `import urllib.request; urllib.request.urlopen('http://192.168.50.30/')`: Admin PC එකේ සිට කැමරාවේ IP එක වන `192.168.50.30` හි Port 80 (Web Server) වෙත සැබෑ HTTP GET request එකක් යවන්න.
-- `Get-Content lab_virtual\zeek_logs\conn.log -Tail 1`: Zeek Sensor එක විසින් සටහන් කරගත් `conn.log` ගොනුවේ අන්තිමටම ලියවුණු අලුත්ම 1 වන පේළිය පමණක් screen එකේ පෙන්වන්න.
+- `Get-Content lab_virtual\zeek_logs\conn.log | Select-String "192.168.50.10" | Select-Object -Last 1`: Admin PC එකෙන් (`192.168.50.10`) කැමරාවට ගිය අලුත්ම connection record එක තෝරා තිරයේ පෙන්වන්න. *(කැමරාව පසුබිමේදී Cloud Server එක වෙත යවන සාමාන්‍ය Port 443 background telemetry වලට හසු නොවී Admin PC එකේ Port 80 HTTP ඉල්ලීම කෙලින්ම වෙන් කර ගැනීමට `Select-String "192.168.50.10"` භාවිතා කෙරේ).*
 
 ##### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 ```json

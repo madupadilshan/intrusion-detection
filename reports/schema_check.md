@@ -1,9 +1,9 @@
 # Offline vs Live Feature Check (Step 22)
 
 **Proposal:** Sections 2.5 and 3.5; Objective O3; Research Question RQ3; Table 11
-**Date:** 2026-11-11 09:52:23 UTC
+**Date:** 2026-11-13 04:55:07 UTC
 **Offline data:** `D:\intrusion detection\data\processed\train_features.parquet` (1,384,070 flows)
-**Live data:** `lab_virtual\zeek_logs\conn.log` (20,929 flows)
+**Live data:** `lab_virtual\zeek_logs\conn.log` (249 flows)
 **Model bundle:** `D:\intrusion detection\ml_engine\models\ids_bundle_v3.joblib`
 
 > **Data source: REAL.** REAL capture: Zeek `conn.log` from the lab mirror port. This report is the Step 22 evidence for Objective O3 and Research Question RQ3.
@@ -18,7 +18,7 @@
 | Normal ranges (no negative counts; ratios in 0–1) | 21 / 21 numeric features valid | **PASS** |
 | Model runs on the live features | valid probabilities = True | **PASS** |
 | Categories not seen in training | 2 feature(s): `service`, `history` | reported (encoded as unknown = -1) |
-| Summary distributions (KS statistic >= 0.3) | 14 feature(s): `duration`, `orig_pkts`, `resp_pkts`, `resp_ip_bytes`, `pkt_ratio`, `is_incomplete_flow`, `src_conn_60s`, `src_udst_60s`, `src_uport_60s`, `src_udst_ratio`, `pair_conn_60s`, `pair_gap`, `pair_gap_change`, `pair_fail_1h` | reported (a large shift is a domain difference, see below) |
+| Summary distributions (KS statistic >= 0.3) | 19 feature(s): `duration`, `orig_bytes`, `resp_bytes`, `orig_pkts`, `orig_ip_bytes`, `resp_pkts`, `resp_ip_bytes`, `orig_bytes_per_pkt`, `resp_bytes_per_pkt`, `byte_ratio`, `pkt_ratio`, `is_incomplete_flow`, `src_conn_60s`, `src_udst_60s`, `src_uport_60s`, `src_udst_ratio`, `pair_conn_60s`, `pair_gap`, `pair_gap_change` | reported (a large shift is a domain difference, see below) |
 
 **Format check overall: PASS.** This means the live pipeline makes the same 27 columns, with the same types, without missing or impossible values, and the model accepts them. It does **not** mean the live traffic looks like IoT-23: the distribution and category rows show how different it is.
 
@@ -60,46 +60,46 @@ KS = two-sample Kolmogorov–Smirnov statistic on samples of up to 10,000 flows 
 
 | Feature | Offline min–max | Live min–max | Offline median (p95) | Live median (p95) | KS statistic | Range status |
 | :--- | :--- | :--- | :--- | :--- | ---: | :--- |
-| `duration` | 0.0 – 93280.0312 | 0.0 – 300.2182 | 0.0 (17.3633) | 0.0 (0.0011) | 0.777 | PASS |
-| `orig_bytes` | 0.0 – 66205577216.0 | 0.0 – 1716567808.0 | 0.0 (636.0) | 0.0 (57.0) | 0.052 | PASS |
-| `resp_bytes` | 0.0 – 336516352.0 | 0.0 – 58643200.0 | 0.0 (0.0) | 0.0 (48.0) | 0.080 | PASS |
-| `missed_bytes` | 0.0 – 1342177280.0 | 0.0 – 58598880.0 | 0.0 (0.0) | 0.0 (0.0) | 0.004 | PASS |
-| `orig_pkts` | 0.0 – 14319118.0 | 1.0 – 2999.0 | 1.0 (6.0) | 2.0 (5.0) | 0.317 | PASS |
-| `orig_ip_bytes` | 0.0 – 1781371392.0 | 28.0 – 155983.0 | 60.0 (1080.0) | 80.0 (325.0) | 0.272 | PASS |
-| `resp_pkts` | 0.0 – 239484.0 | 0.0 – 2998.0 | 0.0 (0.0) | 1.0 (5.0) | 0.962 | PASS |
-| `resp_ip_bytes` | 0.0 – 349618688.0 | 0.0 – 58799104.0 | 0.0 (0.0) | 44.0 (280.0) | 0.969 | PASS |
-| `orig_bytes_per_pkt` | 0.0 – 946322432.0 | 0.0 – 858283904.0 | 0.0 (30.0) | 0.0 (21.1667) | 0.051 | PASS |
-| `resp_bytes_per_pkt` | 0.0 – 16394.0 | 0.0 – 19560.7734 | 0.0 (0.0) | 0.0 (35.0) | 0.080 | PASS |
-| `byte_ratio` | 0.0 – 1.0 | 0.0 – 1.0 | 0.0 (1.0) | 0.0 (0.4908) | 0.066 | PASS |
-| `pkt_ratio` | 0.0 – 1.0 | 0.2 – 1.0 | 1.0 (1.0) | 0.6667 (0.6667) | 0.927 | PASS |
-| `is_incomplete_flow` | 0.0 – 1.0 | 0.0 – 1.0 | 1.0 (1.0) | 0.0 (0.0) | 0.973 | PASS |
-| `src_conn_60s` | 1.0 – 1176902.0 | 1.0 – 6780.0 | 9292.0 (638456.65) | 2050.0 (6209.6) | 0.556 | PASS |
-| `src_udst_60s` | 1.0 – 1176785.0 | 1.0 – 4.0 | 5212.0 (610887.1) | 1.0 (1.0) | 0.891 | PASS |
-| `src_uport_60s` | 1.0 – 73.0 | 1.0 – 5.0 | 2.0 (7.0) | 1.0 (1.0) | 0.710 | PASS |
-| `src_udst_ratio` | 0.0 – 1.0 | 0.0001 – 1.0 | 0.9998 (1.0) | 0.0005 (0.5) | 0.804 | PASS |
-| `pair_conn_60s` | 1.0 – 729517.0 | 1.0 – 6780.0 | 1.0 (148124.2) | 2050.0 (6209.6) | 0.760 | PASS |
-| `pair_gap` | -1.0 – 599.9959 | -1.0 – 542.6211 | -1.0 (8.5833) | 0.0011 (30.4653) | 0.759 | PASS |
-| `pair_gap_change` | -1.0 – 599.9834 | -1.0 – 438.2992 | -1.0 (4.4299) | 0.0001 (30.0116) | 0.784 | PASS |
-| `pair_fail_1h` | 0.0 – 3578269.0 | 0.0 – 33.0 | 0.0 (411457.85) | 1.0 (2.0) | 0.702 | PASS |
+| `duration` | 0.0 – 93280.0312 | 0.0003 – 300.1888 | 0.0 (17.3633) | 0.0011 (0.0131) | 0.798 | PASS |
+| `orig_bytes` | 0.0 – 66205577216.0 | 27.0 – 57134000.0 | 0.0 (636.0) | 57.0 (127.0) | 0.913 | PASS |
+| `resp_bytes` | 0.0 – 336516352.0 | 0.0 – 58643200.0 | 0.0 (0.0) | 48.0 (5618.0) | 0.975 | PASS |
+| `missed_bytes` | 0.0 – 1342177280.0 | 0.0 – 58601776.0 | 0.0 (0.0) | 0.0 (0.0) | 0.028 | PASS |
+| `orig_pkts` | 0.0 – 14319118.0 | 1.0 – 2999.0 | 1.0 (6.0) | 5.0 (6.0) | 0.609 | PASS |
+| `orig_ip_bytes` | 0.0 – 1781371392.0 | 55.0 – 57285632.0 | 60.0 (1080.0) | 325.0 (447.0) | 0.562 | PASS |
+| `resp_pkts` | 0.0 – 239484.0 | 1.0 – 2998.0 | 0.0 (0.0) | 5.0 (6.0) | 0.963 | PASS |
+| `resp_ip_bytes` | 0.0 – 349618688.0 | 71.0 – 58799104.0 | 0.0 (0.0) | 280.0 (5938.0) | 0.973 | PASS |
+| `orig_bytes_per_pkt` | 0.0 – 946322432.0 | 0.013 – 19593.2793 | 0.0 (30.0) | 19.5 (48.0) | 0.911 | PASS |
+| `resp_bytes_per_pkt` | 0.0 – 16394.0 | 0.0 – 19560.7734 | 0.0 (0.0) | 43.0 (936.3333) | 0.975 | PASS |
+| `byte_ratio` | 0.0 – 1.0 | 0.0 – 1.0 | 0.0 (1.0) | 0.4536 (0.8261) | 0.911 | PASS |
+| `pkt_ratio` | 0.0 – 1.0 | 0.5 – 0.5455 | 1.0 (1.0) | 0.5 (0.5455) | 0.932 | PASS |
+| `is_incomplete_flow` | 0.0 – 1.0 | 0.0 – 1.0 | 1.0 (1.0) | 0.0 (0.0) | 0.972 | PASS |
+| `src_conn_60s` | 1.0 – 1176902.0 | 1.0 – 4.0 | 9292.0 (638456.65) | 2.0 (4.0) | 0.962 | PASS |
+| `src_udst_60s` | 1.0 – 1176785.0 | 1.0 – 1.0 | 5212.0 (610887.1) | 1.0 (1.0) | 0.895 | PASS |
+| `src_uport_60s` | 1.0 – 73.0 | 1.0 – 3.0 | 2.0 (7.0) | 1.0 (3.0) | 0.428 | PASS |
+| `src_udst_ratio` | 0.0 – 1.0 | 0.25 – 1.0 | 0.9998 (1.0) | 0.5 (1.0) | 0.477 | PASS |
+| `pair_conn_60s` | 1.0 – 729517.0 | 1.0 – 4.0 | 1.0 (148124.2) | 2.0 (4.0) | 0.399 | PASS |
+| `pair_gap` | -1.0 – 599.9959 | -1.0 – 300.0875 | -1.0 (8.5833) | 30.3954 (60.4163) | 0.747 | PASS |
+| `pair_gap_change` | -1.0 – 599.9834 | -1.0 – 60.0211 | -1.0 (4.4299) | 30.0047 (60.0089) | 0.804 | PASS |
+| `pair_fail_1h` | 0.0 – 3578269.0 | 0.0 – 0.0 | 0.0 (411457.85) | 0.0 (0.0) | 0.197 | PASS |
 
 ## 3. Categories
 
 | Feature | Offline categories | Live categories | In both | Not seen in training |
 | :--- | ---: | ---: | ---: | :--- |
-| `proto` | 3 | 3 | 3 | `none` |
-| `service` | 7 | 6 | 5 | `ntp` |
-| `conn_state` | 13 | 7 | 7 | `none` |
-| `history` | 238 | 19 | 10 | `SahR, Sh, ShADadFR, ShADadgFf, ShADadgfF, ShADadggggFR, ShADadggggFtR, ShADadggggfF, ShAFdR` |
+| `proto` | 3 | 2 | 2 | `none` |
+| `service` | 7 | 5 | 4 | `ntp` |
+| `conn_state` | 13 | 3 | 3 | `none` |
+| `history` | 238 | 5 | 3 | `DafAr, ShADadggggFR` |
 | `orig_port_cat` | 4 | 3 | 3 | `none` |
-| `resp_port_cat` | 4 | 3 | 3 | `none` |
+| `resp_port_cat` | 4 | 2 | 2 | `none` |
 
 Categories not seen in training are encoded as "unknown" (-1). The model still runs, but it has never learned what these values mean, so predictions for such flows are less reliable.
 
 ## 4. Model run on the live features
 
-- Flows: 20,929
+- Flows: 249
 - Probabilities valid (each row sums to 1): True
-- Predicted classes: `{"Benign": 4017, "DDoS_DoS": 16873, "PortScan": 5, "CnC": 34}`
+- Predicted classes: `{"Benign": 249}`
 
 ## 5. What to do with the result (proposal 3.5)
 
