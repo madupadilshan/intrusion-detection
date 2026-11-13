@@ -132,7 +132,7 @@ const AttackHistory = () => {
               >
                 <option value="all">All Classes</option>
                 <option value="Benign">Benign</option>
-                <option value="DDoS">DDoS</option>
+                <option value="DDoS_DoS">DDoS_DoS</option>
                 <option value="PortScan">PortScan</option>
                 <option value="CnC">CnC</option>
                 <option value="Malware_Download">Malware_Download</option>

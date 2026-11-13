@@ -6,18 +6,18 @@
 > මෙම පද්ධතිය මුල සිට අගට ක්‍රියාත්මක වන ආකාරය ("මේ තියෙන්නේ කැමරාව, මේක Zeek එක, මේකෙන් මේ දේ එළියට එනවා, ඊළඟ කෙනා ඒකෙන් මේ දේ කරනවා...") යන සම්පූර්ණ දාමය, **Dashboard එක සැබවින්ම සම්බන්ධ වී තත්‍ය කාලීනව (Real-time) ක්‍රියාත්මක වන ආකාරය**, සහ **Virtual Lab එකේ සෑම කොටසක්ම තනි තනියෙන් පරීක්ෂා කර පෙන්වන ආකාරය**, ඕනෑම කෙනෙකුට (විශේෂයෙන්ම Supervisor ට) පැහැදිලි කිරීමට හැකි වන පරිදි, සරල සිංහලෙන් සහ තාක්ෂණික විස්තර සහිතව ඉදිරිපත් කිරීමයි.
 
 >
-> **⚠️ කියවීමට පෙර (Honesty notes - 11 Nov 2026 දින Virtual Lab එකේ සියලු commands ධාවනය කර පරීක්ෂා කරන ලදී, progress entry 3.77, decision D-057):**
+> **⚠️ කියවීමට පෙර (Honesty notes - 12–13 Nov 2026 දින cold start එකක සිට Virtual Lab එකේ සියලු commands Windows PowerShell 5.1 හි ධාවනය කර පරීක්ෂා කරන ලදී, progress entry 3.78, decision D-057):**
 >
 > - **සැබෑ දේ:** network packets, Zeek, AI model එක (v3.1.0), Decision Engine, Router එකේ Linux `nftables` firewall එක, MongoDB, Dashboard, සහ Nmap device scan එක.
 > - **අනුකරණය (simulated) කළ දේ:** උපාංග (Camera, NVR, Admin PC, Attacker, Cloud) Docker containers වේ. කැමරාව `camera_sim.py` වැඩසටහනකි - එය යවන්නේ සැබෑ H.264 වීඩියෝවක් නොව, තත්පරයට ~200 KB අහඹු bytes ය.
-> - **ඉලක්කම් සෑම run එකකදීම වෙනස් වේ:** පහත "ලැබෙන පිළිතුර" කොටස් 11 Nov 2026 දින ලබාගත් උදාහරණ වේ. Latency, flow ගණන, confidence වැනි අගයන් එක් එක් run එකේදී වෙනස් වේ.
+> - **ඉලක්කම් සෑම run එකකදීම වෙනස් වේ:** පහත "ලැබෙන පිළිතුර" කොටස් 12–13 Nov 2026 දින ලබාගත් උදාහරණ වේ. Latency, flow ගණන, confidence වැනි අගයන් එක් එක් run එකේදී වෙනස් වේ.
 > - **Virtual Lab එකෙන් ඔප්පු කළ නොහැකි දේ:** Hypothesis H1 හි දෙවන කොටස (සැබෑ කැමරා traffic මත FPR ≤ 5%) සහ RQ3 හි අවසාන පිළිතුර සඳහා **සැබෑ IP කැමරාවක්** අවශ්‍ය වේ (Hardware Lab, `lab_hardware/README.md`). Supervisor ට කියන්න: *"This is our virtual lab: the packets, Zeek, the model, the router firewall and the dashboard are real; the devices are simulated. The real-camera results come from the hardware lab."*
 
 ---
 
 ## පටුන (Table of Contents)
 
-1. [පද්ධතියේ සිටින චරිත 5 (The 5 Network Entities)](#1-පද්ධතියේ-සිටින-චරිත-5-the-5-network-entities)
+1. [පද්ධතියේ සිටින චරිත (The Network Entities)](#1-පද්ධතියේ-සිටින-චරිත-the-network-entities)
 2. [A සිට Z දක්වා දත්ත ගලායන සම්පූර්ණ දාමය සහ සැබෑ පද්ධති ගෘහ නිර්මාණ සටහන (The End-to-End Operational Architecture & Data Chain)](#2-a-සිට-z-දක්වා-දත්ත-ගලායන-සම්පූර්ණ-දාමය-සහ-සැබෑ-පද්ධති-ගෘහ-නිර්මාණ-සටහන-the-end-to-end-operational-architecture--data-chain)
 3. [Dashboard එක පද්ධතියට සම්බන්ධ වන ආකාරය සහ එහි පිටු 7 (The Dashboard Architecture)](#3-dashboard-එක-පද්ධතියට-සම්බන්ධ-වන-ආකාරය-සහ-එහි-පිටු-7-the-dashboard-architecture)
 4. [Virtual Lab එක Docker මඟින් නිර්මාණය කර ඇති ආකාරය සහ එහි සාක්ෂි (Virtual Lab Architecture & Proofs)](#4-virtual-lab-එක-docker-මඟින්-නිර්මාණය-කර-ඇති-ආකාරය-සහ-එහි-සාක්ෂි-virtual-lab-architecture--proofs)
@@ -32,7 +32,7 @@
      - 4.2.6 [Attacker Port Scan (Reconnaissance - Scenario 2)](#426-attacker-විසින්-port-scan-සිදු-කිරීම-reconnaissance---table-10-scenario-2)
      - 4.2.7 [IDS Pipeline & Sub-Second Latency (FR-02, FR-03 & Table 9 Target)](#427-ids-pipeline-ක්‍රියාකාරීත්වය-සහ-sub-second-latency-තහවුරු-කිරීම-ml-detector--latency---fr-02-fr-03--table-9-target)
      - 4.2.8 [C&C Autonomous Block & Live Alert (FR-04, FR-06 & Scenario 4)](#428-cc-ප්‍රහාරය-හඳුනාගෙන-router-firewall-එකේ-සජීවීව-block-වීම-autonomous-mitigation---fr-04-fr-06--table-10-scenario-4)
-     - 4.2.9 [කැමරා වීඩියෝවට බාධාවක් නොවීම (Hypothesis H1 & RQ5)](#429-ප්‍රහාරය-අතරතුරදීත්-කැමරා-වීඩියෝවට-කිසිදු-බාධාවක්-නොවීම-zero-disruption-to-camera-operations---hypothesis-h1-target--rq5)
+     - 4.2.9 [ප්‍රහාර අතරතුර කැමරා stream එක සහ ආරක්ෂිත උපාංග (RQ5 & Benign Safety)](#429-ප්‍රහාරය-අතරතුරදීත්-කැමරා-stream-එකට-බාධාවක්-නොවීම-සහ-කැමරාව-block-නොවීම-camera-safety-during-attacks---rq5-table-9-benign-safety)
      - 4.2.10 [පාලනය කළ Nmap Scan මඟින් උපාංග සෙවීම (Device Discovery - FR-05)](#4210-පාලනය-කළ-nmap-scan-මඟින්-අනුමත-උපාංග-සහ-සේවාවන්-හඳුනාගැනීම-controlled-nmap-device-discovery---fr-05--section-37)
      - 4.2.11 [Manual Block/Unblock & Filtered Log Export (FR-07, FR-08 & Scenario 6)](#4211-පරිපාලකයාට-manual-block-unblock-කිරීම-සහ-audit-logs-export-කිරීම-manual-blockunblock-audit-trail--filtered-export---fr-07-fr-08-scenario-6-objective-o5)
      - 4.2.12 [Machine Learning ආකෘතියේ පුහුණුව, නිරවද්‍යතාව සහ සජීවී වර්ගීකරණය තහවුරු කිරීම (ML Model Architecture, Training & Live Inference - FR-01, FR-02, Objective O2)](#4212-machine-learning-ආකෘතියේ-පුහුණුව-නිරවද්‍යතාව-සහ-සජීවී-වර්ගීකරණය-තහවුරු-කිරීම-ml-model-architecture-iot-23-training-zero-leakage-evaluation--live-inference-proof---objective-o2-table-6-table-7-fr-02-table-8-table-9)
@@ -40,9 +40,9 @@
      - 4.3.1 [PortScan: Nmap Port Sweep (Table 10 Scenario 2)](#431-ප්‍රහාර-වර්ගය-1-portscan-reconnaissance---table-10-scenario-2)
      - 4.3.2 [DDoS / DoS: SYN Flood & Router Rate-Limiting (Table 10 Scenario 3 & D-055)](#432-ප්‍රහාර-වර්ගය-2-ddos--dos-syn-flood-resource-exhaustion---table-10-scenario-3--rule-d-055)
      - 4.3.3 [Command & Control (C&C): Botnet Beacons & Autonomous Block (Table 10 Scenario 4)](#433-ප්‍රහාර-වර්ගය-3-command--control-cc-botnet-beacons---table-10-scenario-4)
-     - 4.3.4 [Malware Download: Binary Payload Transfer & Forensic Alerts (Table 10 Scenario 5)](#434-ප්‍රහාර-වර්ගය-4-malware-download--suspicious-binary-transfer---table-10-scenario-5)
-     - 4.3.5 [Administrator Manual Block & Rollback (Table 10 Scenario 6)](#435-ප්‍රහාර-වර්ගය-5-administrator-manual-block--rollback---table-10-scenario-6)
-5. [සැබෑ උදාහරණ: සාමාන්‍ය අවස්ථාව සහ විවිධ ප්‍රහාරක අවස්ථා](#5-සැබෑ-උදාහරණ-සාමාන්‍ය-අවස්ථාව-සහ-විවිධ-ප්‍රහාරක-අවස්ථා)
+     - 4.3.4 [Malware Download: Binary Payload Transfer & Forensic Alerts (Table 10 Scenario 5)](#434-ප්‍රහාර-වර්ගය-4-malware-download--suspicious-binary-transfer-table-10-scenario-5)
+     - 4.3.5 [Administrator Manual Block & Rollback (Table 10 Scenario 6)](#435-ප්‍රහාර-වර්ගය-5-administrator-manual-block--rollback-table-10-scenario-6)
+5. [සැබෑ උදාහරණ: සාමාන්‍ය අවස්ථාව සහ විවිධ ප්‍රහාරක අවස්ථා](#5-සැබෑ-උදාහරණ-සාමාන්‍ය-අවස්ථාව-සහ-විවිධ-ප්‍රහාරක-අවස්ථා-end-to-end-data-chain-in-action)
 6. [Supervisor ඉදිරියේ Presentation එකක් කරන ආකාරය (Step-by-Step Script)](#6-supervisor-ඉදිරියේ-presentation-එකක්-කරන-ආකාරය-step-by-step-script)
 
 ---
@@ -62,7 +62,7 @@ Cloud Server (10.10.10.123)    ───┘         │
                                 ├─ NVR Video Recorder (192.168.50.20)
                                 ├─ Admin PC (192.168.50.10)
                                 ├─ IDS Scanner / Sensor management port (192.168.50.5) - Nmap device scans
-                                └─ [ZEEK SENSOR] (කේබලයට සවන් දෙයි - No IP)
+                                └─ [ZEEK SENSOR] (කේබලයට සවන් දෙයි - lab උපාංගයක් ලෙස IP එකක් නැත)
 ```
 
 1. **IP Camera (`192.168.50.30`):**
@@ -216,7 +216,7 @@ flowchart TD
   └────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┘
                                                                                                    │
                      ┌─────────────────────────────────────────────────────────────────────────────┴──────────┐
-                     │ (8) Autonomous Block Decision: "DROP 10.10.10.50 (Timeout 1800s)"                      │
+                     │ (8) Autonomous Block Decision: "DROP 10.10.10.50 (timeout 30m)"                        │
                      ▼                                                                                        ▼
   ┌─────────────────────────────────────────────────────┐            ┌────────────────────────────────────────────────┐
   │  FIREWALL MITIGATION CONTROLLER                     │            │  PERSISTENCE & DASHBOARD SERVER (Port 5000)    │
@@ -230,7 +230,7 @@ flowchart TD
                      ▼                                                                        ▼
   ┌─────────────────────────────────────────────────────┐            ┌────────────────────────────────────────────────┐
   │  ids-lab-router FIREWALL KERNEL                     │            │  REACT DARK-THEME OPERATIONAL DASHBOARD        │
-  │  - 10.10.10.50 instantly blocked                    │            │  - Live Alerts Page: Red High-Severity Alert   │
+  │  - 10.10.10.50 instantly blocked                    │            │  - Live Alerts Page: CnC alert, BLOCKED badge  │
   │  - Camera .30 remains online & video flows          │            │  - Blocklist Page: rule with its end time      │
   │  - Rule expires by itself after 30 min              │            │  - Overview Page: Attack Class Bar Chart       │
   └─────────────────────────────────────────────────────┘            └────────────────────────────────────────────────┘
@@ -342,7 +342,7 @@ flowchart TD
 - **ක්‍රියාත්මක වන කේතය:** [`core_engine/detector.py`](<file:///d:/intrusion%20detection/core_engine/detector.py>)
 - **එළියට එන දේ (Output - DetectionResult Object):**
   - `predicted_class`: **`"CnC"`**
-  - `confidence`: **`0.932`** (93.2% ක් විශ්වාසයි)
+  - `confidence`: **`0.931`** (93.1%; 12 Nov 2026 run එක. අගය run එකෙන් run එකට වෙනස් වේ)
   - `model_version`: `"v3.1.0"`
 
 ---
@@ -351,19 +351,22 @@ flowchart TD
 
 - **මොකක්ද වෙන්නේ?**
   - Model එක කී පමණින් කෙලින්ම block කරන්නේ නැත. එය Decision Engine වෙත යවයි.
-  - **නීතිය 1 (Allowlist පරීක්ෂාව):** මේ IP එක කැමරාවද? NVR එකද? Admin ද? (නැත, මේක `10.10.10.50` නම් පිටත පරිගණකයකි).
-  - **නීතිය 2 (Repeats පරීක්ෂාව):** තත්පර 60ක් ඇතුළත අවම වශයෙන් 3 වතාවක් මේ ප්‍රහාරය ආවාද? (ඔව්, 7 වතාවක් ආවා).
-  - **නීතිය 3 (ප්‍රහාරයේ වර්ගය අනුව පියවර):**
-    - C&C හෝ Port Scan නම් $\rightarrow$ Router එකේ IP එක **Block** කරන්න.
-    - DDoS flood නම් $\rightarrow$ Router එකේ **Rate-Limit** කරන්න (තත්පරයකට packets 200 කට සීමා කරන්න).
+  - **නීතිය 1 (ආරක්ෂිත IP පරීක්ෂාව):** block කිරීමට යන IP එක allowlist එකේ (`.1`, `.5`, `.10`, `.20`) හෝ කැමරා ජාලයේ (`192.168.50.0/24`, `lab.local_networks`) තිබේද? තිබේ නම් කිසිවිටෙක block නොකරයි. (කැමරාව `.30` allowlist එකේ නැත; එය ආරක්ෂා වන්නේ local-network නීතියෙනි.) මෙහි target එක `10.10.10.50` නම් පිටත පරිගණකයයි.
+  - **නීතිය 2 (Confidence පරීක්ෂාව):** Alert එකක් සඳහා $P \ge 0.30$. Block සඳහා: CnC $P \ge 0.30$, PortScan $P \ge 0.88$. DDoS rate-limit සඳහා $P \ge 0.30$. Malware_Download සඳහා block නැත (alert පමණි).
+  - **නීතිය 3 (Repeats පරීක්ෂාව):** එකම target එකට, එකම පන්තියේ block-candidate alerts තත්පර 60 ක් ඇතුළත අවම වශයෙන් 3 ක් ආවාද? (මෙය පියවර 3 හි `pair_fail_1h` ගණනට වඩා වෙනස් ගණනකි.)
+  - **නීතිය 4 (ප්‍රහාරයේ වර්ගය අනුව පියවර):**
+    - C&C නම් $\rightarrow$ පිටත C&C server එක (destination) **Block** කරන්න (`block_dst`).
+    - Port Scan නම් $\rightarrow$ scan කරන පිටත IP එක (source) **Block** කරන්න (`block_src`).
+    - DDoS flood නම් $\rightarrow$ පිටත source එක **Rate-Limit** කරන්න (`limit_src`: තත්පරයට packets 200 ට වැඩි කොටස drop කරයි, D-055).
 - **ක්‍රියාත්මක වන කේතය:**
   - [`core_engine/decision_engine.py`](<file:///d:/intrusion%20detection/core_engine/decision_engine.py>)
   - [`core_engine/response_policy.py`](<file:///d:/intrusion%20detection/core_engine/response_policy.py>)
 - **එළියට එන දේ (Output - PolicyDecision):**
-  - `action`: `"BLOCK"`
+  - `action_type`: `"block"`
   - `target_ip`: `"10.10.10.50"`
-  - `direction`: `"destination"`
+  - `direction`: `"outbound"` (එනම් `block_dst` set එක භාවිත වේ)
   - `duration_minutes`: 30
+  - `reason_code`: `"AUTO_CNC_DEST_BLOCK"`
 
 ---
 
@@ -377,7 +380,7 @@ flowchart TD
 - **Router එක තුළ ධාවනය වන Linux Command එක:**
 
   ```bash
-  nft add element inet ids block_dst { 10.10.10.50 timeout 1800s }
+  nft add element inet ids block_dst { 10.10.10.50 timeout 30m }
   ```
 
   > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
@@ -386,7 +389,7 @@ flowchart TD
   > - **`add element`:** පවතින Firewall ලැයිස්තුවකට (Set) අලුත් IP ලිපිනයක් ඇතුළත් කිරීමේ විධානයයි.
   > - **`inet ids`:** IPv4 සහ IPv6 දෙකටම අදාළ වන පරිදි සාදා ඇති `ids` නම් ප්‍රධාන Firewall Table එකයි.
   > - **`block_dst`:** අවහිර කළ යුතු Destination IP ලිපින රඳවා ගන්නා Drop Set එකයි.
-  > - **`{ 10.10.10.50 timeout 1800s }`:** පහර දුන් Attacker ගේ IP එක වන `10.10.10.50` තත්පර 1800 ක (මිනිත්තු 30 ක) Countdown Timer එකක් සමඟ ඇතුළත් කරයි. තත්පර 1800 අවසන් වූ සැණින් Linux kernel එක විසින් මෙම නීතිය ඉබේම ඉවත් කරනු ලබයි.
+  > - **`{ 10.10.10.50 timeout 30m }`:** පහර දුන් Attacker ගේ IP එක වන `10.10.10.50` මිනිත්තු 30 ක (තත්පර 1800) කාල සීමාවක් සමඟ set එකට ඇතුළත් කරයි. කාලය අවසන් වූ සැණින් Linux kernel එක විසින් මෙම element එක ඉබේම ඉවත් කරයි. (`nft list set` මඟින් ඉතිරි කාලය `expires 29m45s` ලෙස බැලිය හැක.)
   >
 - **එළියට එන දේ (Output / ප්‍රතිඵලය):**
 
@@ -406,8 +409,8 @@ flowchart TD
 - **Frontend කේතය:** [`my-app/src/pages/LiveAlerts.js`](<file:///d:/intrusion%20detection/my-app/src/pages/LiveAlerts.js>)
 - **එළියට එන දේ (Output - Screen එකේ පෙනෙන දේ):**
   - Browser එක refresh නොකරම:
-    - **Live Alerts පිටුව:** රතු පාටින් "CnC attack detected from 10.10.10.50 (Confidence: 93%)" දිස්වේ.
-    - **Blocklist පිටුව:** `10.10.10.50` ලිපිනය සමඟ මිනිත්තු 30 ක Countdown Timer එකක් වැටේ.
+    - **Live Alerts පිටුව:** `CnC` class pill එක, `Confidence: 91%`, `192.168.50.30:<port> → 10.10.10.50:6667` (source කැමරාව, destination C&C server), සහ `RESPONSE: BLOCKED` badge එක සහිත alert කාඩ්පතක් දිස්වේ (socket event: `new_event`).
+    - **Blocklist / Mitigations පිටුව:** `10.10.10.50` ලිපිනය, block එක අවසන් වන වේලාව (**EXPIRES AT** තීරුව - ස්ථාවර වේලාවක්, countdown එකක් නොවේ) සමඟ දිස්වේ.
 
 ---
 
@@ -425,7 +428,7 @@ flowchart TD
        │  ▼
 [Unified Flask + Socket.IO Server (core_engine/app.py: Port 5000)]
        │
-       ├─ MongoDB (iot_ids_db: 9 Collections)
+       ├─ MongoDB (virtual lab database: iot_ids_lab, 9 collections)
        ├─ Live Pipeline Runner (runner.py)
        └─ Router Firewall Adapter (router_adapter.py over SSH)
 ```
@@ -443,13 +446,13 @@ flowchart TD
 
 | #           | පිටුව (Page)        | සම්බන්ධ වන Backend Endpoint එක              | එයින් කරන කාර්යය                                                                                                                        |
 | ----------- | ------------------------ | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1** | **Overview**       | `GET /api/summary`                                   | පද්ධතියේ සජීවී වේගය (Latency 112ms), Benign flows ගණන, සහ සක්‍රිය blocks ගණන පෙන්වයි.                          |
-| **2** | **Live Alerts**    | `socket.on("new_event")`                             | ප්‍රහාර හඳුනාගත් සැණින් තත්‍ය කාලීනව රතු පාටින් screen එකට alert එක ගෙනෙයි.                       |
-| **3** | **Attack History** | `GET /api/events`                                    | MongoDB හි තැන්පත් කර ඇති අතීත ප්‍රහාර සියල්ල search සහ filter කිරීමට ඉඩ දෙයි.                           |
-| **4** | **Mitigations / Blocklist** | `http://localhost:5000/mitigations` (`GET /api/blocklist`, `DELETE /api/blocklist/<ip>`) | දැනට block කර ඇති සියලුම IP සහ ඒවායේ අවසන් වන වේලාව (Expiry Timestamp) පෙන්වයි. මෙතැනින් **Manual Unblock** කළ හැක. |
-| **5** | **IoT Devices**             | `http://localhost:5000/devices` (`GET /api/devices`, `POST /api/scans`)                  | Nmap / Discovery scan මඟින් ජාලයේ ඇති කැමරා සහ අනෙකුත් උපකරණ හඳුනාගනී (FR-05).                                                 |
-| **6** | **Logs & Export**            | `http://localhost:5000/export` (`GET /api/logs/export`, `GET /api/logs`)                | ප්‍රහාරක ලඝු සටහන් සහ system audit records සම්මත RFC 4180 CSV / JSON මඟින් බාගත කිරීමට ඉඩ සලසයි (FR-07, FR-08).               |
-| **7** | **Settings**       | `GET /api/settings`  `PUT /api/settings`           | Block කිරීමේ thresholds (Repeats=3, Window=60s) වෙනස් කිරීමට ඉඩ දෙයි.                                                          |
+| **1** | **Overview** (`/overview`) | `GET /api/summary` | මනින ලද latency (median / 95%), pipeline එක සැකසූ flows ගණන, පැය 24 තුළ Benign flows, සක්‍රිය blocks සහ rate-limits, model version පෙන්වයි. |
+| **2** | **Live Alerts** (`/alerts`) | `socket.on("new_event")` | ප්‍රහාර හඳුනාගත් සැණින් refresh නොකර alert කාඩ්පත (`MODEL PREDICTION` / `CONFIRMED INCIDENT`, class, confidence, `RESPONSE: ...`) ගෙනෙයි. |
+| **3** | **Attack History** (`/history`) | `GET /api/events` | MongoDB හි තැන්පත් කර ඇති අතීත ප්‍රහාර සියල්ල search සහ filter කිරීමට ඉඩ දෙයි. |
+| **4** | **Blocklist / Mitigations** (`/mitigations`) | `GET /api/blocklist`, `POST /api/blocklist`, `DELETE /api/blocklist/<ip>` | දැනට block / rate-limit කර ඇති IP සහ ඒවා අවසන් වන වේලාව (**EXPIRES AT**) පෙන්වයි. මෙතැනින් **Manual Block** සහ **Manual Unblock** කළ හැක. |
+| **5** | **Devices & Scans** (`/devices`) | `GET /api/devices`, `POST /api/scans` | සැබෑ Nmap scan මඟින් (`ids-lab-scanner`, D-057) ජාලයේ උපාංග සහ "possible camera" උපාංග හඳුනාගනී (FR-05). |
+| **6** | **Logs & Export** (`/export`) | `GET /api/logs/export`, `GET /api/logs` | ප්‍රහාර, response actions සහ audit records (`system_logs`) RFC 4180 CSV / JSON ලෙස බාගත කිරීමට, සහ audit සටහන් වගුව බැලීමට ඉඩ දෙයි (FR-07, FR-08). |
+| **7** | **Settings** (`/settings`) | `GET /api/settings`, `PUT /api/settings` | Allowlist, min confidence, repeats (3), window (60 s), උපරිම rule කාලය (30 min) වෙනස් කිරීමට ඉඩ දෙයි; සෑම වෙනසක්ම audit වේ. |
 
 ---
 
@@ -504,7 +507,7 @@ Supervisor විසින් ඔබෙන්: **"ඔයාලා මේ Virtual
 
 | ජාලය (Network)    | Subnet              | Linux Bridge නම | ජාලයේ කාර්යභාරය (Network Role)                          | සම්බන්ධ වන උපාංග                                           |
 | :-------------------- | :------------------ | :---------------- | :-------------------------------------------------------------------- | :----------------------------------------------------------------------- |
-| **`camlan`**  | `192.168.50.0/24` | `br-ids-lan`    | ආරක්ෂිත කැමරා ජාලය (Camera Isolated LAN)              | Camera (`.30`), NVR (`.20`), Admin PC (`.10`), Router LAN (`.1`) |
+| **`camlan`**  | `192.168.50.0/24` | `br-ids-lan`    | ආරක්ෂිත කැමරා ජාලය (Camera Isolated LAN)              | Camera (`.30`), NVR (`.20`), Admin PC (`.10`), IDS Scanner (`.5`), Router LAN (`.1`); bridge එකේම ලිපිනය `.254` (Docker) |
 | **`outside`** | `10.10.10.0/24`   | `br-ids-out`    | පිටත අන්තර්ජාලය / WAN ජාලය (Outside Network)        | Attacker (`.50`), Cloud Server (`.123`), Router WAN (`.1`)         |
 | **`mgmt`**    | `172.31.250.0/24` | `docker bridge` | ආරක්ෂක නිලධාරියාගේ Dedicated Management Channel එක | Windows Host $\leftrightarrow$ Router SSH (Port 2222)                  |
 
@@ -521,8 +524,8 @@ Supervisor විසින් ඔබෙන්: **"ඔයාලා මේ Virtual
 
 #### ආ) Zeek Sensor Container එක (`ids-lab-sensor`):
 
-- **විශේෂත්වය — `network_mode: host`:** මෙය සාමාන්‍ය container එකක් මෙන් කිසිදු IP එකක් ලබාගෙන ජාලයට සම්බන්ධ නොවේ. ඒ වෙනුවට එය ධාවනය වන්නේ Host mode එකෙනි.
-- **Promiscuous Mode (SPAN / Mirror Port):** Zeek එක `br-ids-lan` bridge එකට කෙලින්ම Promiscuous mode එකෙන් සවන් දෙයි (`zeek -C -i br-ids-lan /lab/local.zeek`).
+- **විශේෂත්වය — `network_mode: host`:** මෙයට lab උපාංගයක් ලෙස IP එකක් නැත. එය Docker host එකේ ජාලය තුළ ධාවනය වී `br-ids-lan` bridge එකට කෙලින්ම සවන් දෙයි. (Docker විසින් bridge එකටම `192.168.50.254` ලිපිනය දෙයි; Nmap scan එකේ `.254` ලෙස පෙනෙන්නේ එයයි.)
+- **Promiscuous Mode (SPAN / Mirror Port):** Zeek එක `br-ids-lan` bridge එකට කෙලින්ම Promiscuous mode එකෙන් සවන් දෙයි (`zeek -C -i br-ids-lan /lab/local.zeek`; `-C` = checksum errors නොසලකා හරින්න).
 - කැමරාව සහ NVR එක අතර, හෝ Attacker සහ කැමරාව අතර යන සියලුම binary ethernet frames වල පිටපතක් (mirror copy) Zeek එකට ලැබේ. කිසිදු උපාංගයක් Zeek sensor එකක් ජාලයේ ඇති බව නොදනී!
 - Zeek එක එම packets වලින් protocol header විග්‍රහ කර, connections අවසන් වූ සැණින් JSON log පේළියක් ලෙස **`lab_virtual/zeek_logs/conn.log`** ගොනුවට ලියයි.
 
@@ -534,17 +537,18 @@ Docker Containers තුළ නිකන්ම හිස් OS එකක් න�
 
 1. **IP Camera (`ids-lab-camera`):**
    - ධාවනය වන්නේ: `python camera_sim.py normal --cloud 10.10.10.123`
-   - **Port 80 (HTTP Server):** Admin PC එකට Web UI එක පෙන්වයි (`<html><body><h1>Lab IP camera</h1>...`).
-   - **Port 554 (RTSP Video Streaming Server):** NVR එක සම්බන්ධ වූ විට තත්පරයකට ~200 KB ක සැබෑ binary video stream එකක් socket එක හරහා නොකඩවා යවයි.
-   - සෑම තත්පර 30 කට වරක් Cloud Server එකට HTTPS (Port 443) request එකක් සහ සෑම තත්පර 60 කට වරක් NTP (UDP 123) request එකක් යවයි.
+   - **Port 80 (HTTP Server):** Admin PC එකට Web UI එක පෙන්වයි (`<title>Lab IP Camera - Live Web Interface</title>`, bytes 5,478) සහ `/api/status`.
+   - **Port 554 (RTSP-වැනි Stream Server):** `OPTIONS` / `DESCRIBE` / `SETUP` වලට කෙටි RTSP පිළිතුරක් දෙයි. NVR එක `PLAY` යැවූ පසු තත්පරයකට ~200 KB ක **අහඹු bytes** (සැබෑ H.264 වීඩියෝවක් නොවේ) socket එක හරහා නොකඩවා යවයි.
+   - සෑම තත්පර 30 කට වරක් Cloud Server එකට TCP 443 හරහා කෙටි status පණිවිඩයක් (සරල JSON පේළියක්; TLS/HTTPS නොවේ), සහ සෑම තත්පර 60 කට වරක් time request එකක් (UDP 123) සහ name lookup එකක් (UDP 53) යවයි.
 2. **NVR Recorder (`ids-lab-nvr`):**
    - ධාවනය වන්නේ: `python camera_sim.py nvr --camera 192.168.50.30`
-   - කැමරාවේ `192.168.50.30:554` වෙත TCP connection එකක් හදාගෙන නොකඩවා වීඩියෝව බාගත කරගනී. සෑම මිනිත්තු 5 කට වරක් `NVR: recorded 58.6 MB` ලෙස log කරයි.
+   - කැමරාවේ `192.168.50.30:554` වෙත TCP connection එකක් හදා `PLAY` යවා stream එක නොකඩවා ලබාගනී. සෑම මිනිත්තු 5 කට වරක් connection එක වසා නැවත සාදා `NVR: recorded 58.6 MB` ලෙස log කරයි (පළමු පේළිය lab එක ආරම්භ කර මිනිත්තු 5 කට පසුවයි; ගොනුවක් ලෙස වීඩියෝවක් ගබඩා නොකරයි).
 3. **Admin PC (`ids-lab-admin`):**
    - ධාවනය වන්නේ: `python camera_sim.py admin --camera 192.168.50.30`
-   - සෑම තත්පර 60 කට වරක් කැමරාවේ Port 80 වෙත request යවමින් කැමරාව හොඳින් ක්‍රියාත්මකදැයි පරීක්ෂා කරයි.
+   - සෑම තත්පර 60 කට වරක් කැමරාවේ Port 80 හි `/` සහ `/api/status` වෙත requests යවයි (live viewing ලෙස).
 4. **Attacker Laptop (`ids-lab-attacker`):**
-   - Nmap, Scapy, DoS flooders, සහ Botnet beaconing scripts අඩංගු Kali Linux වැනි පරිසරයකි.
+   - Alpine Linux මත **Nmap** පමණක් ඇති container එකකි (`lab_virtual/attacker/Dockerfile`).
+   - එම IP එකම (`10.10.10.50`) බෙදාගන්නා **`ids-lab-attack-server`** (Python) තුළ: SYN flood script එක (`syn_flood.py`), test program එක දෙන web server එක (port 80), සහ lab C&C server එක (port 6667, `lab_server.py --role cnc`). C&C beacons යවන්නේ attacker නොව **කැමරාවයි** (`camera_sim.py bot`).
    - Router එක හරහා (`10.10.10.1`) කැමරා ජාලයට පිවිසීමට routing table එක සකසා ඇත (`ip route add 192.168.50.0/24 via 10.10.10.1`).
 
 ---
@@ -594,10 +598,10 @@ Docker Containers තුළ නිකන්ම හිස් OS එකක් න�
 2. **පාලම 2: Firewall එක පාලනය කිරීම (Mitigation Control - SSH Port 2222):**
    - Router container එකේ Port 22 (SSH) අපේ Windows Host එකේ `127.0.0.1:2222` වෙත map කර ඇත.
    - Windows Python එකේ ඇති `router_adapter.py` මඟින් SSH key එක (`lab_virtual/keys/router_admin`) භාවිතයෙන් Router එකට රහසිගතව සම්බන්ධ වී Linux command එකක් ධාවනය කරයි:
-     `nft add element inet ids block_dst { 10.10.10.50 timeout 1800s }`
+     `nft add element inet ids block_dst { 10.10.10.50 timeout 30m }`
 3. **පාලම 3: පරිශීලකයාට පෙන්වීම (SOC Dashboard - HTTP & WebSockets Port 5000):**
    - Windows Host එකේ Port 5000 මත Unified Flask + Socket.IO Server එක ධාවනය වේ.
-   - ඔබගේ Browser එක (Chrome) මඟින් `http://localhost:5000` විවෘත කළ විට WebSocket සම්බන්ධතාවයක් ගොඩනැගේ. ප්‍රහාරයක් හඳුනාගත් සැණින් තත්පර 0.1 ක් ඇතුළත Screen එකට push notification එක යවයි.
+   - ඔබගේ Browser එක (Chrome) මඟින් `http://localhost:5000` විවෘත කළ විට WebSocket සම්බන්ධතාවයක් ගොඩනැගේ. ප්‍රහාරයක් හඳුනාගත් සැණින් Screen එකට push notification එක යවයි (Zeek පේළිය කියවූ සිට median ~0.1–0.2 s).
 
 ---
 
@@ -632,7 +636,7 @@ docker exec -d ids-lab-camera python -u /lab/camera_sim.py bot --server 10.10.10
 
 ## 4.2 සෑම කොටසක්ම තනි තනියෙන් පරීක්ෂා කර පෙන්වන සාක්ෂි (Component-by-Component Proofs)
 
-පර්යේෂණ යෝජනාවලියේ (Research Proposal) අඩංගු **ප්‍රධාන අරමුණු (Aim & Objectives - Table 3)**, **ක්‍රියාකාරී අවශ්‍යතා (Functional Requirements - Table 7)**, **පර්යේෂණ ගැටලු (Research Questions RQ1–RQ5)**, **ප්‍රධාන උපකල්පනය (Hypothesis H1)**, **පිළිගැනීමේ නිර්ණායක (Acceptance Criteria - Table 9)**, සහ **පාලිත පරීක්ෂණ අවස්ථා (Controlled Scenarios - Table 10)** අපේ පද්ධතිය තුළ 100% ක් ප්‍රායෝගිකව සාක්ෂාත් වී ඇති බව Supervisor (Dr. Matheeh & Dr. Amarakeerthi) ඉදිරියේ විද්‍යාත්මකව ඔප්පු කිරීමට අවශ්‍ය **පරීක්ෂණ 12** පහත දැක්වේ.
+පර්යේෂණ යෝජනාවලියේ (Research Proposal) අඩංගු **ප්‍රධාන අරමුණු (Aim & Objectives - Table 3)**, **ක්‍රියාකාරී අවශ්‍යතා (Functional Requirements - Table 7)**, **පර්යේෂණ ගැටලු (Research Questions RQ1–RQ5)**, **ප්‍රධාන උපකල්පනය (Hypothesis H1)**, **පිළිගැනීමේ නිර්ණායක (Acceptance Criteria - Table 9)**, සහ **පාලිත පරීක්ෂණ අවස්ථා (Controlled Scenarios - Table 10)** අපේ පද්ධතිය තුළ Virtual Lab එක තුළ ප්‍රායෝගිකව ක්‍රියාත්මක වන බව Supervisor (Dr. Matheeh & Dr. Amarakeerthi) ඉදිරියේ පෙන්වීමට අවශ්‍ය **පරීක්ෂණ 13 (4.2.0 – 4.2.12)** සහ 4.3 අත්පොත පහත දැක්වේ.
 
 ---
 
@@ -642,18 +646,18 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 
 | පරීක්ෂණ අංකය & නම                  | Proposal හි අරමුණ (Objective - Table 3)             | ක්‍රියාකාරී අවශ්‍යතාවය (Requirement - Table 7)                     | පර්යේෂණ ගැටලුව / උපකල්පනය (RQ / H1 / Table 9)                  | පරීක්ෂණ අවස්ථාව (Table 10 Scenario) | මෙමඟින් ඔප්පු කරන නිශ්චිත සාක්ෂිය (Core Scientific Proof)                                                                         |
 | :---------------------------------------------- | :--------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- | :------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **4.2.0: Cold Start Lifecycle**           | **O4, O6** (Integration & Performance)               | System Integration & Recovery                                                           | **Table 9** (Reliability & Clean Recovery)                                    | Pre-requisite                                     | බිංදුවේ සිට මුළු පද්ධතියම (Bridges, Containers 10, IDS Pipeline, Dashboard) එකවර ක්‍රියාත්මක කරගත හැකි බව.      |
+| **4.2.0: Cold Start Lifecycle**           | **O4, O6** (Integration & Performance)               | System Integration & Recovery                                                           | **Table 9** (Reliability & Clean Recovery)                                    | Pre-requisite                                     | බිංදුවේ සිට මුළු පද්ධතියම (Bridges, Containers 11, IDS Pipeline, Dashboard) එකවර ක්‍රියාත්මක කරගත හැකි බව.      |
 | **4.2.1: Camera Services**                | **O4** (Monitoring & Environment)                    | Section 5.1 (Camera Specification)                                                      | **Section 5.1 & Table 10**                                                    | **Scenario 1** (Normal Baseline)            | කැමරාව තුළ Web (Port 80) සහ Video (Port 554 RTSP) සේවාවන් සක්‍රියව පවතින බව.                                                  |
-| **4.2.2: NVR Video Ingestion**            | **O5** (Safe Operation & Policy)                     | Section 5.1 (NVR Recorder)                                                              | **Table 9** (Benign Safety: Zero Video Interruption)                          | **Scenario 1** (Continuous Stream)          | මිනිත්තු 5 කට වරක් 58.6 MB වීඩියෝ දත්ත කැමරාවේ සිට NVR එකට නොකඩවා ගලා එන බව (Zero video drop).               |
+| **4.2.2: NVR Video Ingestion**            | **O5** (Safe Operation & Policy)                     | Section 5.1 (NVR Recorder)                                                              | **Table 9** (Benign Safety: Zero Video Interruption)                          | **Scenario 1** (Continuous Stream)          | සෑම මිනිත්තු 5 segment එකක්ම සම්පූර්ණ 58.6 MB ලෙස කැමරාවේ සිට NVR එකට ගලා එන බව (stream එක නොකැඩේ; simulated data).               |
 | **4.2.3: Admin PC Web GUI**               | **O4, O5** (Management Plane)                        | Section 3.6 (Device Management Plane)                                                   | **Section 3.6 & FR-05**                                                       | **Scenario 1** (Admin Management)           | කැමරාවේ Web UI එක (Port 80) Admin PC එකට විවෘත වන බව සහ සැබෑ බ්‍රවුසරයකින් දර්ශනය වන බව.                     |
-| **4.2.4: Zeek Sensor Sniffing**           | **O3** (Live Flow Feature Generation)                | **FR-01 (Must)**: Network Packet Capture & Flow Extraction                        | **RQ3** (Feature Alignment) & **FR-01 Schema Test**                     | Continuous / Passive SPAN                         | Zeek විසින් switch එකෙන් live packets කියවා `conn.log` ලියන බව (ShADadfF flags, 1,260 packets, 11.8 MB payload).                       |
-| **4.2.5: Router nftables Firewall**       | **O5** (Controlled Response & Allowlist)             | **FR-06 (Must)**: Firewall Rule Engine & **FR-07 (Must)**: Allowlist Safety | **RQ5** (Safety Rules preventing camera cut-off)                              | Firewall Invariant                                | Router එකේ immutable allowlist (Admin, NVR) සහ timed auto-expiry drop sets kernel මට්ටමේ ක්‍රියාත්මක බව.                               |
-| **4.2.6: Attacker Port Scan**             | **O6** (Attack Testing & Detection)                  | **FR-05** (Service Discovery Verification)                                        | **RQ2** (Scanning Class) & **Table 10 Scenario 2**                      | **Scenario 2** (Nmap Port Scan)             | පිටත Attacker Router එක හරහා කැමරාවේ Ports 80, 554 ක්ෂණිකව scan කරන බව (0.79s).                                                   |
-| **4.2.7: IDS Pipeline & Latency**         | **O2** (ML Detection) & **O6** (Speed/Latency) | **FR-02 (Must)**: Multi-class ML & **FR-03 (Must)**: DB Storage             | **RQ4** & **Table 9 Latency Target** (Median decision $< 2\text{ s}$) | Telemetry Baseline                                | Model v3.1.0 ධාවනය වන බවත්, සාමාන්‍ය තීරණ ගැනීමේ කාලය 112.15 ms ($< 2.0\text{ s}$) බවත් තහවුරු වීම.            |
+| **4.2.4: Zeek Sensor Sniffing**           | **O3** (Live Flow Feature Generation)                | **FR-01 (Must)**: Network Packet Capture & Flow Extraction                        | **RQ3** (Feature Alignment) & **FR-01 Schema Test**                     | Continuous / Passive SPAN                         | Zeek විසින් switch එකෙන් live packets කියවා `conn.log` ලියන බව (ShADadfF flags, ~1,270 packets / ~11.8 MB per minute, 0 dropped).                       |
+| **4.2.5: Router nftables Firewall**       | **O5** (Controlled Response & Allowlist)             | **FR-06 (Must)**: Firewall Rule Engine & **FR-07 (Must)**: Allowlist Safety | **RQ5** (Safety Rules preventing camera cut-off)                              | Firewall Invariant                                | Router එකේ allowlist (Router, Sensor, Admin, NVR) සහ timed auto-expiry drop sets kernel මට්ටමේ ක්‍රියාත්මක බව.                               |
+| **4.2.6: Attacker Port Scan**             | **O6** (Attack Testing & Detection)                  | **FR-02 (Must)**: PortScan class from live flows                                   | **RQ2** (Scanning Class) & **Table 10 Scenario 2**                      | **Scenario 2** (Nmap Port Scan)             | පිටත Attacker Router එක හරහා subnet එක scan කළ විට Zeek එය අල්ලාගෙන PortScan alert එකක් (≈0.88) ලැබෙන බව.                                                   |
+| **4.2.7: IDS Pipeline & Latency**         | **O2** (ML Detection) & **O6** (Speed/Latency) | **FR-02 (Must)**: Multi-class ML & **FR-03 (Must)**: DB Storage             | **RQ4** & **Table 9 Latency Target** (Median decision $< 2\text{ s}$) | Telemetry Baseline                                | Model v3.1.0 ධාවනය වන බවත්, මනින ලද median latency එක ~0.1–0.2 s ($< 2.0\text{ s}$) බවත් තහවුරු වීම.            |
 | **4.3.2: DDoS SYN Flood & Rate-Limit**     | **O5, O6** (Autonomous Rate-Limiting)               | **Table 5 & 10** (DDoS Mitigation) & Rule D-055                                          | **RQ4, RQ5** & **Table 10 Scenario 3**                                  | **Scenario 3** (DDoS SYN Flood)             | Attacker SYN Flood (1000 pkts/s) එල්ල කරන විට, Router එකෙන් Rate-Limit කර කැමරා සේවාව (NVR RTSP) සුරැකීම.    |
-| **4.2.8: C&C Autonomous Block**           | **O4, O5** (Automated Mitigation)                    | **FR-04 (Must)**: Live Socket.IO & **FR-06 (Must)**: Router Auto Block      | **RQ4** (End-to-End Time) & **Table 10 Scenario 4**                     | **Scenario 4** (C&C Botnet Beacons)         | C&C හඳුනාගත් සැණින් Router එකේ තත්පර 1800 කට block වී, තිරය refresh නොවී Dashboard Alert එක වැටීම.                    |
-| **4.2.9: Camera Stream Survival**         | **O5** (Safety Invariants)                           | Safety Guardrails & Access Protection                                                   | **Hypothesis H1** (FPR $\le 5\%$, Zero False Block) & **RQ5**         | **Scenario 4 / Table 9**                    | Attacker ව Block කළද කැමරාවේ සිට NVR එකට යන වීඩියෝවට බිංදු මාත්‍රයක හෝ බාධාවක් නොවීම (Safety Invariant). |
-| **4.3.4: Malware Download Evidence**      | **O3, O4** (Binary Transfer & Alerting)              | **Table 10 Row 5** & RULE_EXECUTABLE_DOWNLOAD                                           | **Table 10 Scenario 5** (Forensic Evidence)                             | **Scenario 5** (Malware Download)           | කැමරාව `.x86` binary එකක් බාගත කරන විට Zeek HTTP log එකෙන් අල්ලා Alert එකක් දී විද්‍යාත්මක සාක්ෂි රැස්කිරීම.  |
+| **4.2.8: C&C Autonomous Block**           | **O4, O5** (Automated Mitigation)                    | **FR-04 (Must)**: Live Socket.IO & **FR-06 (Must)**: Router Auto Block      | **RQ4** (End-to-End Time) & **Table 10 Scenario 4**                     | **Scenario 4** (C&C Botnet Beacons)         | C&C (0.86–0.93) හඳුනාගෙන, 60 s තුළ alerts 3 කට පසු Router එකේ `block_dst` එකට මිනිත්තු 30 කට දමා, refresh නොකර Dashboard Alert එක වැටීම.                    |
+| **4.2.9: Camera Stream Survival**         | **O5** (Safety Invariants)                           | Safety Guardrails & Access Protection                                                   | **RQ5** & **Table 9** Benign Safety (H1 FPR: Hardware Lab)         | **Scenario 4 / Table 9**                    | Attacker block / rate-limit වී ඇති විටත් NVR stream එක නොකැඩීම, සහ කිසිදු ආරක්ෂිත උපාංගයක් block නොවීම. |
+| **4.3.4: Malware Download Evidence**      | **O3, O4** (Binary Transfer & Alerting)              | **Table 10 Row 5** & RULE_EXECUTABLE_DOWNLOAD                                           | **Table 10 Scenario 5** (Forensic Evidence)                             | **Scenario 5** (Malware Download)           | කැමරාව හානිකර නොවන test program එකක් (`lab_test.x86`) download කරන විට Zeek `files.log` හි file type එකෙන් `RULE_EXECUTABLE_DOWNLOAD` alert එක ලැබීම (block නැත).  |
 | **4.2.10: Controlled Nmap Discovery**     | **O4** (Device Inventory & Storage)                  | **FR-05 (Should)**: Controlled Nmap Discovery & Services                          | **Section 3.7** (Device Inventory & Multi-evidence)                           | Inventory Audit                                   | පරිපාලකයාට ජාලයේ ඇති කැමරා සහ සේවාවන් Nmap මඟින් සොයාගෙන Dashboard හි Devices ලැයිස්තුවට දැමීම.   |
 | **4.2.11: Manual Block/Unblock & Export** | **O5** (Reversible Response) & **O4**          | **FR-07 (Must)**: Audit Log & **FR-08 (Should)**: Filtered Export           | **Table 10 Scenario 6** & **Table 9** (Usability & Audit)               | **Scenario 6** (Manual Block & Rollback)    | පරිපාලකයාට ඕනෑම IP එකක් Manual Block/Unblock කිරීමට සහ ප්‍රහාරක logs RFC 4180 CSV/JSON ලෙස Export කිරීම.             |
 | **4.3: Manual Attack Playbook**           | **O1–O6** (Comprehensive Hands-On Verification)      | End-to-End Manual Command Execution & Telemetry                                         | **Table 10 Scenarios 1–6 (Complete Hands-On)**                          | **Scenarios 1 to 6**                              | ටර්මිනලයේ අතින්ම commands ගසා (PortScan, DDoS, C&C, Malware, Manual Block) සියල්ල සජීවීව පෙන්වීමේ සම්පූර්ණ අත්පොත. |
@@ -667,8 +671,8 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 > - **ඉටුවන පර්යේෂණ අරමුණ (Objective):** **Objective O4** ("Build the monitoring, dashboard, storage and alerts, and join them together") සහ **Objective O6** ("Test how well it runs and resource use").
 > - **සම්පූර්ණ වන ක්‍රියාකාරී අවශ්‍යතාවය (Requirement):** System Integration, Automated Key Provisioning, and Pipeline Startup.
 > - **විසඳෙන පර්යේෂණ ගැටලුව / ඉලක්කය (Target):** **Table 9 (Reliability Acceptance Criteria)** — "Recovery after restart, data kept in the database, and old rules cleaned up. All important recovery tests pass."
-> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පරිගණකය Shutdown කර ඇති හෝ කිසිවක් ධාවනය නොවී ඇති මුල් අවස්ථාවක සිට (Cold Start), කිසිදු අතින් කරන අමතර සැකසුමකින් තොරව ස්ක්‍රිප්ට් මඟින් සම්පූර්ණ පද්ධතියම (Bridges, Containers 10, AI Pipeline, Dashboard) එකවර නිරවුල්ව පණගන්වා ගත හැකි බව පෙන්වීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O4 and Table 9 Reliability. From a complete cold start, our orchestration commands provision SSH credentials, instantiate the dual-bridge Docker network, launch all 10 containers, and bind the real-time Python IDS engine with verified pipeline health."*
+> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පරිගණකය Shutdown කර ඇති හෝ කිසිවක් ධාවනය නොවී ඇති මුල් අවස්ථාවක සිට (Cold Start), කිසිදු අතින් කරන අමතර සැකසුමකින් තොරව ස්ක්‍රිප්ට් මඟින් සම්පූර්ණ පද්ධතියම (Bridges, Containers 11, AI Pipeline, Dashboard) එකවර නිරවුල්ව පණගන්වා ගත හැකි බව පෙන්වීමටයි.
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O4 and Table 9 Reliability. From a complete cold start, our orchestration commands provision SSH credentials, instantiate the dual-bridge Docker network, launch all 11 containers, and bind the real-time Python IDS engine with verified pipeline health."*
 
 ### 💡 `lab_virtual/lab.py` යනු කුමක්ද? එය අප විසින් සාදාගත්තේ ඇයි? (What is `lab.py` & Why Did We Build It?)
 
@@ -682,7 +686,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
    - සාමාන්‍යයෙන් මේවා එකින් එක terminal commands වලින් open කරමින් සිටීම අතිශය වෙහෙසකර බැවින්, ඒ සියල්ල තනි විධානයකින් එකවර build කර up/down කිරීමට `lab.py` නිර්මාණය කළෙමු.
 2. **රහස්‍ය SSH Keys ස්වයංක්‍රීයව සැකසීම (Automated Ed25519 Key Provisioning):**
    - අපගේ Python IDS Engine එකට Router Firewall එකේ (`nftables`) drop rules ඇතුළත් කිරීමට නම් Router එක වෙත Password නැතිව SSH මඟින් රහසිගතව Login වීමට අවශ්‍ය වේ.
-   - ඒ සඳහා අවශ්‍ය Cryptographic Ed25519 SSH Keys (`lab_virtual/keys/router_admin`) සහ Dashboard Login Password (`dashboard_login.txt`) ස්වයංක්‍රීයව ජනනය කිරීම `lab.py setup` මඟින් සිදු වේ.
+   - ඒ සඳහා අවශ්‍ය Cryptographic Ed25519 SSH Keys (`lab_virtual/keys/router_admin`, router host key, `known_hosts`) ස්වයංක්‍රීයව ජනනය කිරීම `lab.py setup` මඟින් සිදු වේ. Dashboard Login Password එක (`dashboard_login.txt`) සාදන්නේ **`lab.py ids-start`** පළමු වරට run කළ විටයි (MongoDB හි `labadmin` පරිශීලකයා සමඟ).
    - 🔒 **මෙම Keys සහ Password run කරන වාරයක් පාසා වෙනස් වෙනවාද? (Are they Persistent?):**
      - **නැත (NO)! මේවා run කරන වාරයක් පාසා වෙනස් නොවේ.**
      - කේතය තුළ `if not (KEYS / name).exists():` සහ `if not LOGIN_FILE.exists():` යන කොන්දේසි පරීක්ෂා කෙරේ. එනම් එම ගොනු දැනටමත් පවතී නම්, ඒවා නැවත අලුතින් හදන්නේ හෝ overwrite කරන්නේ නැත.
@@ -694,9 +698,9 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 #### 2. `lab.py` සතු ප්‍රධාන විධාන 8 (The 8 Controller Subcommands Summary):
 | විධානය (Command) | කරනු ලබන කාර්යය (What it Does) | කවදාද භාවිතා කරන්නේ? |
 | :--- | :--- | :--- |
-| **`python lab.py setup`** | Router SSH Keys (`router_admin`) සහ Dashboard Password (`dashboard_login.txt`) සාදයි. | පළමු වතාවේ පමණි (One-time). |
+| **`python lab.py setup`** | Router SSH Keys (`router_admin`, `router_host_ed25519`) සහ lab එකේම `known_hosts` සාදයි (`up` මඟින්ද keys නැත්නම් මෙය ඉබේම run වේ). | පළමු වතාවේ පමණි (One-time). |
 | **`python lab.py up`** | Virtual Lab Containers සහ Virtual Bridges සියල්ල එකවර Boot up කරයි. | Lab එක පටන් ගන්නා විට. |
-| **`python lab.py ids-start`** | Port 5000 න් Python IDS Engine එක, Zeek Adapter එක, සහ Web Dashboard එක Background එකේ ධාවනය කරයි. | Lab එක On කළ පසු. |
+| **`python lab.py ids-start`** | Port 5000 න් Python IDS Engine එක, Zeek Adapter එක, සහ Web Dashboard එක Background එකේ ධාවනය කරයි. පළමු වරට `labadmin` login එක සාදා `dashboard_login.txt` හි ලියයි. | Lab එක On කළ පසු. |
 | **`python lab.py status`** | Containers, nftables Firewall Rules, Zeek `conn.log`, සහ AI Pipeline Latency තත්ත්වය එකවර පෙන්වයි. | පද්ධතිය පරීක්ෂා කිරීමට. |
 | **`python lab.py scenario N`** | Proposal Table 10 හි Scenarios 1–6 ස්වයංක්‍රීයව ධාවනය කර Markdown පරීක්ෂණ වාර්තා සාදයි (පහත 2.1 බලන්න). | Supervisor ට පරීක්ෂණ පෙන්වීමට. |
 | **`python lab.py reset`** | Router Firewall එකේ සියලුම Blocks ඉවත් කර පද්ධතිය පිරිසිදු (Fresh state) තත්ත්වයට පත් කරයි. | ප්‍රහාරයක් අවසන් වූ පසු. |
@@ -736,10 +740,10 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
    - `router_ssh(command)`: Windows host එකේ සිට Router Container එක (`ids-lab-router`) වෙත Port 2222 හරහා `router_admin` SSH key එක භාවිතයෙන් password නොමැතිව ආරක්ෂිතව සම්බන්ධ වී Firewall විධාන ධාවනය කරයි (උදා: `nft list table inet ids`).
 3. **ජීවන චක්‍ර පාලකයන් (Lifecycle Commands - Lines 76–220):**
    - `cmd_setup()`: Windows OpenSSH `ssh-keygen` භාවිතයෙන් Ed25519 SSH keys සාදයි.
-   - `cmd_up()`: `docker compose up -d --build` මඟින් Containers 10 සහ Bridges එකවර පණගන්වයි.
+   - `cmd_up()`: `docker compose up -d --build` මඟින් Containers 11 සහ Bridges එකවර පණගන්වා, Router එකේ SSH පිළිතුරු දෙන තෙක් බලා සිටී.
    - `cmd_ids_start()`: Windows එක මත Port 5000 න් Unified IDS Server එක (`core_engine/app.py`) Background එකේ ධාවනය කරවයි.
-   - `cmd_status()`: Containers 10 ම ධාවනය වේද, Zeek `conn.log` ලියයිද, සහ AI Latency එක කොපමණද යන්න එකම screen එකක පෙන්වයි.
-   - `cmd_reset()`: Router එකේ `nft flush` මඟින් සියලු Drop blocks ඉවත් කර MongoDB දත්ත reset කරයි.
+   - `cmd_status()`: Containers 11 ම ධාවනය වේද, Zeek `conn.log` ලියයිද, සහ AI Latency එක කොපමණද යන්න එකම screen එකක පෙන්වයි.
+   - `cmd_reset()`: IDS API එක හරහා සියලු active blocks ඉවත් කර (database එකේ ඒවා `removed` ලෙස සටහන් වේ; අනෙක් දත්ත මැකෙන්නේ නැත), Router එකේ `nft flush set` මඟින් sets තුනම හිස් කරයි.
    - `cmd_down()`: සියලු Containers නවතා Memory නිදහස් කරයි.
 4. **ප්‍රහාර මෙහෙයුම් එන්ජිම (Proposal Table 10 Scenarios Engine - Lines 221–366):**
    - `SCENARIOS` ලැයිස්තුව: Proposal Table 10 හි සඳහන් අවස්ථා 6 ම මෙහි කේතනය කර ඇත.
@@ -761,13 +765,13 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 │  [1. Docker Desktop Open]                                              │
 │            │                                                           │
 │            ▼                                                           │
-│  [2. lab.py setup]       ──► SSH Keys & Login File Created (One-Time)  │
+│  [2. lab.py setup]       ──► Lab SSH Keys & known_hosts (One-Time)     │
 │            │                                                           │
 │            ▼                                                           │
 │  [3. lab.py up]          ──► 11 Containers & Virtual Bridges Spawned   │
 │            │                                                           │
 │            ▼                                                           │
-│  [4. lab.py ids-start]   ──► Python IDS Backend Running on Port 5000   │
+│  [4. lab.py ids-start]   ──► IDS on Port 5000 (+ login file 1st time)  │
 │            │                                                           │
 │            ▼                                                           │
 │  [5. lab.py status]      ──► All Green (Verification Passed)           │
@@ -787,23 +791,32 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
    - **ක්‍රමය B: කෙලින්ම ගසන සැබෑ විධානයන් (Direct Raw Commands):**
      ඔබට `lab.py` නැතිව සෘජුවම මෙය සිදු කිරීමට අවශ්‍ය නම් Terminal එකේ පහත විධාන ධාවනය කළ හැක:
      ```powershell
-     # 1. Router SSH Keys (Ed25519) සාදා lab_virtual/keys හි තැන්පත් කිරීම:
-     ssh-keygen -q -t ed25519 -N "" -C "ids-lab-sensor" -f lab_virtual/keys/router_admin
-     ssh-keygen -q -t ed25519 -N "" -C "ids-lab-router-host" -f lab_virtual/keys/router_host_ed25519
+     # (පළමු වතාවේ පමණි: lab_virtual\keys හි ගොනු දැනටමත් ඇත්නම් මෙය run නොකරන්න - ssh-keygen ඒවා overwrite කිරීමට අසයි)
+     # 1. Router SSH Keys (Ed25519) සාදා lab_virtual\keys හි තැන්පත් කිරීම (PowerShell 5.1 හි හිස් passphrase එක '""' ලෙස ලියන්න):
+     ssh-keygen -q -t ed25519 -N '""' -C "ids-lab-sensor" -f lab_virtual\keys
+outer_admin
+     ssh-keygen -q -t ed25519 -N '""' -C "ids-lab-router-host" -f lab_virtual\keys
+outer_host_ed25519
 
-     # 2. Router එකේ SSH host key එක known_hosts ගොනුවට දැමීම:
-     Get-Content lab_virtual\keys\router_host_ed25519.pub | ForEach-Object { "[127.0.0.1]:2222 " + $_.Split()[0] + " " + $_.Split()[1] } | Set-Content lab_virtual\keys\known_hosts
+     # 2. Private keys වෙනත් පරිශීලකයින්ට කියවිය නොහැකි කිරීම (නැත්නම් Windows OpenSSH key එක ප්‍රතික්ෂේප කරයි):
+     icacls lab_virtual\keys
+outer_admin /inheritance:r /grant:r "$($env:USERNAME):F"
+     icacls lab_virtual\keys
+outer_host_ed25519 /inheritance:r /grant:r "$($env:USERNAME):F"
 
-     # 3. Dashboard Admin පරිශීලකයා සෑදීම (Username: labadmin):
-     .venv\Scripts\python.exe tools/create_admin.py --db-name iot_ids_lab -u labadmin -p Admin123! --force
+     # 3. Router එකේ SSH host key එක lab එකේම known_hosts ගොනුවට දැමීම (~/.ssh භාවිත නොවේ):
+     $k = (Get-Content lab_virtual\keys
+outer_host_ed25519.pub).Split(" ")
+     Set-Content lab_virtual\keys\known_hosts "[127.0.0.1]:2222 $($k[0]) $($k[1])" -Encoding ascii
      ```
+     *(Dashboard login එක (`labadmin` සහ අහඹු මුරපදය, `dashboard_login.txt`) මෙහිදී නොව, 4 වන පියවරේ `lab.py ids-start` පළමු වරට run කළ විට ඉබේම සෑදේ.)*
 
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
    >
-   > - **`lab_virtual\lab.py setup`:** අප විසින් ලියන ලද `lab.py` Controller ස්ක්‍රිප්ට් එකේ `setup` විධානය මඟින් ඉහත පියවර 3 ම තනි ක්ලික් එකකින් සිදු කරයි.
+   > - **`lab_virtual\lab.py setup`:** අප විසින් ලියන ලද `lab.py` Controller ස්ක්‍රිප්ට් එකේ `setup` විධානය මඟින් ඉහත ක්‍රමය B හි පියවර 3 ම එකම විධානයකින් සිදු කරයි (keys දැනටමත් ඇත්නම් ඒවා වෙනස් නොකරයි).
    > - **පසුබිමින් සිදුවන දේ:**
    >   1. **Router SSH Keys සාදයි:** අපගේ IDS Engine එකට Router Firewall එක (`ids-lab-router`) ස්වයංක්‍රීයව පාලනය කර block rules දැමීමට අවශ්‍ය `router_admin` (Ed25519 Cryptographic SSH Key යුගලය) සහ `known_hosts` ගොනුව `lab_virtual/keys/` තුළ ස්වයංක්‍රීයව සාදයි (Windows OpenSSH permissions ද ආරක්ෂිතව සකස් කරයි).
-   >   2. **Dashboard මුරපදය සාදයි:** ආරක්ෂිතව React Dashboard එකට Login වීම සඳහා අහඹු මුරපදයක් ජනනය කර `lab_virtual/keys/dashboard_login.txt` තුළ සුරකියි (Username: `labadmin`).
+   >   2. **Dashboard මුරපදය (`setup` නොව `ids-start`):** `lab.py ids-start` පළමු වරට run කළ විට අහඹු මුරපදයක් ජනනය කර, MongoDB හි `labadmin` පරිශීලකයා සාදා, `lab_virtual/keys/dashboard_login.txt` තුළ සුරකියි.
    >
    > 💡 **විශේෂ පැහැදිලි කිරීම: මෙම Keys සහ Password සෑම run එකකදීම වෙනස් වෙනවාද? (Idempotence & Stability):**
    >
@@ -864,7 +877,8 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
      ```powershell
      $env:IDS_SETTINGS_FILE="lab_virtual/settings.lab.yaml"; $env:DB_NAME="iot_ids_lab"; $env:PORT="5000"; $env:HOST="127.0.0.1"; .venv\Scripts\python.exe -m core_engine.app
      ```
-     *(Background එකේ ධාවනය කිරීමට අවශ්‍ය නම්: `Start-Process .venv\Scripts\python.exe -ArgumentList "-m core_engine.app" -Environment @{IDS_SETTINGS_FILE="lab_virtual/settings.lab.yaml"; DB_NAME="iot_ids_lab"; PORT="5000"; HOST="127.0.0.1"}`)*
+     *(මෙය terminal එක block කරයි; නැවැත්වීමට `Ctrl+C`. Background එකේ ධාවනය කිරීමට: ඉහත `$env:...` පේළි 4 ම set කර, ඉන්පසු `Start-Process .venv\Scripts\python.exe -ArgumentList "-m core_engine.app" -WorkingDirectory (Get-Location)` - child process එකට env variables උරුම වේ. Windows PowerShell 5.1 හි `Start-Process -Environment` නැත.)*
+     *(ක්‍රමය A මඟින් pipeline එක ආරම්භ වන්නේ නැත. (login වී) `POST /api/v1/pipeline/start` අවශ්‍යයි (Dashboard එකේ මේ සඳහා බොත්තමක් නැත). `dashboard_login.txt` නැත්නම් ද මෙය එය සාදන්නේ නැත. එබැවින් **ක්‍රමය B නිර්දේශිතයි**.)*
 
    - **ක්‍රමය B: පහසු Controller කෙටි විධානය (Convenient Shortcut):**
      ```powershell
@@ -873,7 +887,14 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
    >
-   > - Windows Host එක මත Port 5000 න් Unified Server එක (`core_engine/app.py`), Zeek log කියවන Live Pipeline Runner එක, සහ Auto-Expiry Worker එක Background එකේ ධාවනය කරවයි. Dashboard එක `http://localhost:5000` හි විවෘත වේ.
+   > - Windows Host එක මත Port 5000 න් Unified Server එක (`core_engine/app.py`) Background එකේ ධාවනය කර (log: `lab_virtual\ids_backend.log`), `/api/health` පිළිතුරු දෙන තෙක් බලා සිට, `POST /api/v1/pipeline/start` මඟින් Zeek log කියවන Live Pipeline Runner එක ආරම්භ කරයි. පළමු වරට `labadmin` login එක සාදා `dashboard_login.txt` හි ලියයි. Dashboard එක `http://localhost:5000` හි විවෘත වේ.
+   >
+   > **ලැබෙන පිළිතුර (12 Nov 2026):**
+   > ```text
+   > IDS backend running (pid 21604), database iot_ids_lab; pipeline start: 200 running
+   > Dashboard: http://localhost:5000 (served by the backend)  login in D:\intrusion detection\lab_virtual\keys\dashboard_login.txt
+   > ```
+   > 💡 **Demo එකට පෙර:** backend එක demo එකට අවම වශයෙන් **මිනිත්තු 5 කට පෙර** start කරන්න. ආරම්භයේදී latency එක ~570 ms පමණ වන අතර, ටික වේලාවකට පසු ~115 ms දක්වා අඩු වේ.
    >
 5. **පස්වන පියවර: පද්ධතියේ සජීවී තත්ත්වය එකවර පරීක්ෂා කිරීම (Status Check):**
 
@@ -897,19 +918,23 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
    - **ලැබෙන පිළිතුර (Verified Output):**
      ```text
      Lab machines:
-       ids-lab-admin        running
-       ids-lab-attacker     running
-       ids-lab-camera       running
-       ids-lab-nvr          running
-       ids-lab-router       running
-       ids-lab-sensor       running
-       ...
+       ids-lab-admin	running
+       ids-lab-attack-server	running
+       ids-lab-attacker	running
+       ids-lab-camera	running
+       ids-lab-camera-net	running
+       ids-lab-cloud	running
+       ids-lab-cloud-net	running
+       ids-lab-nvr	running
+       ids-lab-router	running
+       ids-lab-scanner	running
+       ids-lab-sensor	running
      Router blocks (real nftables sets): {'block_src': [], 'block_dst': [], 'limit_src': []}
-     Zeek conn.log lines: 20,807; files.log present: True
-     IDS pipeline: running latency_ms_p50: 112.24 ms
+     Zeek conn.log lines: 57; files.log present: True
+     IDS pipeline: running {'attacks_detected': 0, ..., 'flows_processed': 2, ..., 'latency_ms_p50': 573.73, 'latency_ms_p95': 573.73, ...} file check: {..., 'running': True}
      ```
 
-   *(සියලුම Containers 11 ක් සාර්ථකව ධාවනය වන බවත්, Zeek sensor එක ලඝු සටහන් ලියන බවත්, AI Pipeline එක තත්පර 0.1 ක latency එකකින් ක්‍රියාත්මක වන බවත් තහවුරු වේ).*
+   *(12 Nov 2026 දින cold start එකෙන් ලැබූ සැබෑ පිළිතුර. Containers 11 ම running බවත්, Router sets හිස් බවත්, Zeek `conn.log` ලියන බවත්, pipeline එක running බවත් තහවුරු වේ. ආරම්භයේදී flows ගණන සහ latency අගයන් කුඩා/අස්ථාවරයි; මිනිත්තු කිහිපයකට පසු latency median එක ~115 ms වේ.)*
 
 ---
 
@@ -929,14 +954,20 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
     ```powershell
     .venv\Scripts\python.exe lab_virtual\lab.py reset
     ```
-    *(මෙමඟින් Router එකේ ඇති සියලුම Drop Sets හිස් කර Dashboard Database එකේ active blocks ද reset කර පද්ධතිය මුල් පිරිසිදු තත්ත්වයට පත් කරයි).*
+    *(මෙමඟින් IDS API එක හරහා සියලු active blocks ඉවත් කර (database එකේ `removed` ලෙස සටහන් වේ, audit records ද ලියවේ), Router එකේ sets තුනම හිස් කරයි. ක්‍රමය A මඟින් router එක පමණක් හිස් වන අතර database එකේ blocks "active" ලෙස ඉතිරි වේ; එබැවින් **ක්‍රමය B භාවිත කරන්න**.)*
+
+    **ලැබෙන පිළිතුර:**
+    ```text
+    removed 1 block(s) through the IDS
+    router sets now: {'block_src': [], 'block_dst': [], 'limit_src': []}
+    ```
 
 - **පරීක්ෂණ අවසානයේ සියල්ල සම්පූර්ණයෙන්ම Stop කිරීමට:**
 
   - **ක්‍රමය A: සෘජු විධානයන් (Direct Raw Commands):**
     ```powershell
     # 1. Background එකේ දුවන Backend Server process එක නැවැත්වීම:
-    Get-Process -Name python -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*core_engine.app*" } | Stop-Process -Force
+    Get-CimInstance Win32_Process -Filter "Name='python.exe'" | Where-Object { $_.CommandLine -like '*core_engine.app*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
 
     # 2. Docker Containers සහ Virtual Bridges සියල්ල සම්පූර්ණයෙන්ම වසා Memory නිදහස් කිරීම:
     docker compose -f lab_virtual\docker-compose.yml down
@@ -989,7 +1020,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 > - **විසඳෙන පර්යේෂණ ගැටලුව / ඉලක්කය (Target):** **Table 9 (Benign Safety Acceptance Criteria)** — "Zero Stream Interruption on camera video feeds".
 > - **අදාළ පරීක්ෂණ අවස්ථාව (Table 10 Scenario):** **Table 10 Scenario 1** ("Normal live streaming and playback: traffic summary keeps working").
 > - **මෙය සිදු කළේ ඇයි? (Core Rationale):** සාමාන්‍ය අවස්ථාවේදී ජාල කේබලය (Virtual Bridge) හරහා සැබවින්ම අධික දත්ත ප්‍රමාණයක් (High Bandwidth Traffic ~200 KB/s) ගලා යන බවත්, NVR එක විසින් කිසිදු දත්ත බිඳවැටීමකින් තොරව කැමරාවේ වීඩියෝව එක දිගට පටිගත කරගන්නා බවත් ඔප්පු කිරීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Table 9 Benign Safety and Scenario 1. The NVR at 192.168.50.20 actively pulls continuous 58.6 MB video chunks from the camera over RTSP port 554 with zero packet drops."*
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Table 9 Benign Safety and Scenario 1. The NVR at 192.168.50.20 receives the camera's stream over port 554 without a break: every 5-minute segment is 58.6 MB (about 200 KB/s). The stream is simulated data, not real video."*
 
 - **ධාවනය කළ යුතු Command එක (Terminal):**
 
@@ -1006,10 +1037,13 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 - **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
 
   ```text
-  08:18:07 NVR: recorded 58.6 MB
-  08:23:07 NVR: recorded 58.6 MB
+  17:49:31 NVR: recorded 58.6 MB
+  17:54:31 NVR: recorded 58.6 MB
+  17:59:31 NVR: recorded 58.6 MB
+  18:04:31 NVR: recorded 58.6 MB
   ```
-- **මෙයින් ඔප්පු වන කරුණ:** සෑම මිනිත්තු 5 කට වරක්ම මෙගාබයිට් 58.6 ක සැබෑ video packets ප්‍රමාණයක් (තත්පරයකට ~200 KB) Virtual Switch එක (`br-ids-lan`) හරහා NVR එක වෙත ගලා එයි.
+  *(සටහන: NVR එක පළමු පේළිය ලියන්නේ lab එක ආරම්භ කර **මිනිත්තු 5 කට පසුවයි**. ඊට පෙර `docker logs ids-lab-nvr` හිස්ය - එය දෝෂයක් නොවේ.)*
+- **මෙයින් ඔප්පු වන කරුණ:** සෑම මිනිත්තු 5 කට වරක්ම මෙගාබයිට් 58.6 ක දත්ත (තත්පරයකට ~200 KB, simulator එකේ අහඹු bytes) Virtual Switch එක (`br-ids-lan`) හරහා NVR එක වෙත නොකඩවා ගලා එයි. සෑම segment එකක්ම 58.6 MB වීම stream එක නොකැඩුණු බවට සාක්ෂියකි.
 
 ---
 
@@ -1021,7 +1055,7 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 > - **සම්පූර්ණ වන ක්‍රියාකාරී අවශ්‍යතාවය (Requirement):** **FR-05 Management Plane Verification**.
 > - **අදාළ පරීක්ෂණ අවස්ථාව (Table 10 Scenario):** **Table 10 Scenario 1** ("Administrator login, video playback and device discovery").
 > - **මෙය සිදු කළේ ඇයි? (Core Rationale):** ජාලය තුළ සිටින ආරක්ෂක පරිපාලකයාට (Admin PC `192.168.50.10`) කැමරාවේ Web UI එක (Port 80) සාමාන්‍ය පරිදි විවෘත වන බවත්, එය හුදෙක් terminal response එකක් පමණක් නොව සැබෑ Web Browser එකකින් (Chrome/Edge) දර්ශනය වන සැබෑ Dark Mode Interface එකක් බවත් තහවුරු කිරීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Section 3.6 and Section 5.1. The Admin PC on 192.168.50.10 successfully authenticates with the camera web interface on port 80, allowing full visual management directly in a standard browser."*
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Section 3.6 and Section 5.1. The Admin PC on 192.168.50.10 opens the camera web interface on port 80 (HTTP 200, 5,478 bytes), and the same page can be shown in a normal browser."*
 
 - **අ) Terminal පරීක්ෂාව (CLI Proof):**
 
@@ -1048,17 +1082,17 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 
   ```powershell
   docker exec ids-lab-admin python -c "import urllib.request; open('/tmp/camera_preview.html', 'wb').write(urllib.request.urlopen('http://192.168.50.30/').read())"
-  docker cp ids-lab-admin:/tmp/camera_preview.html camera_preview.html
-  Start-Process camera_preview.html
+  docker cp ids-lab-admin:/tmp/camera_preview.html "$env:TEMP\camera_preview.html"
+  Start-Process "$env:TEMP\camera_preview.html"
   ```
 
   > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
   >
   > - **`open('/tmp/camera_preview.html', 'wb').write(...)`:** Admin container එක මඟින් කැමරාවෙන් බාගත කළ සම්පූර්ණ HTML වෙබ් පිටුව එහි `/tmp` ෆෝල්ඩරයේ සුරකියි.
-  > - **`docker cp ids-lab-admin:/tmp/... camera_preview.html`:** Container එක ඇතුළේ ඇති HTML ගොනුව ඔබගේ සැබෑ Windows පරිගණකයට පිටපත් (copy) කරගනී.
-  > - **`Start-Process camera_preview.html`:** Windows වල ඇති default Web Browser එක (Chrome හෝ Edge) මඟින් එම HTML වෙබ් පිටුව තිරය මත විවෘත කරයි.
+  > - **`docker cp ids-lab-admin:/tmp/... "$env:TEMP\camera_preview.html"`:** Container එක ඇතුළේ ඇති HTML ගොනුව ඔබගේ Windows පරිගණකයේ Temp ෆෝල්ඩරයට පිටපත් (copy) කරගනී (project ෆෝල්ඩරයට අමතර ගොනුවක් නොඑකතු වේ).
+  > - **`Start-Process "$env:TEMP\camera_preview.html"`:** Windows වල ඇති default Web Browser එක (Chrome හෝ Edge) මඟින් එම HTML වෙබ් පිටුව තිරය මත විවෘත කරයි.
   >
-- **මෙයින් ඔප්පු වන කරුණ:** කැමරාවේ Web UI එක ඔබගේ පරිගණකයේ Chrome හෝ Edge බ්‍රවුසරය තුළ අලංකාර Dark Mode Interface එකක් ලෙස විවෘත වේ (Camera IP: `192.168.50.30`, Resolution: 1080p, RTSP Port: 554, NVR Connection: Active).
+- **මෙයින් ඔප්පු වන කරුණ:** කැමරාවේ Web UI එක ඔබගේ පරිගණකයේ Chrome හෝ Edge බ්‍රවුසරය තුළ Dark Mode පිටුවක් ලෙස විවෘත වේ. *(අවංක සටහන: පිටුවේ ඇති "1920x1080 @ 25 fps" වැනි අගයන් simulator පිටුවේ ලියා ඇති ස්ථාවර text ය; සැබෑ වීඩියෝ resolution එකක් නොවේ. `docker cp` කළ පිටුව offline පිටපතක් බැවින් එහි live දත්ත update නොවේ.)*
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
   > *"Sir, the Admin PC on 192.168.50.10 can successfully poll the camera web interface on port 80. By exporting the response, we can render the camera's full live management UI directly in the browser."*
@@ -1073,8 +1107,8 @@ Supervisor ඉදිරියේ පද්ධතිය පෙන්වන වි
 > - **ඉටුවන පර්යේෂණ අරමුණ (Objective):** **Objective O3** ("Make flow features from live IP-camera traffic that match the dataset").
 > - **සම්පූර්ණ වන ක්‍රියාකාරී අවශ්‍යතාවය (Requirement):** **Table 7 FR-01 (Must)** — "Capture mirrored or inline network traffic, and make connection flows from it (Priority: Must / schema test)".
 > - **විසඳෙන පර්යේෂණ ගැටලුව (Research Question):** **RQ3** ("Which flow features stay available and stay the same in both IoT-23 and live camera traffic made by Zeek?").
-> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පද්ධතිය කිසිදු ව්‍යාජ (dummy) හෝ කලින් හදන ලද static logs කියවන්නේ නැති බවත්, Zeek Sensor එක කිසිදු IP එකක් නැතිව switch එකට Promiscuous mode එකෙන් සවන් දී සැබෑ binary packets කියවන බවත්, එම සජීවී දත්ත අපේ AI Model එක පුහුණු කළ IoT-23 dataset හි schema එක සමඟ 100% ක් සමාන බවත් (Zero Training-Serving Skew) ඔප්පු කිරීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O3, Table 7 FR-01, and Research Question RQ3. Through live packet injection, Zeek's TCP state machine flags, and our automated schema audit on 20,929 live flows, we conclusively prove real-time packet capture and flow extraction."*
+> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පද්ධතිය කිසිදු ව්‍යාජ (dummy) හෝ කලින් හදන ලද static logs කියවන්නේ නැති බවත්, Zeek Sensor එක කිසිදු IP එකක් නැතිව switch එකට Promiscuous mode එකෙන් සවන් දී සැබෑ binary packets කියවන බවත්, එම සජීවී දත්ත වලින් training එකේදී භාවිත කළ **එකම කේතයෙන්** (zero training-serving skew) features 27 ම **එකම ආකෘතියෙන් (columns, types, ranges)** සෑදෙන බවත් ඔප්පු කිරීමටයි. *(අවංක සටහන: ආකෘතිය සමාන වුවද, අගයන්ගේ ව්‍යාප්තිය (distribution) IoT-23 ට වඩා බොහෝ වෙනස්ය - පහත සාක්ෂිය 3 බලන්න.)*
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O3, Table 7 FR-01, and Research Question RQ3. Through live packet injection, Zeek's TCP state machine flags, and our automated schema check, we show real-time packet capture and flow extraction. The live flows have the same 27-feature format as the training data; their value distributions differ from IoT-23, which is part of our RQ3 answer."*
 
 > 💡 **සරල පැහැදිලි කිරීම: "Promiscuous Mode" යනු කුමක්ද? (What is Promiscuous Mode?):**
 > 
@@ -1113,8 +1147,10 @@ Get-Content lab_virtual\zeek_logs\conn.log -Tail 3
 **ලැබෙන පිළිතුර (JSON text):**
 
 ```json
-{"ts":1731313087.12,"uid":"CH92421...","id.orig_h":"192.168.50.20","id.orig_p":49152,"id.resp_h":"192.168.50.30","id.resp_p":554,"proto":"tcp","service":"rtsp","duration":300.02,"orig_bytes":58623600,"resp_bytes":1420,"conn_state":"SF"}
+{"ts":1794506371.875058,"uid":"CYVPd93UdqafFbq96j","id.orig_h":"192.168.50.20","id.orig_p":33062,"id.resp_h":"192.168.50.30","id.resp_p":554,"proto":"tcp","duration":300.1275751590729,"orig_bytes":39,"resp_bytes":58604000,"conn_state":"RSTO","local_orig":true,"local_resp":true,"missed_bytes":58559680,"history":"ShADadggggFR","orig_pkts":2997,"orig_ip_bytes":155879,"resp_pkts":2996,"resp_ip_bytes":58759800,"ip_proto":6}
 ```
+
+*(12 Nov 2026 දින ලබාගත් NVR → කැමරා stream පේළියකි (`-Tail 3` මඟින් ඔබට ලැබෙන්නේ එම මොහොතේ අවසන් වූ ඕනෑම flows 3 කි). NVR එක (`orig`) යවන්නේ `PLAY` request එක පමණි (`orig_bytes: 39`); කැමරාව (`resp`) තත්පර 300 ක segment එකකදී bytes 58,604,000 යවයි (`resp_bytes`). Zeek මෙය `rtsp` ලෙස නම් නොකරයි (`service` නැත). `missed_bytes` විශාල වන්නේ Docker virtual network එක ඉතා විශාල (merged) packets යවන බැවින් Zeek ට payload එකේ කොටස් නොපෙනෙන නිසාය; bytes ගණන TCP sequence numbers වලින් නිවැරදිව ගණනය වේ.)*
 
 ---
 
@@ -1127,7 +1163,8 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
 
    ```powershell
    docker exec ids-lab-admin python -c "import urllib.request; urllib.request.urlopen('http://192.168.50.30/')"
-   Get-Content lab_virtual\zeek_logs\conn.log -Tail 1
+   Start-Sleep -Seconds 7
+   Get-Content lab_virtual\zeek_logs\conn.log | Select-String '"id.orig_h":"192.168.50.10"' | Select-Object -Last 1
    ```
 
    > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
@@ -1135,13 +1172,14 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
    > - **`docker exec ids-lab-admin`:** ක්‍රියාත්මක වන Admin PC container එක ඇතුළට ගොස් විධානයක් run කරන්න.
    > - **`python -c "..."`:** Container එක තුළ ඇති Python මඟින් inline command එකක් run කරන්න (`-c` = command).
    > - **`import urllib.request; urllib.request.urlopen('http://192.168.50.30/')`:** Admin PC එකේ සිට කැමරාවේ IP එක වන `192.168.50.30` හි Port 80 (Web Server) වෙත සැබෑ HTTP GET request එකක් යවන්න (හරියට browser එකකින් web page එකක් open කළා වගේ).
-   > - **`Get-Content lab_virtual\zeek_logs\conn.log -Tail 1`:** Zeek Sensor එක විසින් සටහන් කරගත් `conn.log` ගොනුවේ අන්තිමටම ලියවුණු අලුත්ම 1 වන පේළිය පමණක් screen එකේ පෙන්වන්න.
+   > - **`Start-Sleep -Seconds 7`:** Zeek පේළිය ලියන්නේ connection එක වැසී තත්පර ~5 කට පසුව (`tcp_close_delay`) බැවින් තත්පර 7 ක් රැඳී සිටින්න. පෙනෙන පේළියේ `ts` අගය command එක run කළ වේලාවට ගැළපිය යුතුය.
+   > - **`Get-Content ... | Select-String '"id.orig_h":"192.168.50.10"' | Select-Object -Last 1`:** Admin PC (`.10`) ආරම්භ කළ අලුත්ම flow පේළිය පමණක් පෙන්වන්න. (`-Tail 1` පමණක් භාවිත කළහොත්, ඒ අතරතුර ලියවුණු කැමරාවේ DNS/NTP පේළියක් පෙනිය හැක.)
    >
 
    **ලැබෙන සැබෑ පිළිතුර:**
 
    ```json
-   {"ts":1794390662.04,"uid":"CiKgoa1TTSstcUREd8","id.orig_h":"192.168.50.10","id.orig_p":41326,"id.resp_h":"192.168.50.30","id.resp_p":80,"proto":"tcp","service":"http","duration":0.0015,"orig_bytes":127,"resp_bytes":153,"conn_state":"SF","history":"ShADadfF","orig_pkts":6,"resp_pkts":6}
+   {"ts":1794505532.932928,"uid":"CYzNbZ35NI4WfHCrf4","id.orig_h":"192.168.50.10","id.orig_p":35832,"id.resp_h":"192.168.50.30","id.resp_p":80,"proto":"tcp","service":"http","duration":0.0012128353118896484,"orig_bytes":127,"resp_bytes":153,"conn_state":"SF","local_orig":true,"local_resp":true,"missed_bytes":0,"history":"ShADadfF","orig_pkts":6,"orig_ip_bytes":447,"resp_pkts":6,"resp_ip_bytes":473,"ip_proto":6}
    ```
 
    **විද්‍යාත්මක සාක්ෂිය:**
@@ -1164,10 +1202,10 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
    **ලැබෙන සැබෑ පිළිතුර:**
 
    ```json
-   {"pkts_proc": 1260, "bytes_recv": 11809863, "pkts_dropped": 0, "active_tcp_conns": 1}
+   {"ts":1794505533.893805,"peer":"zeek","mem":269,"pkts_proc":1270,"bytes_recv":11816346,"pkts_dropped":0,"pkts_link":1270,"pkt_lag":0.002157926559448242,"events_proc":192,"events_queued":187,"active_tcp_conns":4,"active_udp_conns":2, ...}
    ```
 
-   **විද්‍යාත්මක සාක්ෂිය:** Zeek විසින් පසුගිය තත්පර 60 තුළ kernel socket එකෙන් binary Ethernet packets **1,260 ක්** සහ RTSP වීඩියෝ දත්ත **11,809,863 bytes (~11.8 Megabytes)** කෙලින්ම කියවා ඇති බව ඔප්පු වේ (`pkts_dropped: 0`).
+   **විද්‍යාත්මක සාක්ෂිය:** Zeek විසින් පසුගිය තත්පර 60 තුළ kernel socket එකෙන් binary Ethernet packets **1,270 ක්** සහ **11,816,346 bytes (~11.8 MB)** (බොහෝමයක් කැමරා stream එක) කෙලින්ම කියවා ඇති බව ඔප්පු වේ (`pkts_dropped: 0`). `stats.log` පේළියක් ලියවෙන්නේ මිනිත්තුවකට වරක් බැවින්, lab එක ආරම්භ කර මිනිත්තුවක් යනතුරු මෙය හිස් විය හැක.
 3. **සාක්ෂිය 3: Proposal FR-01 ස්වයංක්‍රීය Schema විග්‍රහය (`schema_check.py`):**
    `conn.log` හි ඇති සෑම flow එකකම columns, types, nulls, සහ ranges නිවැරදිදැයි පරීක්ෂා කිරීම:
 
@@ -1185,14 +1223,18 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
    **ලැබෙන සැබෑ පිළිතුර:**
 
    ```text
-   Offline sample size: 1,384,070 rows | Live sample size: 20,929 rows
-   Schema Audit Results: Columns=True | Dtypes=True | Nulls=True | Ranges=True | Inference=True => OVERALL=PASS
+   [INFO] [zeek_adapter] Offline sample size: 1384070 rows | Live sample size: 3089 rows
+   [INFO] [zeek_adapter] Schema Audit Results: Columns=True | Dtypes=True | Nulls=True | Ranges=True | Inference=True => OVERALL=PASS
+   [INFO] [zeek_adapter] Format check passed (see the report for distribution and category differences).
    ```
 
-   **විද්‍යාත්මක සාක්ෂිය:** Zeek විසින් ජනනය කරන ලද සජීවී flows 20,929 ක් අපේ AI Model එක පුහුණු කළ IoT-23 dataset schema එක සමඟ 100% ක් ගැලපෙන බවත් (RQ3 සම්පූර්ණ බවත්), ML Model එකට කිසිදු දෝෂයකින් තොරව සජීවීව inference කළ හැකි බවත් විද්‍යාත්මකව ඔප්පු වේ.
+   **විද්‍යාත්මක සාක්ෂිය:** සජීවී flows (12 Nov 2026 දින 3,089 ක්; ගණන lab එක ධාවනය වූ කාලය අනුව වැඩි වේ) features 27 ම **එකම columns, types, හිස් අගයන් නැතිව, නිවැරදි ranges** සමඟ සෑදෙන බවත්, Model එක ඒවා දෝෂයකින් තොරව භාවිත කරන බවත් (FR-01 schema test) ඔප්පු වේ.
+
+   ⚠️ **අවංක සටහන (RQ3):** `PASS` යනු **ආකෘතිය (format)** සමාන බව පමණි. අගයන්ගේ ව්‍යාප්තිය සැසඳූ විට features 27 න් **15 ක්** IoT-23 ට වඩා බොහෝ වෙනස්ය (KS ≥ 0.3; `reports/schema_check.md`). මෙය දෝෂයක් නොව, IoT-23 සහ අපේ කැමරා traffic අතර වෙනසයි; RQ3 පිළිතුරේ කොටසක් ලෙස වාර්තා කළ යුතුය. සැබෑ කැමරාවක් සමඟ අවසන් පිළිතුර Hardware Lab එකෙන් ලැබේ.
+   *(සටහන: මෙම command එක `reports/schema_check.md` සහ `.csv` නැවත ලියයි. Demo එකකදී පමණක් run කළේ නම්, පසුව `git checkout -- reports/schema_check.md` මඟින් සුරැකි වාර්තාව නැවත ලබාගත හැක.)*
 
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
-  > *"Sir, this conclusively proves FR-01. When we trigger a live HTTP request from the Admin PC, Zeek captures the exact 12 link-layer Ethernet frames within 1.5 milliseconds, recording the TCP state machine flags 'ShADadfF'. Furthermore, Zeek's stats.log verifies that it processed over 1,200 raw packets and 11.8 MB of video payload with zero kernel packet loss."*
+  > *"Sir, this shows FR-01 working. When we send a live HTTP request from the Admin PC, Zeek records the connection with its 12 packets (6 each way) and the TCP flags 'ShADadfF'. Zeek's stats.log shows about 1,270 packets and 11.8 MB per minute with zero dropped packets. The schema check passes on format; the value distributions differ from IoT-23, and we report that as part of RQ3."*
   >
 
 ---
@@ -1204,8 +1246,8 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
 > - **ඉටුවන පර්යේෂණ අරමුණ (Objective):** **Objective O5** ("Build IP blocking that follows the policy, and let the admin undo it by hand").
 > - **සම්පූර්ණ වන ක්‍රියාකාරී අවශ්‍යතා (Requirements):** **Table 7 FR-06 (Must)** ("Add, list, expire and remove blocking rules on the firewall or router") සහ **FR-07 (Must)** ("Keep the allowlists, the confidence thresholds, and a full audit history").
 > - **විසඳෙන පර්යේෂණ ගැටලුව (Research Question):** **RQ5** ("What safety rules do we need so that automatic response does not stop normal camera access?").
-> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** සැබෑ Linux kernel එකේ `nftables` packet filtering firewall එක Router එක තුළ ක්‍රියාත්මක වන බවත්, නීත්‍යානුකූල කළමනාකරණ පරිගණක (Admin, NVR) ආරක්ෂා කරන Allowlist එකක් (`set allow`) සහ ස්වයංක්‍රීයව expire වන Drop sets (`block_dst`, `limit_src`) එහි සූදානම්ව පවතින බවත් ඔප්පු කිරීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O5, FR-06, FR-07, and Research Question RQ5. The router enforces native Linux nftables. Notice the immutable allowlist protecting our management PC and NVR (FR-07), alongside dynamic auto-expiring sets block_dst, block_src, and limit_src (FR-06)."*
+> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** සැබෑ Linux kernel එකේ `nftables` packet filtering firewall එක Router එක තුළ ක්‍රියාත්මක වන බවත්, කළමනාකරණ උපාංග (Router, Sensor, Admin, NVR) ආරක්ෂා කරන Allowlist එකක් (`set allow`) සහ ස්වයංක්‍රීයව expire වන Drop sets (`block_dst`, `limit_src`) එහි සූදානම්ව පවතින බවත් ඔප්පු කිරීමටයි.
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O5, FR-06, FR-07, and Research Question RQ5. The router enforces native Linux nftables. Notice the allowlist set protecting the router, sensor, management PC and NVR (FR-07), alongside dynamic auto-expiring sets block_dst, block_src, and limit_src (FR-06)."*
 
 - **ධාවනය කළ යුතු Command එක (Terminal):**
 
@@ -1223,10 +1265,26 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
 
   ```text
   table inet ids {
-  	set allow { elements = { 192.168.50.1, 192.168.50.5, 192.168.50.10, 192.168.50.20 } }
-  	set block_src { type ipv4_addr; flags timeout; }
-  	set block_dst { type ipv4_addr; flags timeout; }
-  	set limit_src { type ipv4_addr; flags timeout; }
+  	set allow {
+  		type ipv4_addr
+  		elements = { 192.168.50.1, 192.168.50.5,
+  			     192.168.50.10, 192.168.50.20 }
+  	}
+
+  	set block_src {
+  		type ipv4_addr
+  		flags timeout
+  	}
+
+  	set block_dst {
+  		type ipv4_addr
+  		flags timeout
+  	}
+
+  	set limit_src {
+  		type ipv4_addr
+  		flags timeout
+  	}
 
   	chain forward {
   		type filter hook forward priority filter; policy accept;
@@ -1240,15 +1298,15 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
 
   > **ලැබුණු Firewall නීති වල තේරුම (Output Breakdown):**
   >
-  > - **`set allow`:** කිසිදා Block නොකළ යුතු ආරක්ෂිත උපාංග (Admin, NVR, Router) වල IP ලැයිස්තුව (FR-07).
-  > - **`set block_dst`:** ප්‍රහාර එල්ල කරන විට Auto-Expiry Timers සමඟ IP වැටෙන Drop Set එක (FR-06).
-  > - **`set limit_src`:** DDoS Floods එන විට තත්පරයකට packets 200 කට සීමා කරන Rate-Limit Set එක.
+  > - **`set allow`:** කිසිදා Block නොකළ යුතු ආරක්ෂිත උපාංග (Router `.1`, IDS Scanner/Sensor `.5`, Admin `.10`, NVR `.20`). මෙම IP වලින් **එන** packets block sets පරීක්ෂා කිරීමට පෙරම accept වේ (FR-07). කැමරාව `.30` මෙහි නැත; IDS එකේ `lab.local_networks` නීතිය මඟින් එය ආරක්ෂා වේ.
+  > - **`set block_src` / `set block_dst`:** ප්‍රහාරක IP වැටෙන Drop Sets (FR-06). `block_src` = එම IP එකෙන් **එන** packets drop (PortScan, manual block); `block_dst` = එම IP එක **වෙත යන** packets drop (C&C server). `flags timeout` නිසා සෑම element එකක්ම නියමිත කාලයකින් ඉබේම ඉවත් වේ.
+  > - **`set limit_src`:** DDoS flood source එකෙන් එන packets තත්පරයට 200 ට වැඩි වූ කොටස (burst 5) drop කරන Rate-Limit Set එක (D-055).
   > - **`chain forward`:** Router එක හරහා ගමන් කරන packets allow කරන හෝ drop කරන kernel නීති.
   >
 - **මෙයින් ඔප්පු වන කරුණ:** Proposal FR-06 සහ FR-07 තහවුරු වේ. `allow` set එක මඟින් ආරක්ෂිත උපාංග ආරක්‍ෂා කරන අතර, `block_dst` සහ `limit_src` මඟින් ප්‍රහාරකයන්ගේ packets kernel level එකේදීම drop කිරීමට සූදානම්ව පවතී.
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
-  > *"Sir, the router enforces native Linux nftables. Notice the immutable allowlist protecting our management PC and NVR (FR-07), alongside dynamic auto-expiring sets block_dst, block_src, and limit_src (FR-06)."*
+  > *"Sir, the router enforces native Linux nftables. Notice the allowlist set protecting the router, sensor, management PC and NVR (FR-07), alongside dynamic auto-expiring sets block_dst, block_src, and limit_src (FR-06)."*
   >
 
 ---
@@ -1261,49 +1319,62 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
 > - **විසඳෙන පර්යේෂණ ගැටලුව (Research Question):** **RQ2** ("How well can it sort traffic into the DDoS, scanning, C&C and malware/download classes?").
 > - **අදාළ පරීක්ෂණ අවස්ථාව (Table 10 Scenario):** **Table 10 Scenario 2** ("Authorised Nmap horizontal scan: attack laptop: nmap -p 23,80,554 192.168.50.0/24").
 > - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පිටත WAN ජාලයේ සිටින Attacker Laptop එක (`10.10.10.50`) Router එක හරහා කැමරා Subnet එකට රහසිගතව පැමිණ විවෘත Ports සෙවීමට Nmap Port Scan ප්‍රහාරයක් එල්ල කළ හැකි බවත්, එම scans Router එක හරහා සාර්ථකව ගමන් කරන අතරතුර Zeek sensor එක ඒ සියල්ල අල්ලාගෙන PortScan logs සාදන බවත් ඔප්පු කිරීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Table 10 Scenario 2 and addresses RQ2. The external attacker scans the camera through the router using Nmap, identifying open HTTP and RTSP ports in 0.79 seconds."*
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Table 10 Scenario 2 and addresses RQ2. The outside attacker scans the camera subnet through the router with Nmap. Zeek records every probe, and the model raises a PortScan alert for the attack laptop 10.10.10.50."*
 
 - **ධාවනය කළ යුතු Commands (Terminal):**
 
-  **ක්‍රමය 1: තනි කැමරාවක Web (80) සහ Video (554) Ports හඳුනාගැනීම (Targeted Probe - 0.79s):**
-
-  ```powershell
-  docker exec ids-lab-attacker nmap -p 80,554 192.168.50.30
-  ```
-
-  **ක්‍රමය 2: Proposal Table 10 Scenario 2 සම්පූර්ණ Subnet Reconnaissance Scan එක (Direct Subnet Sweep):**
+  **ක්‍රමය 1: Proposal Table 10 Scenario 2 සම්පූර්ණ Subnet Scan එක (Alert එක පෙන්වීමට මෙය භාවිත කරන්න):**
 
   ```powershell
   docker exec ids-lab-attacker nmap -p 23,80,554 192.168.50.0/24
   ```
 
+  **ක්‍රමය 2: කැමරාවේ Ports 80 සහ 554 පමණක් බැලීම (කුඩා scan එකක් - alert එකක් ඇති නොවේ):**
+
+  ```powershell
+  docker exec ids-lab-attacker nmap -p 80,554 192.168.50.30
+  ```
+
   > **කේතයෙන් සිදුවන දේ සරලව (Command Breakdown):**
   >
   > - **`docker exec ids-lab-attacker`:** පිටත ජාලයේ සිටින Attacker Laptop Container එක තුළ විධානය ක්‍රියාත්මක කරන්න.
-  > - **`nmap -p 23,80,554 192.168.50.0/24`:** කැමරා Subnet එකේ ඇති සියලුම IP ලිපින (`192.168.50.1` සිට `.254` දක්වා) හරහා Ports 23 (Telnet), 80 (HTTP), 554 (RTSP) horizontal sweep reconnaissance scan එකක් කෙලින්ම දියත් කරන්න.
-  > - **Zeek Detection:** Router එක හරහා ගමන් කරන මෙම multi-host packets Zeek Sensor එක විසින් ග්‍රහණය කර `conn.log` හි වාර්තා කරයි. Random Forest Model එක මඟින් `PortScan` අනතුරු ඇඟවීමක් ජනනය වේ.
-  > *(සටහන: මෙය ස්වයංක්‍රීයව run කර Proposal Table 10 Markdown පරීක්ෂණ වාර්තාවක්ද සෑදීමට අවශ්‍ය නම් පමණක් `.venv\Scripts\python.exe lab_virtual/lab.py scenario 2` විධානය භාවිත කළ හැක).*
+  > - **`nmap -p 23,80,554 192.168.50.0/24`:** කැමරා Subnet එකේ IP ලිපින 256 ම (`192.168.50.0` සිට `.255` දක්වා) Ports 23 (Telnet), 80 (HTTP), 554 (RTSP) සඳහා horizontal scan එකක් කරන්න.
+  > - **Zeek සහ Model:** Router එක හරහා ගමන් කරන මෙම probes Zeek විසින් `conn.log` හි ලියයි. Model එක `PortScan` alert එකක් ජනනය කරයි.
+  > - **ක්‍රමය 2 පිළිබඳ අවංක සටහන:** එක් host එකක ports 2 ක් පමණක් scan කිරීම flows කිහිපයක් පමණි; 12 Nov 2026 දින පරීක්ෂාවේදී එයින් **කිසිදු alert එකක් ඇති නොවීය**. Alert එක පෙන්වීමට ක්‍රමය 1 භාවිත කරන්න.
+  > *(සටහන: ස්වයංක්‍රීයව run කර Table 10 Markdown වාර්තාවක් සෑදීමට: `.venv\Scripts\python.exe lab_virtual\lab.py scenario 2`).*
   >
-- **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
+- **ලැබෙන සැබෑ පිළිතුර (Verified Output - 12 Nov 2026, ක්‍රමය 1 හි අවසාන පේළි):**
 
   ```text
-  PORT    STATE SERVICE
-  80/tcp  open  http
-  554/tcp open  rtsp
-  Nmap done: 1 IP address (1 host up) scanned in 0.79 seconds
+  Nmap scan report for 192.168.50.30
+  PORT    STATE  SERVICE
+  23/tcp  closed telnet
+  80/tcp  open   http
+  554/tcp open   rtsp
+  ...
+  Nmap done: 256 IP addresses (6 hosts up) scanned in 7.91 seconds
   ```
+  *(Hosts 6: router `.1`, scanner `.5`, admin `.10`, NVR `.20`, camera `.30`, සහ Docker bridge එකේම ලිපිනය `.254`. කැමරාවේ පමණක් ports 80 සහ 554 විවෘතයි.)*
+
+- **IDS එක ලබාදුන් ප්‍රතිඵලය (12 Nov 2026, `GET /api/events`):**
+
+  ```text
+  PortScan  10.10.10.50 -> 192.168.50.254:23  confidence 0.88  response: candidate  reason: SCAN_RAPID_PROBE_SWEEP
+  ```
+  - **Alert එකේ destination එක `.254` වන්නේ ඇයි?** Model එක alert එක ලබාදෙන්නේ scan එකේ එක් flow එකකටයි; එය subnet එකේ ඕනෑම host එකක් විය හැක (11 Nov run එකේදීද `.254`, confidence 0.75).
+  - **Block නොවූයේ ඇයි?** PortScan block සීමාව $P \ge 0.88$ සහ **තත්පර 60 ක් තුළ alerts 3 ක්** අවශ්‍යයි. මෙහි ඇත්තේ alert 1 ක් පමණි, එබැවින් `candidate` (block නොකර alert පමණි). Confidence එක run එකෙන් run එකට වෙනස් වේ (0.75 – 0.88).
+
 - **🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/alerts` - Live Alerts):**
 
-  - Attacker විසින් Port Scan ප්‍රහාරය එල්ල කළ සැණින්, Zeek sensor එකෙන් flow එක ග්‍රහණය කර Random Forest AI Model එක වෙත යවයි.
-  - Dashboard එකේ **Live Alerts** පිටුවෙහි තැඹිලි පැහැති අනතුරු ඇඟවීමේ Badge එකක් සජීවීව වැටේ:
-    - **Classification:** `PortScan (Reconnaissance)`
-    - **Attacker IP:** `10.10.10.50`
-    - **Target IP:** `192.168.50.30` (Ports: `80, 554`)
-    - **Action:** `Reconnaissance Observed` (පද්ධතිය මඟින් ප්‍රහාරකයාගේ මුල් පියවර නිරීක්ෂණය කරන ලදී).
-- **මෙයින් ඔප්පු වන කරුණ:** පිටත ජාලයේ සිට Router එක හරහා කැමරා subnet එක වෙත පැමිණෙන scans සාර්ථකව ගමන් කරයි. Router එක මඟින් packets forward කරයි.
+  - Refresh නොකරම, අලුත් alert කාඩ්පතක් ඉහළට වැටේ:
+    - **Badge:** `MODEL PREDICTION` (නිල් පැහැය) - පරිපාලකයා තවම තහවුරු කර නැති model අනාවැකියක්.
+    - **Class:** `PortScan` (තැඹිලි/amber පැහැය), **Confidence:** `88%` පමණ
+    - **Source → Destination:** `10.10.10.50:<port> → 192.168.50.254:23` (TCP), direction `inbound`
+    - **Response:** `RESPONSE: CANDIDATE`
+- **මෙයින් ඔප්පු වන කරුණ:** පිටත ජාලයේ සිට Router එක හරහා කැමරා subnet එකට එන scan එක Zeek විසින් අල්ලාගෙන, Model එක `PortScan` ලෙස හඳුනාගනී. කැමරාව කිසිවිටෙක block නොවේ.
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
-  > *"Sir, here the attacker at 10.10.10.50 scans the camera through the router using Nmap, identifying open HTTP and RTSP ports in 0.79 seconds as defined in Scenario 2."*
+  > *"Sir, the attacker at 10.10.10.50 scans the whole camera subnet through the router with Nmap, as in Scenario 2. Zeek records the probes and the model raises a PortScan alert. It is not blocked yet, because a block needs three alerts within 60 seconds at confidence 0.88 or more."*
   >
 
 ---
@@ -1315,14 +1386,14 @@ Supervisor විසින් ඔබෙන්: **"Zeek එක ඇත්තටම
 > - **ඉටුවන පර්යේෂණ අරමුණු (Objectives):** **Objective O2** ("Train and test a multi-class Random Forest with no scenario leakage") සහ **Objective O6** ("Test how well it detects, how fast it runs, and how much it uses").
 > - **සම්පූර්ණ වන ක්‍රියාකාරී අවශ්‍යතා (Requirements):** **Table 7 FR-02 (Must)** ("Put each flow we can use into a class, and give back the class, the confidence and the model version") සහ **FR-03 (Must)** ("Save benign traffic summaries, attacks and response actions").
 > - **විසඳෙන පර්යේෂණ ගැටලුව සහ ඉලක්කය (RQ & Target):** **RQ4** ("How much time does the whole process take in the laboratory, from detection to dashboard, alert and blocking?") සහ **Table 9 Latency Target** — "Median decision latency $< 2.0\text{ s}$; 95th percentile $< 5.0\text{ s}$".
-> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** අපේ AI Machine Learning Model එක (Random Forest v3.1.0) සැබවින්ම Background Pipeline එක තුළ සක්‍රියව ධාවනය වන බවත්, සාමාන්‍ය කැමරා flows (7,605 benign flows) MongoDB හි තැන්පත් වන බවත්, පැකට් එකක් පැමිණි පසු තීරණයක් ගැනීමට ගතවන කාලය (Median Latency) **මිලි තත්පර 112.24 ක් (තත්පර 0.11)** වැනි අතිශය සුළු කාලයක් බවත් (Proposal ඉලක්කයට වඩා 18 ගුණයකින් වේගවත් බවත්) සජීවීව පරීක්ෂා කර ඔප්පු කිරීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objectives O2 & O6, Table 7 FR-02 & FR-03, and Table 9 Latency Target. Our live pipeline runs calibrated Model v3.1.0 with an empirical median decision latency of only 112.2 ms—18 times faster than our 2-second target."*
+> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** අපේ Random Forest Model එක (v3.1.0) Background Pipeline එක තුළ සක්‍රියව ධාවනය වන බවත්, සාමාන්‍ය (Benign) flows MongoDB හි `traffic_summaries` තුළ සාරාංශ ලෙස සටහන් වන බවත් (FR-03), Zeek පේළිය කියවූ මොහොතේ සිට Dashboard එකට push කරන තෙක් කාලය (decision latency) Proposal Table 9 ඉලක්කයට (median < 2 s, 95% < 5 s) වඩා බොහෝ අඩු බවත් සජීවීව පෙන්වීමටයි.
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objectives O2 and O6, FR-02, FR-03 and the Table 9 latency target. The live pipeline runs model v3.1.0. From the moment our adapter reads a Zeek line to the moment the dashboard is told, the median is about 0.1 to 0.2 seconds, well under the 2-second target. The numbers change from run to run, so we read them live."*
 
 ---
 
-#### සාක්ෂිය 1: පද්ධතියේ Pipeline තත්ත්වය සහ සමස්ත Latency Baseline එක ලබාගැනීම (System Status & Latency Metric Check)
+#### සාක්ෂිය 1: පද්ධතියේ Pipeline තත්ත්වය සහ Latency එක ලබාගැනීම (System Status & Latency Metric Check)
 
-Terminal එකේ පහත Python විධානය ධාවනය කර Backend API එකෙන් සජීවීව ක්‍රියාත්මක වන Pipeline තත්ත්වය පරීක්ෂා කරන්න:
+Terminal එකේ පහත Python විධානය ධාවනය කර Backend API එකෙන් සජීවී තත්ත්වය බලන්න:
 
 ```powershell
 python -c "
@@ -1338,37 +1409,53 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
 
 > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
 >
-> - **`import urllib.request, json`:** HTTP requests යැවීමට සහ JSON දත්ත විග්‍රහ කිරීමට අවශ්‍ය සම්මත Python libraries සම්බන්ධ කරගැනීම.
-> - **`open('...dashboard_login.txt')`:** ආරක්ෂිත Admin පරිශීලක නාමය (`labadmin`) සහ මුරපදය ගොනුවෙන් කියවා ගැනීම.
-> - **`POST /api/auth/login`:** Backend API එකට අක්තපත්‍ර ඉදිරිපත් කර ආරක්ෂිත **JWT Session Token** එකක් ලබාගැනීම (Proposal Section 3.7 - Authenticated Administrator).
-> - **`GET /api/summary (headers={'Authorization':'Bearer '+tok})`:** එම JWT Token එක සහිතව Backend එකෙන් සජීවී ප්‍රතිචාර කාලය (Latency), Active Model version (v3.1.0), සහ Benign flow ගණන ලබාගෙන තිරයේ පෙන්වීම.
+> - **`import urllib.request, json`:** HTTP requests යැවීමට සහ JSON කියවීමට අවශ්‍ය සම්මත Python libraries.
+> - **`open('...dashboard_login.txt')`:** `labadmin` පරිශීලක නාමය සහ මුරපදය ගොනුවෙන් කියවා ගැනීම.
+> - **`POST /api/auth/login`:** Login වී **JWT Token** එකක් ලබාගැනීම (Proposal Section 3.7 - Authenticated Administrator).
+> - **`GET /api/summary`:** Overview පිටුව භාවිත කරන එකම දත්ත (මනින ලද latency, model version, flows, blocks) ලබාගෙන පෙන්වීම.
 
-- **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
+- **ලැබෙන සැබෑ පිළිතුර (12 Nov 2026, backend එක ආරම්භ කර මිනිත්තු 6 කට පසු; කෙටි කළ):**
 
   ```json
   {
-    "pipeline_status": "running",
-    "model_version": "v3.1.0",
-    "latency_ms_p50": 112.24,
-    "latency_ms_p95": 141.10,
-    "active_blocks": 0,
-    "benign_flows_24h": 7605
+    "class_distribution": { "CnC": 660, "DDoS_DoS": 146, "Malware_Download": 1, "PortScan": 42 },
+    "metrics": {
+      "active_blocks": 0,
+      "active_rate_limits": 0,
+      "benign_flows_24h": 116,
+      "camera_devices": 1,
+      "total_devices": 6,
+      "total_incidents": 41
+    },
+    "status": "success",
+    "system": {
+      "auto_response": true,
+      "firewall": "router_ssh",
+      "firewall_simulated": false,
+      "flows_processed": 64,
+      "latency_ms_p50": 113.87,
+      "latency_ms_p95": 300.29,
+      "local_networks": [ "192.168.50.0/24" ],
+      "model_version": "v3.1.0",
+      "pipeline_status": "running"
+    }
   }
   ```
 
   > **ලැබුණු දත්ත වල තේරුම (Output Breakdown):**
   >
-  > - **`"pipeline_status": "running"`:** Zeek logs කියවා AI Model එකට යවන Streaming Pipeline එක background එකෙහි සක්‍රියව ධාවනය වේ.
-  > - **`"model_version": "v3.1.0"`:** Proposal Table 7 FR-02 අනුව පුහුණු කරන ලද සැබෑ Random Forest Model අනුවාදය.
-  > - **`"latency_ms_p50": 112.24`:** ගලා ආ flows 2,000 කට අධික ප්‍රමාණයක් නිරීක්ෂණය කිරීමෙන් පසු තීරණයක් ගැනීමට ගතවූ Median (සාමාන්‍ය) කාලය මිලි තත්පර 112.24 කි (තත්පර 0.11).
-  > - **`"benign_flows_24h": 7605`:** පසුගිය පැය 24 තුළ කැමරාවෙන් සාමාන්‍ය වීඩියෝ flows 7,605 ක් කිසිදු බාධාවකින් තොරව ගමන් කර MongoDB හි ආරක්ෂිතව සටහන් වී ඇත.
-  >
+  > - **`system.pipeline_status: "running"`:** Zeek logs කියවා Model එකට යවන Pipeline එක ධාවනය වේ.
+  > - **`system.model_version: "v3.1.0"`:** භාවිත වන Random Forest Model අනුවාදය (FR-02).
+  > - **`system.latency_ms_p50` / `latency_ms_p95`:** Pipeline එක ආරම්භ වූ පසු සැකසූ flows (`flows_processed`) මත, Zeek පේළිය කියවූ මොහොතේ සිට dashboard push එක දක්වා කාලයේ median සහ 95th percentile.
+  > - **`system.firewall: "router_ssh"`, `firewall_simulated: false`:** Block කිරීම් සැබෑ Router එකට SSH මඟින් යයි.
+  > - **`metrics.benign_flows_24h`:** පසුගිය පැය 24 තුළ Benign ලෙස සැකසූ **සියලු** flows ගණන (කැමරාව, NVR, Admin, Cloud, DNS, NTP ආදී සියල්ල).
+  > - **`class_distribution`:** Database එකේ ඇති ප්‍රහාරක flows ගණන පන්තිය අනුව (පෙර runs වලද ඇතුළුව).
 
 ---
 
-#### සාක්ෂිය 2: සජීවීව Packet එකක් යවා Decision Latency මැන පෙන්වීම (Live Packet Injection & Latency Measurement Test)
+#### සාක්ෂිය 2: සජීවීව Packet එකක් යවා Latency මැන පෙන්වීම (Live Packet Injection & Latency Measurement Test)
 
-> 🔬 **මෙම පරීක්ෂණයේ අරමුණ:** හුදෙක් ගොනුවක ලියා ඇති අගයක් පෙන්වීම වෙනුවට, Admin PC එකෙන් කැමරාවට **සජීවීව Network Packet එකක් (HTTP Request) යවා**, එම packet එක සැබෑ ලෙස ගමන් කිරීමට ගතවන කාලයත් (Network Round-Trip Time), පද්ධතියේ AI Pipeline එක එම flow එක හඳුනාගෙන තීරණය දීමට ගන්නා සැබෑ කාලයත් (Decision Latency) එම මොහොතේදීම මැන ඔප්පු කිරීමයි.
+> 🔬 **මෙම පරීක්ෂණයේ අරමුණ:** Admin PC එකෙන් කැමරාවට **සජීවී HTTP request එකක්** යවා, (1) ජාලය හරහා එය යාමට ගතවන සැබෑ කාලය container එක තුළදීම මැනීම, සහ (2) Pipeline එකේ decision latency අගයන් එම මොහොතේදීම API එකෙන් කියවීම.
 
 - **ධාවනය කළ යුතු Command එක (Terminal):**
 
@@ -1382,122 +1469,119 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
   req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
   tok = json.loads(urllib.request.urlopen(req).read())['token']
 
-  # 2. Admin PC එකෙන් කැමරාවට සජීවීව Packet එකක් යවා Round-Trip කාලය මැනීම
-  t0 = time.time()
-  subprocess.run(['docker', 'exec', 'ids-lab-admin', 'curl', '-s', 'http://192.168.50.30/'], capture_output=True)
-  t_packet = time.time()
-  net_ms = round((t_packet - t0) * 1000, 2)
+  # 2. Admin PC container එක තුළදීම කැමරාවට HTTP request එකක් යවා ජාල කාලය මැනීම
+  code = 'import time,urllib.request;t=time.perf_counter();urllib.request.urlopen(chr(104)+chr(116)+chr(116)+chr(112)+chr(58)+chr(47)+chr(47)+chr(49)+chr(57)+chr(50)+chr(46)+chr(49)+chr(54)+chr(56)+chr(46)+chr(53)+chr(48)+chr(46)+chr(51)+chr(48)+chr(47)).read();print(round((time.perf_counter()-t)*1000,2))'
+  net_ms = subprocess.run(['docker', 'exec', 'ids-lab-admin', 'python', '-c', code], capture_output=True, text=True).stdout.strip()
 
-  # 3. Pipeline Runner එකට flow එක කියවා තීරණය ගැනීමට සුළු විරාමයක් දීම
-  time.sleep(0.5)
+  # 3. Zeek පේළිය ලියා Pipeline එක එය සැකසීමට සුළු විරාමයක්
+  time.sleep(3)
 
-  # 4. Backend Pipeline එකෙන් සැබෑ Decision Latency මිනුම් ලබාගැනීම
+  # 4. Backend Pipeline එකෙන් Decision Latency මිනුම් ලබාගැනීම
   req_status = urllib.request.Request('http://127.0.0.1:5000/api/v1/pipeline/status', headers={'Authorization': 'Bearer ' + tok})
-  status = json.loads(urllib.request.urlopen(req_status).read())
-  metrics = status['metrics']
-  p50 = metrics['latency_ms_p50']
-  p95 = metrics['latency_ms_p95']
-  flows = metrics['flows_processed']
+  metrics = json.loads(urllib.request.urlopen(req_status).read())['metrics']
+  p50, p95, flows = metrics['latency_ms_p50'], metrics['latency_ms_p95'], metrics['flows_processed']
 
   print('=== LIVE INJECTION & PIPELINE LATENCY TEST ===')
-  print('1. Network Packet Round-Trip (Admin -> Camera):', net_ms, 'ms')
-  print('2. Pipeline Decision Latency Median (p50):      ', p50, 'ms')
-  print('3. Pipeline 95th Percentile Latency (p95):       ', p95, 'ms')
-  print('4. Total Empirical Flows Processed:              ', flows)
-  print('5. Proposal Table 9 Target Comparison:           ', p50, 'ms < 2000.0 ms (PASS - 18x FASTER)')
+  print('1. HTTP round trip inside the lab (Admin -> Camera):', net_ms, 'ms')
+  print('2. Pipeline decision latency, median (p50):       ', p50, 'ms')
+  print('3. Pipeline decision latency, 95th percentile:    ', p95, 'ms')
+  print('4. Flows processed since the pipeline started:    ', flows)
+  print('5. Table 9 target: median < 2000 ms ->', 'PASS' if p50 < 2000 else 'FAIL', '(%.0fx below)' % (2000 / p50), '| 95% < 5000 ms ->', 'PASS' if p95 < 5000 else 'FAIL')
   "
   ```
 
   > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
   >
-  > - **පියවර 1 (`open`, `POST /api/auth/login`):** Dashboard API එක සමග සම්බන්ධ වීමට Admin authentication token එකක් ලබාගනී.
-  > - **පියවර 2 (`t0 = time.time()`, `docker exec ... curl ... http://192.168.50.30/`):** Admin PC කන්ටේනරය තුළින් කැමරාවේ Web Server එක වෙත සැබෑ HTTP Request එකක් යවයි. සැබෑ ජාලය තුළ packet එක ගොස් Camera වෙබ් පිටුව ලැබීමට ගතවන්නේ **2.2 ms** කි (PowerShell හරහා docker exec ආරම්භ වීමේ overhead එක සමඟ ~166 ms ක් සටහන් වේ).
-  > - **පියවර 3 (`time.sleep(0.5)`):** Zeek sensor එක විසින් flow එක සටහන් කර, Python adapter එක එය කියවා Machine Learning model එක හරහා තීරණය ගැනීමට අවශ්‍ය තත්පර භාගයක කාලය ලබාදෙයි.
-  > - **පියවර 4 (`GET /api/v1/pipeline/status`):** පද්ධතිය තුළ සැබෑ flows 2,200 කට අධික ප්‍රමාණයක් මත ගණනය කරන ලද Steady-State Median (`p50` = 112.24 ms) සහ 95th Percentile (`p95` = 141.1 ms) Latency අගයන් කියවා ගනී.
-  >   *(සටහන: Cold Start එකේදී latency එක ~650 ms වන අතර, පද්ධතිය විනාඩි 5ක් පමණ ධාවනය වූ පසු 112 ms steady state එකට පැමිණේ).*
-  > - **පියවර 5 (`print`):** Proposal Table 9 හි ඉලක්කය වූ තත්පර 2.0 (2000 ms) හා සසඳා පද්ධතිය කෙතරම් වේගවත්ද යන්න සනාථ කරයි.
+  > - **පියවර 1 (`POST /api/auth/login`):** API එක භාවිත කිරීමට JWT token එකක් ලබාගනී.
+  > - **පියවර 2 (`docker exec ids-lab-admin python -c ...`):** Admin PC container එක **තුළදීම** timer එක ආරම්භ කර කැමරාවේ web page එක (`http://192.168.50.30/`) ලබාගෙන කාලය මනී. (URL එක `chr(...)` ලෙස ලියා ඇත්තේ PowerShell 5.1 හි quotes ගැටලු මඟහැරීමටයි.) Windows එකේ සිට `docker exec` එක මැනුවොත් docker exec ආරම්භ වීමේ කාලය (~0.2–1.5 s) ද එකතු වන බැවින් එය ජාල කාලය නොවේ.
+  > - **පියවර 3 (`time.sleep(3)`):** Connection එක වැසුණු පසු Zeek පේළිය ලියා Pipeline එක එය කියවීමට කාලය දෙයි.
+  > - **පියවර 4 (`GET /api/v1/pipeline/status`):** Pipeline එක ආරම්භ වූ පසු සැකසූ සියලු flows මත ගණනය කළ median සහ 95th percentile කියවයි.
+  > - **පියවර 5:** Table 9 ඉලක්ක සමඟ **ගණනය කර** සසඳයි (PASS/FAIL සහ ගුණය ස්ථාවර text එකක් නොවේ).
+  >   *(සටහන: Backend එක ආරම්භ කළ මුල් මිනිත්තු කිහිපයේ latency ~570 ms පමණ වේ; ඉන්පසු ~115 ms පමණ දක්වා අඩු වේ. විශාල flood එකකින් පසු flows දහස් ගණනක් එකවර පැමිණෙන බැවින් median එක ~180 ms, 95% එක ~575 ms පමණ දක්වා ඉහළ යා හැක - තවමත් ඉලක්කයට වඩා බොහෝ අඩුය.)*
   >
-- **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
+- **ලැබෙන සැබෑ පිළිතුර (උදාහරණය - අගයන් සෑම run එකකදීම වෙනස් වේ):**
 
   ```text
   === LIVE INJECTION & PIPELINE LATENCY TEST ===
-  1. Network Packet Round-Trip (Admin -> Camera): 2.2 ms (docker exec wrapper: 166.6 ms)
-  2. Pipeline Decision Latency Median (p50):       112.24 ms
-  3. Pipeline 95th Percentile Latency (p95):        141.1 ms
-  4. Total Empirical Flows Processed:               2294
-  5. Proposal Table 9 Target Comparison:           112.24 ms < 2000.0 ms (PASS - 18x FASTER)
+  1. HTTP round trip inside the lab (Admin -> Camera): 18.69 ms
+  2. Pipeline decision latency, median (p50):        180.03 ms
+  3. Pipeline decision latency, 95th percentile:     573.73 ms
+  4. Flows processed since the pipeline started:     3129
+  5. Table 9 target: median < 2000 ms -> PASS (11x below) | 95% < 5000 ms -> PASS
   ```
 
 ---
 
-#### සාක්ෂිය 3: "Pipeline Decision Latency" යනු කුමක්ද සහ එය සිදුවන ක්ෂුද්‍ර අදියර 5 (Deep Dive into the 5 Internal Stages)
+#### සාක්ෂිය 3: "Pipeline Decision Latency" යනු කුමක්ද සහ එය සිදුවන අදියර 5 (Deep Dive into the 5 Internal Stages)
 
 > 💡 **Latency යනු කුමක්ද? එය සාමාන්‍ය Ping එකක් නොවේද?**
 >
-> සාමාන්‍ය **Ping Latency** යනු පරිගණක දෙකක් අතර packet එකක් ගොස් ඒමට ගතවන වයර් කාලයයි (Wire transmission time).
-> නමුත් අපගේ පද්ධතියේ මනිනු ලබන **Pipeline Decision Latency** යනු **AI තීරණ ගැනීමේ සම්පූර්ණ ජීවන චක්‍රයයි (End-to-End Decision Lifecycle)**. එනම් ජාලයෙන් flow එකක් ලැබුණු මොහොතේ සිට, Machine Learning Model එකෙන් වර්ගීකරණය වී, SOC Dashboard එකට WebSocket හරහා alert එක ලැබෙන තෙක් ගතවන සම්පූර්ණ කාලයයි:
+> සාමාන්‍ය **Ping Latency** යනු පරිගණක දෙකක් අතර packet එකක් ගොස් ඒමට ගතවන කාලයයි.
+> අපගේ පද්ධතියේ මනිනු ලබන **Pipeline Decision Latency** යනු **Adapter එක Zeek පේළිය කියවූ මොහොතේ (`adapter_ts`) සිට**, features සාදා, Model එකෙන් වර්ගීකරණය කර, Decision Engine එකෙන් තීරණය කර, MongoDB හි ලියා, WebSocket හරහා dashboard එකට message එක යවන (`emit_ts`) තෙක් කාලයයි. **Zeek එක connection එක අවසන් වන තෙක් බලා සිටින කාලය මෙයට ඇතුළත් නොවේ** (කෙටි connections වලට මෙය තත්පරයකටත් අඩුය; NVR stream එක වැනි දිගු connection එකක් තත්පර 300 කට පසුව පමණක් ලියවේ).
 
 ```
 [Virtual Network Bridge: br-ids-lan]
                │
-               ▼  (Stage 1: Packet sniffing & TCP reconstruction)
+               ▼  (Stage 1: Packet sniffing; Zeek writes the line when the connection ends - NOT timed)
      [Zeek Sensor conn.log]  ──► timestamps["zeek_ts"]
                │
-               ▼  (Stage 2: File tailing & 27 feature extraction)
+               ▼  (Stage 2: File tailing & 27 feature extraction)      ◄── timer starts (adapter_ts)
     [LivePipelineRunner]     ──► timestamps["adapter_ts"]
                │
                ▼  (Stage 3: Random Forest Multiclass Inference)
    [ML Model Detector v3.1.0] ──► timestamps["detect_ts"]
                │
-               ▼  (Stage 4: Lab safety guardrails & allowlist check)
+               ▼  (Stage 4: Safety rules: allowlist, local networks, thresholds, repeats)
       [DecisionEngine]       ──► timestamps["decision_ts"]
                │
-               ▼  (Stage 5: MongoDB write & WebSocket broadcast)
+               ▼  (Stage 5: MongoDB write & WebSocket broadcast)       ◄── timer stops (emit_ts)
    [Socket.IO / React SOC]   ──► timestamps["emit_ts"]
 ```
 
 1. **අදියර 1 - Packet Capture & Flow Termination (`zeek_ts`):**
-   - Virtual Switch එක (`br-ids-lan`) හරහා ගමන් කරන Ethernet frames, Zeek sensor එක මගින් live capture කර TCP state machine එක නිරීක්ෂණය කරයි.
-   - Connection එක අවසන් වූ පසු (TCP FIN/RST හෝ Inactivity Timeout), සම්පූර්ණ flow එක `conn.log` හි තනි structured JSON පේළියක් ලෙස ලියයි.
+   - Virtual Switch එක (`br-ids-lan`) හරහා ගමන් කරන frames Zeek විසින් capture කර TCP state එක නිරීක්ෂණය කරයි.
+   - Connection එක අවසන් වූ පසු (TCP FIN/RST හෝ inactivity timeout), flow එක `conn.log` හි එක් JSON පේළියක් ලෙස ලියයි.
 2. **අදියර 2 - Live Adapter Ingestion & Feature Extraction (`adapter_ts`):**
-   - Background හි ධාවනය වන `LivePipelineRunner` (file watcher), `conn.log` හි අලුත් පේළියක් වැටුණු ක්ෂණිකව එය කියවා ගනී.
-   - Proposal Table 6 හි නිර්වචනය කර ඇති පරිදි Flow Features 27 ක් (උදා: `duration`, `orig_bytes`, `resp_bytes`, `orig_pkts`, `resp_pkts`, `service`, `conn_state` ආදිය) ක්ෂුද්‍ර තත්පර ගණනකින් නිස්සාරණය කරයි.
+   - `LivePipelineRunner` එක `conn.log` හි අලුත් පේළි කියවයි.
+   - Proposal Table 6 අනුව features 27 ක් සාදයි: one-flow features 19 (`proto`, `service`, `conn_state`, `history`, `duration`, `orig_bytes`, ...) සහ window features 8 (`src_conn_60s`, ..., `pair_fail_1h`).
 3. **අදියර 3 - Random Forest ML Inference (`detect_ts`):**
-   - නිස්සාරණය කළ features 27, අප පුහුණු කළ Calibrated Random Forest Model v3.1.0 වෙත යවයි.
-   - Scikit-learn Classifier එක Decision Trees 100 ක් හරහා ensemble voting ක්‍රමයට flow එක අයත් වන්නේ `Benign`, `DDoS`, `Okiru`, `PortScan`, හෝ `CnC` යන කාණ්ඩ 5 න් කුමකටද යන්නත්, එහි Confidence සම්භාවිතාව ($P$) කොපමණද යන්නත් ගණනය කරයි.
-4. **අදියර 4 - Decision Engine & Lab Safety Guardrails (`decision_ts`):**
-   - Proposal Table 7 FR-04 සහ FR-06 අනුව `DecisionEngine` ක්‍රියාත්මක වේ.
-   - කැමරාවේ IP එක Allowlist හි තිබේදැයි පරීක්ෂා කරයි, Confidence Threshold එක ($P \ge 0.85$) ඉක්මවා ඇත්දැයි බලයි, සහ මෙය Candidate Mitigation එකක්ද නැතහොත් Benign Summary එකක්ද යන්න තීරණය කරයි.
+   - Features 27, Model v3.1.0 වෙත යවයි.
+   - Decision Trees 100 ක් හරහා flow එක `Benign`, `DDoS_DoS`, `PortScan`, `CnC`, හෝ `Malware_Download` යන පන්ති 5 න් කුමකටද යන්නත්, එහි confidence ($P$) කොපමණද යන්නත් ගණනය කරයි.
+4. **අදියර 4 - Decision Engine & Safety Rules (`decision_ts`):**
+   - Alert එකක් සඳහා $P \ge 0.30$ දැයි බලයි.
+   - Block/rate-limit කිරීමට පෙර: target IP එක allowlist (`.1`, `.5`, `.10`, `.20`) හෝ කැමරා ජාලයේ (`192.168.50.0/24`) නැති බව, පන්තියේ සීමාව (CnC 0.30, PortScan 0.88, DDoS rate-limit 0.30), සහ තත්පර 60 ක් තුළ alerts 3 ක් ඇති බව පරීක්ෂා කරයි.
 5. **අදියර 5 - MongoDB Storage & Real-Time Socket.IO Push (`emit_ts`):**
-   - තීරණය MongoDB දත්ත සමුදායේ `traffic_summaries` හෝ `attack_events` හි සටහන් කරයි.
-   - එම මොහොතේදීම WebSockets (Socket.IO) හරහා React SOC Dashboard එකට `traffic_update` හෝ `alert_event` ලෙස broadcast කරයි (පරිශීලකයාට Browser Refresh කිරීමට අවශ්‍ය නැත).
+   - Benign flows `traffic_summaries` හි, ප්‍රහාර `attack_events` හි සටහන් කරයි.
+   - WebSockets (Socket.IO) හරහා dashboard එකට `traffic_update` (benign) හෝ `new_event` (ප්‍රහාරය) ලෙස යවයි.
 
-- **කේතය තුළ Latency ගණනය වන නිල සූත්‍රය ([`core_engine/decision_engine.py`](<file:///d:/intrusion%20detection/core_engine/decision_engine.py#L548>)):**
+- **කේතය තුළ Latency ගණනය වන සූත්‍රය ([`core_engine/decision_engine.py`](<file:///d:/intrusion%20detection/core_engine/decision_engine.py#L548>)):**
 
   $$
   \text{Pipeline Decision Latency (ms)} = (\text{emit\_ts} - \text{adapter\_ts}) \times 1000.0
   $$
-- **`latency_ms_p50` සහ `latency_ms_p95` හි සංඛ්‍යානමය තේරුම:**
+- **`latency_ms_p50` සහ `latency_ms_p95` හි තේරුම:**
 
-  - **`latency_ms_p50` (Median - 50th Percentile):** පද්ධතිය හරහා ගලාගිය flows 2,294 න් **50% කටම** තීරණයක් ලබාදී Dashboard එකට push කිරීමට ගතවූ කාලය **මිලි තත්පර 112.24 (තත්පර 0.11)** ට වඩා අඩුය!
-  - **`latency_ms_p95` (95th Percentile):** ජාලයේ දැඩි තදබදයක් ඇති අවස්ථාවල පවා flows වලින් **95% කටම** තීරණය ලබාදීමට ගතවූ කාලය **මිලි තත්පර 141.10 (තත්පර 0.14)** ට වඩා අඩුය!
-- **Proposal Table 9 Benchmark Target සමග සංසන්දනය:**
+  - **`latency_ms_p50` (Median):** සැකසූ flows වලින් **50% ක්** මෙම කාලයට වඩා අඩු කාලයකින් dashboard එකට push විය.
+  - **`latency_ms_p95` (95th Percentile):** flows වලින් **95% ක්** මෙම කාලයට වඩා අඩු කාලයකින් push විය.
+- **Proposal Table 9 ඉලක්කය සමග සංසන්දනය (12 Nov 2026 මැනුම්):**
 
-  | මිනුම (Metric)                         | Proposal Table 9 ඉලක්කය           | අපගේ සැබෑ පද්ධතියේ ප්‍රතිඵලය | තත්ත්වය (Status)         |
-  | :------------------------------------------ | :-------------------------------------- | :---------------------------------------------------- | :------------------------------ |
-  | **Median Decision Latency ($p50$)** | $< 2.0\text{ s}$ ($2000\text{ ms}$) | **$112.24\text{ ms}$ ($0.11\text{ s}$)**    | ✅ **PASS (18x Faster!)** |
-  | **95th Percentile Latency ($p95$)** | $< 5.0\text{ s}$ ($5000\text{ ms}$) | **$141.10\text{ ms}$ ($0.14\text{ s}$)**    | ✅ **PASS (35x Faster!)** |
-- **🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/overview` - System Overview):**
+  | මිනුම (Metric) | Proposal Table 9 ඉලක්කය | මනින ලද අගය | තත්ත්වය |
+  | :--- | :--- | :--- | :--- |
+  | **Median ($p50$)** | $< 2.0\text{ s}$ | ~0.11–0.18 s (ආරම්භයේදී ~0.57 s) | ✅ PASS |
+  | **95th Percentile ($p95$)** | $< 5.0\text{ s}$ | ~0.30–0.58 s | ✅ PASS |
 
-  - **`MONITORED FLOWS`:** කැමරාව සහ NVR අතර ගලායන packets ගණන තත්පරයෙන් තත්පරය Live update වේ.
-  - **`PIPELINE: RUNNING`:** Zeek adapter සහ Machine Learning background worker එක සක්‍රිය බව දක්වන කොළ පැහැති Badge එක.
+  *(Virtual Lab මැනුමකි. සැබෑ කැමරාව සමඟ RQ4 හි අවසාන මැනුම Hardware Lab එකෙන් ලැබේ.)*
+- **🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/overview` - Overview):**
+
+  - **`MONITORED FLOWS`:** Pipeline එක ආරම්භ වූ පසු සැකසූ flows ගණන (`flows_processed`), සහ යටින් "benign in 24 h" ගණන.
+  - **`PIPELINE: RUNNING`:** Pipeline එක ධාවනය වන බව දක්වන badge එක.
   - **`SYSTEM STATUS (MEASURED)`:**
-    - `Time per flow (median / 95%)`: **`112.2 ms / 141.1 ms`** සජීවීව ප්‍රදර්ශනය වේ.
+    - `Time per flow, Zeek line to dashboard (median / 95%)`: මනින ලද p50 / p95 අගයන්.
     - `Model`: **`v3.1.0`**.
     - `Automatic response`: **`ON (lab test) · firewall: router_ssh`**.
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
-  > *"Sir, as demonstrated by our live packet injection test and telemetry metrics, our system achieves an empirical median decision latency of only 112.24 ms and a 95th percentile latency of 141.10 ms across 2,294 real processed flows. This satisfies Proposal Objectives O2 & O6, Table 7 FR-02 & FR-03, and crushes our Proposal Table 9 benchmark (< 2.0 s) by running 18 times faster than required."*
+  > *"Sir, the live test sends a real request inside the lab and then reads the measured latency from the pipeline. The time is counted from when our adapter reads the Zeek line until the dashboard is told. The median is about 0.1 to 0.2 seconds and the 95th percentile under 0.6 seconds, well inside the Table 9 targets of 2 and 5 seconds. Zeek itself writes a line only when a connection ends; that wait is not part of this number."*
   >
 
 ---
@@ -1509,8 +1593,8 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
 > - **ඉටුවන පර්යේෂණ අරමුණු (Objectives):** **Objective O4** ("Build monitoring, dashboard, storage and alerts, and join them together") සහ **Objective O5** ("Build IP blocking that follows the policy, and let the admin undo it by hand").
 > - **සම්පූර්ණ වන ක්‍රියාකාරී අවශ්‍යතා (Requirements):** **Table 7 FR-04 (Must)** ("Send new events and alerts to the dashboard, which needs a login, without the user pressing refresh") සහ **FR-06 (Must)** ("Add, list, expire and remove blocking rules on the firewall or router").
 > - **විසඳෙන පර්යේෂණ ගැටලුව සහ පරීක්ෂණ අවස්ථාව (RQ & Scenario):** **RQ4** ("How much time does the whole process take from detection to dashboard, alert and blocking?") සහ **Table 10 Scenario 4** ("C&C-like periodic outbound simulation: C&C destination blocked, camera never blocked").
-> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** ප්‍රහාරයක් පැමිණි විට මිනිස් මැදිහත්වීමකින් තොරව (Autonomously) පද්ධතිය තනිවම තීරණය කර SSH මඟින් Router kernel එකට Drop rule එක ඇතුළත් කරන බවත්, තත්පර 1800 ක ස්වයංක්‍රීය Countdown Timer එකක් සක්‍රිය වන බවත්, තිරය refresh නොවී Browser එකේ Dashboard එකට තත්‍ය කාලීන Alert එකක් සහ Countdown Timer එකක් Socket.IO මඟින් ක්ෂණිකව තල්ලු (WebSocket push) වන බවත් ඔප්පු කිරීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objectives O4 & O5, Table 7 FR-04 & FR-06, and Table 10 Scenario 4. The moment periodic C&C beacons exceed policy threshold, our decision engine autonomously injects 10.10.10.50 into the router's nftables drop set with an 1800-second auto-expiry timer, pushing the incident badge live to our React dashboard via WebSockets without page reload."*
+> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** ප්‍රහාරයක් පැමිණි විට මිනිස් මැදිහත්වීමකින් තොරව (Autonomously) පද්ධතිය තනිවම තීරණය කර SSH මඟින් Router kernel එකට Drop rule එක ඇතුළත් කරන බවත්, මිනිත්තු 30 කින් ඉබේම ඉවත් වන (`timeout 30m`) rule එකක් සක්‍රිය වන බවත්, තිරය refresh නොවී Browser එකේ Dashboard එකට තත්‍ය කාලීන Alert එකක් සහ block record එක (EXPIRES AT වේලාව සමඟ) Socket.IO මඟින් ක්ෂණිකව තල්ලු (WebSocket push) වන බවත් ඔප්පු කිරීමටයි.
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objectives O4 & O5, Table 7 FR-04 & FR-06, and Table 10 Scenario 4. When the camera keeps trying to reach the outside C&C server, the model predicts CnC; after three such alerts within 60 seconds, the decision engine puts 10.10.10.50 into the router's block_dst set for 30 minutes, and the alert appears on the dashboard without a page reload. The camera itself is never blocked."*
 
 - **පියවර 1: ප්‍රහාරයට පෙර Router එකේ `block_dst` ලැයිස්තුව හිස් බව පෙන්වීම:**
 
@@ -1535,12 +1619,15 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
   > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
   >
   > 1. **`docker exec -d ids-lab-attack-server ...`:** පිටත WAN ජාලයේ සිටින Attacker පරිගණකය (`10.10.10.50`) තුළ Port 6667 (IRC/Botnet control port) මත Master C&C Server එකක් Background එකේ (`-d`) සක්‍රිය කරයි.
-  > 2. **`docker exec -d ids-lab-camera ...`:** ආසාදිත කැමරාව (`192.168.50.30`) තුළින් සෑම තත්පර 5 කට වරක්ම පිටත C&C Server එක වෙත periodic outbound botnet beacons (reverse shell සම්බන්ධතා) යැවීම Background එකේ ආරම්භ කරයි.
+  > 2. **`docker exec -d ids-lab-camera ...`:** ආසාදිත කැමරාව (`192.168.50.30`) තුළින් සෑම තත්පර 5 කට වරක්ම පිටත C&C Server එක (`10.10.10.50:6667`) වෙත සම්බන්ධ වීමට උත්සාහ කරයි (`--duration 90` = තත්පර 90 ක් පමණි). සම්බන්ධ වුවහොත් IRC-වැනි කෙටි chat session එකක් (`NICK`, `USER`, `PING`/`PONG`) පවත්වයි (shell එකක් නොවේ).
+  >    - **වැදගත්:** C&C server එක විවෘත වන්නේ තත්පර 120 කට පසුවයි (`--cnc-open-after 120`, IoT-23 හි මෙන් මුල් උත්සාහයන් අසාර්ථක වීමට). Bot එක තත්පර 90 කින් නවතින බැවින් මෙම demo එකේ සියලු උත්සාහයන් **ප්‍රතික්ෂේප (REJ)** වේ. Detection එක පදනම් වන්නේ මෙම නැවත නැවත අසාර්ථක වන outbound උත්සාහයන් මතයි (`pair_fail_1h`, `pair_gap`).
   > 3. **පද්ධතියේ AI සහ Autonomous Mitigation ක්‍රියාත්මක වීම:**
-  >    - **Zeek Sniffing:** Zeek sensor එක කැමරාවෙන් පිටතට යන මෙම periodic outbound flows ක්ෂණිකව capture කර `conn.log` හි ලියයි.
-  >    - **ML Model Inference (v3.1.0):** Flow Features 27 ක් කියවා බලා, මෙය සාමාන්‍ය වීඩියෝවක් නොව **`CnC`** ප්‍රහාරයක් බව Random Forest Model එක $P \ge 0.85$ ඉහළ Confidence එකකින් හඳුනාගනී.
-  >    - **Safety Guardrail & Autonomous Block:** කැමරාව Allowlist හි ඇති බැවින් කැමරාව කිසිසේත්ම block නොකර, පිටත ඇති නපුරු C&C Server IP ලිපිනය (`10.10.10.50`) Router එකේ Linux `nftables` Drop ලැයිස්තුවට (`block_dst`) තත්පර 1800 ක (මිනිත්තු 30) Auto-expiry timer එකක් සමඟ ස්වයංක්‍රීයව ඇතුළත් කරයි.
-  >    - **Zero Disruption (Hypothesis H1):** කැමරාව සහ NVR අතර RTSP වීඩියෝවට (Port 554) කිසිදු බාධාවක් නොවන අතර, React SOC Dashboard එකට WebSocket හරහා live alert එක තල්ලු වේ.
+  >    - **Zeek Sniffing:** Zeek sensor එක කැමරාවෙන් පිටතට යන මෙම flows capture කර `conn.log` හි ලියයි (`conn_state: "REJ"`).
+  >    - **ML Model Inference (v3.1.0):** Features 27 කියවා Model එක **`CnC`** ලෙස හඳුනාගනී (12 Nov 2026: confidence **0.93**, 13 Nov: **0.86**; ආරම්භ කර තත්පර ~21–24 කින්).
+  >    - **Safety Rules & Autonomous Block:** CnC block සීමාව $P \ge 0.30$ සහ තත්පර 60 තුළ alerts 3 ක්. කැමරාව `lab.local_networks` (`192.168.50.0/24`) තුළ ඇති බැවින් කිසිසේත්ම block නොකර, පිටත C&C Server IP එක (`10.10.10.50`) Router එකේ `block_dst` set එකට මිනිත්තු 30 කට (`timeout 30m`) ඇතුළත් කරයි. Block එකෙන් පසු කැමරාවේ උත්සාහයන් router එකේදී drop වේ (`conn_state: "S0"`).
+  >    - **කැමරා stream එක:** කැමරාව සහ NVR අතර traffic router එක හරහා නොයන බැවින් block එක එයට බලපාන්නේ නැත; NVR එක දිගටම 58.6 MB segments පටිගත කරයි (4.2.9).
+  >    - **තවත් දකින්නට හැකි දෙයක්:** එම flows සඳහා model එක සමහරවිට කුඩා confidence එකකින් (උදා: 0.49) `PortScan` alert එකක්ද දෙයි; කැමරාව ආරක්ෂිත බැවින් එහි response එක `none` වේ.
+  >    - **විශ්වාසනීයත්වය:** 12 Nov (0.93) සහ 13 Nov 2026 (0.86) දින මෙම විධාන දෙක run කළ වාර දෙකේදීම block එක ලැබුණි. පෙර `lab.py scenario 4` runs වලින් (11 Nov) සමහර ඒවායේ confidence අඩු වී (0.46, 0.65) block නොවීය. Block එක නොලැබුණොත්, cleanup commands run කර, තත්පර 60 ක් රැඳී, විධාන දෙක නැවත run කරන්න.
   >
   > 💡 **ප්‍රහාරය අවසන් වූ පසු C&C processes නැවැත්වීමට (Cleanup Commands):**
   > ```powershell
@@ -1555,93 +1642,118 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
   docker exec ids-lab-router nft list set inet ids block_dst
   ```
 
-  > **කේතයෙන් සිදුවන දේ සරලව:** ප්‍රහාරයෙන් පසු Router එකේ එම Drop ලැයිස්තුව නැවත පරීක්ෂා කර, Attacker IP එක තත්පර 1800 ක auto-expiry timer එකක් සමඟ ඇතුළත් වී ඇත්දැයි පෙන්වන්න.
+  > **කේතයෙන් සිදුවන දේ සරලව:** විධාන දෙක run කර තත්පර 30–60 කට පසු Router එකේ Drop ලැයිස්තුව නැවත පරීක්ෂා කර, Attacker IP එක මිනිත්තු 30 ක timeout එකක් සමඟ ඇතුළත් වී ඇත්දැයි පෙන්වන්න.
   >
 - **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
 
   ```text
-  elements = { 10.10.10.50 timeout 1800s expires 1785s }
+  table inet ids {
+  	set block_dst {
+  		type ipv4_addr
+  		flags timeout
+  		elements = { 10.10.10.50 timeout 30m expires 28m40ms }
+  	}
+  }
   ```
+  *(12 Nov 2026 දින ලැබූ සැබෑ පිළිතුර. `expires` අගය nft විසින් milliseconds සමඟ (`28m40ms` = මිනිත්තු 28, ms 40 පමණ) පෙන්විය හැක.)*
 
   > **ලැබුණු දත්ත වල තේරුම (Output Breakdown):**
   >
   > - **`10.10.10.50`:** පිටත ජාලයේ සිටින Command & Control (C&C) Master Server එකෙහි IP ලිපිනය (Attacker Machine).
-  > - **`timeout 1800s`:** පද්ධතිය විසින් මිනිත්තු 30 ක කාලයකට (තත්පර 1800) Drop rule එක පනවා ඇත.
-  > - **`expires 1785s`:** තත්පරයෙන් තත්පරය අඩු වන Countdown Timer එකක් ක්‍රියාත්මක වේ. මිනිත්තු 30 අවසන් වූ සැණින් Rule එක ඉබේම ඉවත් වේ!
+  > - **`timeout 30m`:** පද්ධතිය විසින් මිනිත්තු 30 ක (තත්පර 1800) කාලයකට Drop rule එක පනවා ඇත.
+  > - **`expires 28m40ms`:** Router kernel එකේ ඉතිරි කාලයයි (command එක නැවත run කළ විට අඩුවී ඇති බව පෙනේ). මිනිත්තු 30 අවසන් වූ සැණින් Rule එක ඉබේම ඉවත් වේ. (Dashboard එකේ countdown එකක් නැත; එහි ඇත්තේ EXPIRES AT වේලාවයි.)
   >
   > 💡 **විශේෂ පැහැදිලි කිරීම: පැකට් යැව්වේ කැමරාව නම්, 10.10.10.50 ප්‍රහාරකයා (Attacker) ලෙස සලකා Block කළේ ඇයි?**
   >
   > 1. **10.10.10.50 යනු කවුද?**
-  >    - අපගේ ජාල සැලසුම (Proposal Table 3) අනුව, `192.168.50.30` යනු අභ්‍යන්තර කැමරාව වන අතර, **`10.10.10.50` යනු පිටත අනාරක්ෂිත ජාලයේ (Outside LAN) සිටින Attacker ගේ පරිගණකයයි (`ids-lab-attack-server`)**.
+  >    - අපගේ lab ජාල සැලසුම අනුව (`lab_virtual/docker-compose.yml`, proposal Figure 2), `192.168.50.30` යනු අභ්‍යන්තර කැමරාව වන අතර, **`10.10.10.50` යනු පිටත ජාලයේ (Outside LAN) සිටින Attacker ගේ පරිගණකයයි (`ids-lab-attacker` + `ids-lab-attack-server`)**.
   > 2. **C&C (Command & Control) ප්‍රහාරයක ස්වභාවය (Botnet Reverse Connection):**
   >    - සාමාන්‍ය Port Scan හෝ DDoS ප්‍රහාරවලදී පිටත සිටින Attacker කෙලින්ම කැමරාවට පැකට් එවයි.
   >    - නමුත් **Botnet / Mirai Malware ප්‍රහාරවලදී සිදුවන්නේ ඊට හාත්පසින්ම වෙනස් ක්‍රියාවලියකි:**
-  >      - ආසාදනය වූ කැමරාවක්, පිටත අන්තර්ජාලයේ සිටින හැකර්ගේ Master Command Server එක වෙත රහසිගතව සම්බන්ධ වී *"මම සූදානම්, මීළඟට කළ යුත්තේ කුමක්ද?"* කියා විමසයි (Reverse Shell / Periodic Outbound Beacons).
+  >      - ආසාදනය වූ කැමරාවක්, පිටත අන්තර්ජාලයේ සිටින හැකර්ගේ Master Command Server එක වෙත වරින් වර සම්බන්ධ වී *"මම සූදානම්, මීළඟට කළ යුත්තේ කුමක්ද?"* කියා විමසයි (Periodic Outbound Beacons).
   >      - මෙහිදී හැකර්ගේ Master C&C Server එක පිහිටුවා ඇත්තේ **`10.10.10.50`** මතයි (Port 6667).
   >      - එබැවින් මෙහිදී **පැකට් යවන්නා (Source) කැමරාව (`192.168.50.30`) වුවද, ප්‍රහාරය මෙහෙයවන සහ ආසාදනය පාලනය කරන සැබෑ ප්‍රහාරකයා වන්නේ පිටත ඇති C&C Server එකයි (`10.10.10.50` - Destination)!**
   > 3. **පද්ධතිය 10.10.10.50 ප්‍රහාරකයෙකු බව නිගමනය කළේ කෙසේද?**
   >    - කැමරාව සාමාන්‍යයෙන් දත්ත යැවිය යුත්තේ Local NVR එකට (`192.168.50.20:554` RTSP) පමණි. කැමරාව පිටත නොදන්නා IP එකක (`10.10.10.50`) Port 6667 (IRC Botnet Port) වෙත තත්පර 5 කට වරක් periodic කෙටි TCP flows යැවීම සාමාන්‍ය හැසිරීමක් නොවේ.
-  >    - අපගේ Random Forest AI Model v3.1.0 එක මෙම flow features 27 පරීක්ෂා කර, මෙය සාමාන්‍ය වීඩියෝවක් නොව **`CnC`** (Command & Control) ප්‍රහාරයක් බවට $P \ge 0.30$ (Operational Threshold) ඉක්මවූ ඉහළ Confidence එකකින් (0.91) හඳුනාගනී.
+  >    - අපගේ Random Forest AI Model v3.1.0 එක මෙම flow features 27 පරීක්ෂා කර, මෙය **`CnC`** (Command & Control) ලෙස, CnC block සීමාව ($P \ge 0.30$) ඉක්මවූ confidence එකකින් (12 Nov 2026: 0.93; 13 Nov: 0.86; 11 Nov: 0.91) හඳුනාගනී.
   > 4. **ඇයි කැමරාව Block නොකර `block_dst` මඟින් `10.10.10.50` Block කළේ? (Local Network Protection):**
   >    - සාමාන්‍ය IDS එකක් නම්, පැකට් එන්නේ කැමරාවෙන් නිසා Source IP එක වන කැමරාව block කර කැමරාවේ වීඩියෝවද නවතා දමනු ඇත!
-  >    - නමුත් අපගේ පද්ධතියේ **Proposal Table 7 FR-04 සහ FR-06 Lab Safety Guardrails** ක්‍රියාත්මක වේ:
+  >    - නමුත් අපගේ පද්ධතියේ ආරක්ෂක නීති (Proposal Section 3.7, Table 5, RQ5) ක්‍රියාත්මක වේ:
   >      - **වින්දිතයා ආරක්ෂා කිරීම (Victim Protection):** කැමරාව (`192.168.50.30`) යනු ප්‍රහාරකයා නොව ප්‍රහාරයට ලක්වූ අහිංසක උපාංගයයි. එය Local Subnet (`192.168.50.0/24`) හි ඇති බැවින් `lab.local_networks` නීතිය යටතේ **කැමරාව කිසිසේත්ම Block නොකරයි!**
   >      - **නපුරු Destination එක Block කිරීම (`block_dst`):** ප්‍රහාරය මෙහෙයවන පිටත C&C Server එක වන්නේ **`10.10.10.50`** බැවින්, Router එකේ `block_dst` (Destination Drop Set) එකට `10.10.10.50` දමයි.
-  >      - **ප්‍රතිඵලය:** කැමරාවට හැකර්ගේ C&C Server එක සමඟ ඇති සම්බන්ධය සම්පූර්ණයෙන්ම කපා දමයි (C&C cut-off)! නමුත් කැමරාව සහ Local NVR එක අතර වීඩියෝ විකාශනය (Port 554) 100% ක් නොනැවතී ආරක්ෂිතව ක්‍රියාත්මක වේ (Zero Disruption - Proposal Hypothesis H1).
+  >      - **ප්‍රතිඵලය:** කැමරාවට හැකර්ගේ C&C Server එක සමඟ ඇති සම්බන්ධය කපා දමයි (C&C cut-off). කැමරාව සහ Local NVR එක අතර stream එක (Port 554) router එක හරහා නොයන බැවින් නොනැවතී ක්‍රියාත්මක වේ (4.2.9).
   >
 - **🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (What Appears on the React Dashboard):**
 
   1. **Live Alerts පිටුව (`http://localhost:5000/alerts`):**
-     - Browser එක refresh කිරීමකින් තොරවම (Zero page reload via WebSockets - Proposal FR-04), තිරය මත රතු පැහැති Critical Alert කාඩ්පතක් සජීවීව මතුවේ:
-       - **Classification:** `CnC (Command & Control)`
-       - **Confidence:** `91%` (ඉහළ විශ්වාසනීයත්වය)
-       - **Source $\rightarrow$ Destination:** `192.168.50.30` $\rightarrow$ `10.10.10.50:6667`
-       - **Response Status:** `[AUTO-MITIGATED]` (පද්ධතිය විසින් ස්වයංක්‍රීයව පියවර ගෙන ඇත)
+     - Browser එක refresh කිරීමකින් තොරවම (WebSocket event `new_event` - Proposal FR-04), අලුත් alert කාඩ්පතක් ඉහළට වැටේ:
+       - **Badge:** `MODEL PREDICTION` (නිල්) - පරිපාලකයා "Confirm" කළ පසු `CONFIRMED INCIDENT` (රතු) වේ.
+       - **Class:** `CnC` (දම් පැහැති pill එක), **Confidence:** `93%` පමණ, **severity** `high`
+       - **Source $\rightarrow$ Destination:** `192.168.50.30:<port>` $\rightarrow$ `10.10.10.50:6667` (TCP), direction `outbound`
+       - **Response:** `RESPONSE: BLOCKED` (රතු badge එක)
   2. **Mitigations පිටුව (`http://localhost:5000/mitigations`):**
-     - Active Firewall Blocks වගුව තුළ `10.10.10.50` ලිපිනය දිස්වේ.
-     - එහි **Expires At** තීරුව තුළ අවහිරය අවසන් වන වේලාව (Expiry Timestamp) දිස්වන අතර, Router එකෙහි `timeout 1800s` Auto-expiry timer එක ක්‍රියාත්මක වේ.
-     - පරිපාලකයාට අවශ්‍ය නම් පසෙකින් ඇති `[Unblock]` බොත්තම ක්ලික් කර එම block එක අතින් ඉවත් කිරීමටද (Manual Rollback - FR-06) හැකියාව ඇත.
+     - Active blocks වගුව තුළ `10.10.10.50` ලිපිනය (direction `destination`, reason `AUTO_CNC_DEST_BLOCK`, actor `autonomous_policy`) දිස්වේ.
+     - එහි **EXPIRES AT** තීරුව තුළ block එක අවසන් වන වේලාව දිස්වන අතර, Router එකෙහි `timeout 30m` ක්‍රියාත්මක වේ.
+     - පරිපාලකයාට අවශ්‍ය නම් පසෙකින් ඇති `UNBLOCK` බොත්තම ක්ලික් කර එම block එක අතින් ඉවත් කිරීමටද (Manual Rollback - FR-06) හැකියාව ඇත.
 - **මෙයින් ඔප්පු වන කරුණ:**
 
   - AI Model එක මඟින් C&C ප්‍රහාරය හඳුනාගැනීමෙන් පසු SSH මඟින් Router kernel එකට Drop rule එක ඇතුළත් කර ඇත.
-  - තත්පර 1800 ක (මිනිත්තු 30) Timeout එකක් සක්‍රිය වී ඇති අතර, එය අවසන් වූ පසු rule එක kernel එකෙන්ම ඉබේම ඉවත් වේ.
-  - Browser එකේ ඇති React Dashboard එකේ **Live Alerts** පිටුවේ රතු Alert එකක් සහ **Mitigations** පිටුවේ block record එක refresh නොවී සජීවීව වැටේ (FR-04).
+  - මිනිත්තු 30 ක (`timeout 30m`) කාලයක් සක්‍රිය වී ඇති අතර, එය අවසන් වූ පසු rule එක kernel එකෙන්ම ඉබේම ඉවත් වේ.
+  - Dashboard එකේ **Live Alerts** පිටුවේ CnC alert එක සහ **Mitigations** පිටුවේ block record එක refresh නොවී සජීවීව වැටේ (FR-04).
+  - කැමරාව (`192.168.50.30`) කිසිවිටෙක block නොවේ.
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
-  > *"Sir, as demonstrated in Scenario 4, the moment C&C beacons exceed threshold, our decision engine autonomously inserts 10.10.10.50 into the router's nftables drop set with an 1800-second auto-expiry timer, while streaming the alert live to our React dashboard via WebSockets."*
+  > *"Sir, as in Scenario 4, the camera keeps trying to reach the outside C&C server. After three CnC alerts within 60 seconds, the decision engine puts 10.10.10.50 into the router's block_dst set for 30 minutes, and the alert reaches the dashboard through WebSockets. The camera is protected by the local-network rule and is never blocked."*
   >
 
 ---
 
-### 4.2.9 ප්‍රහාරය අතරතුරදීත් කැමරා වීඩියෝවට කිසිදු බාධාවක් නොවීම (Zero Disruption to Camera Operations - Hypothesis H1 Target & RQ5)
+### 4.2.9 ප්‍රහාරය අතරතුරදීත් කැමරා stream එකට බාධාවක් නොවීම සහ කැමරාව block නොවීම (Camera Safety During Attacks - RQ5, Table 9 Benign Safety)
 
 > 🎯 **Proposal එකේ මෙම පරීක්ෂණයෙන් සාක්ෂාත් වන අරමුණ සහ ඔප්පු වන කරුණු (What this Test Proves):**
 >
 > - **ඉටුවන පර්යේෂණ අරමුණ (Objective):** **Objective O5** ("Safe response rules preventing false cutoff of normal camera access").
-> - **විසඳෙන ප්‍රධාන උපකල්පනය සහ ගැටලුව (Hypothesis & RQ):** **Hypothesis H1 Target** ("Keeping the false-positive rate for benign traffic at 5% or less on the local IP-camera traffic we control"), **Research Question RQ5** ("What safety rules do we need so that automatic response does not stop normal camera access?"), සහ **Table 9 Benign Safety Acceptance Target** ("Zero Stream Interruption; no blocks on the management computer or the NVR").
-> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** අපේ පද්ධතියේ ප්‍රධානතම ආරක්ෂක ප්‍රතිඥාව (Core Safety Invariant) වන්නේ *"ප්‍රහාරකයාව block කළද, කැමරාවෙන් NVR එකට යන සජීවී වීඩියෝ දර්ශනයට කිසිදු බාධාවක් සිදු නොවිය යුතුය"* යන්නයි. මෙම පරීක්ෂණය මඟින් Attacker block වී සිටියදීත් NVR එක කිසිදු පැකට් අඩුවක් නැතිව සාමාන්‍ය පරිදි 58.6 MB chunks පටිගත කරගන්නා බවත්, False-Positive Rate එක 0.00% ක් බවත් සනාථ කරයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this conclusively proves Hypothesis H1, RQ5, and Table 9 Benign Safety. While the external attacker is actively dropped at the router firewall, the legitimate camera stream to the NVR continues uninterrupted at 58.6 MB per interval with zero false blocks."*
+> - **විසඳෙන පර්යේෂණ ගැටලුව (RQ):** **Research Question RQ5** ("What safety rules do we need so that automatic response does not stop normal camera access?") සහ **Table 9 Benign Safety** ("no blocks on the management computer or the NVR; camera access keeps working").
+> - **⚠️ Hypothesis H1 පිළිබඳ අවංක සටහන:** H1 හි දෙවන කොටස (සැබෑ කැමරා traffic මත benign false-positive rate ≤ 5%) මෙම Virtual Lab පරීක්ෂණයෙන් **මැනිය නොහැක**: මෙහි කැමරාව simulator එකකි. එය සැබෑ කැමරාවක් සමඟ Hardware Lab එකෙන් මැනිය යුතුය (`lab_hardware/README.md`). මෙම පරීක්ෂණය පෙන්වන්නේ ආරක්ෂක නීති (RQ5) ක්‍රියාත්මක වන බවයි.
+> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** අපේ පද්ධතියේ ප්‍රධාන ආරක්ෂක නීතිය වන්නේ *"ප්‍රහාරකයාව block කළද, කැමරාව, NVR, Admin PC block නොවිය යුතු අතර, කැමරාවෙන් NVR එකට යන stream එක නොකැඩිය යුතුය"* යන්නයි. 4.2.8 (C&C block) සහ 4.3.2 (SYN flood) අතරතුර සහ පසුව NVR එක සෑම මිනිත්තු 5 කම සම්පූර්ණ 58.6 MB segment එක පටිගත කරන බවත්, router එකේ කිසිදු ආරක්ෂිත IP එකක් block නොවූ බවත් මෙයින් පෙන්වයි.
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this addresses RQ5 and the Table 9 benign-safety check. While the outside attacker was blocked and rate-limited, the NVR kept recording the full 58.6 MB in every 5-minute segment, and no protected device was ever put into a block set. The false-positive part of H1 needs the real camera, so it will be measured in the hardware lab."*
 
-- **ධාවනය කළ යුතු Command එක (Terminal):**
+- **ධාවනය කළ යුතු Commands (Terminal):**
 
   ```powershell
-  docker logs ids-lab-nvr --tail 3
+  # 1. NVR එක ප්‍රහාර අතරතුරත් නොකඩවා පටිගත කළ බව (සෑම පේළියක්ම මිනිත්තු 5 ක segment එකකි):
+  docker logs ids-lab-nvr --tail 6
+
+  # 2. Router එකේ block sets තුනේ කිසිම ආරක්ෂිත IP එකක් (.1, .5, .10, .20, .30) නැති බව:
+  docker exec ids-lab-router nft list table inet ids | Select-String "elements"
+
+  # 3. Admin PC එකට තවමත් කැමරා පිටුව විවෘත වන බව:
+  docker exec ids-lab-admin python -c "import urllib.request; print('camera page HTTP', urllib.request.urlopen('http://192.168.50.30/').status)"
   ```
 
   > **කේතයෙන් සිදුවන දේ සරලව (Command Breakdown):**
   >
-  > - **`docker logs ids-lab-nvr`:** NVR Recorder Container එකේ System Logs කියවන්න.
-  > - **`--tail 3`:** Attacker ව Block කර ඇති අතරතුරදී පවා NVR එක කැමරාවෙන් නොකඩවා 58.6 MB වීඩියෝ කොටස් ලබාගන්නා බව සනාථ කරන අන්තිම පේළි 3 පෙන්වන්න.
+  > - **`docker logs ids-lab-nvr --tail 6`:** NVR එකේ අන්තිම segments 6 (මිනිත්තු 30 ක් පමණ). ප්‍රහාර run කළ වේලාවන් ආවරණය වන ලෙස බලන්න.
+  > - **`nft list table inet ids | Select-String "elements"`:** Router එකේ ඇති සියලු IP ලැයිස්තු පෙන්වයි. `allow` set එකේ ආරක්ෂිත IP 4 ද, block sets වල ප්‍රහාරක IP (`10.10.10.50`) පමණක්ද තිබිය යුතුය.
+  > - **Admin → camera HTTP:** කළමනාකරණ ප්‍රවේශය නොකැඩුණු බව.
   >
-- **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
+- **ලැබෙන සැබෑ පිළිතුර (12 Nov 2026: C&C block එක 17:56 ට, SYN flood එක 17:58 ට):**
 
   ```text
-  08:28:07 NVR: recorded 58.6 MB
+  17:49:31 NVR: recorded 58.6 MB
+  17:54:31 NVR: recorded 58.6 MB
+  17:59:31 NVR: recorded 58.6 MB
+  18:04:31 NVR: recorded 58.6 MB
   ```
-- **මෙයින් ඔප්පු වන කරුණ:** Attacker (`10.10.10.50`) අවහිර කර ඇති නමුත්, කැමරාව (`192.168.50.30`) සහ NVR (`192.168.50.20`) අතර ඇති connection එක සාමාන්‍ය පරිදි 100% ක් සුරක්ෂිතව ක්‍රියාත්මක වේ. Zero False Blocks!
+  *(17:54:31–17:59:31 segment එක තුළ C&C block එක සහ SYN flood එක යන දෙකම සිදුවිය; එම segment එකද සම්පූර්ණ 58.6 MB කි.)*
+
+- **මෙයින් ඔප්පු වන කරුණ:**
+  - Attacker (`10.10.10.50`) block / rate-limit වී ඇති අතරතුර, කැමරාව (`192.168.50.30`) සහ NVR (`192.168.50.20`) අතර stream එක නොකැඩී ක්‍රියාත්මක විය.
+  - කැමරාව, NVR, Admin PC, Router, Scanner කිසිවක් block නොවිය (IDS වාර්තා වල `Protected devices blocked: none (correct)`).
+  - **අවංක සටහන:** කැමරාව සහ NVR එකම LAN එකේ ඇති බැවින් ඔවුන් අතර traffic router එක හරහා යන්නේ නැත. එබැවින් stream එක නොකැඩීම පෙන්වන්නේ කැමරාව block නොවූ බව සහ ප්‍රහාරය එයට බලපෑ නොවූ බවයි; router firewall එකේ ක්‍රියාකාරීත්වය පෙන්වන්නේ 4.2.8 සහ 4.2.11 යි.
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
-  > *"Sir, this satisfies Research Question RQ5 and our core safety invariant: even while the external attacker is blocked in the kernel firewall, the camera continues streaming 58.6 MB video chunks to the NVR with zero packet drops."*
+  > *"Sir, this is our safety check for RQ5. The attacker was blocked and rate-limited, yet the NVR recorded every 5-minute segment in full and no protected address appears in any block set. The camera is protected by the local-network rule, the NVR and admin PC by the allowlist."*
   >
 
 ---
@@ -1652,112 +1764,132 @@ print(json.dumps(json.loads(urllib.request.urlopen(req2).read()), indent=2))
 >
 > - **ඉටුවන පර්යේෂණ අරමුණ (Objective):** **Objective O4** ("Build the monitoring, dashboard, storage and alerts, and join them together") සහ **Section 3.7** ("Device Discovery and Automated Response").
 > - **සම්පූර්ණ වන ක්‍රියාකාරී අවශ්‍යතාවය (Requirement):** **Table 7 FR-05 (Should)** — "Find approved devices and services with controlled Nmap scans (Priority: Should / inventory test)".
-> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** ජාලය තුළ ඇති උපාංග සහ ඒවායේ සේවාවන් (Ports) සොයාගැනීම සඳහා අනුමත IP පරාසය (`192.168.50.0/24`) තුළ පමණක් ක්‍රියාත්මක වන Nmap inventory scanner එකක් පද්ධතිය තුළ ඇති බවත්, එමඟින් සොයාගන්නා කැමරා (Port 554 RTSP, Port 80 Web, ONVIF) Dashboard එකේ **Devices & Scans (`/devices`)** පිටුවේ ස්වයංක්‍රීයව ලැයිස්තුගත වන බවත්, පරිපාලකයාට (Admin) කැමරා භූමිකාව තහවුරු කර (Camera Role Confirmation) ආරක්ෂිත Allowlist එකට ඇතුළත් කළ හැකි බවත් ඔප්පු කිරීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Table 7 FR-05 and Section 3.7. Our inventory service runs controlled scans strictly over authorized subnets, detecting IP cameras and recording their open ports in MongoDB, allowing the admin to inspect heuristics and confirm camera roles directly into the permanent allowlist."*
+> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** අනුමත IP පරාසය (`192.168.50.0/24`, `lab.approved_scan_subnets`) තුළ පමණක් ක්‍රියාත්මක වන **සැබෑ Nmap** inventory scan එකක් පද්ධතිය තුළ ඇති බවත්, සොයාගත් උපාංග සහ ඒවායේ ports / services MongoDB `devices` collection එකේ සටහන් වී Dashboard එකේ **Devices & Scans (`/devices`)** පිටුවේ පෙනෙන බවත්, එක් port එකකින් පමණක් නොව **සාක්ෂි 2 ක් හෝ වැඩි ගණනකින්** "possible camera" තීරණය කරන බවත් (Section 3.7), පරිපාලකයාට කැමරා භූමිකාව තහවුරු කළ හැකි බවත් පෙන්වීමටයි.
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Table 7 FR-05 and Section 3.7. The dashboard starts a real Nmap scan of the approved subnet only. It found six addresses; only the camera at .30 is marked as a possible camera, with four pieces of evidence, not one port. The admin can then mark it as a confirmed camera, and that action is audited."*
 
 ---
 
-#### 1. මෙම උපාංග 5 ජාලය තුළට පැමිණියේ කොහෙන්ද? (Where Did These 5 Devices Come From?)
+#### 1. Scan එක ධාවනය වන්නේ කොහෙන්ද? (Where Does the Scan Run?)
 
-Dashboard එකේ දැක්වෙන උපාංග 5 යනු අහඹු නම් හෝ නිකරුණේ ලියූ දත්ත නොවේ. **මේවා අපගේ Virtual Lab එක තුළ Docker Containers මඟින් සැබවින්ම ක්‍රියාත්මක වන අතථ්‍ය පරිගණක සහ උපාංග 5 කි ([`lab_virtual/docker-compose.yml`](<file:///d:/intrusion%20detection/lab_virtual/docker-compose.yml>)):**
+- Windows PC එකට Docker lab ජාල වෙත සෘජුවම ළඟා විය නොහැක. එබැවින් IDS එක **`ids-lab-scanner`** (`192.168.50.5`, lab plan එකේ sensor management port එක) container එක තුළ සැබෑ Nmap ධාවනය කරයි: `docker exec ids-lab-scanner nmap ...` (setting `scanner.nmap_command`, decision **D-057**).
+- Simulated (ව්‍යාජ) scan එක **අක්‍රියයි** (`scanner.allow_simulation: false`). Nmap නොමැති නම් scan එක පැහැදිලි දෝෂයක් සමඟ fail වේ; ව්‍යාජ උපාංග කිසිවිටෙක පෙන්වන්නේ නැත. (Software tests සඳහා simulation භාවිත කළහොත්, එම උපාංග "SIMULATED - NOT A REAL DEVICE" ලෙස රතු ලේබලයකින් පෙන්වයි.)
+- Hardware Lab එකේදී sensor එකම Nmap ධාවනය කරයි.
 
-1. **`ids-lab-router` (IP: `192.168.50.1`):** මුළු ජාලයම පාලනය කරන අපේ Gateway / Router එක (Cisco Systems).
-2. **`ids-lab-sensor` (IP: `192.168.50.5`):** Zeek Sniffer එක ක්‍රියාත්මක වන Security Sensor පරිගණකය (Intel Corporation).
-3. **`ids-lab-admin` (IP: `192.168.50.10`):** පද්ධතිය පාලනය කරන Admin Workstation පරිගණකය (Dell Inc.).
-4. **`ids-lab-nvr` (IP: `192.168.50.20`):** කැමරාවේ වීඩියෝ ලබාගෙන ගබඩා කරන Network Video Recorder සේවාදායකය (Hikvision NVR).
-5. **`ids-lab-camera` (IP: `192.168.50.30`):** සැබෑ වීඩියෝ විකාශනය කරන අපගේ Lab IP කැමරාව (Dahua Technology).
+#### 2. Scan එකෙන් සොයාගන්නා උපාංග 6 (The 6 Addresses the Real Scan Finds)
 
----
+| IP | Container / උපාංගය | Open ports | Camera heuristic |
+| :--- | :--- | :--- | :--- |
+| `192.168.50.1` | `ids-lab-router` (Router) | 22 | Standard Host |
+| `192.168.50.5` | `ids-lab-scanner` (scan එක කරන යන්ත්‍රයම) | - | Standard Host |
+| `192.168.50.10` | `ids-lab-admin` (Admin PC) | - | Standard Host |
+| `192.168.50.20` | `ids-lab-nvr` (NVR) | - | Standard Host |
+| `192.168.50.30` | `ids-lab-camera` (IP camera simulator) | 80, 554 | **POSSIBLE CAMERA** |
+| `192.168.50.254` | Docker `br-ids-lan` bridge එකේම ලිපිනය | - | Standard Host |
 
-#### 2. Terminal එකෙන් ස්කෑන් එක දියත් කර උපාංග තොරතුරු ලබාගැනීම (Terminal Execution):
+*(Vendor එක "unknown" ලෙස පෙනේ: Docker විසින් අහඹු MAC ලිපින දෙන බැවින් vendor (OUI) එකක් නැත. MAC ලිපින `lab.py down` / `up` කළ සෑම වරකම වෙනස් වේ.)*
+
+#### 3. Terminal එකෙන් ස්කෑන් එක දියත් කර උපාංග තොරතුරු ලබාගැනීම (Terminal Execution):
 
 ```powershell
 python -c "
-import urllib.request, json
+import urllib.request, json, time
 with open('lab_virtual/keys/dashboard_login.txt') as f:
     u, p = f.read().strip().split()[:2]
 tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
+H = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok}
 
-# 1. අනුමත Subnet එක Scan කිරීම (Proposal FR-05)
-req_scan = urllib.request.Request('http://127.0.0.1:5000/api/scans', data=json.dumps({'subnet': '192.168.50.0/24'}).encode(), headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok})
-scan_res = json.loads(urllib.request.urlopen(req_scan).read())
-print('Scan Status:', scan_res.get('status'), '-', scan_res.get('message'))
+# 1. අනුමත Subnet එක Scan කිරීම ආරම්භ කිරීම (Proposal FR-05) - scan එක background එකේ ධාවනය වේ (HTTP 202)
+start = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/scans', data=json.dumps({'subnet': '192.168.50.0/24'}).encode(), headers=H)).read())
+scan_id = start['scan']['scan_id']
+print('Scan started:', scan_id)
 
-# 2. සොයාගත් උපාංග ලැයිස්තුව ලබාගැනීම (MongoDB devices collection)
-req = urllib.request.Request('http://127.0.0.1:5000/api/devices', headers={'Authorization':'Bearer '+tok})
-print(json.dumps(json.loads(urllib.request.urlopen(req).read()), indent=2)[:600] + '\n  ...\n}')
+# 2. Scan එක අවසන් වන තෙක් (තත්පර ~30) බලා සිටීම
+t0 = time.time()
+while True:
+    s = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/scans/' + scan_id, headers=H)).read())
+    s = s.get('scan', s)
+    if s.get('status') in ('completed', 'failed'):
+        break
+    time.sleep(3)
+print('Scan', s.get('status'), 'in', round(time.time() - t0), 's')
+
+# 3. සොයාගත් උපාංග (MongoDB devices collection)
+for d in json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/devices', headers=H)).read())['devices']:
+    print('%-15s %-18s ports=%-10s possible_camera=%-5s confirmed=%-5s simulated=%s' % (d['ip'], d.get('mac') or '-', d.get('open_ports'), d.get('possible_camera'), d.get('confirmed_camera'), d.get('simulated')))
 "
 ```
 
 > **කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):**
 >
-> - **`POST /api/auth/login`:** ආරක්ෂිත JWT Access Token එක ලබාගැනීම (Section 3.7 - Authenticated Admin).
-> - **`POST /api/scans`:** අනුමත Subnet එක (`192.168.50.0/24`) සඳහා Nmap Discovery Scan එකක් ආරම්භ කිරීම (Proposal FR-05).
-> - **`GET /api/devices`:** Scan එක මඟින් සොයාගෙන MongoDB `devices` collection එකේ තැන්පත් කර ඇති උපාංග 5 හි තොරතුරු ලබාගැනීම.
+> - **`POST /api/auth/login`:** JWT token එක ලබාගැනීම (Section 3.7 - Authenticated Admin).
+> - **`POST /api/scans`:** අනුමත Subnet එක (`192.168.50.0/24`) සඳහා Nmap scan එකක් ආරම්භ කරයි. අනුමත නොවන subnet එකක් දුන්නොත් backend එක එය ප්‍රතික්ෂේප කරයි.
+> - **`GET /api/scans/<scan_id>`:** Scan එක `completed` වන තෙක් තත්පර 3 කට වරක් බලයි (scan එකට තත්පර ~30 ක් ගතවේ; වහාම devices කියවුවහොත් පැරණි ලැයිස්තුව ලැබේ).
+> - **`GET /api/devices`:** Scan එක මඟින් MongoDB `devices` collection එකේ ලියූ උපාංග ලබාගැනීම.
 
-- **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
+- **ලැබෙන සැබෑ පිළිතුර (Verified Output - 12 Nov 2026):**
 
-  ```json
-  {
-    "count": 5,
-    "devices": [
-      {
-        "ip": "192.168.50.30",
-        "mac": "1e:c7:54:9f:6b:73",
-        "vendor": "IP Camera (Virtual Lab)",
-        "hostname": "ids-lab-camera",
-        "open_ports": [80, 554],
-        "possible_services": ["http Camera-Web", "rtsp live555"],
-        "possible_camera": true,
-        "confirmed_camera": true,
-        "device_type": "ip_camera"
-      }
-    ]
-  }
+  ```text
+  Scan started: 052f2d5f-68aa-4897-b44e-1374eee9b798
+  Scan completed in 27 s
+  192.168.50.5    unknown            ports=[]         possible_camera=False confirmed=False simulated=False
+  192.168.50.30   AE:FC:89:05:69:8E  ports=[80, 554]  possible_camera=True  confirmed=False simulated=False
+  192.168.50.254  FA:0D:08:6F:6D:3E  ports=[]         possible_camera=False confirmed=False simulated=False
+  192.168.50.20   76:CD:2C:44:47:47  ports=[]         possible_camera=False confirmed=False simulated=False
+  192.168.50.10   1E:4A:1A:46:92:B8  ports=[]         possible_camera=False confirmed=False simulated=False
+  192.168.50.1    1E:73:30:1F:CD:91  ports=[22]       possible_camera=False confirmed=False simulated=False
   ```
+
+  **කැමරාවේ සාක්ෂි (`camera_evidence`, `.30` record එක):**
+  ```text
+  RTSP streaming port 554 is open (video payload transport)
+  Service banner indicates RTSP protocol: 'rtsp'
+  Device hostname suggests camera role: 'ids-lab-camera-net.ids-lab_camlan'
+  Web management interface paired with video streaming ports
+  possible_services: ['http BaseHTTPServer', 'rtsp']
+  ```
+
+  ⚠️ **අවංක සටහන:** Scan එකේ probes `192.168.50.5` සිට පැමිණෙන බැවින්, Live Alerts හි `.5` source එකෙන් PortScan / CnC / DDoS_DoS alerts කිහිපයක් පෙනේ. `.5` allowlist එකේ ඇති බැවින් ඒවා `RESPONSE: ALLOWLIST_PROTECTED` වන අතර කිසිවිටෙක block නොවේ.
 
 ---
 
-#### 3. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/devices` - Devices & Scans):
+#### 4. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/devices` - Devices & Scans):
 
-SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"** ක්ලික් කළ විට දිස්වන සම්පූර්ණ අතුරුමුහුණත (UI):
+SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"** ක්ලික් කළ විට:
 
 ```
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│  📷 DISCOVERED NETWORK ASSETS & SCANS                       [ 192.168.50.0/24 ]  [ ▶ TRIGGER NMAP ]   │
-│  Nmap Asset Discovery + Multi-Evidence Surveillance Camera Verification                                │
-├───────────────┬────────────────────────────┬──────────────────┬──────────────────┬──────────────┬──────┤
-│ IP ADDRESS    │ MAC / VENDOR               │ OPEN PORTS       │ CAMERA HEURISTIC │ ADMIN STATUS │ ...  │
-├───────────────┼────────────────────────────┼──────────────────┼──────────────────┼──────────────┼──────┤
-│ 192.168.50.1  │ b6:83:5f:4b:4d:f8 (Router) │ 22, 53, 80       │ Standard Host    │ Standard Host│ 🔍   │
-│ 192.168.50.5  │ 02:42:c0:a8:32:05 (Sensor) │ 22               │ Standard Host    │ Standard Host│ 🔍   │
-│ 192.168.50.10 │ 26:02:51:91:55:f9 (Admin)  │ 22               │ Standard Host    │ Standard Host│ 🔍   │
-│ 192.168.50.20 │ 8a:a3:74:6f:6f:0b (NVR)    │ 80, 554, 8000    │ POSSIBLE CAMERA  │ CONF. CAMERA │ 🔍   │
-│ 192.168.50.30 │ 1e:c7:54:9f:6b:73 (Camera) │ 80, 554          │ POSSIBLE CAMERA  │ CONF. CAMERA │ 🔍   │
-└───────────────┴────────────────────────────┴──────────────────┴──────────────────┴──────────────┴──────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  DEVICES & SCANS                                             [ 192.168.50.0/24 ]  [ ▶ TRIGGER NMAP ]        │
+├────────────────┬──────────────────────────────┬────────────┬───────────────────┬─────────────────┬───────────┤
+│ IP ADDRESS     │ MAC / VENDOR                 │ OPEN PORTS │ SERVICES          │ CAMERA HEURISTIC│ ADMIN ... │
+├────────────────┼──────────────────────────────┼────────────┼───────────────────┼─────────────────┼───────────┤
+│ 192.168.50.1   │ 1E:73:30:1F:CD:91 vendor unk.│ 22         │ ssh OpenSSH       │ Standard Host   │ MARK CAM. │
+│ 192.168.50.5   │ unknown  vendor unknown      │ None       │ —                 │ Standard Host   │ MARK CAM. │
+│ 192.168.50.10  │ 1E:4A:1A:46:92:B8 vendor unk.│ None       │ —                 │ Standard Host   │ MARK CAM. │
+│ 192.168.50.20  │ 76:CD:2C:44:47:47 vendor unk.│ None       │ —                 │ Standard Host   │ MARK CAM. │
+│ 192.168.50.30  │ AE:FC:89:05:69:8E vendor unk.│ 80, 554    │ http BaseHTTP.., rtsp │ POSSIBLE CAMERA │ MARK CAM. │
+│ 192.168.50.254 │ FA:0D:08:6F:6D:3E vendor unk.│ None       │ —                 │ Standard Host   │ MARK CAM. │
+└────────────────┴──────────────────────────────┴────────────┴───────────────────┴─────────────────┴───────────┘
 ```
+*(MAC ලිපින ඔබගේ run එකේදී වෙනස් වේ.)*
 
 > **UI අංග වල ක්‍රියාකාරීත්වය (Interactive Elements Breakdown):**
 >
-> 1. **`CAMERA HEURISTIC` තීරුව (Multi-Evidence Camera Verification - Section 3.7):**
->    - පද්ධතිය Port 554 විවෘත වූ පමණින් හෝ තනි ලක්ෂණයකින් උපාංගයක් කැමරාවක් යැයි ස්ථිරව තීරණය නොකරයි.
->    - RTSP Port 554, Web Port 80, සහ වීඩියෝ සේවාවන් සලකා බලා `.30` (Camera) සහ `.20` (NVR) උපාංග **`[POSSIBLE CAMERA]`** ලෙස කහ පැහැයෙන් ලේබල් කරයි.
->    - අනෙකුත් පරිගණක (Admin, Sensor, Router) **`Standard Host`** ලෙස නිවැරදිව හඳුනාගනී.
-> 2. **`ADMIN STATUS` තීරුව (`[CONFIRMED CAMERA]` - Proposal FR-05 & Local Protection):**
->    - පරිපාලකයා විසින් කැමරාව තහවුරු කළ විට එය `[CONFIRMED CAMERA]` ලෙස සටහන් වේ.
->    - වඩාත් වැදගත්ම කරුණ වන්නේ, කැමරාව අපගේ Local Subnet (`192.168.50.0/24`) තුළ පිහිටා ඇති බැවින් `lab.local_networks` ප්‍රතිපත්තිය යටතේ ප්‍රහාරක අවස්ථාවලදී පවා ස්වයංක්‍රීය block වීම් වලින් මුළුමනින්ම ආරක්ෂා වීමයි (Zero False Cutoff).
-> 3. **`EVIDENCE` තීරුව (`Inspect` බොත්තම):**
->    - මෙය ක්ලික් කළ විට, පද්ධතිය මෙම උපාංගය කැමරාවක් ලෙස සැක කිරීමට හේතු වූ සැබෑ සාක්ෂි (RTSP Port 554, HTTP Web 80) Modal Popup එකකින් පෙන්වයි.
-> 4. **`[TRIGGER NMAP]` බොත්තම (ඉහළ දකුණු කෙළවර):**
->    - ජාලයට අලුත් උපාංගයක් සම්බන්ධ කළ විට, Admin හට පිටුවෙන් පිට නොවී මෙම බොත්තම ක්ලික් කිරීමෙන් Subnet එක නැවත Scan කර නව උපාංග live update කරගත හැක.
+> 1. **`CAMERA HEURISTIC` තීරුව (Section 3.7 - "one port number is not proof"):**
+>    - සාක්ෂි **2 ක් හෝ වැඩි** ගණනක් ඇති උපාංගයක් පමණක් කහ පැහැති **`POSSIBLE CAMERA`** ලෙස ලේබල් කරයි. මෙහි `.30` ට සාක්ෂි 4 ක් ඇත.
+>    - අනෙක් උපාංග **`Standard Host`** ලෙස පෙනේ.
+> 2. **`ADMIN STATUS` තීරුව (`MARK CAMERA` / `CONFIRMED CAMERA` බොත්තම):**
+>    - පරිපාලකයා `MARK CAMERA` ක්ලික් කළ විට උපාංගය `CONFIRMED CAMERA` (කොළ) ලෙස සටහන් වේ (`PATCH /api/devices/<ip>/confirm-camera`) සහ audit log එකේ `DEVICE_CAMERA_CONFIRMED` ලෙස ලියවේ.
+>    - **මෙය allowlist එකට එකතු නොකරයි.** කැමරාව auto-block වලින් ආරක්ෂා වන්නේ `lab.local_networks` (`192.168.50.0/24`) නීතියෙනි; allowlist එක වෙනස් කිරීමට Settings පිටුව භාවිත වේ.
+> 3. **`EVIDENCE` තීරුව (`Inspect` බොත්තම):** පද්ධතිය මෙම උපාංගය කැමරාවක් ලෙස සැක කිරීමට හේතු වූ සාක්ෂි (ඉහත 4) popup එකකින් පෙන්වයි.
+> 4. **`[TRIGGER NMAP]` බොත්තම (ඉහළ දකුණු කෙළවර):** පිටුවෙන් පිට නොවී subnet එක නැවත scan කරයි; progress bar එක සහ නව උපාංග live update වේ.
 
 - **මෙයින් ඔප්පු වන කරුණ:**
 
-  - Proposal FR-05 සහ Section 3.7 100% ක් සම්පූර්ණයි. ආරක්ෂිත කැමරා ජාලය තුළ ඇති උපාංග 5 සහ ඒවායේ open ports (80, 554) හඳුනාගෙන Dashboard එකේ **Devices & Scans** පිටුවේ සජීවීව ප්‍රදර්ශනය වේ.
-  - පරිපාලකයාට කැමරා භූමිකාව තහවුරු කර (Camera Role Confirmation) ආරක්ෂිත Allowlist එකට එක් කිරීමට පූර්ණ හැකියාව ලැබේ.
+  - Proposal FR-05 සහ Section 3.7: අනුමත subnet එක තුළ පමණක් සැබෑ Nmap scan එකක් ධාවනය වී, උපාංග 6 සහ ඒවායේ open ports හඳුනාගෙන Dashboard එකේ **Devices & Scans** පිටුවේ පෙන්වයි.
+  - Camera heuristic එක එක් port එකක් මත නොව සාක්ෂි කිහිපයක් මත ක්‍රියා කරයි; NVR, Admin, Router "camera" ලෙස වැරදියට ලේබල් නොවේ.
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
-  > *"Sir, this satisfies FR-05 and Section 3.7. Our inventory engine executes controlled scans strictly over approved subnets, identifying active hosts and evaluating multi-evidence heuristics (vendor OUI, RTSP, ONVIF). As shown on our Devices & Scans dashboard page, the administrator can inspect the evidence and confirm camera roles directly into the immutable allowlist."*
+  > *"Sir, this satisfies FR-05 and Section 3.7. Our scanner runs real Nmap, only on the approved subnet. Six addresses were found; only the camera is a possible camera, with four pieces of evidence: RTSP port 554, the RTSP service banner, the device name, and a web interface next to the stream port. The administrator can inspect that evidence and mark the camera as confirmed; that action is written to the audit log."*
   >
 
 ---
@@ -1773,7 +1905,7 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 >   - **Table 7 FR-08 (Should):** "Export filtered attack logs for testing and reporting (Priority: Should / export test)."
 > - **අදාළ පරීක්ෂණ අවස්ථාව සහ පිළිගැනීමේ ඉලක්කය (Scenario & Acceptance):** **Table 10 Scenario 6** ("Manual block and unblock: rule change seen in dashboard/database, connection comes back, full audit record kept") සහ **Table 9 Usability/Audit Acceptance Criteria** ("The administrator can finish the set tasks, and we can trace every action").
 > - **මෙය සිදු කළේ ඇයි? (Core Rationale):** ආරක්ෂක නිලධාරියාට (Security Analyst) අවශ්‍ය ඕනෑම මොහොතක Dashboard එකෙන් සැකකටයුතු IP එකක් අතින් Block කිරීමට (Manual Block), නැවත එය මුදාහැරීමට (Manual Unblock / Rollback), එම සෑම ක්‍රියාවක්ම `system_logs` හි සදාකාලිකව සටහන් වන බව තහවුරු කිරීමට, සහ සියලුම ප්‍රහාරක ලඝු සටහන් සම්මත RFC 4180 CSV හෝ JSON ආකෘතියෙන් බාගත (Export) කර වාර්තා සෑදීමට හැකි බව ඔප්පු කිරීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O5, FR-07, FR-08, and Table 10 Scenario 6. The administrator can manually enforce or rollback firewall blocks from the dashboard, verify immutable audit trails in system_logs, and export filtered forensic incident reports in RFC 4180 CSV format."*
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O5, FR-07, FR-08, and Table 10 Scenario 6. The administrator can manually enforce or rollback firewall blocks from the dashboard, see every action in the audit trail (system_logs), and export filtered incident reports as RFC 4180 CSV or JSON."*
 
 - **ධාවනය කළ යුතු Command එක (Terminal):**
 
@@ -1814,13 +1946,15 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 - **🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (What Appears on the Dashboard UI):**
 
   1. **Mitigations පිටුව (`http://localhost:5000/mitigations`):**
-     - පිටුවේ ඉහළ ඇති **"Manual Firewall Rule Enforcer"** කොටසේ IP ලිපිනය (`10.10.10.99`), කාලය (Minutes: 15), සහ Reason එක ඇතුළත් කර **`[Block IP]`** ක්ලික් කළ විට, ක්ෂණිකව Router Firewall එකේ rule එක වැටී Active Blocks වගුවේ Expiry Timestamp එක සමඟ දිස්වේ.
-     - වගුවේ පසෙකින් ඇති රතු පැහැති **`[Unblock]`** බොත්තම ක්ලික් කළ සැණින් (Manual Rollback - Objective O5), rule එක ඉවත් වී වගුවෙන් මැකී යයි.
+     - පිටුවේ ඉහළ ඇති **"CREATE MANUAL FIREWALL MITIGATION"** කොටසේ Target IP Address (`10.10.10.99`), Traffic Direction, Duration (Minutes: 15), සහ Reason ඇතුළත් කර **`ENFORCE BLOCK`** ක්ලික් කළ විට, Router Firewall එකේ rule එක වැටී active blocks වගුවේ **EXPIRES AT** වේලාව සමඟ දිස්වේ.
+     - වගුවේ පසෙකින් ඇති රතු පැහැති **`UNBLOCK`** බොත්තම ක්ලික් කළ සැණින් (Manual Rollback - Objective O5), rule එක router එකෙන් ඉවත් වී වගුවෙන් මැකී යයි.
+     - ආරක්ෂිත IP එකක් (උදා: `192.168.50.20`) block කිරීමට උත්සාහ කළහොත් backend එක `403 ALLOWLIST_PROTECTED` ලෙස ප්‍රතික්ෂේප කරයි.
   2. **Logs & Export පිටුව (`http://localhost:5000/export`):**
      - Proposal FR-08 Forensic Export කොටස:
-       - **Filter Options:** Date Range (ආරම්භක සහ අවසාන දිනය), Attack Class (DDoS, CnC, PortScan ආදිය), IP Address, සහ Severity අනුව පෙරහන් කළ හැක.
-       - **One-Click Export බොත්තම්:** **`[Download CSV]`** හෝ **`[Download JSON]`** ක්ලික් කළ සැණින් සම්මත RFC 4180 ගොනුවක් Browser එක හරහා ක්ෂණිකව පරිගණකයට බාගත (Download) වේ.
-- **මෙයින් ඔප්පු වන කරුණ:** Proposal Table 10 Scenario 6 (Manual Block & Unblock) සහ Table 7 FR-08 (Filtered Log Export) 100% ක් සම්පූර්ණ බව තහවුරු වේ. පරිපාලකයාට පද්ධතිය පාලනය කිරීමේ සම්පූර්ණ බලය පවතින අතර සෑම ක්‍රියාවක්ම audit log එකක සටහන් වේ.
+       - **Filter Options:** Log type (Attack Events / System & Audit Logs / Firewall Response Actions), Attack Class (`Benign`, `DDoS_DoS`, `PortScan`, `CnC`, `Malware_Download`), IP Address, සහ ආරම්භක / අවසාන දිනය අනුව පෙරහන් කළ හැක.
+       - **Export බොත්තම්:** **`EXPORT RFC 4180 CSV`** හෝ **`EXPORT STRUCTURED JSON`** ක්ලික් කළ සැණින් ගොනුව Browser එක හරහා බාගත වේ. සෑම export එකක්ම audit log එකේ `LOGS_EXPORTED` ලෙස සටහන් වේ.
+       - පිටුවේ පහළ ඇති **System & Audit Logs** වගුවේ `MANUAL_BLOCK`, `MANUAL_UNBLOCK`, `AUTH_LOGIN_SUCCESS` වැනි සියලු පරිපාලක ක්‍රියා දිස්වේ.
+- **මෙයින් ඔප්පු වන කරුණ:** Proposal Table 10 Scenario 6 (Manual Block & Unblock) සහ Table 7 FR-08 (Filtered Log Export) Virtual Lab එකේ ක්‍රියාත්මක වන බව තහවුරු වේ (12 Nov 2026: `201 / 200 / 200`). සෑම block, unblock සහ export ක්‍රියාවක්ම audit log එකේ (`system_logs`) සටහන් වේ (FR-07).
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
   > *"Sir, this satisfies Objective O5, FR-06, FR-07, and FR-08. Our evaluation proves the administrator can manually intervene to enforce or rollback blocks, while maintaining full forensic reproducibility through CSV and JSON audit exports."*
@@ -1835,42 +1969,45 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 > - **ඉටුවන පර්යේෂණ අරමුණ (Objective):** **Objective O2** ("Train an off-the-shelf classifier on IoT network data, tuned to catch real attacks while keeping the benign false-positive rate low") සහ **Objective O3** ("Validate the model in two steps: first on held-out scenarios to test generalisation, then on our own IP-camera traffic to measure false alarms").
 > - **සම්පූර්ණ වන ක්‍රියාකාරී අවශ්‍යතා (Requirements):**
 >   - **Table 7 FR-01 (Must):** Zeek logs වලින් Proposal Table 6 ට අනුකූලව flow features 27 ක් නිරවද්‍යව උකහා ගැනීම (Zero Training-Serving Skew).
->   - **Table 7 FR-02 (Must):** ජාල ගමනාගමනය (flows) පන්ති 5 කට (Benign, DDoS_DoS, PortScan, CnC, Malware_Download) ක්‍රමාංකනය කළ සම්භාවිතා (calibrated confidence probabilities) සහ Model Version (`v3.1.0`) සමඟ වර්ගීකරණය කිරීම.
+>   - **Table 7 FR-02 (Must):** ජාල ගමනාගමනය (flows) පන්ති 5 කට (Benign, DDoS_DoS, PortScan, CnC, Malware_Download) confidence අගයක් සහ Model Version (`v3.1.0`) සමඟ වර්ගීකරණය කිරීම.
 > - **විසඳෙන පර්යේෂණ ගැටලු සහ විද්‍යාත්මක උපකල්පනය (Research Questions & Hypothesis):**
 >   - **RQ1 & RQ2:** IoT ජාල දත්ත මත පදනම්ව Random Forest ආකෘතියේ වර්ගීකරණ නිරවද්‍යතාව සහ විවිධ ප්‍රහාරක හැසිරීම් රටා හඳුනාගැනීම.
->   - **Hypothesis H1:** මුළුමනින්ම නුදුටු Held-Out Scenario (`Capture-34-1`) මත Macro-F1 $\ge 0.85$ (පවතින පන්ති සඳහා 85.95% ලබා ඇත) සහ Local Benign FPR $\le 5.0\%$.
->   - **Supervisor Checkpoint C4 & C6:** Zero Scenario Leakage Split (Scenario `Capture-34-1` පුහුණුවට කිසිසේත්ම නොගෙන මුද්‍රා තබා තැබීම) සහ Zero Training-Serving Skew (Offline training සඳහා සහ Live detection සඳහා එකම Feature Extractor කේතය භාවිතා කිරීම).
-> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පද්ධතිය තුළ ක්‍රියාත්මක වන AI / Machine Learning ආකෘතිය (Random Forest Classifier Model `v3.1.0`) නිකම්ම Dummy හෝ උපකල්පිත එකක් නොව, සැබෑ IoT-23 දත්ත කට්ටලයේ flows මිලියන 1.18 ක් මත විද්‍යාත්මකව පුහුණු කරන ලද (Trained), පුහුණුවේදී නුදුටු රහසිගත පරීක්ෂණ දත්ත (Held-out Test set) මත දැඩිව පරීක්ෂා කර තහවුරු කළ (Evaluated), සහ තත්පරයකට flows 125,000 කට වඩා වර්ගීකරණය කළ හැකි (7.96 µs per flow) සැබෑ නිෂ්පාදන මට්ටමේ AI මොඩලයක් බව සජීවී Terminal Commands මඟින් Supervisor ඉදිරියේ ඔප්පු කිරීමටයි.
-> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O2, Objective O3, FR-01, FR-02, and Table 9 Model Quality criteria. Our intrusion detection engine is powered by an optimized 100-tree Random Forest classifier bundle (v3.1.0) trained on 1,182,984 flows across 22 IoT-23 scenarios using 27 behavioral features. Evaluated under strict Level 2 Zero-Scenario-Leakage protocol on the unseen scenario Capture-34-1 (23,145 flows), our model achieved 93.22% overall accuracy, 93.67% weighted F1, and 85.95% Macro-F1 on active classes, with an ultra-low inference latency of 7.96 microseconds per flow."*
+>   - **Hypothesis H1 (පළමු කොටස):** Held-out scenario (`Capture-34-1`) මත Macro-F1 $\ge 0.85$: පවතින පන්ති 4 සඳහා **0.8595** (D-054), පන්ති 5 ම සඳහා 0.6876.
+>     - ⚠️ **අවංක සටහන:** 34-1 පුහුණුවට කිසිදු flow එකක් නොගත්තද, model තේරීමේ කාලය තුළ එය දැනටමත් බලා අධ්‍යයනය කර ඇත; එබැවින් එය **සම්පූර්ණයෙන්ම පිරිසිදු (clean) පරීක්ෂණයක් නොවේ** (`reports/experiments/evaluation_iot23.md`). Lab එකෙන් එය තහවුරු කළ යුතුය.
+>     - 34-1 මත Benign FPR එක **5.6%** (ඉලක්කය 5% ට මඳක් වැඩි). H1 හි දෙවන කොටස (අපේ **සැබෑ කැමරා** traffic මත FPR ≤ 5%) Hardware Lab එකෙන් මැනිය යුතුය.
+>   - **Supervisor Checkpoint C4 & C6:** Scenario-level split (Scenario `Capture-34-1` පුහුණුවට නොගෙන වෙන් කර තැබීම) සහ Zero Training-Serving Skew (Offline training සඳහා සහ Live detection සඳහා එකම Feature කේතය භාවිතා කිරීම).
+> - **මෙය සිදු කළේ ඇයි? (Core Rationale):** පද්ධතිය තුළ ක්‍රියාත්මක වන AI / Machine Learning ආකෘතිය (Random Forest Classifier Model `v3.1.0`) නිකම්ම Dummy හෝ උපකල්පිත එකක් නොව, සැබෑ IoT-23 දත්ත කට්ටලයේ flows 1,182,984 ක් මත පුහුණු කරන ලද, පුහුණුවට නොගත් held-out scenario එක (34-1) මත පරීක්ෂා කළ, සහ තත්පරයකට flows 125,000 කට වඩා වර්ගීකරණය කළ හැකි (7.96 µs per flow) model එකක් බව සජීවී Terminal Commands මඟින් පෙන්වීමටයි.
+> - **Supervisor ට කියන සාරාංශ සාක්ෂිය:** *"Sir, this satisfies Objective O2, Objective O3, FR-01, FR-02, and Table 9 Model Quality criteria. Our intrusion detection engine is powered by an optimized 100-tree Random Forest classifier bundle (v3.1.0) trained on 1,182,984 flows across 22 IoT-23 scenarios using 27 behavioral features. On the held-out scenario Capture-34-1 (23,145 flows), which was never used for training, it reached 93.22% accuracy, 0.9367 weighted F1 and 0.8595 macro-F1 on the four classes present. Because we had already studied 34-1 while choosing the model, this is not a fully clean test, and the hardware lab must confirm it. One flow takes about 8 microseconds."*
 
 ---
 
 #### 🧠 Machine Learning ආකෘතිය නිර්මාණය කළ සහ පුහුණු කළ ආකාරය (Model Architecture & Training Details)
 
 1. **පුහුණු දත්ත කට්ටලය (Training Dataset - IoT-23 v1.0.0):**
-   - Stratosphere IoT-23 දත්ත කට්ටලයේ සම්පූර්ණ flows මිලියන 325.3 කින් (Scenarios 22 කින්) සකස් කරගත් **flows 1,182,984** ක stratified sample එකක් භාවිතා කර ඇත.
-   - **Variant WCD (Decisions D-051, D-052, D-054):** විශ්වාසදායක ලේබල් පමණක් තබා ගනිමින් (`label_trusted = True`) සහ මතභේදාත්මක flows ඉවත් කර වඩාත් පිරිසිදු දත්ත මත පුහුණු කර ඇත.
-   - දුර්ලභ C&C flows 100% ක්ම පුහුණු දත්ත තුළ සුරක්ෂිතව රඳවාගෙන ඇත.
+   - Stratosphere IoT-23 දත්ත කට්ටලයේ flows 325,309,946 න් (`reports/data_quality_report.md`), training scenarios 22 න් ගත් stratified sample එකකින්, අවසාන training rows **1,182,984** කි.
+   - Sampling එකේදී කුඩා පන්තිවල rows සියල්ල තබාගත්තේය (උදා: CnC flows 48,992 ම).
+   - **Variant WCD (Decisions D-051, D-052, D-054):** `label_trusted = False` rows සහ `config/disputed_labels.yaml` හි ඇති disputed rows ඉවත් කර පුහුණු කර ඇත.
 
-2. **Zero Scenario Leakage Split (Level 2 Scientific Validation - Checkpoint C4):**
-   - Proposal Section 3.3 සහ Checkpoint C4 අනුව, ආකෘතිය පුහුණු කිරීමේදී **`CTU-IoT-Malware-Capture-34-1` (Mirai botnet capture - flows 23,145)** දත්ත කට්ටලය සම්පූර්ණයෙන්ම වෙන් කර (Held-out) මුද්‍රා තැබිණි. ආකෘතිය පුහුණු කිරීමට එයින් එකඳු flow එකක්වත් භාවිතා නොකළ අතර, එය භාවිතා කළේ අවසාන විද්‍යාත්මක පරීක්ෂාවට (Generalisation Test) පමණි.
+2. **Scenario-level Split (Level 2 Held-Out Test - Checkpoint C4):**
+   - Proposal Section 3.3 සහ Checkpoint C4 අනුව, **`CTU-IoT-Malware-Capture-34-1` (Mirai botnet capture - flows 23,145)** scenario එක පුහුණුවෙන් වෙන් කර (Held-out) තැබිණි. Model එක පුහුණු කිරීමට එයින් එකඳු flow එකක්වත් භාවිත නොකළේය.
+   - ⚠️ නමුත් model / variant තේරීමේදී 34-1 ප්‍රතිඵල බලා ඇති බැවින්, මෙය සම්පූර්ණයෙන්ම පිරිසිදු (clean) පරීක්ෂණයක් ලෙස වාර්තා නොකරන්න (34-1 භාවිත කර model එක තෝරා නොගත යුතුය - project rule).
 
 3. **හැසිරීම් රටා ලක්ෂණ 27 (27 Behavioral Features - Proposal Table 6 & Zero-Skew):**
-   - `ml_engine/features.py` සහ `core_engine/zeek_adapter.py` මඟින් හරියටම එකම ලක්ෂණ 27 උකහා ගනී:
+   - Training සහ live detection දෙකම එකම කේතය (`ml_engine/features.py` + `ml_engine/window_features.py`, live එකේදී `core_engine/zeek_adapter.py` හරහා) භාවිත කර හරියටම එකම ලක්ෂණ 27 සාදයි:
      - **ප්‍රවාහන සහ සේවා (6 Categorical):** `proto`, `service`, `conn_state`, `history`, `orig_port_cat`, `resp_port_cat` (Ordinal Encoded).
      - **තනි Flow එකක පරිමාව සහ කාලය (13 Numerical):** `duration`, `orig_bytes`, `resp_bytes`, `missed_bytes`, `orig_pkts`, `orig_ip_bytes`, `resp_pkts`, `resp_ip_bytes`, `orig_bytes_per_pkt`, `resp_bytes_per_pkt`, `byte_ratio`, `pkt_ratio`, `is_incomplete_flow`.
-     - **කාල කවුළු ලක්ෂණ (8 Window Features - D-051, D-052):** එකම මූලාශ්‍රයෙන් තත්පර 60 ක් තුළ සම්බන්ධතා ගණන (`src_conn_60s`), වෙනස් ගමනාන්ත ගණන (`src_udst_60s`), port scan ලක්ෂණ (`src_uport_60s`, `src_udst_ratio`), C&C beacon කාල පරතරය (`pair_gap`, `pair_gap_change`), සහ පැයක් තුළ අසාර්ථක වූ TCP උත්සාහයන් (`pair_fail_1h`).
+     - **කාල කවුළු ලක්ෂණ (8 Window Features - D-051, D-052):** එකම මූලාශ්‍රයෙන් තත්පර 60 ක් තුළ සම්බන්ධතා ගණන (`src_conn_60s`), වෙනස් ගමනාන්ත ගණන (`src_udst_60s`), වෙනස් ports ගණන (`src_uport_60s`), ගමනාන්ත අනුපාතය (`src_udst_ratio`), එකම source→destination යුගලයේ තත්පර 60 සම්බන්ධතා (`pair_conn_60s`), C&C beacon කාල පරතරය (`pair_gap`, `pair_gap_change`), සහ පැයක් තුළ එම යුගලයේ අසාර්ථක TCP උත්සාහයන් (`pair_fail_1h`).
    - 🔒 **දැඩි ආරක්ෂක නීතිය (Rule 5):** IP Addresses, MAC addresses, UIDs හෝ File names ආකෘතියට කිසිවිටෙකත් input ලෙස ලබා නොදේ (Zero IP bias).
 
 4. **ඇල්ගොරිතමය සහ Hyperparameters (Random Forest Classifier):**
    - **Estimators:** `n_estimators = 100` (Decision Trees 100 ක එකතුව).
    - **Tree Constraints:** `max_depth = 25`, `max_features = 'log2'`, `min_samples_leaf = 4`, `min_samples_split = 2`.
    - **Class Balancing:** `class_weight = 'balanced'` (අසමතුලිත දත්ත සඳහා ස්වයංක්‍රීයව බර තැබීම).
-   - **Probability Calibration:** `CalibratedClassifierCV` හරහා විශ්වාසනීය සම්භාවිතා ප්‍රතිශත ගණනය කිරීම.
+   - **Probabilities:** Model bundle එකේ ඇත්තේ **calibration නොකළ (raw) Random Forest probabilities** ය (Step 17a, D-044/D-045 අනුව තෝරාගත්). Alert / block සීමාවන් ගණනය කළේ grouped out-of-fold probabilities මතයි. (`CalibratedClassifierCV` භාවිත නොවේ.)
 
 5. **ද්විත්ව මෙහෙයුම් සීමාවන් (Dual Operational Thresholds - Table 7 FR-02 & D-021):**
    - **Passive Alert Threshold:** $P \ge 0.30$ (ඕනෑම ප්‍රහාරක පන්තියක සම්භාවිතාව 30% ඉක්මවූ විට Dashboard Alert නිකුත් වේ).
-   - **Active Block Threshold (Firewall Drop):** CnC $P \ge 0.30$, PortScan $P \ge 0.88$, DDoS $P \ge 0.30$ (Rate-limit). නිරපරාදේ කැමරාව block වීම වැළැක්වීමට (Zero False Block) දැඩි සීමාවන් පනවා ඇත.
+   - **Active Response Threshold:** CnC block $P \ge 0.30$, PortScan block $P \ge 0.88$, DDoS_DoS **rate-limit** $P \ge 0.30$ (D-055), Malware_Download - block නැත (alert පමණි). ඊට අමතරව තත්පර 60 තුළ alerts 3 ක් අවශ්‍යයි. කැමරා ජාලය (`192.168.50.0/24`) සහ allowlist IP කිසිවිටෙක ස්වයංක්‍රීයව block නොවේ.
 
 ---
 
@@ -1879,10 +2016,10 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 - **පියවර 1: Production Model Bundle Metadata සහ ගුණාංග පරීක්ෂාව (Inspect Bundle Metadata):**
 
   ```powershell
-  .venv\Scripts\python.exe -c "import joblib; b = joblib.load('ml_engine/models/ids_bundle_v3.joblib'); m = b['metadata']; print(f'Model Name       : {m[\"bundle_name\"]} ({m[\"bundle_version\"]})'); print(f'Git Commit       : {m[\"git_commit\"]}'); print(f'Training Flows   : {m[\"training_samples_count\"]} flows (IoT-23 Variant {m[\"training_variant\"]})'); print(f'Feature Columns  : {len(b[\"feature_columns\"])} features'); print(f'Class Names      : {b[\"class_names\"]}'); print(f'Held-Out Test    : {m[\"level_2_heldout_scenario\"]} ({m[\"level_2_heldout_flows\"]} flows)'); print(f'Held-Out Accuracy: {m[\"level_2_accuracy\"]*100:.2f}%'); print(f'Present Macro-F1 : {m[\"level_2_macro_f1_present\"]*100:.2f}% (Target >= 85.0%)'); print(f'Inference Latency: {m[\"inference_latency_us_flow\"]:.2f} microseconds/flow')"
+  .venv\Scripts\python.exe -c "import joblib; b = joblib.load('ml_engine/models/ids_bundle_v3.joblib'); m = b['metadata']; print('Model Name       :', m['bundle_name'], '(' + m['bundle_version'] + ')'); print('Git Commit       :', m['git_commit']); print('Training Flows   :', m['training_samples_count'], 'flows (IoT-23 Variant ' + m['training_variant'] + ')'); print('Feature Columns  :', len(b['feature_columns']), 'features'); print('Class Names      :', b['class_names']); print('Held-Out Test    :', m['level_2_heldout_scenario'], '(' + str(m['level_2_heldout_flows']) + ' flows)'); print('Held-Out Accuracy: %.2f%%' % (m['level_2_accuracy'] * 100)); print('Present Macro-F1 : %.2f%% (Target >= 85.0%%)' % (m['level_2_macro_f1_present'] * 100)); print('Inference Latency: %.2f microseconds/flow' % m['inference_latency_us_flow'])"
   ```
 
-  > **කේතයෙන් සිදුවන දේ සරලව:** නිෂ්පාදන මට්ටමේ `ids_bundle_v3.joblib` ගොනුව load කර, පුහුණු කළ flows ගණන, features 27, classes 5, සහ held-out පරීක්ෂණ නිරවද්‍යතා අගයන් සෘජුවම terminal එකේ ප්‍රදර්ශනය කිරීම.
+  > **කේතයෙන් සිදුවන දේ සරලව:** `ids_bundle_v3.joblib` ගොනුව load කර, පුහුණු කළ flows ගණන, features 27, classes 5, සහ held-out පරීක්ෂණ අගයන් terminal එකේ පෙන්වීම. *(Windows PowerShell 5.1 හි `\"` escaping ක්‍රියා නොකරන බැවින්, මෙම විධානයේ ඇතුළත double quotes කිසිවක් නැත.)*
 
   - **ලැබෙන සැබෑ පිළිතුර (Verified Output):**
 
@@ -1911,7 +2048,7 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
     ```text
     [INFO] Starting Step 16 Held-Out Scenario Evaluation...
     [INFO] Loading sealed held-out test dataset from: data\processed\heldout\held_out_test.parquet
-    [INFO] Successfully verified scenario 'CTU-IoT-Malware-Capture-34-1' with 23145 flows across classes: {0: 1923, 1: 14394, 2: 122, 3: 6706}
+    [INFO] Successfully verified scenario 'CTU-IoT-Malware-Capture-34-1' with 23145 flows across classes: {0: np.int64(1923), 1: np.int64(14394), 2: np.int64(122), 3: np.int64(6706)}
     [INFO] Evaluating model: Random Forest (Bagging) on 23145 held-out flows...
     [INFO] Evaluating model: Logistic Regression (Linear) on 23145 held-out flows...
     [INFO] Evaluating model: HistGradientBoosting (Boosting) on 23145 held-out flows...
@@ -1920,19 +2057,27 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
     [INFO] Saved confusion matrix visualization to: reports\experiments\confusion_matrix_heldout.png
     [INFO] Step 16 evaluation complete! Deliverables generated in reports\experiments
     ```
+    *(12 Nov 2026 දින run එක; තත්පර ~8 ක් ගතවේ. සෑම පේළියකම ආරම්භයේ දිනය සහ වේලාවද පෙනේ. Classes: 0 = Benign, 1 = DDoS_DoS, 2 = PortScan, 3 = CnC; 34-1 හි Malware_Download නැත.)*
+    *(සටහන: මෙය `reports/experiments/evaluation_iot23.md`, `.csv` සහ `confusion_matrix_heldout.png` නැවත ලියයි. ලකුණු (scores) එලෙසම පවතින අතර speed අගයන් පමණක් සෑම run එකකම මඳක් වෙනස් වේ.)*
 
   - **ප්‍රතිඵල විශ්ලේෂණ සාරාංශය (Multi-Model Comparison Table):**
 
-    | පරීක්ෂණ මිණුම (Metric) | Random Forest (අපගේ Prototype) | Logistic Regression | HistGradientBoosting | Proposal ඉලක්කය (Table 9) |
+    *(මූලාශ්‍රය: `reports/experiments/evaluation_iot23.csv`, Capture-34-1, flows 23,145)*
+
+    | පරීක්ෂණ මිණුම (Metric) | Random Forest (deployed) | Logistic Regression | HistGradientBoosting | සටහන |
     | :--- | :---: | :---: | :---: | :--- |
-    | **Overall Accuracy** | **93.22%** | 89.05% | 96.50% | High Accuracy Benchmark |
-    | **Weighted F1-Score** | **0.9367 (93.67%)** | 0.9096 | 0.9656 | High F1 Benchmark |
-    | **Macro-F1 (Classes Present)** | **0.8595 (85.95%)** | 0.6985 | 0.8697 | **$\ge 0.85$ (H1 ඉලක්කය සම්පූර්ණයි!)** |
-    | **DDoS_DoS F1-Score** | **0.9947 (99.47%)** | 0.9412 | 0.9950 | Precision: 100.0%, Recall: 98.94% |
-    | **CnC F1-Score** | **0.8758 (87.58%)** | 0.7621 | 0.8842 | Precision: 95.87%, Recall: 80.61% |
-    | **PortScan F1-Score** | **0.8464 (84.64%)** | 0.6514 | 0.8521 | Precision: 77.93%, Recall: 92.62% |
-    | **Inference Latency per Flow** | **3.91 - 7.96 µs** | 3.83 µs | 12.98 µs | Table 9 Median $< 2.0\text{ s}$ ඉලක්කය ඉක්මවයි |
-    | **Throughput (Flows/Second)** | **> 125,000 flows/s** | 261,198 flows/s | 77,039 flows/s | Real-time Streaming Ready |
+    | **Overall Accuracy** | **93.22%** | 89.05% | 96.50% | |
+    | **Weighted F1-Score** | **0.9367** | 0.9096 | 0.9656 | |
+    | **Macro-F1 (පවතින පන්ති 4)** | **0.8595** | 0.6985 | 0.8697 | H1 ඉලක්කය $\ge 0.85$ (D-054); 34-1 clean test එකක් නොවේ |
+    | **Macro-F1 (පන්ති 5 ම)** | 0.6876 | 0.5588 | 0.6958 | Malware_Download 34-1 හි නැත |
+    | **Benign FPR (34-1)** | 5.62% | 6.50% | 5.72% | ඉලක්කය ≤ 5% (සැබෑ කැමරාවෙන් මැනිය යුතුය) |
+    | **DDoS_DoS F1** | **0.9947** | 0.9255 | 0.9810 | RF: Precision 1.000, Recall 0.9894 |
+    | **CnC F1** | **0.8758** | 0.9627 | 0.9421 | RF: Precision 0.9587, Recall 0.8061 |
+    | **PortScan F1** | **0.8464** | 0.2587 | 0.6006 | RF: Precision 0.7793, Recall 0.9262 (flows 122 පමණි) |
+    | **Benign F1** | 0.7212 | 0.6472 | 0.9552 | |
+    | **Time per flow (model only)** | ~3–8 µs | ~3–4 µs | ~12–14 µs | සෑම run එකකම වෙනස් වේ |
+
+    > ⚠️ **අවංක සටහන:** HistGradientBoosting සමස්ත ලකුණු වලින් RF ට වඩා මඳක් ඉහළය, සහ CnC වලදී Logistic Regression (0.963) සහ HGB (0.942) යන දෙකම RF (0.876) ට වඩා හොඳය. RF ඉදිරියෙන් සිටින්නේ PortScan (0.846) සහ DDoS_DoS වලදීය. RF deployed කළේ proposal එකේ තේරීම අනුවයි (Random Forest prototype); 34-1 ප්‍රතිඵල මත model එක තෝරා නොගත යුතුය.
 
 - **පියවර 3: සජීවී Network Flows ලබාදී තත්‍ය කාලීන ML Inference සහ Calibrated Probabilities පරීක්ෂා කිරීම (Live Flow Classification Test):**
 
@@ -1969,14 +2114,14 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
   1. **System Overview පිටුව (`http://localhost:5000/overview`):**
      - දකුණු පස පහළ **"SYSTEM STATUS (MEASURED)"** කොටසේ:
        - `Model`: **`v3.1.0`** (භාවිතා වන ආකෘතියේ සංස්කරණය පැහැදිලිව පෙන්වයි).
-       - `Time per flow, Zeek line to dashboard (median / 95%)`: **`112.3 ms / 144.9 ms`** (Model inference latency එක microseconds 7.96 ක් පමණක් වන බැවින් Zeek log එකේ සිට Dashboard එක දක්වා සම්පූර්ණ කාලය 112.3 ms ක් වැනි ඉතා සුළු අගයක් ගනී).
+       - `Time per flow, Zeek line to dashboard (median / 95%)`: මනින ලද අගයන් (12 Nov 2026: ~114–180 ms / ~300–575 ms). Model එකට ගතවන්නේ flow එකකට microseconds ~8 ක් පමණි; ඉතිරි කාලය feature සෑදීම, database ලිවීම සහ WebSocket push එකයි.
      - **ATTACK CLASS DISTRIBUTION ප්‍රස්ථාරය:**
-       - Model එක මඟින් වර්ගීකරණය කළ Multiclass Inferences (DDoS, CnC, PortScan, Malware) රතු පැහැති තීර ප්‍රස්ථාරයක් මඟින් සජීවීව දක්වයි.
+       - Database එකේ ඇති ප්‍රහාරක flows පන්තිය අනුව (DDoS_DoS, CnC, PortScan, Malware_Download) එක් එක් පන්තියේ වර්ණයෙන් තීර ප්‍රස්ථාරයක් ලෙස පෙන්වයි.
 
-- **මෙයින් ඔප්පු වන කරුණ:** Proposal Objective O2 ("Train an off-the-shelf classifier on IoT network data"), Objective O3 ("Validate on held-out scenarios"), Table 6 (27 Features), Table 7 FR-01 & FR-02 (Calibrated Multi-Class Inference), Table 8 (Evaluation Protocol), Table 9 (Accuracy, Macro-F1 $\ge 0.85$, Sub-second Latency), සහ Checkpoint C4 (Zero Scenario Leakage) යන සියල්ල 100% ක් නිවැරදිව සම්පූර්ණ කර ඇති බව තහවුරු වේ.
+- **මෙයින් ඔප්පු වන කරුණ:** Objective O2 (IoT-23 මත පුහුණු කළ multi-class Random Forest), Objective O3 හි පළමු පියවර (held-out scenario 34-1 මත පරීක්ෂාව), Table 6 (features 27), Table 7 FR-01 & FR-02 (class, confidence, model version), සහ Table 9 latency ඉලක්කය Virtual Lab එකේ ක්‍රියාත්මක වන බව. **ඉතිරි කොටස්:** O3 හි දෙවන පියවර සහ H1 හි FPR කොටස සැබෑ කැමරාවකින් (Hardware Lab) මැනිය යුතුය; 34-1 clean test එකක් නොවන බැවින් lab ප්‍රතිඵල අවශ්‍යයි.
 - **Supervisor ට පැහැදිලි කරන ආකාරය:**
 
-  > *"Sir, this satisfies Objective O2, Objective O3, Table 6, Table 7 FR-01, FR-02, and Table 9. Our intrusion detection engine is powered by an optimized 100-tree Random Forest classifier bundle (v3.1.0) trained on 1,182,984 flows across 22 IoT-23 scenarios using 27 behavioral features. Evaluated under strict Level 2 Zero-Scenario-Leakage protocol on the unseen scenario Capture-34-1 (23,145 flows), our model achieved 93.22% overall accuracy, 93.67% weighted F1, and 85.95% Macro-F1 on active classes, with an ultra-low inference latency of 7.96 microseconds per flow."*
+  > *"Sir, our model is a 100-tree Random Forest (v3.1.0) trained on 1,182,984 IoT-23 flows from 22 scenarios with 27 features. On the held-out scenario Capture-34-1 it reached 93.22% accuracy and 0.8595 macro-F1 on the four classes present, which meets the H1 number. 34-1 was studied while we chose the model, so it is not a fully clean test, and the benign false-positive rate there is 5.6%. The real-camera false-positive rate will come from the hardware lab. HistGradientBoosting scored slightly higher overall; we keep the Random Forest as planned in the proposal and report the comparison."*
   >
 
 ---
@@ -1996,47 +2141,53 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 
 ---
 
+#### 4.3.0 සෑම ප්‍රහාරයකටම පෙර (Before Each Attack)
+
+```powershell
+# පෙර ප්‍රහාරයකින් ඉතිරි වූ blocks ඉවත් කිරීම (database එක සහ router එක දෙකම):
+.venv\Scripts\python.exe lab_virtual\lab.py reset
+```
+
+*(Blocks ඉතිරිව තිබුණොත් ඊළඟ ප්‍රහාරයේ packets router එකේදී drop වී, ප්‍රතිඵල වෙනස් විය හැක. Alerts බැලීමට Live Alerts පිටුව (`/alerts`) විවෘතව තබාගන්න.)*
+
+> ⚠️ **Git Bash භාවිත කරන්නේ නම්:** පහත commands **PowerShell** සඳහාය. Git Bash හි `/lab/...` වැනි paths ස්වයංක්‍රීයව Windows paths බවට වෙනස් වී commands අසාර්ථක වේ (`can't open file '//C:/Program Files/Git/lab/...'`). Git Bash හි නම් පළමුව `export MSYS_NO_PATHCONV=1` run කරන්න.
+
+---
+
 #### 4.3.1 ප්‍රහාර වර්ගය 1: PortScan (Reconnaissance - Table 10 Scenario 2)
 
 - **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** පිටත WAN ජාලයේ සිටින Attacker Laptop එක (`10.10.10.50`), Router එක හරහා කැමරා Subnet එකේ ඇති විවෘත Ports සෙවීමට Nmap TCP SYN scan එකක් එල්ල කරයි.
 - **1. Terminal එකේ අතින් ගසන Command එක (Manual Attack Command):**
-  - **ක්‍රමය A: තනි කැමරාවක Web (80) සහ RTSP Video (554) ports ඉලක්ක කර scan කිරීම (Targeted Probe - 0.79s):**
-    ```powershell
-    docker exec ids-lab-attacker nmap -p 80,554 192.168.50.30
-    ```
-  - **ක්‍රමය B: Proposal Table 10 Scenario 2 අනුව මුළු Subnet එකම sweep කිරීම (Subnet Reconnaissance):**
-    ```powershell
-    docker exec ids-lab-attacker nmap -p 23,80,554 192.168.50.0/24
-    ```
+  ```powershell
+  docker exec ids-lab-attacker nmap -p 23,80,554 192.168.50.0/24
+  ```
+  *(තනි කැමරාවක ports 2 ක් පමණක් scan කිරීමෙන් (`nmap -p 80,554 192.168.50.30`) alert එකක් ඇති නොවේ - 4.2.6 බලන්න.)*
 
 - **2. කේතයෙන් සිදුවන දේ සරලව (Under the Hood):**
-  Attacker container එක (`ids-lab-attacker`) පිටත ජාලයේ සිට Router එක (`10.10.10.1`) හරහා `192.168.50.0/24` subnet එකේ IP ලිපින 254 ටම Ports 23 (Telnet), 80 (HTTP), සහ 554 (RTSP) වෙත TCP SYN packets විදිනු ලබයි. කැමරාවේ Ports 80 සහ 554 විවෘත බව තත්පර 0.79 කදී හඳුනාගනී.
+  Attacker container එක Router එක (`10.10.10.1`) හරහා `192.168.50.0/24` subnet එකේ ලිපින 256 ටම Ports 23, 80, 554 වෙත TCP SYN packets යවයි. Hosts 6 ක් "up" ලෙස සොයාගෙන, කැමරාවේ ports 80 සහ 554 විවෘත බව පෙන්වයි (තත්පර ~8).
 
 - **3. Zeek Sensor එක Capture කරන හැටි (Zeek Sniffing Proof):**
-  Zeek sensor එක Router එක සහ Switch එක අතර promiscuous mode එකෙන් අසමින් සිටින බැවින්, මෙම scans සියල්ල capture කර `conn.log` හි ලියයි:
   ```powershell
-  Get-Content lab_virtual\zeek_logs\conn.log -Tail 5
+  Get-Content lab_virtual\zeek_logs\conn.log | Select-String '"id.orig_h":"10.10.10.50"' | Select-Object -Last 5
   ```
-  - **ලැබෙන log සටහන:** `id.orig_h: "10.10.10.50"`, `id.resp_h: "192.168.50.30"`, `id.resp_p: 80`, `conn_state: "S0"`, `history: "S"`.
+  - **ලැබෙන log සටහන්:** `id.orig_h: "10.10.10.50"`, විවිධ `id.resp_h` (`.1`, `.10`, `.20`, `.30`, `.254` ...), `id.resp_p` 23 / 80 / 554, සහ කෙටි, අසම්පූර්ණ connection states (`REJ`, `S0` ආදිය).
 
 - **4. ML Model (v3.1.0) හඳුනාගන්නා ආකාරය (ML Inference):**
-  - Feature Extractor එක මඟින් කෙටි කාලයක් තුළ එකම Host එකකින් වෙනස් destination ports/IPs වෙත ගිය flows ගණන (`pair_flow_count_1m`, `pair_distinct_dst_ports_10m`) ගණනය කරයි.
-  - Random Forest Classifier (v3.1.0) මෙය **`PortScan`** ප්‍රහාරක පන්තිය ලෙස වර්ගීකරණය කරයි.
+  - Window features `src_conn_60s`, `src_udst_60s` (වෙනස් ගමනාන්ත ගණන), `src_uport_60s` (වෙනස් ports ගණන), `src_udst_ratio` මඟින් එකම source එක කෙටි කාලයකදී බොහෝ hosts / ports වෙත ගිය බව ගණනය කරයි.
+  - Model එක මෙය **`PortScan`** ලෙස වර්ගීකරණය කරයි (12 Nov 2026: confidence **0.88**; 11 Nov: 0.75).
 
-- **5. Router Firewall සහ Safety Guardrails (Firewall State):**
-  - කැමරා වීඩියෝවට කිසිදු බාධාවක් නොවේ (Hypothesis H1).
-  - Port Scan එල්ල කළ Attacker IP එක අධීක්ෂණයට ලක්වන අතර, සීමාව ඉක්මවුවහොත් Router එකේ `block_src` ලැයිස්තුවට Drop rule එක වැටේ.
+- **5. Router Firewall සහ Safety Rules (Firewall State):**
+  - PortScan **block** කිරීමට $P \ge 0.88$ සහ තත්පර 60 තුළ alerts 3 ක් අවශ්‍යයි. එක් scan එකකින් සාමාන්‍යයෙන් ලැබෙන්නේ alert 1 ක් බැවින් response එක `candidate` (block නැත) වේ.
   ```powershell
   docker exec ids-lab-router nft list set inet ids block_src
   ```
+  *(12 Nov 2026: `block_src` හිස්ව පැවතුණි. කැමරාව කිසිවිටෙක block නොවේ.)*
 
 - **6. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/alerts`):**
-  - තිරය refresh නොවී WebSocket මඟින් ක්ෂණිකව තැඹිලි පැහැති අනතුරු ඇඟවීමේ Badge එකක් වැටේ:
-    - **Classification:** `PortScan (Reconnaissance)`
-    - **Source IP:** `10.10.10.50` (Attacker)
-    - **Target IP:** `192.168.50.30` (Camera)
-    - **Observed Ports:** `80, 554`
-    - **Action:** `Reconnaissance Observed`
+  - Refresh නොකර අලුත් alert කාඩ්පතක් වැටේ:
+    - **Badge:** `MODEL PREDICTION`, **Class:** `PortScan` (amber පැහැය), **Confidence:** ~88%
+    - **Source → Destination:** `10.10.10.50:<port>` → `192.168.50.254:23` (subnet එකේ ඕනෑම host එකක් විය හැක), direction `inbound`
+    - **Response:** `RESPONSE: CANDIDATE`
 
 - **7. Cleanup:** Nmap ස්කෑන් එක අවසන් වූ සැණින් තනිවම නවතින බැවින් අමතර process cleanup අවශ්‍ය නොවේ.
 
@@ -2044,136 +2195,156 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 
 #### 4.3.2 ප්‍රහාර වර්ගය 2: DDoS / DoS SYN Flood (Resource Exhaustion - Table 10 Scenario 3 & Rule D-055)
 
-- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** Attacker Laptop එක පිටත ජාලයේ සිට කැමරාවේ Web Server එක (Port 80) වෙත අධික වේගයෙන් TCP SYN packets ගංවතුරක් (SYN Flood) එල්ල කර කැමරාවේ සම්පත් අඩපණ කිරීමට උත්සාහ කරයි (Proposal Table 10 Row 3).
+- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** Attacker Laptop එක පිටත ජාලයේ සිට කැමරාවේ Web Server එක (Port 80) වෙත තත්පරයට TCP SYN packets 1,000 ක් තත්පර 20 ක් යවයි (Proposal Table 10 Row 3).
 - **1. Terminal එකේ අතින් ගසන Command එක (Manual Attack Command):**
   ```powershell
   docker exec ids-lab-attack-server python -u /lab/syn_flood.py 192.168.50.30 --port 80 --rate 1000 --seconds 20
   ```
+  **ලැබෙන පිළිතුර:**
+  ```text
+  SYN flood 10.10.10.50 -> 192.168.50.30:80, 1000/s for 20 s
+  sent 20002 SYN packets in 20.0 s
+  ```
 
 - **2. කේතයෙන් සිදුවන දේ සරලව (Under the Hood):**
-  `syn_flood.py` ස්ක්‍රිප්ටුව Linux raw sockets භාවිතා කර, පිටත Attacker IP එකෙන් (`10.10.10.50`) කැමරාවේ IP එක (`192.168.50.30:80`) වෙත **තත්පරයට TCP SYN packets 1,000 බැගින් තත්පර 20 ක් පුරා (මුළු packets 20,000 ක්)** එක දිගටම විදියි. මෙහි අරමුණ වන්නේ කැමරාවේ TCP SYN Backlog Queue එක පිරවීමයි.
+  `syn_flood.py` (Python standard library පමණි) Linux raw socket එකක් භාවිත කර `10.10.10.50` සිට `192.168.50.30:80` වෙත SYN packets යවයි. **සෑම packet එකකටම වෙනස් (අහඹු) source port එකක්** ඇති බැවින් Zeek හට එක් එක් packet එක වෙනම කෙටි connection එකක් ලෙස පෙනේ (11 Nov run එකේ flows 6,226 ක්). Script එක අනුමත subnet (`192.168.50.0/24`) පිටත ඉලක්ක ප්‍රතික්ෂේප කරයි; උපරිම 5,000 pkt/s, තත්පර 120.
 
 - **3. Zeek Sensor එක Capture කරන හැටි (Zeek Sniffing Proof):**
-  Zeek sensor එක මෙම දැවැන්ත packet ප්‍රවාහය ක්ෂණිකව සටහන් කරගනී:
   ```powershell
-  Get-Content lab_virtual\zeek_logs\conn.log -Tail 5
+  (Get-Content lab_virtual\zeek_logs\conn.log | Select-String '"id.orig_h":"10.10.10.50","id.orig_p":[0-9]*,"id.resp_h":"192.168.50.30","id.resp_p":80,').Count
   ```
-  - **ලැබෙන log සටහන:** `conn_state: "S0"` (සම්බන්ධතාවය අවසන් නොවූ අර්ධ SYN තත්ත්වය), `orig_pkts` අගය තත්පරයෙන් තත්පරය සිය ගණනින් ඉහළ යයි, `resp_bytes: 0` (කැමරාවට පිළිතුරු දීමට නොහැකි තරම් flood එකක්).
+  - **ලැබෙන දේ:** Attacker සිට කැමරාවේ port 80 වෙත කෙටි flows දහස් ගණනක් (සෑම එකකම `orig_pkts` 1 ක් පමණ, `orig_bytes: 0`).
 
 - **4. ML Model (v3.1.0) සහ Mitigation Rule (D-055):**
-  - Features 27 අතුරින් `flow_duration`, `orig_pkts`, `orig_ip_bytes`, සහ packet rate features විශ්ලේෂණය කර, Model v3.1.0 මඟින් මෙය **`DDoS_DoS`** ලෙස වර්ගීකරණය කරයි ($P \ge 0.85$).
-  - Proposal Table 5, Table 10 සහ Supervisor අනුමත **Rule D-055** අනුව: පිටතින් එන මෙම අධික flood source එක Router මට්ටමින් **Rate-Limit (වේගය සීමා කිරීම)** හෝ Drop කිරීමට Decision Engine එක තීරණය කරයි.
+  - `src_conn_60s` (තත්පර 60 තුළ connections ගණන), `src_uport_60s`, `duration`, `orig_pkts`, `conn_state` වැනි features මඟින් Model v3.1.0 මෙය **`DDoS_DoS`** ලෙස වර්ගීකරණය කරයි (12 Nov 2026: confidence **0.44**; 11 Nov: 0.58).
+  - DDoS_DoS සඳහා block සීමාවක් නැත; **rate-limit සීමාව $P \ge 0.30$** (D-055, settings `response.ddos_rate_limit: true`). Decision Engine එක පිටත source එක `limit_src` set එකට මිනිත්තු 30 කට දමයි.
+  - ⚠️ **අවංක සටහන (12 Nov 2026 run එක):** Flood එකේ මුල් flows සඳහා model එක **`CnC`** ලෙසද (confidence 0.55) අනාවැකි දුන් අතර, CnC block සීමාව (0.30) ඉක්මවූ බැවින් `10.10.10.50` **`block_src`** එකටද වැටුණි (rate-limit එකට තත්පර 4 කට පෙර). එබැවින් මෙම run එකේදී attacker සම්පූර්ණයෙන්ම block වී සහ rate-limit වී ඇත. මෙය ආරක්ෂිත ප්‍රතිඵලයකි (ප්‍රහාරකයා පමණක් නවතී, කැමරාව block නොවේ), නමුත් සෑම run එකකදීම සිදු නොවේ (11 Nov run එකේදී rate-limit පමණි).
 
 - **5. Router Firewall ක්‍රියාත්මක වීම සහ කැමරා සේවාව සුරැකීම (Safety Verification):**
-  - Router එකේ Linux `nftables` මඟින් `10.10.10.50` වෙතින් එන packets වේගය සීමා කරන බැවින්, කැමරාවේ CPU සහ Socket buffers නිදහස් වේ!
-  - **කැමරාවේ RTSP Video Stream එක (Port 554) NVR එක වෙත කිසිදු බාධාවකින් තොරව ගලායන බව සනාථ කිරීමට:**
+  ```powershell
+  docker exec ids-lab-router nft list set inet ids limit_src
+  docker exec ids-lab-router nft list set inet ids block_src
+  ```
+  **ලැබෙන පිළිතුර (12 Nov 2026):**
+  ```text
+  table inet ids {
+  	set limit_src {
+  		type ipv4_addr
+  		flags timeout
+  		elements = { 10.10.10.50 timeout 30m expires 29m432ms }
+  	}
+  }
+  ```
+  - **කැමරාවේ stream port එක (554) NVR එකට තවමත් විවෘත බව:**
     ```powershell
-    docker exec ids-lab-nvr python -c "import socket; s=socket.create_connection(('192.168.50.30', 554), timeout=3); print('NVR Video Stream: HEALTHY & ACTIVE')"
+    docker exec ids-lab-nvr python -c "import socket; s=socket.create_connection(('192.168.50.30', 554), timeout=3); print('NVR -> camera:554 connection OK')"
     ```
-    *(ප්‍රතිඵලය: `NVR Video Stream: HEALTHY & ACTIVE` ලෙස තිරයේ දිස්වේ).*
+    *(ප්‍රතිඵලය: `NVR -> camera:554 connection OK`. මෙය TCP connection එක විවෘත වන බව පමණක් පෙන්වයි; stream එක නොකැඩුණු බව පෙන්වන්නේ NVR log එකයි - 4.2.9.)*
 
-- **6. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/alerts`):**
-  - **Live Alerts:** රතු පැහැති High-Priority Alert එකක් වැටේ:
-    - **Classification:** `DDoS_DoS (SYN Flood)`
-    - **Source IP:** `10.10.10.50` -> **Target:** `192.168.50.30:80`
-    - **Action:** `Rate-Limited / Autonomous Mitigation Enforced`
-  - **Mitigations පිටුව (`http://localhost:5000/mitigations`):** පිටත Attacker IP ලිපිනය Rate-Limit/Filter ලැයිස්තුවට ඇතුළත් වූ බව සජීවීව පෙන්වයි.
+- **6. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය:**
+  - **Live Alerts (`/alerts`):** `DDoS_DoS` (රතු පැහැති class pill), `10.10.10.50` → `192.168.50.30:80`, `RESPONSE: RATE_LIMITED`. (ඉහත සටහනේ ආකාරයට `CnC` / `RESPONSE: BLOCKED` alert එකක්ද පෙනිය හැක.)
+  - **Mitigations පිටුව (`/mitigations`):** `10.10.10.50` - `· RATE-LIMIT` (reason `AUTO_DDOS_RATELIMIT`) සහ, සිදුවී ඇත්නම්, `· BLOCK` record එක, EXPIRES AT වේලාව සමඟ.
 
-- **7. Cleanup:** තත්පර 20 කින් ස්ක්‍රිප්ට් එක තනිවම අවසන් වේ. ඊට පෙර බලහත්කාරයෙන් නැවැත්වීමට අවශ්‍ය නම්:
+- **7. Cleanup:** තත්පර 20 කින් ස්ක්‍රිප්ට් එක තනිවම අවසන් වේ. ඊට පෙර නැවැත්වීමට:
   ```powershell
   docker exec ids-lab-attack-server pkill -f "syn_flood.py"
   ```
+  ඉන්පසු `lab.py reset` මඟින් rate-limit / block ඉවත් කරන්න.
 
 ---
 
 #### 4.3.3 ප්‍රහාර වර්ගය 3: Command & Control (C&C Botnet Beacons - Table 10 Scenario 4)
 
-- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** ආසාදිත කැමරාවක් (Compromised IoT Camera) පිටත WAN ජාලයේ ඇති Attacker C&C Master Server එක (`10.10.10.50:6667`) වෙත periodic outbound botnet beacons යවමින් ඊළඟ ප්‍රහාරක විධානය ඉල්ලයි (Proposal Table 10 Row 4).
+- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** ආසාදිත කැමරාවක් පිටත ඇති C&C Server එක (`10.10.10.50:6667`) වෙත වරින් වර සම්බන්ධ වීමට උත්සාහ කරයි (Proposal Table 10 Row 4).
 - **1. Terminal එකේ අතින් ගසන Commands (Manual Attack Commands):**
   ```powershell
-  # පියවර 1: පිටත Attacker මැෂිමේ Port 6667 C&C Master Server එක Background එකේ ක්‍රියාත්මක කිරීම:
+  # පියවර 1: පිටත Attacker මැෂිමේ Port 6667 C&C Server එක Background එකේ ආරම්භ කිරීම (තත්පර 120 කට පසු විවෘත වේ):
   docker exec -d ids-lab-attack-server python -u /lab/lab_server.py --role cnc --cnc-open-after 120
 
-  # පියවර 2: ආසාදිත කැමරාව තුළින් පිටත C&C Server එක වෙත Botnet Beacons යැවීම ආරම්භ කිරීම:
+  # පියවර 2: ආසාදිත කැමරාව තුළින් C&C Server එක වෙත තත්පර 5 කට වරක් උත්සාහ කිරීම (තත්පර 90 ක්):
   docker exec -d ids-lab-camera python -u /lab/camera_sim.py bot --server 10.10.10.50 --every 5 --session 30 --duration 90
   ```
 
 - **2. කේතයෙන් සිදුවන දේ සරලව (Under the Hood):**
-  - Attacker Server එක (`10.10.10.50`) Port 6667 (IRC/Botnet Port) සක්‍රිය කරයි (මුල් තත්පර 120 තුළ closed තබා පසුව විවෘත වේ - IoT-23 Malware හැසිරීම අනුකරණය කිරීමට).
-  - ආසාදිත කැමරාව (`192.168.50.30`) සෑම තත්පර 5 කට වරක්ම (`--every 5`) පිටත C&C Server එක අමතමින් "I am alive, send commands" යනුවෙන් Keep-Alive Reverse Shell සම්බන්ධතා ගොඩනැගීමට උත්සාහ කරයි.
+  - C&C server එක මුල් තත්පර 120 port 6667 වසා තබයි (IoT-23 හි මෙන් මුල් උත්සාහයන් අසාර්ථක වීමට). Bot එක තත්පර 90 කින් නවතින බැවින් මෙම demo එකේ සියලු උත්සාහයන් ප්‍රතික්ෂේප (`REJ`) වේ.
+  - සම්බන්ධ වූ විට (දිගු run එකකදී) bot එක IRC-වැනි කෙටි chat එකක් (`NICK`, `USER`, `PING`/`PONG`) පවත්වයි. Shell එකක් නැත.
 
 - **3. Zeek Sensor එක Capture කරන හැටි (Zeek Sniffing Proof):**
   ```powershell
-  Get-Content lab_virtual\zeek_logs\conn.log -Tail 5
+  Get-Content lab_virtual\zeek_logs\conn.log | Select-String '"id.resp_p":6667' | Select-Object -Last 5
   ```
-  - **ලැබෙන log සටහන:** `id.orig_h: "192.168.50.30"`, `id.resp_h: "10.10.10.50"`, `id.resp_p: 6667`, `conn_state: "REJ"`, `history: "Sr"`.
+  - **ලැබෙන log සටහන්:** `id.orig_h: "192.168.50.30"`, `id.resp_h: "10.10.10.50"`, `id.resp_p: 6667`. Block එකට පෙර `conn_state: "REJ"` (12 Nov 2026: 7 ක්), block එකෙන් පසු router එකේදී drop වූ බැවින් `conn_state: "S0"` (6 ක්).
 
 - **4. ML Model (v3.1.0) හඳුනාගන්නා ආකාරය (ML Inference):**
-  - Feature Extractor එක මඟින් `pair_fail_1h = 7` (පැය තුළ අසාර්ථක වූ outbound සම්බන්ධතා), `conn_state = REJ`, සහ `resp_p = 6667` ග්‍රහණය කරගනී.
-  - Random Forest Model v3.1.0 මඟින් මෙය **`CnC`** (Command & Control) ප්‍රහාරයක් බව **91.2% ක ඉහළ Confidence** එකකින් අනාවරණය කරයි.
+  - `pair_fail_1h` (මෙම යුගලයේ පැය තුළ අසාර්ථක උත්සාහ), `pair_gap` / `pair_gap_change` (නිතිපතා කාල පරතරය), `conn_state = REJ` වැනි features.
+  - Model v3.1.0 මෙය **`CnC`** ලෙස හඳුනාගනී (12 Nov 2026: **0.93**, 13 Nov: **0.86**; ආරම්භයෙන් තත්පර ~21–24 කින්).
 
 - **5. Router Firewall ස්වයංක්‍රීයව Block කිරීම (Autonomous Firewall Proof):**
-  - Decision Engine එක කැමරාව Allowlist හි ඇති බව තහවුරු කරගෙන කැමරාව කිසිසේත්ම block නොකරයි.
-  - SSH හරහා Router එකට විධානයක් යවා, පිටත ඇති C&C Server IP එක (`10.10.10.50`) Router එකේ `block_dst` ලැයිස්තුවට **තත්පර 1800 ක (මිනිත්තු 30) Countdown Timer** එකක් සමඟ ඇතුළත් කරයි:
+  - කැමරාව `lab.local_networks` (`192.168.50.0/24`) තුළ ඇති බැවින් කිසිවිටෙක block නොකරයි.
+  - CnC $P \ge 0.30$ සහ තත්පර 60 තුළ alerts 3 ක් ඇති විට, පිටත C&C Server IP එක (`10.10.10.50`) `block_dst` set එකට **මිනිත්තු 30 (`timeout 30m`)** කට දමයි:
   ```powershell
   docker exec ids-lab-router nft list set inet ids block_dst
   ```
-  - **ලැබෙන පිළිතුර (Linux Kernel State):**
+  - **ලැබෙන පිළිතුර (Linux Kernel State, 12 Nov 2026):**
     ```text
     table inet ids {
-        set block_dst {
-            type ipv4_addr
-            flags timeout
-            elements = { 10.10.10.50 timeout 30m expires 29m54s }
-        }
+    	set block_dst {
+    		type ipv4_addr
+    		flags timeout
+    		elements = { 10.10.10.50 timeout 30m expires 28m40ms }
+    	}
     }
     ```
+  - Block එක නොලැබුණොත් (පෙර runs වලින් සමහරක confidence අඩු විය): cleanup commands run කර තත්පර 60 ක් රැඳී, නැවත උත්සාහ කරන්න.
 
 - **6. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය:**
-  - **Live Alerts (`http://localhost:5000/alerts`):** තිරය refresh නොවී WebSocket හරහා රතු පැහැති C&C Incident Badge එකක් දිස්වේ.
-  - **Mitigations පිටුව (`http://localhost:5000/mitigations`):** Active Blocks වගුවේ `10.10.10.50` (Destination) ලිපිනය වැටී, තත්පරයෙන් තත්පරය Auto-Expiry Countdown එක ක්‍රියාත්මක වේ.
-  - **NVR වීඩියෝවට Zero Impact:** කැමරාව සහ NVR අතර Local RTSP Stream එක කිසිදු බාධාවකින් තොරව අඛණ්ඩව ධාවනය වේ (Hypothesis H1 Target).
+  - **Live Alerts (`/alerts`):** `CnC` (දම් පැහැති pill), confidence ~93%, `192.168.50.30` → `10.10.10.50:6667`, direction `outbound`, `RESPONSE: BLOCKED`.
+  - **Mitigations පිටුව (`/mitigations`):** `10.10.10.50` (direction `destination`, reason `AUTO_CNC_DEST_BLOCK`), **EXPIRES AT** වේලාව සමඟ.
+  - **NVR stream එක:** කැමරාව සහ NVR අතර stream එක දිගටම ධාවනය වේ (4.2.9).
 
 - **7. Cleanup Commands (ප්‍රහාරය අවසන් කිරීම):**
   ```powershell
   docker exec ids-lab-attack-server pkill -f "lab_server.py --role cnc"
   docker exec ids-lab-camera pkill -f "camera_sim.py bot"
+  .venv\Scripts\python.exe lab_virtual\lab.py reset
   ```
 
 ---
 
 #### 4.3.4 ප්‍රහාර වර්ගය 4: Malware Download / Suspicious Binary Transfer (Table 10 Scenario 5)
 
-- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** ආසාදිත කැමරාව පිටත Attacker Web Server එකෙන් (`10.10.10.50`) නපුරු Executable Payload එකක් (`lab_test.x86` - Linux ELF Binary එකක්) Download කරගැනීමට උත්සාහ කරයි (Proposal Table 10 Row 5).
+- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** කැමරාව පිටත Attacker Web Server එකෙන් (`10.10.10.50`) executable ගොනුවක් (`lab_test.x86`) download කරයි (Proposal Table 10 Row 5). **ආරක්ෂාව:** මෙම ගොනුව Linux `true` command එකේ හානිකර නොවන පිටපතකි (bytes 43,432) - සැබෑ malware එකක් නොවේ.
 - **1. Terminal එකේ අතින් ගසන Command එක (Manual Attack Command):**
   ```powershell
   docker exec ids-lab-camera python -u /lab/camera_sim.py download --url http://10.10.10.50/bins/lab_test.x86 --count 5 --every 20
   ```
+  **ලැබෙන පිළිතුර:**
+  ```text
+  18:00:30 download 1: 43432 bytes from http://10.10.10.50/bins/lab_test.x86
+  18:00:35 download 2: 43432 bytes from http://10.10.10.50/bins/lab_test.x86
+  ...
+  ```
 
 - **2. කේතයෙන් සිදුවන දේ සරලව (Under the Hood):**
-  කැමරාව (`192.168.50.30`) තුළින් පිටත Attacker Server එකේ (`10.10.10.50:80`) ඇති `/bins/lab_test.x86` ලිපිනය වෙත HTTP GET Requests 5 ක් තත්පර 20 ක පරතරයකින් යවා, එම executable binary payload එක බාගත කරයි.
+  කැමරාව (`192.168.50.30`) පිටත Attacker Server එකේ (`10.10.10.50:80`) `/bins/lab_test.x86` වෙත HTTP GET requests 5 ක් තත්පර 20 ක පරතරයකින් යවා ගොනුව download කරයි (මුළු කාලය ~තත්පර 100).
 
 - **3. Zeek Sensor එක Capture කරන හැටි (Zeek Sniffing Proof):**
-  Zeek HTTP Analyzer එක මෙම ගොනු හුවමාරුව සවිස්තරාත්මකව `http.log` හි වාර්තා කරයි:
   ```powershell
-  Get-Content lab_virtual\zeek_logs\http.log -Tail 3
+  Get-Content lab_virtual\zeek_logs\http.log | Select-String "lab_test" | Select-Object -Last 1
+  Get-Content lab_virtual\zeek_logs\files.log -Tail 1
   ```
-  - **ලැබෙන log සටහන:** `uri: "/bins/lab_test.x86"`, `method: "GET"`, `status_code: 200`, `resp_mime_types: ["application/x-executable"]`.
+  - **`http.log`:** `method: "GET"`, `uri: "/bins/lab_test.x86"`, `status_code: 200`, `response_body_len: 43432`, `resp_mime_types: ["application/x-sharedlib"]`.
+  - **`files.log`:** `source: "HTTP"`, `mime_type: "application/x-sharedlib"`, `total_bytes: 43432`. (Zeek ගොනුවේ මුල් bytes (ELF header) කියවා file type එක තීරණය කරයි; `true` program එක Zeek ට `x-sharedlib` ලෙස පෙනේ.)
 
-- **4. ML Model සහ Signature Rule ක්‍රියාත්මක වීම:**
-  - **`RULE_EXECUTABLE_DOWNLOAD`** නීතිය සක්‍රිය වී binary file extension (`.x86`) සහ ELF Magic Headers හඳුනාගනී.
-  - Random Forest Classifier එක මඟින් **`Malware_Download`** අනතුරු ඇඟවීමක් ජනනය කරයි.
+- **4. File-Type Rule සහ ML Model:**
+  - IDS එකේ **`RULE_EXECUTABLE_DOWNLOAD`** නීතිය (`core_engine/file_check.py`) Zeek `files.log` හි **mime type** එක (program / executable වර්ග) කියවා, allowlist එකේ නැති පිටත host එකකින් පැමිණි program ගොනුවක් සඳහා **`Malware_Download`** alert එකක් ලබාදෙයි (confidence 1.00 = නීතියෙන්; model probability එකක් නොවේ).
+  - Random Forest model එක මෙම flows සඳහා වෙනම අනාවැකි ලබාදෙන නමුත්, මෙම alert එක සෑදුවේ නීතියයි (reason `RULE_EXECUTABLE_DOWNLOAD`).
 
 - **5. Router ප්‍රතිචාරය (Proposal Policy):**
-  - Proposal Table 10 Row 5 හි දක්වා ඇති පරිදි: *"alert and evidence only; no block"*.
-  - කැමරා Firmware Updates වැනි නීත්‍යානුකූල binary downloads වැළැක්වීම වැළැක්වීමට මෙහිදී ස්වයංක්‍රීය block එකක් ක්‍රියාත්මක නොවන අතර, අධිකරණමය සාක්ෂි (Forensic Evidence) MongoDB හි සටහන් කර පරිපාලකයාට තීරණය ගැනීමට ඉඩ හරියි.
+  - Proposal Table 10 Row 5: *"alert and evidence only; no block"*. Malware_Download සඳහා ස්වයංක්‍රීය block එකක් නැත (`RESPONSE: NONE`). Firmware updates වැනි නීත්‍යානුකූල downloads නැවැත්වීම වැළැක්වීමට සාක්ෂි පමණක් සටහන් කර, තීරණය පරිපාලකයාට ඉතිරි කරයි.
 
-- **6. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`http://localhost:5000/alerts`):**
-  - Live Alerts පිටුවේ කහ පැහැති අනතුරු ඇඟවීමේ Badge එකක් වැටේ:
-    - **Classification:** `Malware_Download (Executable Payload)`
-    - **Source IP:** `10.10.10.50` -> **Destination:** `192.168.50.30`
-    - **Evidence File:** `/bins/lab_test.x86`
-    - **Action:** `Forensic Alert Logged (Review Required)`
+- **6. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය (`/alerts`):**
+  - `Malware_Download` (රෝස පැහැති pill), confidence `100%`, `10.10.10.50:80` → `192.168.50.30:<port>`, direction `inbound`, `RESPONSE: NONE`, සහ evidence note එකේ ගොනු වර්ගය, නම, ප්‍රමාණය.
 
 - **7. Cleanup:** බාගත කිරීම් 5 අවසන් වූ පසු ස්ක්‍රිප්ටුව තනිවම අවසන් වේ.
 
@@ -2181,7 +2352,7 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
 
 #### 4.3.5 ප්‍රහාර වර්ගය 5: Administrator Manual Block & Rollback (Table 10 Scenario 6)
 
-- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** පරිපාලකයා විසින් Dashboard UI හෝ REST API එක හරහා ඕනෑම ප්‍රහාරක හෝ අනවසර IP එකක් ක්ෂණිකව Manual Block කිරීම සහ නැවත එය Unblock (Rollback) කිරීම (Proposal Table 10 Row 6 & FR-07, FR-08).
+- **ප්‍රහාරක අවස්ථාව සහ අරමුණ:** පරිපාලකයා Dashboard UI හෝ REST API හරහා IP එකක් Manual Block කර, නැවත Unblock (Rollback) කිරීම (Proposal Table 10 Row 6, FR-06, FR-07).
 - **1. Terminal එකේ අතින් Manual Block කරන Command එක:**
   ```powershell
   python -c "
@@ -2192,15 +2363,17 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
   tok = json.loads(urllib.request.urlopen(req).read())['token']
   req_block = urllib.request.Request('http://127.0.0.1:5000/api/blocklist', data=json.dumps({'ip':'10.10.10.50','direction':'source','duration_minutes':10,'reason':'Manual Supervisor Demo Block'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok})
   res = urllib.request.urlopen(req_block)
-  print('Manual Block Response:', res.getcode(), json.loads(res.read()))
+  print('Manual Block Response:', res.getcode(), json.loads(res.read())['message'])
   "
   ```
+  **ලැබෙන පිළිතුර:** `Manual Block Response: 201 Blocking rule for '10.10.10.50' enacted successfully.`
 
 - **2. Router Firewall එකේ සජීවීව Block එක පරීක්ෂා කිරීම (Kernel Proof):**
   ```powershell
   docker exec ids-lab-router nft list set inet ids block_src
   ```
-  - **ලැබෙන පිළිතුර:** `10.10.10.50` ලිපිනය router එකේ `block_src` ලැයිස්තුවට මිනිත්තු 10 ක timeout එකක් සමඟ ඇතුළත් වී ඇත.
+  - **ලැබෙන පිළිතුර:** `elements = { 10.10.10.50 timeout 10m expires 9m5...s }` - මිනිත්තු 10 ක timeout එකක් සමඟ.
+  - Block එක අතරතුර attacker ට කැමරාවේ port 80 වෙත ළඟා විය නොහැක (`lab.py scenario 6` මෙය `open / blocked / open` ලෙස පරීක්ෂා කරයි).
 
 - **3. Terminal එකේ අතින් Manual Unblock (Rollback) කරන Command එක:**
   ```powershell
@@ -2212,12 +2385,12 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
   tok = json.loads(urllib.request.urlopen(req).read())['token']
   req_unblock = urllib.request.Request('http://127.0.0.1:5000/api/blocklist/10.10.10.50', data=json.dumps({'reason':'Manual Rollback Done'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok}, method='DELETE')
   res = urllib.request.urlopen(req_unblock)
-  print('Manual Unblock Response:', res.getcode(), json.loads(res.read()))
+  print('Manual Unblock Response:', res.getcode(), json.loads(res.read())['message'])
   "
   ```
+  **ලැබෙන පිළිතුර:** `Manual Unblock Response: 200 Unblocked '10.10.10.50'. 1 rule(s) transitioned to 'removed'.` සහ router එකේ `block_src` නැවත හිස් වේ.
 
 - **4. Audit Trail එක තහවුරු කිරීම (Proposal FR-07 Audit Compliance):**
-  පරිපාලකයා කළ Block සහ Unblock ක්‍රියාවන් දෙකම System Audit Log එකේ නිවැරදිව සටහන් වූ බව පෙන්වීම:
   ```powershell
   python -c "
   import urllib.request, json
@@ -2225,77 +2398,85 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
       u, p = f.read().strip().split()[:2]
   req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
   tok = json.loads(urllib.request.urlopen(req).read())['token']
-  req_audit = urllib.request.Request('http://127.0.0.1:5000/api/v1/audit/logs?limit=2', headers={'Authorization':'Bearer '+tok})
-  print(json.dumps(json.loads(urllib.request.urlopen(req_audit).read()), indent=2))
+  for ev in ('MANUAL_BLOCK', 'MANUAL_UNBLOCK'):
+      r = urllib.request.Request('http://127.0.0.1:5000/api/logs?limit=1&event=' + ev, headers={'Authorization':'Bearer '+tok})
+      log = json.loads(urllib.request.urlopen(r).read())['logs'][0]
+      print(log['timestamp'], log['event'], log['actor'], log['outcome'], log['details'].get('ip'), log['details'].get('reason'))
   "
+  ```
+  **ලැබෙන පිළිතුර (උදාහරණය):**
+  ```text
+  2026-11-12T18:01:18.068000 MANUAL_BLOCK labadmin SUCCESS 10.10.10.99 manual test
+  2026-11-12T18:01:18.518000 MANUAL_UNBLOCK labadmin SUCCESS 10.10.10.99 manual rollback test
   ```
 
 - **5. 🖥️ Dashboard එකෙන් සජීවීව පෙනෙන ආකාරය:**
-  - `http://localhost:5000/mitigations`: Block කළ සැණින් IP එක active blocks වගුවට වැටී, Unblock කළ සැණින් වගුවෙන් ඉවත් වේ.
-  - `http://localhost:5000/audit`: පරිපාලකයාගේ නම (`labadmin`), ක්‍රියාව (`manual_block`, `manual_unblock`), හේතුව, සහ වේලාව දැක්වෙන වෙනස් කළ නොහැකි audit සටහනක් දිස්වේ.
+  - `http://localhost:5000/mitigations`: Block කළ සැණින් IP එක active blocks වගුවට වැටී (`· BLOCK`, EXPIRES AT), Unblock කළ සැණින් වගුවෙන් ඉවත් වේ.
+  - `http://localhost:5000/export` (Logs & Export) පහළ **System & Audit Logs** වගුව: actor (`labadmin`), event (`MANUAL_BLOCK`, `MANUAL_UNBLOCK`), outcome, සහ වේලාව.
+  - ⚠️ **ආරක්ෂක සටහන:** allowlist IP (`.1`, `.5`, `.10`, `.20`) manual block කිරීමට උත්සාහ කළහොත් `403 ALLOWLIST_PROTECTED` ලෙස ප්‍රතික්ෂේප වේ. **කැමරාව (`.30`) allowlist එකේ නැති බැවින් පරිපාලකයාට එය manual block කළ හැක** (local-network නීතිය ආරක්ෂා කරන්නේ ස්වයංක්‍රීය blocks වලින් පමණි). Demo එකේදී කැමරාව block නොකරන්න.
 
 ---
 
 # 5. සැබෑ උදාහරණ: සාමාන්‍ය අවස්ථාව සහ විවිධ ප්‍රහාරක අවස්ථා (End-to-End Data Chain In Action)
 
-පද්ධතිය තුළ විවිධ ජාල තත්ත්වයන් යටතේ දත්ත ගලායන සම්පූර්ණ දාමය (Packets ➔ Zeek ➔ Feature Extractor ➔ ML Model ➔ Decision Engine ➔ Router Firewall ➔ Dashboard) පහත සැබෑ අවස්ථා මඟින් පැහැදිලි වේ:
+පද්ධතිය තුළ විවිධ ජාල තත්ත්වයන් යටතේ දත්ත ගලායන සම්පූර්ණ දාමය (Packets ➔ Zeek ➔ Feature Extractor ➔ ML Model ➔ Decision Engine ➔ Router Firewall ➔ Dashboard) පහත අවස්ථා මඟින් පැහැදිලි වේ. *(අගයන් 12 Nov 2026 Virtual Lab run එකෙනි; සෑම run එකකම මඳක් වෙනස් වේ.)*
 
-### උදාහරණ A: සාමාන්‍ය වෙලාව (Normal Video Streaming - Scenario 1)
+### උදාහරණ A: සාමාන්‍ය වෙලාව (Normal Streaming - Scenario 1)
 
-1. NVR (`192.168.50.20`) කැමරාවෙන් (`192.168.50.30:554`) වීඩියෝ ඉල්ලයි.
-2. කැමරාව තත්පර 300 ක් පුරා **55.91 MB** ක වීඩියෝ packets යවයි.
-3. Zeek ලියයි: `conn_state: "SF"`, `orig_bytes: 58623600`.
-4. Adapter එක features 27 ක් හදයි: `pair_fail_1h = 0`.
-5. Model එක කියයි: `predicted_class = "Benign"`, `confidence = 0.99`.
-6. Decision Engine: Normal traffic නිසා block කරන්නේ නැත.
-7. **ප්‍රතිඵලය:** Dashboard එකේ "Benign Traffic" කවුන්ටරය 1 කින් වැඩි වේ. කිසිදු alert එකක් හෝ block එකක් නැත.
+1. NVR (`192.168.50.20`) කැමරාවට (`192.168.50.30:554`) `PLAY` request එකක් යවයි.
+2. කැමරාව තත්පර 300 ක segment එකක් පුරා bytes **58,604,000 (58.6 MB)** යවයි (simulator එකේ අහඹු bytes).
+3. Zeek ලියයි: `orig_bytes: 39`, `resp_bytes: 58604000`, `duration: 300.1`, `conn_state: "RSTO"`.
+4. Adapter එක features 27 ක් හදයි (`pair_fail_1h = 0`).
+5. Model එක මෙය Benign ලෙස සලකයි; NVR හෝ කැමරා stream එක සඳහා කිසිදු alert එකක් නොලැබුණි. (`.20` allowlist එකේද ඇත.)
+6. Decision Engine: Benign summary එකක් ලෙස `traffic_summaries` හි සටහන් කරයි.
+7. **ප්‍රතිඵලය:** Overview හි "benign in 24 h" ගණන වැඩි වේ. කිසිදු alert එකක් හෝ block එකක් නැත. *(12 Nov 18:05 සිට 13 Nov 00:09 දක්වා පැය ~6 ක සාමාන්‍ය traffic තුළ කැමරා / NVR / Admin සඳහා කිසිදු alert එකක් නොවීය. මෙය Virtual Lab නිරීක්ෂණයක් පමණි; H1 FPR මැනීම නොවේ.)*
 
 ---
 
 ### උදාහරණ B: Reconnaissance PortScan ප්‍රහාරයක් එල්ල වන වෙලාව (Scenario 2)
 
-1. Attacker (`10.10.10.50`) කැමරාවේ විවෘත ports සෙවීමට Nmap scan එකක් එල්ල කරයි.
-2. Router එක හරහා TCP SYN packets ගමන් කර කැමරාවේ Ports 80, 554 හඳුනාගනී.
-3. Zeek ලියයි: `conn_state: "S0"`, කෙටි කාලයකදී වෙනස් ports/IPs කිහිපයක්.
-4. Adapter එක features 27 ක් හදයි: `pair_flow_count_1m = 18`, `pair_distinct_dst_ports_10m = 3`.
-5. Model v3.1.0 එක කියයි: `predicted_class = "PortScan"`, `confidence = 0.88`.
-6. Decision Engine: Reconnaissance ලෙස හඳුනාගෙන Dashboard එකට alert එකක් යවයි (කැමරාව සුරක්ෂිතව පවතී).
-7. **ප්‍රතිඵලය:** Dashboard එකේ තැඹිලි පාට "PortScan" badge එක සජීවීව වැටේ.
+1. Attacker (`10.10.10.50`) `nmap -p 23,80,554 192.168.50.0/24` මඟින් subnet එක scan කරයි.
+2. Router එක හරහා probes ගමන් කර, hosts 6 ක් සොයාගෙන කැමරාවේ Ports 80, 554 විවෘත බව හඳුනාගනී.
+3. Zeek ලියයි: `10.10.10.50` සිට විවිධ hosts / ports වෙත කෙටි, අසම්පූර්ණ connections.
+4. Adapter එක window features හදයි: `src_udst_60s` (වෙනස් hosts), `src_uport_60s` (වෙනස් ports), `src_conn_60s`.
+5. Model v3.1.0 එක කියයි: `predicted_class = "PortScan"`, `confidence = 0.88` (`10.10.10.50` → `192.168.50.254:23`).
+6. Decision Engine: Alert 1 ක් පමණක් ඇති බැවින් (block සඳහා 0.88 සහ 60 s තුළ 3 ක් අවශ්‍යයි) `candidate` - alert පමණි, block නැත.
+7. **ප්‍රතිඵලය:** Live Alerts හි `PortScan` (amber) alert එක, `RESPONSE: CANDIDATE`. කැමරාව සුරක්ෂිතව පවතී.
 
 ---
 
 ### උදාහරණ C: DDoS SYN Flood ප්‍රහාරයක් එල්ල වන වෙලාව (Scenario 3)
 
-1. Attacker (`10.10.10.50`) කැමරාවේ Port 80 වෙත තත්පරයට packets 1,000 ක SYN flood එකක් එල්ල කරයි.
-2. කැමරාවේ Web buffer එක පිරී යාමට උත්සාහ කරයි.
-3. Zeek ලියයි: `conn_state: "S0"`, `orig_pkts` අතිවිශාල ලෙස වැඩිවේ, `resp_bytes: 0`.
-4. Adapter එක features 27 ක් හදයි: packet rate සහ flow frequency අතිශය ඉහළයි.
-5. Model v3.1.0 එක කියයි: `predicted_class = "DDoS_DoS"`, `confidence = 0.93`.
-6. Decision Engine (Rule D-055): Attacker source එක Router එකේ Rate-Limit ලැයිස්තුවට දමයි.
-7. **ප්‍රතිඵලය:** Flood එක පාලනය වන අතර කැමරාවේ NVR වීඩියෝව (Port 554) සහ Admin UI බිඳ නොවැටී සුරක්ෂිත වේ.
+1. Attacker (`10.10.10.50`) කැමරාවේ Port 80 වෙත තත්පරයට SYN packets 1,000 ක් තත්පර 20 ක් (මුළු 20,002) යවයි.
+2. සෑම packet එකකටම අලුත් source port එකක් ඇති බැවින් Zeek ට එක් එක් එක කෙටි connection එකක් ලෙස පෙනේ (flows දහස් ගණනක්).
+3. Zeek ලියයි: `10.10.10.50` → `192.168.50.30:80`, `orig_bytes: 0`, packet 1–2 බැගින්.
+4. Adapter එක features 27 ක් හදයි: `src_conn_60s` සහ `src_uport_60s` අතිශය ඉහළයි.
+5. Model v3.1.0 එක කියයි: `predicted_class = "DDoS_DoS"`, `confidence = 0.44` (11 Nov: 0.58).
+6. Decision Engine (Rule D-055): rate-limit සීමාව 0.30 ඉක්මවූ බැවින් attacker source එක `limit_src` (200 pkt/s) ලැයිස්තුවට මිනිත්තු 30 කට දමයි. *(12 Nov run එකේදී මුල් flows `CnC` (0.55) ලෙසද අනාවැකි වී, attacker `block_src` එකටද වැටුණි.)*
+7. **ප්‍රතිඵලය:** Flood එක පාලනය වේ; කැමරාවේ NVR stream එක (Port 554) සහ Admin web page එක දිගටම ක්‍රියාත්මකයි.
 
 ---
 
-### උදාහරණ D: C&C Botnet Beacons ප්‍රහාරයක් එල්ල වන වෙලාව (Scenario 4)
+### උදාහරණ D: C&C Beacons ප්‍රහාරයක් එල්ල වන වෙලාව (Scenario 4)
 
-1. ආසාදිත කැමරාව (`192.168.50.30`) පිටත ඇති C&C server එක (`10.10.10.50:6667`) වෙත සම්බන්ධ වීමට outbound botnet beacons යවයි.
-2. C&C server එක ආරම්භක තත්පර 120 තුළ වසා ඇති බැවින් එම සම්බන්ධතා ප්‍රතික්ෂේප වේ (Reject - `REJ`).
-3. Zeek ලියයි: `conn_state: "REJ"`, `id.resp_h: "10.10.10.50"`, `resp_p: 6667`.
-4. Adapter එක features 27 ක් හදයි: `pair_fail_1h = 7` (පැය තුළ අසාර්ථක උත්සාහ 7 කි).
-5. Model v3.1.0 එක කියයි: `predicted_class = "CnC"`, `confidence = 0.91`.
-6. Decision Engine: කැමරාව Local Subnet එකේ බැවින් ආරක්ෂිතයි, පිටත destination එක වන `10.10.10.50` block කිරීමට අනුමත කරයි.
-7. Router Adapter: SSH මඟින් router එකට ගොස් `10.10.10.50` Drop list එකට (`block_dst`) දමයි (30-min auto-expiry).
-8. **ප්‍රතිඵලය:** කැමරාවට පිටත C&C server එක හා සම්බන්ධ වීම අවහිර වේ. Dashboard එකේ රතු alert එක වැටේ. කැමරාවේ වීඩියෝව Local NVR එකට සාමාන්‍ය පරිදි ගලා යයි.
+1. ආසාදිත කැමරාව (`192.168.50.30`) පිටත ඇති C&C server එක (`10.10.10.50:6667`) වෙත තත්පර 5 කට වරක් සම්බන්ධ වීමට උත්සාහ කරයි.
+2. C&C server එක ආරම්භක තත්පර 120 තුළ වසා ඇති බැවින් එම උත්සාහයන් ප්‍රතික්ෂේප වේ (`REJ`).
+3. Zeek ලියයි: `conn_state: "REJ"`, `id.resp_h: "10.10.10.50"`, `id.resp_p: 6667`.
+4. Adapter එක features 27 ක් හදයි: `pair_fail_1h` (මෙම යුගලයේ අසාර්ථක උත්සාහ) වැඩි වේ, `pair_gap` නිතිපතා (~5 s).
+5. Model v3.1.0 එක කියයි: `predicted_class = "CnC"`, `confidence = 0.86–0.93` (ආරම්භයෙන් තත්පර ~21–24 කින්).
+6. Decision Engine: කැමරාව local network එකේ බැවින් ආරක්ෂිතයි; පිටත destination එක වන `10.10.10.50` block කිරීමට තීරණය කරයි (CnC ≥ 0.30, 60 s තුළ alerts 3).
+7. Router Adapter: SSH මඟින් router එකට ගොස් `10.10.10.50` `block_dst` set එකට දමයි (`timeout 30m`). ඉන්පසු කැමරාවේ උත්සාහයන් router එකේදී drop වේ (`S0`).
+8. **ප්‍රතිඵලය:** කැමරාවට පිටත C&C server එක හා සම්බන්ධ වීම අවහිර වේ. Live Alerts හි `CnC` alert එක `RESPONSE: BLOCKED` සමඟ වැටේ. කැමරාවේ stream එක Local NVR එකට සාමාන්‍ය පරිදි ගලා යයි.
 
 ---
 
-### උදාහරණ E: Malware Download ප්‍රහාරයක් එල්ල වන වෙලාව (Scenario 5)
+### උදාහරණ E: Executable Download එකක් සිදුවන වෙලාව (Scenario 5)
 
-1. ආසාදිත කැමරාව පිටත Attacker Web Server එකෙන් (`10.10.10.50/bins/lab_test.x86`) binary executable එකක් බාගත කරයි.
-2. Zeek HTTP Analyzer එක URI එක සහ MIME type එක (`application/x-executable`) කියවයි.
-3. Rule Engine: `RULE_EXECUTABLE_DOWNLOAD` නීතිය ක්‍රියාත්මක වේ. Model v3.1.0: `Malware_Download` class.
-4. Decision Engine: Table 10 Row 5 අනුව, කැමරාව block නොකර අධිකරණමය සාක්ෂි (Forensic Evidence) සටහන් කරයි.
-5. **ප්‍රතිඵලය:** Dashboard එකේ Forensic Alert එකක් සටහන් වේ. පරිපාලකයාට අවශ්‍ය නම් Manual Block කළ හැක.
+1. කැමරාව පිටත Attacker Web Server එකෙන් (`http://10.10.10.50/bins/lab_test.x86`) හානිකර නොවන test program එකක් (`true` හි පිටපතක්, bytes 43,432) download කරයි.
+2. Zeek `http.log` හි URI එක සහ `files.log` හි ගොනු වර්ගය (`application/x-sharedlib`) ලියයි.
+3. File-type නීතිය: `RULE_EXECUTABLE_DOWNLOAD` ක්‍රියාත්මක වී `Malware_Download` alert එකක් (confidence 1.00 - නීතියෙන්) සාදයි.
+4. Decision Engine: Table 10 Row 5 අනුව block නොකර සාක්ෂි (evidence) පමණක් සටහන් කරයි (`RESPONSE: NONE`).
+5. **ප්‍රතිඵලය:** Live Alerts හි `Malware_Download` alert එක සහ ගොනු සාක්ෂි. පරිපාලකයාට අවශ්‍ය නම් Manual Block කළ හැක.
 
 ---
 
@@ -2325,7 +2506,9 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
    - Pass: `lab_virtual/keys/dashboard_login.txt` හි ඇති password එක.
 2. **Dashboard Overview පිටුව පෙන්වන්න:**
 
-   > *"On the Overview page Sir, you can see live measured pipeline latency of 112 milliseconds, zero active blocks, and our benign traffic counter incrementing automatically as the camera streams video."*
+   > *"On the Overview page Sir, you can see the measured pipeline latency (about 0.1 to 0.2 seconds median), the active blocks, the model version v3.1.0, and the benign flow count growing as the lab traffic runs."*
+   >
+   > 💡 *(Demo එකට පෙර: backend එක මිනිත්තු 5 කට පෙර start කරන්න, `lab.py reset` run කරන්න, සහ NVR log පේළි ඇති බව බලන්න - NVR පළමු පේළිය ලියන්නේ lab එක ආරම්භ කර මිනිත්තු 5 කට පසුවයි.)*
    >
 3. **NVR එක වීඩියෝ record කරන බව පෙන්වන්න:**
 
@@ -2333,7 +2516,7 @@ SOC Dashboard එකේ වම්පස මෙනුවේ **"Devices & Scans"**
    docker logs ids-lab-nvr --tail 3
    ```
 
-   > *"In the terminal, you can verify that the NVR is actively receiving and recording 58.6 MB video chunks from the camera over RTSP port 554."*
+   > *"In the terminal, you can see that the NVR receives the camera stream on port 554 without a break: every 5-minute segment is 58.6 MB. The stream is simulated data, not real video."*
    >
 
 ---
@@ -2366,9 +2549,11 @@ docker exec -d ids-lab-camera python -u /lab/camera_sim.py bot --server 10.10.10
    >
 2. > *"Our Random Forest model v3.1.0 classifies the pattern as C&C with 91% confidence."*
    >
-3. > *"Notice Sir, without refreshing the browser, the WebSocket pushed the event to our screen! The Live Alerts page shows the red C&C incident badge."*
+3. > *"Notice Sir, without refreshing the browser, the WebSocket pushed the event to our screen. The Live Alerts page shows the CnC alert from the camera to 10.10.10.50:6667 with RESPONSE: BLOCKED."*
    >
-4. > *"If we switch to the Mitigations tab (http://localhost:5000/mitigations), you can see 10.10.10.50 has been placed on the blocklist with an active 30-minute auto-expiry timestamp."*
+4. > *"If we switch to the Mitigations tab (http://localhost:5000/mitigations), you can see 10.10.10.50 on the blocklist as a destination block, with the time it expires, 30 minutes after the block."*
+   >
+   *(Alert එක සාමාන්‍යයෙන් තත්පර 20–40 කින් පෙනේ. Block එක නොලැබුණොත්, 4.2.8 හි cleanup commands run කර, තත්පර 60 ක් රැඳී, විධාන දෙක නැවත run කරන්න.)*
    >
 
 ---
@@ -2397,10 +2582,12 @@ Supervisor විසින්: *"Can you show me a PortScan or a DDoS attack rig
 
 | ප්‍රහාරක වර්ගය (Attack Type) | Terminal එකේ ගසන Command එක (Direct Manual Execution) | ML Model & Firewall ප්‍රතිචාරය | Dashboard හි පෙනෙන ආකාරය |
 | :--- | :--- | :--- | :--- |
-| **1. PortScan (Scenario 2)** | `docker exec ids-lab-attacker nmap -p 80,554 192.168.50.30` | `PortScan` class ($P \ge 0.85$), Camera not blocked | Live Alerts හි තැඹිලි පාට Reconnaissance Badge |
-| **2. DDoS SYN Flood (Scenario 3)** | `docker exec ids-lab-attack-server python -u /lab/syn_flood.py 192.168.50.30 --port 80 --rate 1000 --seconds 20` | `DDoS_DoS` class, Router Rate-Limits Attacker (D-055), NVR Stream Survives | Live Alerts හි රතු පාට DDoS Badge, Rate-Limit Mitigations |
-| **3. C&C Botnet Beacons (Scenario 4)** | `docker exec -d ids-lab-attack-server python -u /lab/lab_server.py --role cnc --cnc-open-after 120`<br>`docker exec -d ids-lab-camera python -u /lab/camera_sim.py bot --server 10.10.10.50 --every 5 --session 30 --duration 90` | `CnC` class ($P = 0.91$), Router nftables drops `10.10.10.50` (`block_dst`) for 1800s | Live Alerts හි රතු පාට CnC Badge, Mitigations හි Auto-Expiry Countdown |
-| **4. Malware Download (Scenario 5)** | `docker exec ids-lab-camera python -u /lab/camera_sim.py download --url http://10.10.10.50/bins/lab_test.x86 --count 5 --every 20` | `Malware_Download` class, Executable Signature Alert, Forensic Evidence logged | Live Alerts හි කහ පාට Malware Payload Warning |
-| **5. Manual Block / Unblock (Scenario 6)** | Dashboard UI (`http://localhost:5000/mitigations`) හෝ REST API මඟින් Block/Unblock කිරීම | Router nftables `block_src` update වීම, System Audit log සටහන් වීම | Mitigations වගුව ක්ෂණිකව update වීම, Audit Trail සටහන |
+| **1. PortScan (Scenario 2)** | `docker exec ids-lab-attacker nmap -p 23,80,554 192.168.50.0/24` | `PortScan` alert (12 Nov: 0.88), `RESPONSE: CANDIDATE` (block සඳහා 60 s තුළ alerts 3 ක් අවශ්‍යයි), camera not blocked | Live Alerts හි amber `PortScan` alert |
+| **2. DDoS SYN Flood (Scenario 3)** | `docker exec ids-lab-attack-server python -u /lab/syn_flood.py 192.168.50.30 --port 80 --rate 1000 --seconds 20` | `DDoS_DoS` (12 Nov: 0.44) → `limit_src` rate-limit (D-055); සමහර runs වල `CnC` ලෙසද අනාවැකි වී `block_src` ද වේ; NVR stream continues | Live Alerts හි `DDoS_DoS` + `RESPONSE: RATE_LIMITED`; Mitigations හි `· RATE-LIMIT` |
+| **3. C&C Beacons (Scenario 4)** | `docker exec -d ids-lab-attack-server python -u /lab/lab_server.py --role cnc --cnc-open-after 120`<br>`docker exec -d ids-lab-camera python -u /lab/camera_sim.py bot --server 10.10.10.50 --every 5 --session 30 --duration 90` | `CnC` (12–13 Nov: 0.93, 0.86) → router `block_dst` `10.10.10.50` for 30 min (`timeout 30m`) | Live Alerts හි purple `CnC` + `RESPONSE: BLOCKED`; Mitigations හි EXPIRES AT වේලාව |
+| **4. Executable Download (Scenario 5)** | `docker exec ids-lab-camera python -u /lab/camera_sim.py download --url http://10.10.10.50/bins/lab_test.x86 --count 5 --every 20` | `RULE_EXECUTABLE_DOWNLOAD` → `Malware_Download` alert (1.00), evidence only, no block | Live Alerts හි pink `Malware_Download` + `RESPONSE: NONE` |
+| **5. Manual Block / Unblock (Scenario 6)** | Dashboard UI (`http://localhost:5000/mitigations`) හෝ REST API (4.3.5) මඟින් Block/Unblock කිරීම | Router `block_src` update වීම, audit log හි `MANUAL_BLOCK` / `MANUAL_UNBLOCK` | Mitigations වගුව ක්ෂණිකව update වීම; Logs & Export හි audit සටහන් |
+
+*(සෑම ප්‍රහාරයකටම පසු `.venv\Scripts\python.exe lab_virtual\lab.py reset` run කරන්න.)*
 
 *(සවිස්තරාත්මක විස්තර, Zeek logs පරීක්ෂා කිරීම්, සහ Kernel nftables තහවුරු කිරීම් සඳහා ඉහත **[Section 4.3](#43-විවිධ-ප්‍රහාර-වර්ග-අතින්-commands-ගසා-සජීවීව-පෙන්වීමේ-ප්‍රායෝගික-අත්පොත-hands-on-manual-attack-execution-ml-detection-firewall-response--dashboard-telemetry-playbook)** බලන්න).*

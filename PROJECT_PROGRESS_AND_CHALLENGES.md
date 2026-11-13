@@ -1360,6 +1360,40 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
   - The claims "proves H1 / FPR 0.00% / 100% complete" are not supported: H1 part 2 needs a real camera. 34-1 is not a clean test (D-054).
 - **Also seen:** the lab database had been emptied, and `conn.log` was cleared while Zeek was running. This left 8.4 MB of zero bytes at the start of the file. Restart the sensor container instead of clearing the file.
 
+**3.78 Full re-test of `A_TO_Z_SYSTEM_FLOW.md` from a cold start, and correction of the guide (12–13 November 2026)**
+
+- **What was done:**
+  - The virtual lab was stopped and removed (`lab.py ids-stop`, `down`), then started from the beginning (`up`, `ids-start`, `status`). It took about 90 s.
+  - Every PowerShell command of the guide was run in Windows PowerShell 5.1, in the order of the guide, and its real output was compared with the guide.
+  - Run twice: on 12 Nov 2026 (first check) and on 13 Nov 2026 (again after the corrections, from a new cold start).
+  - Then the guide was corrected section by section, with the real outputs. Full test suite after the changes: 313 passed.
+- **Results (virtual lab, 12–13 Nov 2026):**
+  - Camera, NVR (58.6 MB every 5 minutes, also during the attacks), admin page (5,478 bytes), Zeek (`ShADadfF`, 0 dropped packets), router table: all correct.
+  - Schema check: format PASS on 3,089 live flows; 15 of 27 features have a large distribution shift (RQ3: report it).
+  - Latency (Zeek line to dashboard): median about 113–180 ms, 95% about 280–635 ms (higher just after a start and after a flood). The real HTTP time inside the lab is 10–19 ms.
+  - Full subnet scan: PortScan alert 0.88, "candidate" (one alert; a block needs 3 in 60 s). A 2-port scan of one host: no alert.
+  - SYN flood: DDoS_DoS 0.44 (12 Nov) and 0.57 (13 Nov), `limit_src` rate-limit (D-055). On 12 Nov the first flood flows were also predicted CnC (0.55), so the attacker was also put in `block_src` (open issue 43); on 13 Nov only the rate-limit.
+  - C&C demo with the guide's commands (bot 90 s, server opens after 120 s, so every try is refused): CnC 0.93 (12 Nov) and 0.86 (13 Nov) after about 21–24 s, `block_dst` 10.10.10.50 for 30 min both times. The camera was never blocked.
+  - Download test: `RULE_EXECUTABLE_DOWNLOAD` alert (Zeek file type `application/x-sharedlib`), no block.
+  - Manual block / unblock / CSV export: 201 / 200 / 200, audit records `MANUAL_BLOCK` and `MANUAL_UNBLOCK`. Blocking the NVR is refused (403).
+  - Device scan: real Nmap through `ids-lab-scanner`, 27 s, 6 addresses, only the camera is a possible camera (4 pieces of evidence).
+  - Model checks of 4.2.12 and `evaluate.py` give the saved numbers (scores unchanged; only speed changes per run).
+  - About 6 hours of normal traffic (12 Nov 18:05 to 13 Nov 00:09 UTC): no alert for the camera, NVR or admin PC.
+- **Bugs found and fixed:**
+  - Dashboard: the class filter on the Logs & Export and Attack History pages sent `DDoS`, but the class is `DDoS_DoS`, so that filter always gave nothing. Fixed in `LogExport.js` and `AttackHistory.js`; dashboard rebuilt.
+- **Errors corrected in the guide (main ones):**
+  - Commands that failed in Windows PowerShell 5.1: `Start-Process -Environment`, `Get-Process ... CommandLine`, `ssh-keygen -N ""` (needs `'""'`), the model metadata command with `\"`, the audit address `/api/v1/audit/logs` (now `/api/logs?event=...`), the page `/audit` (now Logs & Export).
+  - Manual setup (method B): added the key permission step; the password is made by `ids-start`, not by `setup`.
+  - The 2-port scan as the PortScan demo (no alert) replaced by the subnet scan; the live Zeek check now waits 7 s and filters the admin PC line.
+  - Device scan section: the invented devices (vendors Cisco, Intel, Dell, Hikvision, Dahua; NVR as a camera) replaced by the real scan result; "Mark camera adds to the allowlist" removed.
+  - Thresholds (P ≥ 0.85 replaced by alert 0.30, CnC 0.30, PortScan 0.88, DDoS rate-limit 0.30), "camera is on the allowlist" (it is protected by `lab.local_networks`), class "Okiru", event name `alert_event`, `timeout 1800s` (the router uses `timeout 30m`), the "countdown" (the page shows EXPIRES AT), invented dashboard labels.
+  - Wrong numbers: the LR and HGB per-class scores (now from `evaluation_iot23.csv`; LR and HGB find C&C better than RF), "CalibratedClassifierCV" (the model uses raw RF probabilities), the missing feature `pair_conn_60s`, invented features `pair_flow_count_1m` and `pair_distinct_dst_ports_10m`, DDoS 0.93 (real 0.44–0.58), the NVR conn.log line (bytes the wrong way round).
+  - Claims without evidence removed: "proves H1", "FPR 0.00%", "zero packet drops", "100% complete", "unseen / zero leakage" for 34-1.
+  - Container count 10 → 11; table of contents fixed (4 broken links, 3 of them older).
+- **Files changed:** `A_TO_Z_SYSTEM_FLOW.md`, `my-app/src/pages/LogExport.js`, `my-app/src/pages/AttackHistory.js`, `PROJECT_PROGRESS_AND_CHALLENGES.md`.
+- **New open issue:** 52 (the camera can be blocked by hand).
+- **Commit:** none yet (waiting for the owner).
+
 **3.77 End-to-end presentation manual and live lab proof guide (11 November 2026)**
 
 - **What was done:** Created `A_TO_Z_SYSTEM_FLOW.md` as the comprehensive presentation and operational manual for team members and academic supervisors (Dr. A.A.M. Matheeh & Dr. Senaka Amarakeerthi).
@@ -1451,6 +1485,7 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 | 49 | On the WCD rows HistGradientBoosting has a higher out-of-fold macro-F1 than Random Forest (0.7391 vs 0.7097). | Report it (Step 15). Random Forest stays the main model (proposal 2.4, D-019). | Low |
 | 50 | Step 15 reports of v2.0.0 and v3.0.0 show typed-in Random Forest accuracy and recall numbers (D-056). | Fixed in the code; the old report copies are kept unchanged in `*/v2_26features/` and `*/v3_0_WC/`, with this note. Do not quote their RF accuracy or recall rows. | Low |
 | 51 | Hardware lab: everything is ready in `lab_hardware/` (D-054), but nothing has been run on real devices yet. | Build the lab (Step 5), then follow `lab_hardware/README.md` section 6. | High |
+| 52 | A manual block of the camera (192.168.50.30) is accepted: `lab.local_networks` protects only against automatic blocks, and the camera is not on the allowlist (found 13 Nov 2026, entry 3.78). While it was blocked, its failed cloud connections were predicted as CnC (0.57). | Decide with the supervisor: refuse manual blocks of confirmed cameras, or ask the admin to confirm. Until then, the guide warns not to block the camera in a demo. | Medium |
 
 ---
 
