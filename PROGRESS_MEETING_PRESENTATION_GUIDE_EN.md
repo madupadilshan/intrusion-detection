@@ -189,9 +189,15 @@ table inet ids {
 ```
 
 > 6. **📊 Output Breakdown (Explaining every returned metric/field)**
-- `set allow`: Hardcoded allowlist containing protected nodes (.1, .5, .10, .20) ensuring they are never blocked.
-- `set block_dst` and `set block_src`: Dynamic kernel sets with expiration timers (`flags timeout`), currently empty and ready to accept attack IPs.
-- `chain forward`: Kernel packet forwarding chain configured to prioritize allowlist elements and drop matching attack packets.
+- **`set allow` (Hardcoded Immutable Management Allowlist):** Contains the 4 critical infrastructure IP addresses permanently immune to blocking (`policy: ACCEPT`):
+  - **`192.168.50.1` (Core Router & Gateway - `ids-lab-router`):** Default gateway routing packets between LAN and WAN. Never blocked to prevent total network routing failure.
+  - **`192.168.50.5` (IDS Scanner - `ids-lab-scanner`):** Sensor management port running approved Nmap discovery scans (FR-05). Protected so its audit scans are never misidentified as malicious reconnaissance.
+  - **`192.168.50.10` (Admin Workstation - `ids-lab-admin`):** Security administrator's workstation used to manage the IDS dashboard and camera Web UI. Protected to prevent administrator lockout.
+  - **`192.168.50.20` (NVR Server - `ids-lab-nvr`):** Video recorder ingesting RTSP camera streams over port 554. Protected to guarantee zero surveillance recording disruption.
+  *(Note: The Camera at `192.168.50.30` is protected by the Local-Network Guardrail, ensuring only external destination IPs are dropped).*
+- **`set block_src` & `set block_dst`:** Dynamic kernel drop sets with auto-expiry timers (`flags timeout`), currently empty and ready to drop malicious source or destination IPs.
+- **`set limit_src`:** Dynamic kernel set with expiration timers for DDoS/DoS traffic rate-limiting (`flags timeout`).
+- **`chain forward`:** Kernel forwarding chain configured to prioritize allowlist elements (`ip saddr @allow accept`), drop blacklisted IPs (`block_src`/`block_dst`), and rate-limit floods (`limit rate over 200/second burst 5 packets drop`).
 
 ---
 

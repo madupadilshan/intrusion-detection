@@ -189,9 +189,15 @@ table inet ids {
 ```
 
 ##### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
-- `set allow`: Admin PC (`.10`) සහ NVR (`.20`) කිසිම දිනක block නොවීමට hardcoded allowlist එකක් පවතී.
-- `set block_dst` සහ `set block_src`: ප්‍රහාරක IP ලිපින වැටීමට dynamic timeout sets හිස්ව සූදානම්ව පවතී (`flags timeout`).
-- `chain forward`: Allowlist එකේ ඇති IP වලට ප්‍රමුඛතාවය දී, drop sets වල ඇති IP පැකට් kernel මට්ටමෙන්ම drop කරන බව පෙන්වයි.
+- **`set allow` (ආරක්ෂිත Management Allowlist එක):** කිසිදු හේතුවක් මත firewall මඟින් block නොවිය යුතු ප්‍රධාන යටිතල පහසුකම් IP 4 ක් මෙහි hardcode කර ඇත (`policy: ACCEPT`):
+  - **`192.168.50.1` (Core Router & Gateway - `ids-lab-router`):** LAN සහ WAN ජාල දෙක අතර සියලුම traffic forward කරන මූලික Router එක. මෙය block වුවහොත් ජාලයේ සියලුම සන්නිවේදනය ඇණහිටී.
+  - **`192.168.50.5` (IDS Scanner - `ids-lab-scanner`):** Dashboard එකෙන් subnet එක scan කර උපාංග හඳුනාගන්නා (FR-05) scanner container එක. Nmap scans යවන විට එය ප්‍රහාරයක් ලෙස වරදවා වටහාගෙන firewall එකෙන් block නොවීමට allowlist කර ඇත.
+  - **`192.168.50.10` (Admin PC - `ids-lab-admin`):** ආරක්ෂක පරිපාලකයා (Security Admin) පද්ධතිය පාලනය කරන සහ කැමරාවේ Web UI එකට log වන PC එක. පරිපාලකයා පද්ධතියෙන් lockout වීම වැළැක්වීමට මෙය block නොකරයි.
+  - **`192.168.50.20` (NVR Server - `ids-lab-nvr`):** කැමරාවෙන් RTSP Port 554 ඔස්සේ වීඩියෝ නොකඩවා පටිගත කරන රෙකෝඩරය. CCTV surveillance වීඩියෝ recording එක බිඳවැටීම වැළැක්වීමට මෙය ආරක්ෂා කර ඇත.
+  *(සැලකිය යුතුයි: කැමරාවේ IP එක වන `192.168.50.30` allowlist එකේ නැත. එය Local-Network Guardrail Policy එක මඟින් ආරක්ෂා වේ).*
+- **`set block_src` සහ `set block_dst`:** ප්‍රහාරක IP ලිපින වැටීමට dynamic timeout sets හිස්ව සූදානම්ව පවතී (`flags timeout`).
+- **`set limit_src`:** DDoS/DoS ප්‍රහාර සඳහා traffic rate-limit කිරීමට dynamic timeout set එකක් පවතී.
+- **`chain forward`:** Allowlist එකේ ඇති IP වලට ප්‍රමුඛතාවය දී (`accept`), drop sets වල ඇති IP පැකට් drop කර (`block_src`/`block_dst`), flood පැකට් rate-limit කරන බව (`limit rate over 200/second burst 5 packets drop`) පෙන්වයි.
 
 ---
 
