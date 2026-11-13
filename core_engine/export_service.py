@@ -144,7 +144,7 @@ def serialize_csv(records: List[Dict[str, Any]], fieldnames: List[str]) -> str:
             if isinstance(val, (dict, list)):
                 row[field] = json.dumps(val, ensure_ascii=False)
             elif isinstance(val, datetime):
-                row[field] = val.isoformat()
+                row[field] = (val.isoformat() + "Z") if val.tzinfo is None else val.isoformat()
             elif val is None:
                 row[field] = ""
             else:
@@ -159,7 +159,7 @@ def serialize_json(records: List[Dict[str, Any]]) -> str:
 
     def json_serializer(obj: Any) -> Any:
         if isinstance(obj, datetime):
-            return obj.isoformat()
+            return (obj.isoformat() + "Z") if obj.tzinfo is None else obj.isoformat()
         return str(obj)
 
     return json.dumps(records, default=json_serializer, indent=2, ensure_ascii=False)

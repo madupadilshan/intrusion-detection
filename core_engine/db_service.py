@@ -303,7 +303,7 @@ class DatabaseService:
         if format_dates:
             for k, v in list(out.items()):
                 if isinstance(v, datetime):
-                    out[k] = v.isoformat()
+                    out[k] = (v.isoformat() + "Z") if v.tzinfo is None else v.isoformat()
                 elif isinstance(v, list):
                     out[k] = [
                         DatabaseService._format_doc(item, format_dates=True)
@@ -1294,7 +1294,8 @@ class DatabaseService:
             if format_dates:
                 for item in history:
                     if isinstance(item.get("updated_at"), datetime):
-                        item["updated_at"] = item["updated_at"].isoformat()
+                        dt = item["updated_at"]
+                        item["updated_at"] = (dt.isoformat() + "Z") if dt.tzinfo is None else dt.isoformat()
             return history
         except PyMongoError as e:
             logger.error(f"Error fetching setting history for {key}: {e}")

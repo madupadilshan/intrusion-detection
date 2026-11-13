@@ -482,7 +482,7 @@ docker exec ids-lab-admin curl -s http://192.168.50.30/ | Select-String "Lab IP 
 ---
 
 #### [Test 2.2] Real DDoS TCP SYN Flood Attack (`nping` Raw Packet Blaster)
-💡 **Objective:** Launch a high-rate raw socket TCP SYN flood against camera port 80 using `nping` (the official Nmap packet generator). Prove the attack flags prove a textbook DDoS attack, Zeek captures the flood, the ML model classifies it as `DDoS_DoS` (100% confidence), a red alert pops up on the Dashboard, and the Router Firewall autonomously rate-limits the attacker IP.
+💡 **Objective:** Launch a high-rate raw socket TCP SYN flood against camera port 80 using `nping` (the official Nmap packet generator). Prove the attack flags prove a textbook DDoS attack, Zeek captures the flood, the ML model classifies it as `DDoS_DoS` (~43% - 45% confidence winning class), a red alert pops up on the Dashboard, and the Router Firewall autonomously rate-limits the attacker IP.
 
 ⚙️ **What Happens Under the Hood:**
 `nping` constructs raw TCP SYN packets with half-open connection flags, firing 1,000 packets per second for 5 seconds (5,000 total packets) from attacker (`10.10.10.50`) to Camera (`192.168.50.30:80`). Zeek logs state `RSTO`/`ShR` with massive packet density, prompting the Decision Engine to trigger `AUTO_DDOS_RATELIMIT`.
@@ -518,6 +518,7 @@ Nping done: 1 IP address pinged in 6.46 seconds
 1. **Live Alerts Page (`http://localhost:5000/alerts`):**
    - Within 1-2 seconds, **without refreshing the browser**, a bright red **`DDoS_DoS`** alert card appears live via WebSocket.
    - **Source:** `10.10.10.50` -> **Destination:** `192.168.50.30:80`
+   - **Confidence:** ~43.2% (Top winning class out of 5 multiclass categories, comfortably exceeding the 35% DDoS response policy threshold)
    - **Evidence Note:** `High-rate packet flood: directed at 192.168.50.30:80 (Reason: DOS_HIGH_RATE_PACKET_FLOOD)`.
    - **Response Status:** `rate_limited`
 2. **Router Firewall Rate Limit Proof:**

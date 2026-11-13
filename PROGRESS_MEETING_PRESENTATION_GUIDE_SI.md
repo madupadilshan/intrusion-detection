@@ -482,7 +482,7 @@ docker exec ids-lab-admin curl -s http://192.168.50.30/ | Select-String "Lab IP 
 ---
 
 #### [පරීක්ෂාව 2.2] සැබෑ DDoS SYN Flood ප්‍රහාරය (`nping` Raw Packet Blaster)
-💡 **අරමුණ:** ලොව පිළිගත් Nmap Packet Generator (`nping`) මඟින් කැමරාවේ Port 80 වෙත අධිවේගී Raw Socket TCP SYN Flood ප්‍රහාරයක් එල්ල කරන විට, Zeek එය හසුකරගෙන, Model එක 100% ක විශ්වාසයකින් 'DDoS_DoS' ලෙස වර්ගීකරණය කර, Dashboard එකට ක්ෂණික රතු Alert එකක් එවන බවත් Router එකෙන් rate-limit කරන බවත් පෙන්වීම.
+💡 **අරමුණ:** ලොව පිළිගත් Nmap Packet Generator (`nping`) මඟින් කැමරාවේ Port 80 වෙත අධිවේගී Raw Socket TCP SYN Flood ප්‍රහාරයක් එල්ල කරන විට, Zeek එය හසුකරගෙන, Model එක ජයග්‍රාහී පන්තිය ලෙස (~43% - 45% Calibrated Confidence) 'DDoS_DoS' වර්ගීකරණය කර, Dashboard එකට ක්ෂණික රතු Alert එකක් එවන බවත් Router එකෙන් rate-limit කරන බවත් පෙන්වීම.
 
 ⚙️ **පසුබිමින් සිදුවන දේ:**
 `nping` මඟින් raw TCP SYN packets තත්පරයකට 1,000 බැගින් තත්පර 5ක් තුළ මුළු packets 5,000ක් කැමරාවේ Port 80 වෙත විදිනු ලැබේ. Half-open connections සහ දැවැන්ත packet rate එක නිසා Zeek එක `conn_state: RSTO/ShR` සටහන් කරගන්නා අතර Decision Engine එකෙන් `AUTO_DDOS_RATELIMIT` ක්‍රියාත්මක වේ.
@@ -518,6 +518,7 @@ Nping done: 1 IP address pinged in 6.46 seconds
 1. **Live Alerts පිටුව (`http://localhost:5000/alerts`):**
    - තත්පර 1-2ක් ඇතුළත, Browser එක refresh නොකරම, රතු පැහැති **`DDoS_DoS`** Alert badge එකක් WebSocket හරහා තිරයට මතුවේ.
    - **Source:** `10.10.10.50` -> **Destination:** `192.168.50.30:80`
+   - **Confidence:** ~43.2% (පන්ති 5ක Multiclass ආකෘතියේ වැඩිම සම්භාවිතාව ලබාගෙන 35% Threshold එක ඉක්මවා යමින් ස්වයංක්‍රීයව Rate-Limit සක්‍රීය කරයි)
    - **Evidence Note:** `High-rate packet flood: directed at 192.168.50.30:80 (Reason: DOS_HIGH_RATE_PACKET_FLOOD)`.
    - **Response Status:** `rate_limited`
 2. **Router Firewall Rate Limit සාක්ෂිය:**
