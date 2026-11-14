@@ -500,6 +500,20 @@ class DecisionEngine:
         is_allowlisted = src_ip in self.allowlist
         p_class = detection.predicted_class
         confidence = detection.confidence
+        model_class = p_class  # the raw model class, kept for the audit record
+
+        # Direction-aware correction (proposal Table 5). C&C is defined as a LOCAL device beaconing
+        # to an OUTSIDE server. A flow coming INTO the local network from an outside host therefore
+        # cannot be a C&C beacon from our devices; an unanswered, low-volume inbound probe like this
+        # is reconnaissance. The model confuses the two because both are low-volume failed
+        # connections, so when it predicts "CnC" for an inbound (outside -> local) flow we relabel it
+        # "PortScan". Real C&C (local -> outside) and the trained model itself are unchanged.
+        if p_class == "CnC" and src_ip and dst_ip:
+            try:
+                if self.policy.is_local(dst_ip) and not self.policy.is_local(src_ip):
+                    p_class = "PortScan"
+            except Exception:
+                pass
 
         # Case 1: Benign Flow Handling (Proposal FR-03, Table 5)
         if p_class == "Benign":
@@ -628,6 +642,8 @@ class DecisionEngine:
                 "direction": direction,
                 "traffic_direction": direction,
                 "predicted_class": p_class,
+                "model_class": model_class,  # raw model class before the direction-aware correction
+                "direction_corrected": bool(model_class != p_class),
                 "confidence": confidence,
                 "probabilities": detection.probabilities,
                 "model_version": detection.model_version,

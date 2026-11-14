@@ -24,6 +24,10 @@ const CLASS_COLORS = {
   Unknown: "#6b7280",
 };
 
+// Fixed order so the bars keep their place on every live update (the backend's
+// class_distribution object key order is not stable, which made the bars jump).
+const ATTACK_CLASS_ORDER = ["DDoS_DoS", "PortScan", "CnC", "Malware_Download"];
+
 const Overview = () => {
   const [summary, setSummary] = useState({
     metrics: {},
@@ -92,10 +96,17 @@ const Overview = () => {
     };
   }, []);
 
-  // Format class distribution data for chart
-  const classData = Object.entries(summary.class_distribution || {}).map(([key, val]) => ({
+  // Format class distribution data for chart.
+  // Build from a fixed class order (0 for any class not seen yet), and add any
+  // extra class the backend might send, sorted by name, so the bar order never
+  // changes between live updates — only the heights change.
+  const dist = summary.class_distribution || {};
+  const extraClasses = Object.keys(dist)
+    .filter((k) => !ATTACK_CLASS_ORDER.includes(k))
+    .sort();
+  const classData = [...ATTACK_CLASS_ORDER, ...extraClasses].map((key) => ({
     name: key,
-    count: val,
+    count: dist[key] || 0,
     color: CLASS_COLORS[key] || CLASS_COLORS.Unknown,
   }));
 
@@ -208,9 +219,9 @@ const Overview = () => {
                         fontSize: "12px",
                       }}
                     />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                      {classData.map((entry, idx) => (
-                        <Cell key={`cell-${idx}`} fill={entry.color} />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+                      {classData.map((entry) => (
+                        <Cell key={`cell-${entry.name}`} fill={entry.color} />
                       ))}
                     </Bar>
                   </BarChart>

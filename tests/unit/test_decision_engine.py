@@ -312,3 +312,29 @@ def test_process_flows_batch(decision_engine, mock_db):
     assert outcomes[0].action == "BENIGN_SUMMARY"
     assert outcomes[1].action == "ALERT_ONLY"
     assert outcomes[2].action == "ACTIVE_BLOCK_CANDIDATE"
+
+
+def _cnc_detection(src, dst):
+    return DetectionResult(
+        predicted_class="CnC",
+        confidence=0.62,
+        probabilities={"CnC": 0.62, "Benign": 0.35, "PortScan": 0.02, "DDoS_DoS": 0.005, "Malware_Download": 0.005},
+        raw_flow={"id.orig_h": src, "id.orig_p": 40000, "id.resp_h": dst, "id.resp_p": 554,
+                  "proto": "tcp", "conn_state": "S0", "orig_pkts": 1, "resp_pkts": 0,
+                  "observed_epoch": time.time()},
+    )
+
+
+def test_inbound_cnc_is_relabelled_portscan(decision_engine):
+    """Direction-aware rule (Table 5): a CnC prediction on an INBOUND flow (outside -> local) is a
+    scan probe, not a C&C beacon, so it is shown as PortScan. The raw model class is kept for audit."""
+    import ipaddress
+    decision_engine.policy.local_networks = [ipaddress.ip_network("192.168.50.0/24")]
+
+    # inbound: outside attacker -> local camera
+    outcome = decision_engine.evaluate_detection(_cnc_detection("10.10.10.50", "192.168.50.30"))
+    assert outcome.predicted_class == "PortScan"
+
+    # outbound: local camera -> outside C&C server stays CnC (real C&C unchanged)
+    outcome2 = decision_engine.evaluate_detection(_cnc_detection("192.168.50.30", "10.10.10.50"))
+    assert outcome2.predicted_class == "CnC"

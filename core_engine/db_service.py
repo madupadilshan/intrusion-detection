@@ -550,6 +550,8 @@ class DatabaseService:
             "proto": str(event_data.get("proto") or "unknown").lower(),
             "service": str(event_data.get("service") or "-"),
             "predicted_class": clean_class,
+            "model_class": str(event_data.get("model_class") or clean_class),
+            "direction_corrected": bool(event_data.get("direction_corrected", False)),
             "confidence": confidence_val,
             "probabilities": event_data.get("probabilities") or {},
             "model_version": str(event_data.get("model_version") or "unknown"),

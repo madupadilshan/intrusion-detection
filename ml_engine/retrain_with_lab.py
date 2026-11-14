@@ -69,6 +69,7 @@ def main() -> None:
     ap.add_argument("--heldout", type=Path, default=PROJECT_ROOT / "data" / "processed" / "heldout" / "held_out_test.parquet")
     ap.add_argument("--weight-lab-download", type=float, default=100.0)
     ap.add_argument("--weight-lab-benign", type=float, default=20.0)
+    ap.add_argument("--weight-lab-portscan", type=float, default=40.0)
     ap.add_argument("--out", type=Path, default=MODELS / "ids_bundle_v3_2.joblib")
     ap.add_argument("--version", default="v3.2.0")
     args = ap.parse_args()
@@ -79,9 +80,12 @@ def main() -> None:
     lab = pd.concat([pd.read_parquet(p) for p in args.lab_rows], ignore_index=True)
     X = pd.concat([train[FEATURE_COLUMNS], lab[FEATURE_COLUMNS]], ignore_index=True)
     y = np.concatenate([train["label_idx"].to_numpy(), lab["label_idx"].to_numpy()]).astype(int)
+    # per-class weight for the lab rows (label_idx -> weight); other classes default to benign weight
+    lab_weight = {4: args.weight_lab_download, 0: args.weight_lab_benign, 2: args.weight_lab_portscan}
+    lab_idx = lab["label_idx"].to_numpy()
     w = np.concatenate([
         np.ones(len(train)),
-        np.where(lab["label_idx"].to_numpy() == 4, args.weight_lab_download, args.weight_lab_benign),
+        np.array([lab_weight.get(int(i), args.weight_lab_benign) for i in lab_idx], dtype=float),
     ])
     lab_counts = lab["class_name"].value_counts().to_dict()
     print(f"training rows: IoT-23 {len(train):,} (variant {variant}) + lab {len(lab):,} {lab_counts}", flush=True)

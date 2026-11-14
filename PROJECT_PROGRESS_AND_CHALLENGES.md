@@ -1445,6 +1445,13 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 - **Still not updated:** the Sinhala guide `PROGRESS_MEETING_PRESENTATION_GUIDE_SI.md`.
 - **Files changed:** `sensor/local.zeek`, `core_engine/db_service.py`, `tests/unit/test_zeek_config.py`, `tests/integration/test_db_service.py`, `docs/decision_log.md` (D-058), `PROGRESS_MEETING_PRESENTATION_GUIDE_EN.md`, `PROJECT_PROGRESS_AND_CHALLENGES.md`.
 
+**3.81 Overview chart bars jumped on every update (13 November 2026)**
+
+- **Problem (found during a live demo):** on the Overview page, the "ATTACK CLASS DISTRIBUTION" bars kept moving/reordering on every live update.
+- **Cause:** `my-app/src/pages/Overview.js` built the chart from `Object.entries(summary.class_distribution)`. That object's key order (from the MongoDB aggregation) is not stable, so each `summary_update` push (about every 5 s) could return the classes in a different order, and the bars swapped places. The bars also re-animated from zero on every push.
+- **Fix:** render the chart from a **fixed class order** (`DDoS_DoS, PortScan, CnC, Malware_Download`, with 0 for any class not seen yet, and any extra class appended in name order), keyed the `Cell` by class name, and set `isAnimationActive={false}`. Now only the bar heights change; the positions stay put. Rebuilt `my-app/build`; the backend serves it on port 5000 (hard-refresh the browser to load the new bundle).
+- **Files changed:** `my-app/src/pages/Overview.js`, rebuilt `my-app/build/` (not tracked in Git), `PROJECT_PROGRESS_AND_CHALLENGES.md`.
+
 ---
 
 ## 4. Challenges and how they were solved
