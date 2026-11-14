@@ -50,7 +50,7 @@ HEADER_AND_TOC = """# Progress Meeting Presentation Guide & Requirements Verific
    - [Target 6: Usability & Administrative Audit Compliance](#target-6-usability--administrative-audit-compliance)
 4. [Part 3: Research Objectives (Objectives O1 to O6 - Table 3)](#4-part-3-research-objectives-objectives-o1-to-o6)
 5. [Part 4: Hypothesis and Research Questions (Hypothesis H1 & RQ1 to RQ5)](#5-part-4-hypothesis-and-research-questions-hypothesis-h1--rq1-to-rq5)
-6. [Part 5: Automated Test Suite (315 Tests Passed)](#6-part-5-automated-test-suite)
+6. [Part 5: Automated Test Suite (318 Tests Passed)](#6-part-5-automated-test-suite)
 7. [Part 6: Live Manual Attack Playbook](#7-part-6-live-manual-attack-playbook)
 
 ---

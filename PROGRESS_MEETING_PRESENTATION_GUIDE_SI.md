@@ -47,7 +47,7 @@
    - [Target 6: Usability & Administrative Audit Compliance](#target-6-usability--administrative-audit-compliance)
 4. [කොටස 3: පර්යේෂණ අරමුණු සනාථ කිරීම (Objectives O1 to O6 - Table 3)](#4-කොටස-3-පර්යේෂණ-අරමුණු-සනාථ-කිරීම-objectives-o1-to-o6)
 5. [කොටස 4: උපකල්පනය සහ පර්යේෂණ ගැටලු (Hypothesis H1 & RQ1 to RQ5)](#5-කොටස-4-උපකල්පනය-සහ-පර්යේෂණ-ගැටලු-hypothesis-h1--rq1-to-rq5)
-6. [කොටස 5: ස්වයංක්‍රීය පරීක්ෂණ කට්ටලය (Automated Test Suite - 315 Tests Passed)](#6-කොටස-5-ස්වයංක්‍රීය-පරීක්ෂණ-කට්ටලය-automated-test-suite)
+6. [කොටස 5: ස්වයංක්‍රීය පරීක්ෂණ කට්ටලය (Automated Test Suite - 318 Tests Passed)](#6-කොටස-5-ස්වයංක්‍රීය-පරීක්ෂණ-කට්ටලය-automated-test-suite)
 7. [කොටස 6: අතිරේක සජීවී ප්‍රහාර ප්‍රදර්ශනය (Live Manual Attack Playbook)](#7-කොටස-6-අතිරේක-සජීවී-ප්‍රහාර-ප්‍රදර්ශනය-live-manual-attack-playbook)
 
 ---
@@ -1841,15 +1841,15 @@ Supervisor ඉදිරියේ **[`docs/requirements_checklist.md`](docs/requi
 
 ---
 
-# 6. කොටස 5: ස්වයංක්‍රීය පරීක්ෂණ කට්ටලය (Automated Test Suite)
+# 6. කොටස 5: ස්වයංක්‍රීය පරීක්ෂණ කට්ටලය (Automated Test Suite - 318 Tests Passed)
 
-Supervisor හට පද්ධතියේ Unit සහ Integration Tests පරීක්ෂා කිරීමට අවශ්‍ය නම්, පහත විධානය ධාවනය කර පද්ධතියේ **පරීක්ෂණ 315 ම සාර්ථකව Pass වන බව (All 315 Tests Passed)** පෙන්වන්න:
+Supervisor හට පද්ධතියේ Unit සහ Integration Tests පරීක්ෂා කිරීමට අවශ්‍ය නම්, පහත විධානය ධාවනය කර පද්ධතියේ **පරීක්ෂණ 318 ම සාර්ථකව Pass වන බව (All 318 Tests Passed)** පෙන්වන්න:
 
 #### 💡 ඇයි මේ දේ කරන්නෙ? (Why We Are Doing This):
 පද්ධතියේ සෑම කොටසක්ම (Zeek log parser, feature extraction, ML classification bundle, decision engine, router firewall adapter, JWT authentication, සහ WebSockets) කිසිදු code regression එකකින් තොරව 100% ක් නිවැරදිව වැඩ කරන බව මෘදුකාංග ඉංජිනේරු විද්‍යාත්මකව (Software Engineering Rigor) ඔප්පු කිරීමටය.
 
 #### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
-Python `pytest` framework එක මඟින් `tests/` බහලුමේ ඇති test files 24 ක් සොයාගෙන, test cases 315 ම එකින් එක run කර assertions තහවුරු කරයි.
+Python `pytest` framework එක මඟින් `tests/` බහලුමේ ඇති test files 24 ක් සොයාගෙන, test cases 318 ම එකින් එක run කර assertions තහවුරු කරයි.
 
 #### 💻 ධාවනය කරන Command එක (Terminal):
 
@@ -1866,20 +1866,24 @@ Python `pytest` framework එක මඟින් `tests/` බහලුමේ ඇ
 #### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 
 ```text
-........................................................................ [ 23%]
-........................................................................ [ 46%]
-........................................................................ [ 69%]
-........................................................................ [ 92%]
-.........................                                                [100%]
-315 passed, 6 warnings in 103.28s
+........................................................................ [ 22%]
+........................................................................ [ 45%]
+........................................................................ [ 67%]
+........................................................................ [ 90%]
+..............................                                           [100%]
+============================== warnings summary ===============================
+tests/integration/test_app_api.py::test_blocklist_enforcement_and_allowlist_protection
+  ...
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+318 passed, 6 warnings in 158.08s (0:02:38)
 ```
 
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
-- `315 passed`: Unit tests, Integration tests, Router tests, Model tests, සහ API tests 315 න් 315 ම කිසිදු failure එකක් නොමැතිව 100% ක් සාර්ථක විය.
-- `in 103.28s`: සම්පූර්ණ පරීක්ෂණ කට්ටලයම විනාඩි 1.5 කදී සම්පූර්ණ විය.
+- `318 passed`: Unit tests, Integration tests, Router tests, Model tests, සහ API tests 318 න් 318 ම කිසිදු failure එකක් නොමැතිව 100% ක් සාර්ථක විය.
+- `in 158.08s`: සම්පූර්ණ පරීක්ෂණ කට්ටලයම සාර්ථකව අවසන් විය.
 
 #### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, every component of our system—including the Zeek parser, feature extractor, ML inference bundle, decision engine, Linux nftables adapter, and authenticated WebSocket API—is backed by a comprehensive automated test suite of 315 unit and integration tests, all currently passing with 100% test integrity."*
+> *"Sir, every component of our system—including the Zeek parser, feature extractor, ML inference bundle, decision engine, Linux nftables adapter, and authenticated WebSocket API—is backed by a comprehensive automated test suite of 318 unit and integration tests, all currently passing with 100% test integrity."*
 
 ---
 

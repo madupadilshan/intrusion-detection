@@ -338,3 +338,69 @@ def test_inbound_cnc_is_relabelled_portscan(decision_engine):
     # outbound: local camera -> outside C&C server stays CnC (real C&C unchanged)
     outcome2 = decision_engine.evaluate_detection(_cnc_detection("192.168.50.30", "10.10.10.50"))
     assert outcome2.predicted_class == "CnC"
+
+
+def _scan_detection(src, dst, confidence, udst=0.0, uport=0.0, nconn=1.0):
+    """An inbound low-confidence flow the model calls CnC (relabelled PortScan by direction),
+    carrying the 60 s window fan-out features a scan produces."""
+    return DetectionResult(
+        predicted_class="CnC",
+        confidence=confidence,
+        probabilities={"CnC": confidence, "Benign": 1 - confidence, "PortScan": 0.0,
+                       "DDoS_DoS": 0.0, "Malware_Download": 0.0},
+        raw_flow={"id.orig_h": src, "id.orig_p": 40000, "id.resp_h": dst, "id.resp_p": 23,
+                  "proto": "tcp", "conn_state": "S0", "orig_pkts": 1, "resp_pkts": 0,
+                  "observed_epoch": time.time()},
+        features={"conn_state": "S0", "resp_pkts": 0, "duration": 0.001,
+                  "src_udst_60s": udst, "src_uport_60s": uport, "src_conn_60s": nconn},
+    )
+
+
+def test_fanout_portscan_blocks_despite_low_confidence(decision_engine, mock_db):
+    """Behaviour-based scan block: a low-confidence (0.42) inbound scan that fans out to many
+    hosts in 60 s becomes a block candidate even though the model confidence is far below the
+    PortScan block threshold. The lab nmap sweep (Challenges 38, 46) is caught this way."""
+    import ipaddress
+    decision_engine.policy.local_networks = [ipaddress.ip_network("192.168.50.0/24")]
+
+    outcome = decision_engine.evaluate_detection(
+        _scan_detection("10.10.10.50", "192.168.50.30", confidence=0.42, udst=40, uport=3, nconn=40)
+    )
+    assert outcome.predicted_class == "PortScan"
+    assert outcome.scan_confirmed is True
+    assert outcome.action == "ACTIVE_BLOCK_CANDIDATE"
+    assert outcome.response_status == "candidate"
+    event_arg = mock_db.record_attack_event.call_args[0][0]
+    assert event_arg["scan_confirmed"] is True
+    assert "fan-out confirmed" in outcome.evidence_note
+
+
+def test_low_confidence_portscan_without_fanout_stays_alert(decision_engine):
+    """Safety: the same low confidence with NO fan-out (one host, one port) must NOT auto-block;
+    it only alerts. This keeps a single stray probe from ever blocking on its own."""
+    import ipaddress
+    decision_engine.policy.local_networks = [ipaddress.ip_network("192.168.50.0/24")]
+
+    outcome = decision_engine.evaluate_detection(
+        _scan_detection("10.10.10.50", "192.168.50.30", confidence=0.42, udst=1, uport=1, nconn=1)
+    )
+    assert outcome.predicted_class == "PortScan"
+    assert outcome.scan_confirmed is False
+    assert outcome.action == "ALERT_ONLY"
+    assert outcome.response_status == "none"
+
+
+def test_policy_confidence_check_bypassed_only_for_confirmed_scan(decision_engine):
+    """ResponsePolicy Safety Check 2: a confirmed PortScan is exempt from the confidence floor;
+    an unconfirmed one at the same confidence is still rejected as low-confidence."""
+    from core_engine.response_policy import REASON_SKIP_LOW_CONF
+    decision_engine.policy.auto_response = True  # reach Safety Check 2 (master switch is Check 1)
+    base = {
+        "predicted_class": "PortScan", "confidence": 0.42,
+        "src_ip": "10.10.10.50", "dst_ip": "192.168.50.30", "traffic_direction": "inbound",
+    }
+    rejected = decision_engine.policy.evaluate({**base, "scan_confirmed": False})
+    assert rejected.reason_code == REASON_SKIP_LOW_CONF
+
+    passed = decision_engine.policy.evaluate({**base, "scan_confirmed": True})
+    assert passed.reason_code != REASON_SKIP_LOW_CONF

@@ -1467,6 +1467,17 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 
 ---
 
+**3.83 Port scans now auto-block by behaviour (fan-out), not only by model confidence (14 November 2026)**
+
+- **Problem (found during a live demo):** an `nmap` sweep from the outside attacker (`10.10.10.50` → `192.168.50.0/24`) was shown on the dashboard as **PortScan** (correct, after the direction rule) but the response stayed **RESPONSE: NONE**. The model's confidence on these flows was only **40–42%**, far below the PortScan block threshold of **0.88**, so neither the decision engine nor the response policy made it a block candidate. Root cause is Challenges 38 & 46: the lab's short `nmap` sweep does not look like the IoT-23 Mirai scans the model learnt, so per-flow confidence is low.
+- **Why not just lower the 0.88 threshold:** that would make the whole PortScan class trigger on any single low-confidence flow and weakens the H1 safety story (held-out metrics and the Step-17 thresholds would no longer mean what the model card says). So the model and its thresholds are left untouched.
+- **Fix (behaviour-based scan detection, the classic method — like Zeek's own scan detector):** the decision engine now confirms a port scan from **fan-out** in the 60 s window features it already computes — one non-allowlisted source touching **≥ 6 distinct hosts** (`src_udst_60s`, a subnet sweep) **or ≥ 3 distinct ports** (`src_uport_60s`, a multi-port host scan like `-p 23,80,554`). A confirmed scan becomes a block candidate regardless of model confidence; the response policy exempts a confirmed scan from the confidence check **only**, and still applies every other safety check (master switch, allowlist, local-network protection, ≥ 3 repeats in 60 s, bounded expiry). Because the block target for a scan is the **source**, and every lab device is on the allowlist, a confirmed scan can only ever block an outside scanner — the camera/NVR/admin are never at risk. Thresholds are configurable in settings (`response.scan_behaviour_block`, `scan_block_min_dsts`, `scan_block_min_ports`).
+- **Also fixed:** the evidence note on a relabelled card read "Persistent command-and-control beacon" because `generate_evidence_note` used the raw model class; it now takes the corrected class, so a PortScan card reads "Unanswered TCP probe sweep…". The raw model class is still kept in the audit record (`model_class`, `direction_corrected`), and a confirmed scan also records `scan_confirmed` and the fan-out counts.
+- **Verification:** new unit tests — a low-confidence (0.42) inbound scan **with** fan-out becomes a block candidate with `scan_confirmed=True`; the same confidence **without** fan-out stays alert-only; and the policy's confidence check is bypassed **only** for a confirmed scan. Full suite **318 passed**. Backend-only change (restart the IDS to load it; no dashboard rebuild needed).
+- **Files changed:** `core_engine/decision_engine.py`, `core_engine/response_policy.py`, `tests/unit/test_decision_engine.py`, `PROJECT_PROGRESS_AND_CHALLENGES.md`.
+
+---
+
 ## 4. Challenges and how they were solved
 
 | #  | Challenge                                         | Cause                                                                                                         | Effect                                                     | Solution                                                                                                         | Status   |

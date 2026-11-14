@@ -47,7 +47,7 @@
    - [Target 6: Usability & Administrative Audit Compliance](#target-6-usability--administrative-audit-compliance)
 4. [Part 3: Research Objectives (Objectives O1 to O6 - Table 3)](#4-part-3-research-objectives-objectives-o1-to-o6)
 5. [Part 4: Hypothesis and Research Questions (Hypothesis H1 & RQ1 to RQ5)](#5-part-4-hypothesis-and-research-questions-hypothesis-h1--rq1-to-rq5)
-6. [Part 5: Automated Test Suite (315 Tests Passed)](#6-part-5-automated-test-suite)
+6. [Part 5: Automated Test Suite (318 Tests Passed)](#6-part-5-automated-test-suite)
 7. [Part 6: Live Manual Attack Playbook](#7-part-6-live-manual-attack-playbook)
 
 ---
@@ -1734,15 +1734,15 @@ Provide scientific answers to the research questions defined in Section 4 of **[
 
 ---
 
-# 6. Part 5: Automated Test Suite (315 Tests Passed)
+# 6. Part 5: Automated Test Suite (318 Tests Passed)
 
-If the supervisor requests inspection of unit and integration test coverage, run the following command to demonstrate that **all 315 automated tests pass cleanly**:
+If the supervisor requests inspection of unit and integration test coverage, run the following command to demonstrate that **all 318 automated tests pass cleanly**:
 
 #### 💡 Why We Are Doing This:
 To scientifically prove software engineering rigor: every system component (Zeek log parser, feature extraction, ML classification bundle, decision engine, router firewall adapter, JWT authentication, and WebSockets) operates with 100% test integrity and zero code regressions.
 
 #### ⚙️ What Happens Under the Hood:
-The Python `pytest` framework scans 24 test suites in `tests/`, executes all 315 test cases sequentially, and verifies assertions.
+The Python `pytest` framework scans 24 test suites in `tests/`, executes all 318 test cases sequentially, and verifies assertions.
 
 #### 💻 Direct Raw Command (Terminal):
 
@@ -1759,20 +1759,24 @@ The Python `pytest` framework scans 24 test suites in `tests/`, executes all 315
 #### 📋 Verified Output:
 
 ```text
-........................................................................ [ 23%]
-........................................................................ [ 46%]
-........................................................................ [ 69%]
-........................................................................ [ 92%]
-.........................                                                [100%]
-315 passed, 6 warnings in 103.28s
+........................................................................ [ 22%]
+........................................................................ [ 45%]
+........................................................................ [ 67%]
+........................................................................ [ 90%]
+..............................                                           [100%]
+============================== warnings summary ===============================
+tests/integration/test_app_api.py::test_blocklist_enforcement_and_allowlist_protection
+  ...
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+318 passed, 6 warnings in 158.08s (0:02:38)
 ```
 
 #### 📊 Output Breakdown:
-- `315 passed`: All 315 unit, integration, router, model, and API tests passed with zero failures.
-- `in 103.28s`: Full test suite completed in approximately 1.5 minutes.
+- `318 passed`: All 318 unit, integration, router, model, and API tests passed with zero failures.
+- `in 158.08s`: Full test suite completed cleanly.
 
 #### 🗣️ Spoken English Script:
-> *"Sir, every component of our system—including the Zeek parser, feature extractor, ML inference bundle, decision engine, Linux nftables adapter, and authenticated WebSocket API—is backed by a comprehensive automated test suite of 315 unit and integration tests, all currently passing with 100% test integrity."*
+> *"Sir, every component of our system—including the Zeek parser, feature extractor, ML inference bundle, decision engine, Linux nftables adapter, and authenticated WebSocket API—is backed by a comprehensive automated test suite of 318 unit and integration tests, all currently passing with 100% test integrity."*
 
 ---
 

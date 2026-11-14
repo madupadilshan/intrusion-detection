@@ -108,6 +108,7 @@ class DecisionOutcome:
     conn_state: str = "-"
     traffic_direction: str = "inbound"
     is_allowlisted: bool = False
+    scan_confirmed: bool = False  # behaviour-based port-scan confirmation (fan-out), see evaluate_detection
     evidence_note: str = ""
     reason_code: str = "NONE"
     # none | allowlist_protected | candidate | blocked | rate_limited | already_blocked | failed
@@ -177,6 +178,20 @@ class DecisionEngine:
         # D-055: a class with no block threshold but a rate-limit threshold (DDoS_DoS) is
         # rate-limited instead of blocked, unless settings response.ddos_rate_limit is false.
         self.rate_limit_enabled: bool = bool(response_cfg.get("ddos_rate_limit", True))
+        # Behaviour-based port-scan block (classic fan-out detection, independent of the model's
+        # per-flow confidence). A single source touching many distinct destinations or ports in the
+        # 60 s window is reconnaissance by definition; benign IoT devices talk to a few known hosts
+        # only. This lets the system block lab scans whose model confidence is low because nmap
+        # sweeps differ from the IoT-23 Mirai scans the model learnt (Challenges 38, 46). It targets
+        # the scanning source and is still gated by every response-policy safety check (allowlist,
+        # local-network protection, repeats, master switch).
+        self.scan_block_enabled: bool = bool(response_cfg.get("scan_behaviour_block", True))
+        # >= 6 distinct hosts catches a subnet sweep; >= 3 distinct ports catches a multi-port host
+        # scan (e.g. nmap -sS -p 23,80,554). Benign IoT devices stay well under both, and every lab
+        # device is allowlisted as a source anyway, so a confirmed scan only ever blocks an outside
+        # scanner. The response policy's repeat check (>= 3 probes in 60 s) still applies on top.
+        self.scan_block_min_dsts: int = int(response_cfg.get("scan_block_min_dsts", 6))
+        self.scan_block_min_ports: int = int(response_cfg.get("scan_block_min_ports", 3))
         self.rate_limit_classes: set = set()
         min_conf_map: Dict[str, float] = {}
         for cls_name, cls_cfg in self.thresholds.items():
@@ -391,19 +406,22 @@ class DecisionEngine:
             predicted_class, {}
         ).get("reason_code", "GENERIC_ANOMALY")
 
-    def generate_evidence_note(self, detection: DetectionResult) -> str:
+    def generate_evidence_note(self, detection: DetectionResult, override_class: Optional[str] = None) -> str:
         """
         Synthesize human-readable technical evidence note (FR-02) from flow metrics.
 
         Args:
             detection: `DetectionResult` containing predicted class and extracted features.
+            override_class: the class to describe when it differs from the raw model class
+                (e.g. an inbound "CnC" flow relabelled "PortScan" by the direction rule), so the
+                note text matches the class shown on the dashboard.
 
         Returns:
             Formatted evidence note string.
         """
         feats = detection.features or {}
         raw = detection.raw_flow or {}
-        p_class = detection.predicted_class
+        p_class = override_class or detection.predicted_class
         conf_pct = detection.confidence * 100
 
         dst_ip = raw.get("id.resp_h") or raw.get("id_resp_h") or raw.get("dst_ip", "target")
@@ -515,6 +533,28 @@ class DecisionEngine:
             except Exception:
                 pass
 
+        # Behaviour-based port-scan confirmation (fan-out). Independent of the model's per-flow
+        # confidence: one non-allowlisted source touching many distinct destinations or ports in the
+        # 60 s window is a scan. This confirmation lets a low-confidence PortScan flow become a block
+        # candidate; the response policy still applies every safety check before acting.
+        scan_confirmed = False
+        scan_counts: Dict[str, float] = {}
+        if p_class == "PortScan" and self.scan_block_enabled and not is_allowlisted:
+            feats = detection.features or {}
+
+            def _fval(key: str) -> float:
+                try:
+                    return float(feats.get(key, 0) or 0)
+                except (TypeError, ValueError):
+                    return 0.0
+
+            udst = _fval("src_udst_60s")
+            uport = _fval("src_uport_60s")
+            nconn = _fval("src_conn_60s")
+            scan_counts = {"src_udst_60s": udst, "src_uport_60s": uport, "src_conn_60s": nconn}
+            if udst >= self.scan_block_min_dsts or uport >= self.scan_block_min_ports:
+                scan_confirmed = True
+
         # Case 1: Benign Flow Handling (Proposal FR-03, Table 5)
         if p_class == "Benign":
             evidence_note = self.generate_evidence_note(detection)
@@ -603,10 +643,19 @@ class DecisionEngine:
         block_threshold = float(block_raw) if block_raw is not None else float("inf")
         reason_code = self._get_reason_code(p_class)
         severity = self._classify_severity(p_class, confidence)
-        evidence_note = self.generate_evidence_note(detection)
+        evidence_note = self.generate_evidence_note(detection, override_class=p_class)
+        if scan_confirmed:
+            severity = "high"
+            evidence_note = (
+                f"{evidence_note} Port-scan fan-out confirmed from this source in the last 60 s: "
+                f"{int(scan_counts.get('src_udst_60s', 0))} distinct hosts, "
+                f"{int(scan_counts.get('src_uport_60s', 0))} distinct ports, "
+                f"{int(scan_counts.get('src_conn_60s', 0))} probes "
+                f"(thresholds: {self.scan_block_min_dsts} hosts / {self.scan_block_min_ports} ports)."
+            )
 
-        # Branching based on dual thresholds
-        if confidence < alert_threshold:
+        # Branching based on dual thresholds (a confirmed scan is a block candidate on its own).
+        if confidence < alert_threshold and not scan_confirmed:
             # Noise below alert threshold: ignore
             action = "LOW_CONFIDENCE_IGNORE"
             response_status = "none"
@@ -619,7 +668,7 @@ class DecisionEngine:
                 response_status = "allowlist_protected"
                 evidence_note = f"[ALLOWLIST PROTECTED] {evidence_note}"
                 event_id = None
-            elif confidence >= block_threshold:
+            elif confidence >= block_threshold or scan_confirmed:
                 action = "ACTIVE_BLOCK_CANDIDATE"
                 response_status = "candidate"
                 event_id = None
@@ -644,6 +693,8 @@ class DecisionEngine:
                 "predicted_class": p_class,
                 "model_class": model_class,  # raw model class before the direction-aware correction
                 "direction_corrected": bool(model_class != p_class),
+                "scan_confirmed": bool(scan_confirmed),
+                "scan_counts": scan_counts,
                 "confidence": confidence,
                 "probabilities": detection.probabilities,
                 "model_version": detection.model_version,
@@ -703,6 +754,7 @@ class DecisionEngine:
             conn_state=conn_state,
             traffic_direction=direction,
             is_allowlisted=is_allowlisted,
+            scan_confirmed=scan_confirmed,
             evidence_note=evidence_note,
             reason_code=reason_code,
             response_status=response_status,

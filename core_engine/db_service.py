@@ -523,6 +523,11 @@ class DatabaseService:
                             "$set": {
                                 "last_seen": now,
                                 "confidence": max(float(existing.get("confidence", 0.0)), confidence_val),
+                                # a scan is confirmed for the whole burst once any flow fans out
+                                "scan_confirmed": bool(existing.get("scan_confirmed"))
+                                or bool(event_data.get("scan_confirmed", False)),
+                                **({"scan_counts": event_data.get("scan_counts")}
+                                   if event_data.get("scan_confirmed") else {}),
                             },
                         },
                     )
@@ -552,6 +557,8 @@ class DatabaseService:
             "predicted_class": clean_class,
             "model_class": str(event_data.get("model_class") or clean_class),
             "direction_corrected": bool(event_data.get("direction_corrected", False)),
+            "scan_confirmed": bool(event_data.get("scan_confirmed", False)),
+            "scan_counts": event_data.get("scan_counts") or {},
             "confidence": confidence_val,
             "probabilities": event_data.get("probabilities") or {},
             "model_version": str(event_data.get("model_version") or "unknown"),

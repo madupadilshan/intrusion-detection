@@ -362,9 +362,13 @@ class ResponsePolicy:
 
         # ---------------------------------------------------------
         # Safety Check 2: Minimum calibrated confidence met?
+        # A behaviour-confirmed port scan (fan-out across many hosts/ports, set by the decision
+        # engine) is reconnaissance regardless of the per-flow model confidence, so it is exempt
+        # from this one check. Every other safety check below still applies to it.
         # ---------------------------------------------------------
+        scan_confirmed = bool(data.get("scan_confirmed", False))
         min_conf = self.min_confidence_map.get(p_class, 0.70)
-        if confidence < min_conf:
+        if confidence < min_conf and not (p_class == "PortScan" and scan_confirmed):
             return PolicyDecision(
                 should_act=False,
                 action_type="none",
