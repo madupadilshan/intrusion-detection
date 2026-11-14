@@ -465,7 +465,7 @@ Open **`http://localhost:5000/overview`** in your browser:
 1. **Live Dashboard Stream:** Alerts arrive on the Live Alerts page (`/alerts`) via WebSockets within 0.1 – 0.3 seconds without browser refresh.
 2. **Autonomous Response Policy:**
    - Autonomous Response must be enabled (ON).
-   - Confidence must exceed class threshold: **CnC 0.30 -> block, PortScan 0.88 -> block, DDoS_DoS 0.30 -> rate-limit (D-055), Malware_Download -> alert only (Table 10 row 5)**.
+   - Confidence must exceed class threshold: **CnC 0.30 -> block, PortScan 0.88 -> block (or auto-blocked if behaviourally confirmed via multi-host/port fan-out), DDoS_DoS 0.30 -> rate-limit (D-055), Malware_Download -> alert only (Table 10 row 5)**.
    - Target must not be in the allowlist or on the camera LAN.
    - Requires **3 alerts of the same class for the same target within 60 seconds**.
    - Maximum router rule TTL is 30 minutes.
@@ -656,10 +656,10 @@ Probabilities across all 5 classes:
   - PortScan         :  92.9% <-- [WINNER]
   - CnC              :   1.8%
   - Malware_Download :   0.2%
-Autonomous Action: candidate (SKIP_NOT_REPEATED)
+Autonomous Action: blocked (AUTO_PORTSCAN_REPEATED)
 ```
 
-🛡️ **Router:** `block_src` remains empty. Policy requires confidence $\ge 0.88$ **and** 3 alerts in 60s for a PortScan block. As a single sweep, alerting without blocking is the intended design.
+🛡️ **Router Firewall Evidence:** Attacker `10.10.10.50` is autonomously blocked in `block_src` for 30 minutes. Because the subnet sweep hits 6 distinct hosts, behavioural fan-out detection confirms the reconnaissance scan (**BEHAVIOUR DETECTION**) and triggers firewall mitigation immediately. The camera (`192.168.50.30`) is never blocked.
 
 > ⚠️ **Do Not Scan a Single Host:** Running `nmap -sS -p 23,80,554 192.168.50.30` produces too few flows for window features, risking a stray **CnC alert (0.48)**.
 > ⚠️ **Run Shortly After Fresh Backend Start (Section 1, step 3b).** One hour of continuous testing from `10.10.10.50` fills window memory; a restart restores textbook PortScan 0.84 - 0.93.
@@ -881,7 +881,7 @@ Autonomous Action: none (MALWARE_STAGING_TRANSFER)
 | Test | Class | Tool & Executed Command | Zeek Evidence | Real Alert Received | Router Autonomous Action |
 |---|---|---|---|---|---|
 | **2.1** | **Benign** | `curl` admin -> camera page | `SF`, `ShADadfF` | None (No Alert) | None (Zero False Blocks) |
-| **2.2** | **PortScan** | `nmap -sS -p 23,80,554 192.168.50.0/24` | Multiple `S0` / `REJ` flows | PortScan 0.49–0.88 (v3.2.0) | None (Block requires $\ge 0.88$ and 3 alerts in 60s) |
+| **2.2** | **PortScan** | `nmap -sS -p 23,80,554 192.168.50.0/24` | Multiple `S0` / `REJ` flows | PortScan (BEHAVIOUR DETECTION) | `block_src` blocks `10.10.10.50` for 30 min (confirmed via multi-host sweep fan-out) |
 | **2.3** | **DDoS_DoS** | `nping --tcp -p 80 --flags syn --rate 1000 -c 5000` | Thousands of half-open flows | DDoS_DoS 0.37–0.45 (v3.2.0) | `limit_src` rate-limit only (`block_src` empty; Issue 43 resolved) |
 | **2.4** | **CnC** | `nc -z` loop, every 5 s, port 6667 refused | `REJ` then `S0` | CnC 0.63–0.82 (v3.2.0) | `block_dst` blocks `10.10.10.50` for 30 min; camera unblocked |
 | **2.5** | **Malware_Download** | `camera_sim.py download --count 6` (dropper) | `files.log` `x-sharedlib` | Malware_Download 1.0 (rule) **and** ~0.56 (model v3.2.0) | None (Alert only, Table 10 row 5) |
@@ -889,7 +889,7 @@ Autonomous Action: none (MALWARE_STAGING_TRANSFER)
 All alerts carry model version tag **v3.2.0** (or `rule:files.log`) and reach the browser Live Alerts page within approximately 0.1 seconds of Zeek writing the log.
 
 #### 🗣️ Spoken English Script for FR-02:
-> *"Sir, for FR-02 we used authentic standard networking tools, and our Machine Learning model recognises all four attack types. Normal admin access with curl gave no alert. A subnet scan with nmap gave PortScan alerts, but no block, because a PortScan block strictly requires 0.88 confidence three times within one minute. An nping SYN flood was identified as DDoS and the router rate-limited the attacker without blocking. When the camera attempted to beacon an external C&C server with netcat, the model identified C&C and the router autonomously blocked the outside server in block_dst—the camera itself was never blocked. A repeated program download, following the realistic malware dropper pattern, is now caught by our retrained Random Forest model v3.2.0 as Malware_Download, and every download is simultaneously captured by our Zeek files.log MIME rule; both operate as alert-only as Table 10 specifies. Every single alert carries the predicted class, confidence, and model version v3.2.0, reaching the dashboard within a tenth of a second."*
+> *"Sir, for FR-02 we used authentic standard networking tools, and our Machine Learning model recognises all four attack types. Normal admin access with curl gave no alert. A subnet sweep with nmap was behaviourally confirmed through multi-host fan-out, prompting the router to autonomously block the attacker in block_src for 30 minutes while keeping our camera completely safe. An nping SYN flood was identified as DDoS and the router rate-limited the attacker without blocking. When the camera attempted to beacon an external C&C server with netcat, the model identified C&C and the router autonomously blocked the outside server in block_dst—the camera itself was never blocked. A repeated program download, following the realistic malware dropper pattern, is now caught by our retrained Random Forest model v3.2.0 as Malware_Download, and every download is simultaneously captured by our Zeek files.log MIME rule; both operate as alert-only as Table 10 specifies. Every single alert carries the predicted class, confidence, and model version v3.2.0, reaching the dashboard within a tenth of a second."*
 
 ---
 

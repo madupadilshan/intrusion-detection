@@ -490,7 +490,7 @@ Supervisor ඉදිරියේ Browser එකේ **`http://localhost:5000/over
 1. **සජීවී Dashboard Stream:** බ්‍රවුසරය refresh කිරීමකින් තොරව තත්පර 0.1 – 0.3 ක් ඇතුළත WebSocket හරහා Live Alerts පිටුවට (`/alerts`) alerts ලැබේ.
 2. **ස්වයංක්‍රීය ක්‍රියාමාර්ග (Automatic Response Policy):**
    - Autonomous Response සක්‍රීයව (ON) තිබිය යුතුය.
-   - Confidence අගය අදාළ class threshold එක ඉක්මවිය යුතුය: **CnC 0.30 → block, PortScan 0.88 → block, DDoS_DoS 0.30 → rate-limit (D-055), Malware_Download → alert only (Table 10 row 5)**.
+   - Confidence අගය අදාළ class threshold එක ඉක්මවිය යුතුය: **CnC 0.30 → block, PortScan 0.88 → block (හෝ Multi-host/port fan-out මඟින් Behavioural Scan එකක් තහවුරු වූ විට ක්ෂණිකව block වේ), DDoS_DoS 0.30 → rate-limit (D-055), Malware_Download → alert only (Table 10 row 5)**.
    - ඉලක්කය allowlist එකේ හෝ කැමරා LAN එකේ නොවිය යුතුය.
    - **තත්පර 60ක් ඇතුළත එකම target එකට එකම class එකෙන් alerts 3ක්** පැමිණිය යුතුය.
    - Router rule එකකට උපරිම කාලය (TTL) මිනිත්තු 30 කි.
@@ -681,10 +681,10 @@ Probabilities across all 5 classes:
   - PortScan         :  92.9% <-- [WINNER]
   - CnC              :   1.8%
   - Malware_Download :   0.2%
-Autonomous Action: candidate (SKIP_NOT_REPEATED)
+Autonomous Action: blocked (AUTO_PORTSCAN_REPEATED)
 ```
 
-🛡️ **Router:** `block_src` හිස්ව පවතී. PortScan block එකක් සඳහා confidence ≥ 0.88 **සහ** තත්පර 60ක් තුළ alerts 3ක් අවශ්‍ය වේ. මෙය තනි sweep එකක් බැවින් PortScan alert එක මතුවුවද, block නොවීම නිවැරදි සැලසුමයි.
+🛡️ **Router Firewall සාක්ෂිය:** Subnet sweep එකක් (hosts 6ක් සහ ports 3ක් පුරා fan-out වීම) මඟින් PortScan එක හැසිරීමෙන්ම තහවුරු වන බැවින් (**BEHAVIOUR DETECTION**), Attacker IP එක (`10.10.10.50`) රවුටරයේ `block_src` ලැයිස්තුවට මිනිත්තු 30 කට ස්වයංක්‍රීයව block වේ. කැමරාව (`192.168.50.30`) කිසිවිටෙක block නොවේ.
 
 > ⚠️ **Demo එක සඳහා තනි host එකක් scan නොකරන්න:** `nmap -sS -p 23,80,554 192.168.50.30` (තනි host එකක ports 3ක් පමණක්) යැවූ විට window features සඳහා flows ප්‍රමාණවත් නොවීම නිසා **CnC alert (0.48)** එකක් ඒමේ අවදානමක් ඇත.
 > ⚠️ **මෙම පරීක්ෂණය Fresh Backend Start එකකින් පසු වැඩි වේලාවක් නොගොස් ධාවනය කරන්න (Section 1, step 3b).** Attacker `10.10.10.50` වෙතින් පැයක පමණ කාලයක් අඛණ්ඩව ප්‍රහාර කළ විට model එක scan එක CnC ලෙස දැකිය හැක. Restart එකකින් පසු එය පිරිසිදු PortScan 0.84 - 0.93 ලෙස ලැබේ.
@@ -907,7 +907,7 @@ Autonomous Action: none (MALWARE_STAGING_TRANSFER)
 | පරීක්ෂාව | පන්තිය | මෙවලම සහ ධාවනය කළ විධානය | Zeek සාක්ෂිය | ලැබුණු සැබෑ Alert එක | Router ස්වයංක්‍රීය ක්‍රියාමාර්ගය |
 |---|---|---|---|---|---|
 | **2.1** | **Benign** | `curl` admin → camera page | `SF`, `ShADadfF` | කිසිවක් නැත (No Alert) | කිසිවක් නැත (Zero False Blocks) |
-| **2.2** | **PortScan** | `nmap -sS -p 23,80,554 192.168.50.0/24` | බහු `S0` / `REJ` flows | PortScan 0.49–0.88 (v3.2.0) | කිසිවක් නැත (Block සඳහා ≥ 0.88 සහ 60s තුළ 3ක් අවශ්‍යයි) |
+| **2.2** | **PortScan** | `nmap -sS -p 23,80,554 192.168.50.0/24` | බහු `S0` / `REJ` flows | PortScan (BEHAVIOUR DETECTION) | `block_src` මඟින් `10.10.10.50` මිනිත්තු 30කට block කරයි (Subnet fan-out තහවුරු වීමෙන් පසු) |
 | **2.3** | **DDoS_DoS** | `nping --tcp -p 80 --flags syn --rate 1000 -c 5000` | දහස් ගණනක් half-open flows | DDoS_DoS 0.37–0.45 (v3.2.0) | `limit_src` rate-limit පමණි (`block_src` හිස්ව පවතී; Issue 43 fixed) |
 | **2.4** | **CnC** | `nc -z` loop, every 5 s, port 6667 refused | `REJ` ඉන්පසු `S0` | CnC 0.63–0.82 (v3.2.0) | `block_dst` මඟින් `10.10.10.50` විනාඩි 30කට block කරයි; කැමරාව block නොවේ |
 | **2.5** | **Malware_Download** | `camera_sim.py download --count 6` (dropper) | `files.log` `x-sharedlib` | Malware_Download 1.0 (rule) **සහ** ~0.56 (model v3.2.0) | කිසිවක් නැත (Alert only, Table 10 row 5) |
@@ -915,7 +915,7 @@ Autonomous Action: none (MALWARE_STAGING_TRANSFER)
 සියලුම alerts Model version එක (**v3.2.0**, හෝ `rule:files.log`) සහිතව Zeek line එක කියවා තත්පර 0.1 ක් වැනි සුළු කාලයකදී Dashboard Live Alerts පිටුවට ළඟා වේ.
 
 #### 🗣️ Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, for FR-02 we used authentic standard networking tools, and our Machine Learning model recognises all four attack types. Normal admin access with curl gave no alert. A subnet scan with nmap gave PortScan alerts, but no block, because a PortScan block strictly requires 0.88 confidence three times within one minute. An nping SYN flood was identified as DDoS and the router rate-limited the attacker without blocking. When the camera attempted to beacon an external C&C server with netcat, the model identified C&C and the router autonomously blocked the outside server in block_dst—the camera itself was never blocked. A repeated program download, following the realistic malware dropper pattern, is now caught by our retrained Random Forest model v3.2.0 as Malware_Download, and every download is simultaneously captured by our Zeek files.log MIME rule; both operate as alert-only as Table 10 specifies. Every single alert carries the predicted class, confidence, and model version v3.2.0, reaching the dashboard within a tenth of a second."*
+> *"Sir, for FR-02 we used authentic standard networking tools, and our Machine Learning model recognises all four attack types. Normal admin access with curl gave no alert. A subnet sweep with nmap was behaviourally confirmed through multi-host fan-out, prompting the router to autonomously block the attacker in block_src for 30 minutes while keeping our camera completely safe. An nping SYN flood was identified as DDoS and the router rate-limited the attacker without blocking. When the camera attempted to beacon an external C&C server with netcat, the model identified C&C and the router autonomously blocked the outside server in block_dst—the camera itself was never blocked. A repeated program download, following the realistic malware dropper pattern, is now caught by our retrained Random Forest model v3.2.0 as Malware_Download, and every download is simultaneously captured by our Zeek files.log MIME rule; both operate as alert-only as Table 10 specifies. Every single alert carries the predicted class, confidence, and model version v3.2.0, reaching the dashboard within a tenth of a second."*
 
 ---
 
