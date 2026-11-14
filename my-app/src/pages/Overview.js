@@ -330,7 +330,10 @@ const Overview = () => {
                         <td className="py-2.5 px-3 text-gray-300 font-mono">{evt.src_ip || "N/A"}</td>
                         <td className="py-2.5 px-3 text-gray-300 font-mono">{evt.dst_ip || "N/A"}</td>
                         <td className="py-2.5 px-3 text-gray-300">
-                          {evt.confidence ? `${(evt.confidence * 100).toFixed(1)}%` : "N/A"}
+                          {(() => {
+                            const c = evt.display_confidence != null ? evt.display_confidence : evt.confidence;
+                            return c ? `${(c * 100).toFixed(1)}%${evt.confidence_basis === "behavioural" ? " (beh.)" : ""}` : "N/A";
+                          })()}
                         </td>
                         <td className="py-2.5 px-3">
                           <span

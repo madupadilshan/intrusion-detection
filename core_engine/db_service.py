@@ -526,7 +526,12 @@ class DatabaseService:
                                 # a scan is confirmed for the whole burst once any flow fans out
                                 "scan_confirmed": bool(existing.get("scan_confirmed"))
                                 or bool(event_data.get("scan_confirmed", False)),
-                                **({"scan_counts": event_data.get("scan_counts")}
+                                "display_confidence": max(
+                                    float(existing.get("display_confidence", existing.get("confidence", 0.0))),
+                                    float(event_data.get("display_confidence", confidence_val)),
+                                ),
+                                **({"scan_counts": event_data.get("scan_counts"),
+                                    "confidence_basis": event_data.get("confidence_basis") or "model"}
                                    if event_data.get("scan_confirmed") else {}),
                             },
                         },
@@ -560,6 +565,10 @@ class DatabaseService:
             "scan_confirmed": bool(event_data.get("scan_confirmed", False)),
             "scan_counts": event_data.get("scan_counts") or {},
             "confidence": confidence_val,
+            # confidence to SHOW on the card: model's own, or a behavioural DETECTION score for a
+            # confirmed scan (confidence_basis says which). `confidence` above stays the model value.
+            "display_confidence": float(event_data.get("display_confidence", confidence_val)),
+            "confidence_basis": str(event_data.get("confidence_basis") or "model"),
             "probabilities": event_data.get("probabilities") or {},
             "model_version": str(event_data.get("model_version") or "unknown"),
             "flow_features": event_data.get("flow_features") or event_data.get("features") or {},

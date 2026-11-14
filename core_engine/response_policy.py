@@ -424,9 +424,14 @@ class ResponsePolicy:
 
         # ---------------------------------------------------------
         # Safety Check 5: Sliding-window repeat coalescing
+        # A behaviour-confirmed port scan already *is* repetition: fan-out means the source made
+        # many connections across many hosts/ports in the window, so it satisfies the intent of this
+        # check on its own. Requiring extra repeats on top makes a cold-start scan (empty window
+        # after a backend restart) miss, so a confirmed scan is exempt from this one check. Every
+        # check above (master switch, confidence-or-scan, allowlist, local-network) still applied.
         # ---------------------------------------------------------
         is_repeated, count = self.check_repeats(target_ip, p_class, now)
-        if not is_repeated:
+        if not is_repeated and not (p_class == "PortScan" and scan_confirmed):
             return PolicyDecision(
                 should_act=False,
                 action_type="none",

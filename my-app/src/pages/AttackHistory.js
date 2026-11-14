@@ -185,7 +185,10 @@ const AttackHistory = () => {
                         <td className="py-2.5 px-3 text-gray-300 font-mono">{evt.src_ip || "N/A"}</td>
                         <td className="py-2.5 px-3 text-gray-300 font-mono">{evt.dst_ip || "N/A"}</td>
                         <td className="py-2.5 px-3 text-gray-300">
-                          {evt.confidence ? `${(evt.confidence * 100).toFixed(1)}%` : "N/A"}
+                          {(() => {
+                            const c = evt.display_confidence != null ? evt.display_confidence : evt.confidence;
+                            return c ? `${(c * 100).toFixed(1)}%${evt.confidence_basis === "behavioural" ? " (beh.)" : ""}` : "N/A";
+                          })()}
                         </td>
                         <td className="py-2.5 px-3">
                           <span
@@ -246,12 +249,19 @@ const AttackHistory = () => {
                   </div>
                 </div>
                 <div className="p-2.5 bg-gray-900/60 rounded border border-gray-800">
-                  <div className="text-gray-500">Confidence</div>
+                  <div className="text-gray-500">
+                    {selectedEvent.confidence_basis === "behavioural" ? "Detection confidence (behaviour)" : "Confidence"}
+                  </div>
                   <div className="font-bold text-sm text-gray-200 mt-0.5">
-                    {selectedEvent.confidence
-                      ? `${(selectedEvent.confidence * 100).toFixed(2)}%`
+                    {(selectedEvent.display_confidence != null ? selectedEvent.display_confidence : selectedEvent.confidence)
+                      ? `${((selectedEvent.display_confidence != null ? selectedEvent.display_confidence : selectedEvent.confidence) * 100).toFixed(2)}%`
                       : "N/A"}
                   </div>
+                  {selectedEvent.confidence_basis === "behavioural" && selectedEvent.confidence != null && (
+                    <div className="text-[11px] text-gray-500 mt-0.5">
+                      model: {(selectedEvent.confidence * 100).toFixed(1)}%
+                    </div>
+                  )}
                 </div>
                 <div className="p-2.5 bg-gray-900/60 rounded border border-gray-800 font-mono">
                   <div className="text-gray-500">Source IP & Port</div>

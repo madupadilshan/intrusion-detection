@@ -373,6 +373,11 @@ def test_fanout_portscan_blocks_despite_low_confidence(decision_engine, mock_db)
     event_arg = mock_db.record_attack_event.call_args[0][0]
     assert event_arg["scan_confirmed"] is True
     assert "fan-out confirmed" in outcome.evidence_note
+    # Card shows a behavioural DETECTION confidence (>= 0.90), not the low model value; the raw
+    # model confidence is still kept for the audit record.
+    assert event_arg["confidence_basis"] == "behavioural"
+    assert event_arg["display_confidence"] >= 0.90
+    assert event_arg["confidence"] == pytest.approx(0.42)
 
 
 def test_low_confidence_portscan_without_fanout_stays_alert(decision_engine):
@@ -402,5 +407,9 @@ def test_policy_confidence_check_bypassed_only_for_confirmed_scan(decision_engin
     rejected = decision_engine.policy.evaluate({**base, "scan_confirmed": False})
     assert rejected.reason_code == REASON_SKIP_LOW_CONF
 
+    # A confirmed scan is exempt from both the confidence floor and the repeat gate (its fan-out
+    # is the repetition), so it is approved on the first flow without waiting for min_repeats.
     passed = decision_engine.policy.evaluate({**base, "scan_confirmed": True})
     assert passed.reason_code != REASON_SKIP_LOW_CONF
+    assert passed.should_act is True
+    assert passed.target_ip == "10.10.10.50"

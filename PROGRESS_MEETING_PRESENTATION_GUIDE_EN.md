@@ -1077,7 +1077,7 @@ print('=== FR-05 CONTROLLED ASSET DISCOVERY PROOF ===')
 print('Scan Status :', scan_res.get('status'), '-', scan_res.get('message'))
 print('Total Approved Devices Found:', devs.get('count'))
 for d in devs.get('devices', []):
-    print(f"- IP: {d.get('ip'):<15} | Host: {d.get('hostname','unknown'):<18} | Ports: {str(d.get('open_ports')):<10} | Type: {d.get('device_type')}")
+    print('- IP: %-15s | Host: %-18s | Ports: %-10s | Type: %s' % (d.get('ip'), d.get('hostname','unknown'), str(d.get('open_ports')), d.get('device_type')))
 "
 ```
 
@@ -1090,18 +1090,19 @@ for d in devs.get('devices', []):
 
 ```text
 === FR-05 CONTROLLED ASSET DISCOVERY PROOF ===
-Scan Status : complete - Scan completed successfully
-Total Approved Devices Found: 5
-- IP: 192.168.50.1    | Host: ids-lab-router     | Ports: [22, 80]   | Type: gateway
-- IP: 192.168.50.5    | Host: ids-lab-scanner    | Ports: []         | Type: unknown
-- IP: 192.168.50.10   | Host: ids-lab-admin      | Ports: []         | Type: workstation
-- IP: 192.168.50.20   | Host: ids-lab-nvr        | Ports: []         | Type: nvr
-- IP: 192.168.50.30   | Host: ids-lab-camera     | Ports: [80, 554]  | Type: ip_camera
+Scan Status : success - Discovery scan on approved subnet '192.168.50.0/24' initiated.
+Total Approved Devices Found: 6
+- IP: 192.168.50.5    | Host: ids-sensor         | Ports: []         | Type: ids_sensor
+- IP: 192.168.50.30   | Host: ids-lab-camera-net.ids-lab_camlan | Ports: [80, 554]  | Type: ip_camera
+- IP: 192.168.50.254  | Host:                    | Ports: []         | Type: iot_device
+- IP: 192.168.50.20   | Host: ids-lab-nvr.ids-lab_camlan | Ports: []         | Type: nvr
+- IP: 192.168.50.10   | Host: ids-lab-admin.ids-lab_camlan | Ports: []         | Type: workstation
+- IP: 192.168.50.1    | Host: ids-lab-router.ids-lab_camlan | Ports: [22]       | Type: router
 ```
 
 #### 📊 Output Breakdown:
-- `Scan Status: complete`: Confirms the controlled Nmap scan completed successfully with zero crashes.
-- `Total Approved Devices Found: 5`: All 5 devices on the camera network are accurately recognized.
+- `Scan Status: success`: Confirms the controlled Nmap scan on the approved subnet was accepted and started by the backend scanner.
+- `Total Approved Devices Found: 6`: All devices on the camera network (plus the sensor) are accurately recognized.
 - `ip_camera (192.168.50.30)`: Open ports 80 (HTTP) and 554 (RTSP Video) are confirmed online.
 
 ##### 🔬 Scientific Meaning / Proof:
@@ -1192,7 +1193,7 @@ An autonomous response system must guarantee safety. If an attacker spoofs an IP
 #### ⚙️ What Happens Under the Hood:
 1. Verifies that `lab_virtual/settings.lab.yaml` contains protected allowlist IPs (`192.168.50.30`, `192.168.50.20`, etc.).
 2. Decision engine evaluates allowlist invariants before every firewall command; if a match occurs, the action is suppressed and logged with status `allowlist_protected`.
-3. Queries the `/api/v1/audit/logs` API endpoint to display recent tamper-evident audit records.
+3. Queries the `/api/logs` API endpoint to display recent tamper-evident audit records.
 
 #### 💻 Direct Raw Command (Terminal):
 
@@ -1203,7 +1204,7 @@ with open('lab_virtual/keys/dashboard_login.txt') as f:
     u, p = f.read().strip().split()[:2]
 tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
 
-req = urllib.request.Request('http://127.0.0.1:5000/api/v1/audit/logs?limit=3', headers={'Authorization':'Bearer '+tok})
+req = urllib.request.Request('http://127.0.0.1:5000/api/logs?limit=3', headers={'Authorization':'Bearer '+tok})
 audit_logs = json.loads(urllib.request.urlopen(req).read())
 
 print('=== FR-07 AUDIT TRAIL & SAFETY POLICY COMPLIANCE ===')
@@ -1211,13 +1212,13 @@ print('Autonomous Mitigation Confidence Gate: P >= 0.85 (Calibrated Threshold)')
 print('Immutable Protected Allowlist: Admin (192.168.50.10), NVR (192.168.50.20)')
 print('Recent Tamper-Evident Audit Records:')
 for log in audit_logs.get('logs', []):
-    print(f"  - [{log.get('timestamp')}] User: {log.get('user'):<10} Action: {log.get('action'):<18} Reason: {log.get('reason')}")
+    print('  - [%s] Actor: %-10s Event: %-22s Outcome: %s' % (log.get('timestamp'), log.get('actor'), log.get('event'), log.get('outcome')))
 "
 ```
 
 #### 🔍 Line-by-Line Breakdown:
-- `GET /api/v1/audit/logs?limit=3`: Retrieves the latest 3 audit records from the backend `system_logs` collection.
-- `for log in audit_logs.get('logs', []):`: Prints the timestamp, acting user (`labadmin`), action performed (`manual_block`, `manual_unblock`), and the operational reason.
+- `GET /api/logs?limit=3`: Retrieves the latest 3 audit records from the backend `system_logs` collection.
+- `for log in audit_logs.get('logs', []):`: Prints the timestamp, acting user (`actor`, e.g. `labadmin`), the event performed (`event`, e.g. `AUTH_LOGIN_SUCCESS`, `MANUAL_BLOCK`, `MANUAL_UNBLOCK`), and the outcome (`SUCCESS` / `FAILURE`).
 
 #### 📋 Verified Output:
 
@@ -1226,8 +1227,8 @@ for log in audit_logs.get('logs', []):
 Autonomous Mitigation Confidence Gate: P >= 0.85 (Calibrated Threshold)
 Immutable Protected Allowlist: Admin (192.168.50.10), NVR (192.168.50.20)
 Recent Tamper-Evident Audit Records:
-  - [2026-11-12T09:40:12] User: labadmin   Action: manual_block       Reason: Manual Supervisor Demo Block
-  - [2026-11-12T09:41:05] User: labadmin   Action: manual_unblock     Reason: Manual Rollback Done
+  - [2026-11-14T08:15:03.049000Z] Actor: labadmin   Event: AUTH_LOGIN_SUCCESS     Outcome: SUCCESS
+  - [2026-11-14T08:14:38.179000Z] Actor: labadmin   Event: AUTH_LOGIN_SUCCESS     Outcome: SUCCESS
 ```
 
 #### 📊 Output Breakdown:
@@ -1646,8 +1647,8 @@ Target Status     : PASS
 Even in a fully autonomous system, administrators must retain operational sovereignty: they must have full ability to manually block an IP, immediately unblock (rollback) a rule, and audit all actions.
 
 #### ⚙️ What Happens Under the Hood:
-1. POST `/api/v1/mitigation/block` manually blocks `10.10.10.99`.
-2. POST `/api/v1/mitigation/unblock` immediately rolls back the block.
+1. POST `/api/blocklist` manually blocks `10.10.10.99`.
+2. DELETE `/api/blocklist/10.10.10.99` immediately rolls back the block.
 3. Both events are logged to the MongoDB `system_logs` audit trail.
 
 #### 💻 Direct Raw Command (Terminal):
@@ -1659,12 +1660,12 @@ with open('lab_virtual/keys/dashboard_login.txt') as f:
     u, p = f.read().strip().split()[:2]
 tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
 
-# 1. Manual Block
-req_blk = urllib.request.Request('http://127.0.0.1:5000/api/v1/mitigation/block', data=json.dumps({'ip':'10.10.10.99','direction':'dst','duration':60,'reason':'Usability Test'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok})
+# 1. Manual Block (POST /api/blocklist)
+req_blk = urllib.request.Request('http://127.0.0.1:5000/api/blocklist', data=json.dumps({'ip':'10.10.10.99','direction':'destination','duration_minutes':60,'reason':'Usability Test'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok})
 res_blk = json.loads(urllib.request.urlopen(req_blk).read())
 
-# 2. Manual Rollback
-req_unblk = urllib.request.Request('http://127.0.0.1:5000/api/v1/mitigation/unblock', data=json.dumps({'ip':'10.10.10.99','direction':'dst'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok})
+# 2. Manual Rollback (DELETE /api/blocklist/<ip>)
+req_unblk = urllib.request.Request('http://127.0.0.1:5000/api/blocklist/10.10.10.99', data=json.dumps({'reason':'Rollback done'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok}, method='DELETE')
 res_unblk = json.loads(urllib.request.urlopen(req_unblk).read())
 
 print('=== PROPOSAL TABLE 9 USABILITY & AUDIT ===')

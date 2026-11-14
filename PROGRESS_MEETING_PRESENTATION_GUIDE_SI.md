@@ -1141,7 +1141,7 @@ print('=== FR-05 CONTROLLED ASSET DISCOVERY PROOF ===')
 print('Scan Status :', scan_res.get('status'), '-', scan_res.get('message'))
 print('Total Approved Devices Found:', devs.get('count'))
 for d in devs.get('devices', []):
-    print(f"- IP: {d.get('ip'):<15} | Host: {d.get('hostname','unknown'):<18} | Ports: {str(d.get('open_ports')):<10} | Type: {d.get('device_type')}")
+    print('- IP: %-15s | Host: %-18s | Ports: %-10s | Type: %s' % (d.get('ip'), d.get('hostname','unknown'), str(d.get('open_ports')), d.get('device_type')))
 "
 ```
 
@@ -1154,18 +1154,19 @@ for d in devs.get('devices', []):
 
 ```text
 === FR-05 CONTROLLED ASSET DISCOVERY PROOF ===
-Scan Status : complete - Scan completed successfully
-Total Approved Devices Found: 5
-- IP: 192.168.50.1    | Host: ids-lab-router     | Ports: [22, 80]   | Type: gateway
-- IP: 192.168.50.5    | Host: ids-lab-scanner    | Ports: []         | Type: unknown
-- IP: 192.168.50.10   | Host: ids-lab-admin      | Ports: []         | Type: workstation
-- IP: 192.168.50.20   | Host: ids-lab-nvr        | Ports: []         | Type: nvr
-- IP: 192.168.50.30   | Host: ids-lab-camera     | Ports: [80, 554]  | Type: ip_camera
+Scan Status : success - Discovery scan on approved subnet '192.168.50.0/24' initiated.
+Total Approved Devices Found: 6
+- IP: 192.168.50.5    | Host: ids-sensor         | Ports: []         | Type: ids_sensor
+- IP: 192.168.50.30   | Host: ids-lab-camera-net.ids-lab_camlan | Ports: [80, 554]  | Type: ip_camera
+- IP: 192.168.50.254  | Host:                    | Ports: []         | Type: iot_device
+- IP: 192.168.50.20   | Host: ids-lab-nvr.ids-lab_camlan | Ports: []         | Type: nvr
+- IP: 192.168.50.10   | Host: ids-lab-admin.ids-lab_camlan | Ports: []         | Type: workstation
+- IP: 192.168.50.1    | Host: ids-lab-router.ids-lab_camlan | Ports: [22]       | Type: router
 ```
 
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
-- `Scan Status: complete`: Controlled Nmap scan එක කිසිදු crash එකකින් තොරව සාර්ථකව අවසන් වූ බව පෙන්වයි.
-- `Total Approved Devices Found: 5`: කැමරා ජාලයේ ඇති උපාංග 5 ම නිවැරදිව හඳුනාගෙන ඇත.
+- `Scan Status: success`: ආරක්ෂිත subnet එකේ controlled Nmap scan එක backend scanner එක විසින් පිළිගෙන ආරම්භ කළ බව පෙන්වයි.
+- `Total Approved Devices Found: 6`: කැමරා ජාලයේ ඇති උපාංග (සහ sensor එක) සියල්ල නිවැරදිව හඳුනාගෙන ඇත.
 - `192.168.50.30 | Host: ids-lab-camera | Ports: [80, 554] | Type: ip_camera`: අපගේ ප්‍රධාන පරීක්ෂණ කැමරාව හඳුනාගෙන, එහි Web Server (Port 80) සහ RTSP Video Streaming (Port 554) ports ස්වයංක්‍රීයව හඳුනාගෙන එය `ip_camera` ලෙස category කර ඇත.
 
 ##### 🔬 විද්‍යාත්මක සාක්ෂිය:
@@ -1273,7 +1274,7 @@ Supervisor ඉදිරියේ **`http://localhost:5000/mitigations` (Blocklis
 ස්වයංක්‍රීය ආරක්ෂක පද්ධතියක් (Autonomous Response System) ක්‍රියාත්මක වීමේදී ඇති ප්‍රධානම අවදානම වන්නේ, වැරදි හඳුනාගැනීමක් (False Positive) නිසා නීත්‍යානුකූල කැමරාව හෝ NVR Recorder එක block වී වීඩියෝ නැතිවී යාමයි (Denial of Service). එබැවින් කැමරාව, NVR සහ Admin Workstation කිසිම හේතුවක් මත block නොවන පරිදි Immutable Allowlist එකක් තිබිය යුතුය. තවද, පරිපාලකයා කරන සෑම ක්‍රියාවක්ම කවුරුන් විසින් කවදා කුමන හේතුවක් නිසා කළේදැයි වෙනස් කළ නොහැකි විගණන වාර්තාවක (Audit Trail) සටහන් විය යුතුය.
 
 #### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
-1. Python script එක authenticated `/api/v1/audit/logs?limit=3` endpoint එකට GET request එකක් යවයි.
+1. Python script එක authenticated `/api/logs?limit=3` endpoint එකට GET request එකක් යවයි.
 2. Backend එක මඟින් MongoDB `system_logs` collection එකෙන් අවසන් audit records 3 කියවා ලබාදෙයි.
 3. පද්ධතියේ confidence gate එක ($P \ge 0.85$) සහ Immutable Allowlists සක්‍රිය බව තහවුරු කරයි.
 
@@ -1286,7 +1287,7 @@ with open('lab_virtual/keys/dashboard_login.txt') as f:
     u, p = f.read().strip().split()[:2]
 tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
 
-req = urllib.request.Request('http://127.0.0.1:5000/api/v1/audit/logs?limit=3', headers={'Authorization':'Bearer '+tok})
+req = urllib.request.Request('http://127.0.0.1:5000/api/logs?limit=3', headers={'Authorization':'Bearer '+tok})
 audit_logs = json.loads(urllib.request.urlopen(req).read())
 
 print('=== FR-07 AUDIT TRAIL & SAFETY POLICY COMPLIANCE ===')
@@ -1294,13 +1295,13 @@ print('Autonomous Mitigation Confidence Gate: P >= 0.85 (Calibrated Threshold)')
 print('Immutable Protected Allowlist: Admin (192.168.50.10), NVR (192.168.50.20)')
 print('Recent Tamper-Evident Audit Records:')
 for log in audit_logs.get('logs', []):
-    print(f"  - [{log.get('timestamp')}] User: {log.get('user'):<10} Action: {log.get('action'):<18} Reason: {log.get('reason')}")
+    print('  - [%s] Actor: %-10s Event: %-22s Outcome: %s' % (log.get('timestamp'), log.get('actor'), log.get('event'), log.get('outcome')))
 "
 ```
 
 #### 🔍 කේතයෙන් සිදුවන දේ පේළියෙන් පේළිය (Line-by-Line Breakdown):
-- `GET /api/v1/audit/logs?limit=3`: Backend එකේ `system_logs` collection එකෙන් අවසන් audit records 3 ලබාගැනීම.
-- `for log in audit_logs.get('logs', []):`: සෑම audit record එකකම timestamp, සිදුකළ පරිශීලකයාගේ නම (`labadmin`), සිදුකළ ක්‍රියාව (`manual_block`, `manual_unblock`), සහ හේතුව (Reason) මුද්‍රණය කිරීම.
+- `GET /api/logs?limit=3`: Backend එකේ `system_logs` collection එකෙන් අවසන් audit records 3 ලබාගැනීම.
+- `for log in audit_logs.get('logs', []):`: සෑම audit record එකකම timestamp, සිදුකළ පරිශීලකයා (`actor`, උදා: `labadmin`), සිදුවූ event එක (`event`, උදා: `AUTH_LOGIN_SUCCESS`, `MANUAL_BLOCK`, `MANUAL_UNBLOCK`), සහ outcome එක (`SUCCESS` / `FAILURE`) මුද්‍රණය කිරීම.
 
 #### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 
@@ -1309,8 +1310,8 @@ for log in audit_logs.get('logs', []):
 Autonomous Mitigation Confidence Gate: P >= 0.85 (Calibrated Threshold)
 Immutable Protected Allowlist: Admin (192.168.50.10), NVR (192.168.50.20)
 Recent Tamper-Evident Audit Records:
-  - [2026-11-12T09:40:12] User: labadmin   Action: manual_block       Reason: Manual Supervisor Demo Block
-  - [2026-11-12T09:41:05] User: labadmin   Action: manual_unblock     Reason: Manual Rollback Done
+  - [2026-11-14T08:15:03.049000Z] Actor: labadmin   Event: AUTH_LOGIN_SUCCESS     Outcome: SUCCESS
+  - [2026-11-14T08:14:38.179000Z] Actor: labadmin   Event: AUTH_LOGIN_SUCCESS     Outcome: SUCCESS
 ```
 
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
@@ -1750,8 +1751,8 @@ Target Status     : PASS
 ස්වයංක්‍රීය පද්ධතියක් වුවද, පරිපාලකයාට පූර්ණ පාලන බලයක් (Administrative Sovereignty) තිබිය යුතුය. අවශ්‍ය විටෙක ඕනෑම IP එකක් manual block කිරීමටත්, වැරදීමකින් block වූවක් ක්ෂණිකව unblock (Rollback) කිරීමටත් හැකි විය යුතු අතර, ඒ සියල්ල විගණනය කළ හැකි විය යුතුය.
 
 #### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
-1. `/api/v1/mitigation/block` වෙත POST කර `10.10.10.99` IP එක manual block කරයි. Router එකේ nftables drop list එකට IP එක වැටේ.
-2. `/api/v1/mitigation/unblock` වෙත POST කර එම IP එක ක්ෂණිකව unblock කරයි. Router එකෙන් IP එක ඉවත් වේ.
+1. `/api/blocklist` වෙත POST කර `10.10.10.99` IP එක manual block කරයි. Router එකේ nftables drop list එකට IP එක වැටේ.
+2. `/api/blocklist/10.10.10.99` වෙත DELETE කර එම IP එක ක්ෂණිකව unblock කරයි. Router එකෙන් IP එක ඉවත් වේ.
 3. මෙම ක්‍රියාවන් දෙකම `system_logs` collection එකේ audit records ලෙස සටහන් වේ.
 
 #### 💻 ධාවනය කරන Command එක (Terminal):
@@ -1763,12 +1764,12 @@ with open('lab_virtual/keys/dashboard_login.txt') as f:
     u, p = f.read().strip().split()[:2]
 tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
 
-# 1. Manual Block
-req_blk = urllib.request.Request('http://127.0.0.1:5000/api/v1/mitigation/block', data=json.dumps({'ip':'10.10.10.99','direction':'dst','duration':60,'reason':'Usability Test'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok})
+# 1. Manual Block (POST /api/blocklist)
+req_blk = urllib.request.Request('http://127.0.0.1:5000/api/blocklist', data=json.dumps({'ip':'10.10.10.99','direction':'destination','duration_minutes':60,'reason':'Usability Test'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok})
 res_blk = json.loads(urllib.request.urlopen(req_blk).read())
 
-# 2. Manual Rollback
-req_unblk = urllib.request.Request('http://127.0.0.1:5000/api/v1/mitigation/unblock', data=json.dumps({'ip':'10.10.10.99','direction':'dst'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok})
+# 2. Manual Rollback (DELETE /api/blocklist/<ip>)
+req_unblk = urllib.request.Request('http://127.0.0.1:5000/api/blocklist/10.10.10.99', data=json.dumps({'reason':'Rollback done'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok}, method='DELETE')
 res_unblk = json.loads(urllib.request.urlopen(req_unblk).read())
 
 print('=== PROPOSAL TABLE 9 USABILITY & AUDIT ===')
@@ -1779,8 +1780,8 @@ print('Target Status          : PASS (Full operator control & traceability)')
 ```
 
 #### 🔍 කේතයෙන් සිදුවන දේ පේළියෙන් පේළිය (Line-by-Line Breakdown):
-- `POST /api/v1/mitigation/block`: Test IP එකක් (`10.10.10.99`) manual block කිරීම.
-- `POST /api/v1/mitigation/unblock`: එම block එක ක්ෂණිකව rollback කර unblock කිරීම.
+- `POST /api/blocklist`: Test IP එකක් (`10.10.10.99`) manual block කිරීම.
+- `DELETE /api/blocklist/10.10.10.99`: එම block එක ක්ෂණිකව rollback කර unblock කිරීම.
 - `print(...)`: ක්‍රියාවන් දෙකම සාර්ථකව අවසන් වූ බව තිරයේ පෙන්වීම.
 
 #### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):

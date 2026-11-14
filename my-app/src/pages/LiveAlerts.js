@@ -216,7 +216,11 @@ const LiveAlerts = () => {
             filteredAlerts.map((evt, idx) => {
               const cls = evt.predicted_class || "Unknown";
               const isConfirmed = evt.status === "confirmed";
-              const conf = evt.confidence ? (evt.confidence * 100).toFixed(1) : "0.0";
+              // Show the display confidence (model's own, or a behavioural DETECTION score for a
+              // confirmed scan). confidence_basis says which; the raw model value stays in evt.confidence.
+              const behavioural = evt.confidence_basis === "behavioural";
+              const shownConf = evt.display_confidence != null ? evt.display_confidence : evt.confidence;
+              const conf = shownConf ? (shownConf * 100).toFixed(1) : "0.0";
               const isBenign = cls.toLowerCase() === "benign";
 
               return (
@@ -237,10 +241,16 @@ const LiveAlerts = () => {
                         className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border ${
                           isConfirmed
                             ? "bg-red-950 text-red-300 border-red-700 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+                            : behavioural
+                            ? "bg-amber-950/80 text-amber-300 border-amber-700"
                             : "bg-blue-950/80 text-blue-300 border-blue-700"
                         }`}
                       >
-                        {isConfirmed ? "CONFIRMED INCIDENT" : "MODEL PREDICTION"}
+                        {isConfirmed
+                          ? "CONFIRMED INCIDENT"
+                          : behavioural
+                          ? "BEHAVIOUR DETECTION"
+                          : "MODEL PREDICTION"}
                       </span>
 
                       {/* Class pill */}
@@ -257,6 +267,7 @@ const LiveAlerts = () => {
 
                       <span className="text-xs text-gray-400">
                         Confidence: <strong className="text-gray-200">{conf}%</strong>
+                        {behavioural && <span className="text-amber-400/80"> (behaviour)</span>}
                       </span>
 
                       <span className="text-[11px] text-gray-500">

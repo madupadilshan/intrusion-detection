@@ -654,6 +654,24 @@ class DecisionEngine:
                 f"(thresholds: {self.scan_block_min_dsts} hosts / {self.scan_block_min_ports} ports)."
             )
 
+        # Confidence to SHOW on the card. Normally this is the model's calibrated confidence. For a
+        # behaviour-confirmed scan the model is often unsure of the exact class (it may read the
+        # single probe as CnC), so the model number is misleadingly low; the real certainty comes
+        # from the fan-out evidence. We therefore show a behavioural DETECTION confidence derived
+        # from how far the fan-out exceeds the thresholds (floor 0.90, capped 0.99), labelled as
+        # "behavioural" so it is never mistaken for the model's own probability. The raw model
+        # confidence is still kept in `confidence` for the audit record. If the model itself was
+        # already more confident (a clear PortScan), we keep the model number and label.
+        display_confidence = confidence
+        confidence_basis = "model"
+        if scan_confirmed:
+            over_dsts = max(0.0, scan_counts.get("src_udst_60s", 0.0) - self.scan_block_min_dsts)
+            over_ports = max(0.0, scan_counts.get("src_uport_60s", 0.0) - self.scan_block_min_ports)
+            behavioural_conf = min(0.99, 0.90 + 0.01 * over_dsts + 0.02 * over_ports)
+            if behavioural_conf > confidence:
+                display_confidence = behavioural_conf
+                confidence_basis = "behavioural"
+
         # Branching based on dual thresholds (a confirmed scan is a block candidate on its own).
         if confidence < alert_threshold and not scan_confirmed:
             # Noise below alert threshold: ignore
@@ -696,6 +714,8 @@ class DecisionEngine:
                 "scan_confirmed": bool(scan_confirmed),
                 "scan_counts": scan_counts,
                 "confidence": confidence,
+                "display_confidence": float(display_confidence),
+                "confidence_basis": confidence_basis,
                 "probabilities": detection.probabilities,
                 "model_version": detection.model_version,
                 "evidence_note": evidence_note,
