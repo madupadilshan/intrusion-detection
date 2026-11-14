@@ -83,12 +83,19 @@ class FileCheck:
     """Applies the D-052 rule to files.log records and saves/sends the alerts."""
 
     def __init__(self, local_networks: Iterable[str], allowlist: Iterable[str] = (),
-                 db: Any = None, socketio: Any = None, repeat_window_seconds: int = 60) -> None:
+                 db: Any = None, socketio: Any = None, repeat_window_seconds: int = 60,
+                 event_aggregate_seconds: Optional[int] = None) -> None:
         self.local = _networks(local_networks)
         self.allowlist = {str(a) for a in allowlist or []}
         self.db = db
         self.socketio = socketio
         self.repeat_window_seconds = repeat_window_seconds
+        # Separate, shorter window for merging file alerts into one dashboard card
+        # (keeps two distinct download tests from folding into one incident). Falls
+        # back to repeat_window_seconds when not configured.
+        self.event_aggregate_seconds = (
+            event_aggregate_seconds if event_aggregate_seconds is not None else repeat_window_seconds
+        )
         self.metrics = {"files_seen": 0, "alerts": 0}
 
     def is_local(self, ip: Optional[str]) -> bool:
@@ -157,7 +164,7 @@ class FileCheck:
         logger.warning("RULE_EXECUTABLE_DOWNLOAD: %s", alert["evidence_note"])
         if self.db is not None:
             try:
-                eid = self.db.record_attack_event(alert, aggregate_window_seconds=self.repeat_window_seconds)
+                eid = self.db.record_attack_event(alert, aggregate_window_seconds=self.event_aggregate_seconds)
                 alert["event_id"] = str(eid) if eid else None
             except Exception as e:  # never stop the pipeline because of one record
                 logger.error("Failed to save file-type alert: %s", e)

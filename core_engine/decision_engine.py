@@ -167,6 +167,15 @@ class DecisionEngine:
         self.repeat_window_seconds: int = int(
             self.settings.get("response", {}).get("repeat_window_seconds", 60)
         )
+        # How long flows of the same (src, dst, class) merge into ONE dashboard
+        # incident/card. Kept SEPARATE from (and shorter than) repeat_window_seconds
+        # so that two distinct attack runs seconds apart show as two alerts, while
+        # the thousands of flows inside a single burst still collapse into one card.
+        # This does NOT change the block policy, which still uses repeat_window_seconds.
+        self.event_aggregate_seconds: int = max(
+            5,
+            int(self.settings.get("response", {}).get("event_aggregate_seconds", 20)),
+        )
         self.min_repeats: int = int(self.settings.get("response", {}).get("min_repeats", 3))
         self.max_rule_minutes: int = int(
             self.settings.get("response", {}).get("max_rule_minutes", 30)
@@ -739,7 +748,7 @@ class DecisionEngine:
                 try:
                     event_id = self.db.record_attack_event(
                         event_payload,
-                        aggregate_window_seconds=self.repeat_window_seconds,
+                        aggregate_window_seconds=self.event_aggregate_seconds,
                     )
                     event_payload["event_id"] = str(event_id)
                 except Exception as e:

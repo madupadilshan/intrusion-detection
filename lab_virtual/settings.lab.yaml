@@ -19,7 +19,8 @@ response:
   auto_response: true           # ON for the planned virtual-lab tests only (guide Step 35)
   min_confidence: 0.30
   min_repeats: 3
-  repeat_window_seconds: 60
+  repeat_window_seconds: 60       # window for the BLOCK policy (min_repeats within this)
+  event_aggregate_seconds: 20     # window for merging flows into ONE dashboard card (separate from blocking)
   max_rule_minutes: 30
   allow_device_isolation: false
   ddos_rate_limit: true         # D-055: rate-limit (not block) an outside DDoS source; false = DDoS alert only

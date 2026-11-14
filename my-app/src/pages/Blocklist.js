@@ -18,6 +18,28 @@ const Blocklist = () => {
   const [submitting, setSubmitting] = useState(false);
   const [unblockingIp, setUnblockingIp] = useState(null);
   const [notification, setNotification] = useState("");
+  // Ticks every second so the "TIME LEFT" countdown decreases live on screen,
+  // matching the nftables timeout sets (FR-06: visible second-by-second expiry).
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Remaining time until a rule auto-expires, formatted as mm:ss (or h:mm:ss).
+  const formatRemaining = (expiresAt) => {
+    if (!expiresAt) return "Manual";
+    const ms = new Date(expiresAt).getTime() - now;
+    if (Number.isNaN(ms)) return "—";
+    if (ms <= 0) return "expired";
+    const total = Math.floor(ms / 1000);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    const pad = (n) => String(n).padStart(2, "0");
+    return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+  };
 
   const loadRules = async () => {
     try {
@@ -204,6 +226,7 @@ const Blocklist = () => {
                   <th className="py-2.5 px-3">REASON CODE</th>
                   <th className="py-2.5 px-3">CREATED AT</th>
                   <th className="py-2.5 px-3">EXPIRES AT</th>
+                  <th className="py-2.5 px-3">TIME LEFT</th>
                   <th className="py-2.5 px-3">STATUS</th>
                   <th className="py-2.5 px-3 text-right">ACTION</th>
                 </tr>
@@ -230,6 +253,17 @@ const Blocklist = () => {
                         </td>
                         <td className="py-2.5 px-3 text-gray-400">
                           {rule.expires_at ? new Date(rule.expires_at).toLocaleTimeString() : "Manual"}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono tabular-nums">
+                          {(() => {
+                            const left = formatRemaining(rule.expires_at);
+                            const cls = isExpired || left === "expired"
+                              ? "text-gray-500"
+                              : left === "Manual"
+                                ? "text-gray-400"
+                                : "text-amber-300";
+                            return <span className={cls}>{left}</span>;
+                          })()}
                         </td>
                         <td className="py-2.5 px-3">
                           <span
@@ -258,7 +292,7 @@ const Blocklist = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="7" className="text-center py-8 text-gray-500">
+                    <td colSpan="8" className="text-center py-8 text-gray-500">
                       {loading ? "Loading firewall rules..." : "No active mitigation rules. Network operating normally."}
                     </td>
                   </tr>

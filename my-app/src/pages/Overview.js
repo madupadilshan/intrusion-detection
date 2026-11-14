@@ -33,6 +33,7 @@ const Overview = () => {
     metrics: {},
     system: {},
     class_distribution: {},
+    incidents_by_class: {},
   });
   const m = summary.metrics || {};
   const sys = summary.system || {};
@@ -97,10 +98,15 @@ const Overview = () => {
   }, []);
 
   // Format class distribution data for chart.
+  // Count DETECTED INCIDENTS per class (incidents_by_class), NOT raw flows
+  // (class_distribution). One DDoS flood is a single incident but thousands of
+  // half-open flows, so counting flows made DDoS tower over every other class
+  // and misrepresented how many attacks of each type actually happened. Falls
+  // back to class_distribution only if the backend has not sent incident counts.
   // Build from a fixed class order (0 for any class not seen yet), and add any
   // extra class the backend might send, sorted by name, so the bar order never
   // changes between live updates — only the heights change.
-  const dist = summary.class_distribution || {};
+  const dist = summary.incidents_by_class || summary.class_distribution || {};
   const extraClasses = Object.keys(dist)
     .filter((k) => !ATTACK_CLASS_ORDER.includes(k))
     .sort();
@@ -198,7 +204,7 @@ const Overview = () => {
           <div className="p-4 bg-gray-900/40 border border-gray-800 rounded-lg">
             <h3 className="text-sm font-semibold text-gray-200 mb-3 flex items-center justify-between">
               <span>ATTACK CLASS DISTRIBUTION</span>
-              <span className="text-[11px] text-gray-500">Multiclass Inferences</span>
+              <span className="text-[11px] text-gray-500">Detected incidents by class</span>
             </h3>
             {classData.length > 0 ? (
               <div className="h-64">
@@ -213,13 +219,17 @@ const Overview = () => {
                     />
                     <YAxis tick={{ fill: "#9ca3af", fontSize: 11 }} />
                     <Tooltip
+                      cursor={{ fill: "rgba(255,255,255,0.06)" }}
                       contentStyle={{
                         backgroundColor: "#111827",
                         borderColor: "#374151",
                         fontSize: "12px",
                       }}
+                      labelStyle={{ color: "#9ca3af" }}
+                      itemStyle={{ color: "#e5e7eb" }}
+                      formatter={(value) => [value, "incidents"]}
                     />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+                    <Bar dataKey="count" name="incidents" radius={[4, 4, 0, 0]} isAnimationActive={false}>
                       {classData.map((entry) => (
                         <Cell key={`cell-${entry.name}`} fill={entry.color} />
                       ))}
@@ -319,6 +329,9 @@ const Overview = () => {
                   recentAlerts.map((evt, idx) => {
                     const cls = evt.predicted_class || "Unknown";
                     const isConfirmed = evt.status === "confirmed";
+                    const isRuleBased =
+                      typeof evt.model_version === "string" &&
+                      evt.model_version.toLowerCase().startsWith("rule");
                     return (
                       <tr key={evt.id || idx} className="hover:bg-gray-900/60 transition">
                         <td className="py-2.5 px-3 text-gray-400">
@@ -340,10 +353,12 @@ const Overview = () => {
                             className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide border ${
                               isConfirmed
                                 ? "bg-red-950 text-red-300 border-red-700"
+                                : isRuleBased
+                                ? "bg-teal-950 text-teal-300 border-teal-700"
                                 : "bg-blue-950 text-blue-300 border-blue-700"
                             }`}
                           >
-                            {isConfirmed ? "CONFIRMED INCIDENT" : "MODEL PREDICTION"}
+                            {isConfirmed ? "CONFIRMED INCIDENT" : isRuleBased ? "FILE-TYPE RULE" : "MODEL PREDICTION"}
                           </span>
                         </td>
                         <td className="py-2.5 px-3 text-gray-400 capitalize">

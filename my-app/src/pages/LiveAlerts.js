@@ -61,12 +61,23 @@ const LiveAlerts = () => {
       };
 
       const handleEventUpdate = (updatedEvent) => {
-        if (!isMounted) return;
-        setAlerts((prev) =>
-          prev.map((e) =>
-            e.id === (updatedEvent.event_id || updatedEvent.id) ? { ...e, ...updatedEvent, id: e.id } : e
-          )
-        );
+        if (!isMounted || isPaused) return;
+        const key = updatedEvent.event_id || updatedEvent.id;
+        setAlerts((prev) => {
+          const idx = prev.findIndex((e) => e.id === key);
+          if (idx === -1) return prev;
+          // Refresh the card's live fields and lift it back to the top so a
+          // continuing/repeated burst is visibly active instead of silently
+          // updating a card the user may have scrolled past.
+          const merged = {
+            ...prev[idx],
+            ...updatedEvent,
+            id: prev[idx].id,
+            timestamp: updatedEvent.last_seen || updatedEvent.timestamp || prev[idx].timestamp,
+          };
+          const rest = prev.filter((_, i) => i !== idx);
+          return [merged, ...rest];
+        });
       };
 
       socket.on("new_event", handleNewEvent);
@@ -219,6 +230,12 @@ const LiveAlerts = () => {
               // Show the display confidence (model's own, or a behavioural DETECTION score for a
               // confirmed scan). confidence_basis says which; the raw model value stays in evt.confidence.
               const behavioural = evt.confidence_basis === "behavioural";
+              // Alerts from the Zeek file-type rule (model_version "rule:files.log")
+              // are NOT the ML model — badge them apart so one malware download that
+              // trips both detectors is clearly two different sources, not a duplicate.
+              const isRuleBased =
+                typeof evt.model_version === "string" &&
+                evt.model_version.toLowerCase().startsWith("rule");
               const shownConf = evt.display_confidence != null ? evt.display_confidence : evt.confidence;
               const conf = shownConf ? (shownConf * 100).toFixed(1) : "0.0";
               const isBenign = cls.toLowerCase() === "benign";
@@ -241,6 +258,8 @@ const LiveAlerts = () => {
                         className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border ${
                           isConfirmed
                             ? "bg-red-950 text-red-300 border-red-700 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+                            : isRuleBased
+                            ? "bg-teal-950/80 text-teal-300 border-teal-700"
                             : behavioural
                             ? "bg-amber-950/80 text-amber-300 border-amber-700"
                             : "bg-blue-950/80 text-blue-300 border-blue-700"
@@ -248,6 +267,8 @@ const LiveAlerts = () => {
                       >
                         {isConfirmed
                           ? "CONFIRMED INCIDENT"
+                          : isRuleBased
+                          ? "FILE-TYPE RULE"
                           : behavioural
                           ? "BEHAVIOUR DETECTION"
                           : "MODEL PREDICTION"}

@@ -1493,6 +1493,67 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 
 ---
 
+**3.85 New proposal-driven fulfillment & proof report created (14 November 2026)**
+
+- **Request:** the owner built `PROGRESS_MEETING_PRESENTATION_GUIDE_EN.md` from `Group03_Proposal.pdf` to show the proposal points are met, but asked for a **more structured** standalone `.md` that proves, step by step, that the project does exactly what the proposal describes — "so comprehensive the supervisor is left with no further questions."
+- **What was done:** extracted the full proposal text from `Group03_Proposal.pdf` (via `pdftotext -layout`; no PDF libs installed and `pip install` is blocked in auto mode) and wrote a new report **`PROPOSAL_FULFILLMENT_PROOF_EN.md`**. Unlike the existing guide (organized around `docs/requirements_checklist.md`: FR → Targets → Objectives), the new file is **organized around the proposal itself, in the proposal's own order**: Scope/Ethics (1.2, 3.8) → Aim & Objectives O1–O6 (Table 3) → Hypothesis H1 & RQ1–RQ5 → Architecture (Fig. 2) → Methodology 3.2–3.8 → FR-01–FR-08 (Table 7) → Acceptance criteria (Table 9) → Controlled scenarios (Table 10) → Risks (Table 11) → 318 tests → honest limitations.
+- **Structure:** opens with a **Master Traceability Matrix** (every proposal element → status → section), then every item uses a fixed 4-step block: 📜 Proposal said → 🔧 What we built → 🧪 Proof (re-runnable command/file) → ✅ Result.
+- **Honesty kept explicit (Part 11):** physical-camera validation still pending (H1 Part 2); benign argmax FPR 5.72% on IoT-23 benign of 34-1; held-out present-class macro-F1 87.77% vs grouped-CV OOF 70.97% vs all-5-class 70.22%; PortScan weakest (F1 ≈ 73%); 125,599 flows/s is benchmark capacity, not the live rate. All verified commands/outputs reused from the already-live-tested EN guide.
+- **Files changed:** added `PROPOSAL_FULFILLMENT_PROOF_EN.md`; this progress entry. (No code changed.)
+
+---
+
+**3.86 Overview "Attack Class Distribution" chart now counts incidents, not flows (14 November 2026)**
+
+- **Question from the owner (seen on the live dashboard):** the chart showed a huge `DDoS_DoS` bar (~35,000) towering over every other class — "is this an error? why so many DDoS?"
+- **Diagnosis — not a data bug.** The pipeline is correct. The chart read `class_distribution`, which the backend builds in `DBService.get_attack_stats` by **summing `flow_count` per class** (`core_engine/db_service.py`). One DDoS SYN flood is a **single incident** but **thousands of half-open flows**, so flow-count made DDoS dominate. By actual incidents the same data was `{'CnC': 152, 'PortScan': 78, 'DDoS_DoS': 63, 'Malware_Download': 40}` — DDoS is in fact the **fewest** attacks, the opposite of what the bar implied.
+- **Fix (frontend only):** `my-app/src/pages/Overview.js` now plots `incidents_by_class` (already present in the `/api/summary` payload) instead of `class_distribution`, falling back to the flow counts only if incident counts are absent. Relabelled the subtitle "Multiclass Inferences" → "Detected incidents by class", added `incidents_by_class` to initial state, and named the bar series "incidents" so the tooltip is unambiguous. Rebuilt `my-app/build`.
+- **Why this is the honest view:** "attack class distribution" should answer *how many attacks of each type were detected*, which is incident count. Flow volume is still shown separately (the "Attacks Detected" KPI shows total flows alongside incident count).
+- **To see it:** hard-refresh the dashboard (Ctrl+F5); no backend restart needed (static build is read per request).
+- **Files changed:** `my-app/src/pages/Overview.js`, `my-app/build/*` (rebuild), this progress entry. No backend/model code changed.
+
+---
+
+**3.87 Repeated DDoS floods now show as distinct, visibly-updating alerts (15 November 2026)**
+
+- **Question from the owner (live demo):** ran several `nping` SYN floods in a row; "the alert for the DDoS I performed didn't come through." Only one or two DDoS cards appeared for four floods.
+- **Diagnosis — not a lost alert.** The first flood's card *did* arrive (dashboard 11:56:52 PM = 18:26 UTC). The problem was **burst coalescing**: `DBService.record_attack_event` merges flows of the same `(src, dst, class)` within the aggregate window into one incident, and the aggregate window was tied to `repeat_window_seconds` = **60 s**. Because the floods were ~60 s apart (and each flood keeps `last_seen` fresh), later floods folded into the existing incident. The engine then emitted only throttled `event_update` messages, and the frontend updated the card **in place without moving it**, so it looked like nothing happened.
+- **Fix 1 — decouple the two windows (backend).** Added `response.event_aggregate_seconds` (default **20 s**), used *only* for merging flows into one dashboard card; the block policy still uses `repeat_window_seconds` = 60 s (min_repeats within 60 s) unchanged. `DecisionEngine` now passes `aggregate_window_seconds=self.event_aggregate_seconds` to `record_attack_event`. Effect: the thousands of flows inside a single ~6 s flood still collapse into one card, but two separate flood runs seconds apart now appear as **two distinct alerts**. Blocking behaviour is untouched.
+- **Fix 2 — make a continuing burst visible (frontend).** `my-app/src/pages/LiveAlerts.js` `handleEventUpdate` now refreshes the card's live fields, sets its timestamp to `last_seen`, and **lifts the card back to the top**, so an ongoing/repeated flood is obviously active instead of silently updating a card the user scrolled past. Also now respects the Pause toggle.
+- **Verification:** `pytest tests/integration/test_detection_pipeline.py tests/unit/test_decision_engine.py tests/unit/test_db_service_unit.py -q` → **21 passed** (burst-coalescing test still green: instantaneous flows stay within 20 s → one document). Backend restarted (pid 6388), dashboard rebuilt.
+- **Files changed:** `core_engine/decision_engine.py`, `lab_virtual/settings.lab.yaml`, `my-app/src/pages/LiveAlerts.js`, `my-app/build/*` (rebuild), this progress entry.
+
+---
+
+**3.88 Thorough dashboard-integrity sweep; live auto-expiry countdown added (15 November 2026)**
+
+- **Request:** after the chart (3.86) and repeated-alert (3.87) fixes, the owner asked to "thoroughly check for any other similar issues and rectify them." Swept every page for the same four fault families: flows-vs-incidents mislabels, invisible chart/tooltip text, live updates that never reach the UI, and static values where a live one is expected.
+- **Sweep result — findings:**
+  - **Emitted vs subscribed Socket.IO events** cross-checked: `new_event`, `event_update`, `summary_update`, `blocklist_update`, `device_update`, `scan_progress` all have consumers. `summary_update` pushes the full summary (incl. `incidents_by_class`) every 5 s, so the Overview chart updates live. (`settings_update`/`log_export`/`traffic_update` are emitted without a page consumer — harmless, no visible bug.)
+  - **Confidence display** consistent across LiveAlerts/AttackHistory/Overview (`display_confidence` with `(beh.)` basis, raw model value kept).
+  - **Throughput/latency rows** already honestly labelled ("live rate (last 60 s)" vs "benchmark capacity") from 3.82.
+  - **Only one chart exists** (Overview) and its tooltip was already fixed in 3.86.
+- **Issue found & fixed — Active Mitigations had no live countdown.** The guide (FR-06 and the Attack-3 playbook) tells the supervisor a "real-time countdown timer ticks down second-by-second on the browser screen," but `my-app/src/pages/Blocklist.js` only rendered a **static** `EXPIRES AT` clock time. Added a once-per-second `now` tick and a new **TIME LEFT** column that counts down live (`mm:ss` / `h:mm:ss`, shows `expired`/`Manual`) from each rule's `expires_at`. Verified the `/api/blocklist` JSON returns `expires_at` as ISO-8601 `Z` (parses in-browser). Bumped the empty-row `colSpan` 7→8.
+- **Consistency fix — file/malware alerts.** `FileCheck` still coalesced on the 60 s `repeat_window_seconds`; gave it the same decoupled `event_aggregate_seconds` (20 s) as the engine (3.87) so two separate download tests do not fold into one card. `app.py` passes the setting; param defaults to `repeat_window_seconds` so existing tests are unaffected.
+- **Verification:** full suite `pytest tests/ -q` → **318 passed** (80 s). Dashboard rebuilt, backend restarted (pid 12904), lab reset clean.
+- **Files changed:** `my-app/src/pages/Blocklist.js`, `core_engine/file_check.py`, `core_engine/app.py`, `my-app/build/*` (rebuild), this progress entry.
+
+---
+
+**3.89 Malware download showed two alerts — one was mislabelled "MODEL PREDICTION" (15 November 2026)**
+
+- **Question from the owner:** ran the malware-download command once, two `Malware_Download` alerts appeared — why?
+- **Diagnosis — two alerts is BY DESIGN (dual detection), but one was mislabelled.** A malware download trips two independent detectors, exactly as the guide's FR-02 Test 2.5 documents ("Dual Alerts Emitted"):
+  1. the **ML model** (v3.2.0) on the connection flow — e.g. `Malware_Download 48.3%`, direction outbound;
+  2. the **Zeek file-type rule** (`core_engine/file_check.py`, D-052) on `files.log` — `Malware_Download 100%`, carrying `model_version = "rule:files.log"`, `reason RULE_EXECUTABLE_DOWNLOAD`, alert-only.
+  The real bug: the dashboard badged **both** cards "MODEL PREDICTION", even though the 100% one is a signature rule, not the model. That made one genuine detection look like a duplicate of the other.
+- **Fix (frontend):** `my-app/src/pages/LiveAlerts.js` and `Overview.js` now detect rule-based alerts (`model_version` starts with `"rule"`) and badge them **"FILE-TYPE RULE"** (teal), separate from "MODEL PREDICTION" (blue), "BEHAVIOUR DETECTION" (amber) and "CONFIRMED INCIDENT" (red). So the two malware cards are now clearly *different sources*, not a duplicate. Attack History's badge is `status`-based ("PREDICTION"/"CONFIRMED" = lifecycle, not detector) and its detail panel already shows `model_version`, so it was left as-is.
+- **Why not suppress one alert:** keeping both is the designed defence-in-depth — if the model misses a dropper the file rule still catches it, and vice versa. The goal was to label them honestly, not hide one.
+- **Verification:** `npm run build` compiled clean; no backend change. Dashboard rebuilt.
+- **Files changed:** `my-app/src/pages/LiveAlerts.js`, `my-app/src/pages/Overview.js`, `my-app/build/*` (rebuild), this progress entry.
+
+---
+
 ## 4. Challenges and how they were solved
 
 | #  | Challenge                                         | Cause                                                                                                         | Effect                                                     | Solution                                                                                                         | Status   |

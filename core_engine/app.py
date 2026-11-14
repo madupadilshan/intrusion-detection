@@ -193,6 +193,7 @@ def create_app(
         db=db,
         socketio=socketio,
         repeat_window_seconds=int(resp_cfg.get("repeat_window_seconds", 60)),
+        event_aggregate_seconds=int(resp_cfg.get("event_aggregate_seconds", 20)),
     )
     runner_inst = pipeline_runner or LivePipelineRunner(
         zeek_adapter=zeek_inst,
