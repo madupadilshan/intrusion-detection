@@ -872,6 +872,13 @@ docker exec ids-lab-camera python /lab/camera_sim.py download --url http://10.10
 - `model v3.2.0` (Confidence ~0.56–0.70): **Random Forest Model එක මඟින්ම** ලැබෙන alert එක.
 - දෙකම Alert-only වේ (Malware_Download සඳහා block threshold එකක් නොමැත; Table 10 row 5). කැමරාව block නොවේ.
 
+> 💡 **Dashboard එකේ මේ alerts දෙක වෙන වෙනම Badges වලින් පෙන්වන්නේ ඇයි? (Defence-in-Depth):**
+> තනි malware download විධානයක් ධාවනය කළද, පද්ධතිය තුළ ස්වාධීන ආරක්ෂණ ස්ථර 2ක් (Two Detectors) එකවර ක්‍රියාත්මක වේ:
+> 1. **`MODEL PREDICTION` (නිල් Badge - AI Model v3.2.0):** Network connection එකේ ගලායාම සහ හැසිරීම (flow behaviour) මඟින් හඳුනාගනී (~56% Confidence).
+> 2. **`FILE-TYPE RULE` (කොළ-නිල් / Teal Badge - Zeek Rule):** බාගත වූ ගොනුවේ MIME type එක සැබවින්ම පරීක්ෂා කර එය අනතුරුදායක Linux Executable (`ELF binary`) ගොනුවක් බව 100% ක් නිශ්චිතව හඳුනාගනී.
+> - **වාසිය (Strength):** එක් ක්‍රමයක් අසාර්ථක වුවද අනෙක් ක්‍රමයෙන් අනිවාර්යයෙන්ම හසුවන බව (Defence-in-Depth) Supervisor හට ඔප්පු කළ හැක.
+> - **වෙනම Labels ලබාදීම:** එකම දේ duplicate වී ඇති බවට සැකයක් ඇති නොවී, Detectors දෙකකින් ආ ස්වාධීන සාක්ෂි දෙකක් බව Live Alerts සහ Overview පිටු තුළ පැහැදිලිව පෙන්වීමට වෙනම badges (`MODEL PREDICTION` සහ `FILE-TYPE RULE`) ලබා දී ඇත.
+
 ##### 🔬 Direct ML Inference Proof (Universal Verification Command එක ධාවනය කරන්න):
 ```text
 === LIVE ML INFERENCE RESULT (MODEL v3.2.0) ===

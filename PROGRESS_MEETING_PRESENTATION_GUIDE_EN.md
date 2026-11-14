@@ -846,6 +846,13 @@ docker exec ids-lab-camera python /lab/camera_sim.py download --url http://10.10
 - `model v3.2.0` (Confidence ~0.56–0.70): Alert directly from the **Random Forest Model**.
 - Both are Alert-only (Table 10 row 5: no block threshold for Malware_Download). Camera is not blocked.
 
+> 💡 **Why the Dashboard Displays Two Distinct Badges (Defence-in-Depth):**
+> Even though the malware command is executed once, two independent detection layers fire simultaneously:
+> 1. **`MODEL PREDICTION` (Blue Badge - AI Model v3.2.0):** Detects the threat from network flow behaviour and telemetry patterns (~56% confidence).
+> 2. **`FILE-TYPE RULE` (Teal Badge - Zeek Rule):** Directly inspects the payload MIME type and flags the Linux executable (`ELF binary`) with 100% confidence.
+> - **Strength:** Demonstrates robust "Defence-in-Depth"—if the ML model misses an evasive transfer, the deterministic file rule catches it, and vice versa.
+> - **Distinct Badging:** Live Alerts and Overview pages badge each source independently (`MODEL PREDICTION` vs `FILE-TYPE RULE`) so examiners immediately see two corroborating detection engines rather than an accidental duplicate card.
+
 ##### 🔬 Direct ML Inference Proof (Run Universal Verification Command):
 ```text
 === LIVE ML INFERENCE RESULT (MODEL v3.2.0) ===
