@@ -1493,6 +1493,16 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 
 ---
 
+**3.85 New proposal-driven fulfillment & proof report created (14 November 2026)**
+
+- **Request:** the owner built `PROGRESS_MEETING_PRESENTATION_GUIDE_EN.md` from `Group03_Proposal.pdf` to show the proposal points are met, but asked for a **more structured** standalone `.md` that proves, step by step, that the project does exactly what the proposal describes — "so comprehensive the supervisor is left with no further questions."
+- **What was done:** extracted the full proposal text from `Group03_Proposal.pdf` (via `pdftotext -layout`; no PDF libs installed and `pip install` is blocked in auto mode) and wrote a new report **`PROPOSAL_FULFILLMENT_PROOF_EN.md`**. Unlike the existing guide (organized around `docs/requirements_checklist.md`: FR → Targets → Objectives), the new file is **organized around the proposal itself, in the proposal's own order**: Scope/Ethics (1.2, 3.8) → Aim & Objectives O1–O6 (Table 3) → Hypothesis H1 & RQ1–RQ5 → Architecture (Fig. 2) → Methodology 3.2–3.8 → FR-01–FR-08 (Table 7) → Acceptance criteria (Table 9) → Controlled scenarios (Table 10) → Risks (Table 11) → 318 tests → honest limitations.
+- **Structure:** opens with a **Master Traceability Matrix** (every proposal element → status → section), then every item uses a fixed 4-step block: 📜 Proposal said → 🔧 What we built → 🧪 Proof (re-runnable command/file) → ✅ Result.
+- **Honesty kept explicit (Part 11):** physical-camera validation still pending (H1 Part 2); benign argmax FPR 5.72% on IoT-23 benign of 34-1 (local-camera ≤5% needs hardware); held-out present-class macro-F1 87.77% vs grouped-CV OOF 70.97% vs all-5-class 70.22%; PortScan weakest (F1 ≈ 73%); 125,599 flows/s is benchmark capacity, not the live rate. All verified commands/outputs reused from the already-live-tested EN guide.
+- **Files changed:** added `PROPOSAL_FULFILLMENT_PROOF_EN.md`; this progress entry. (No code changed.)
+
+---
+
 ## 4. Challenges and how they were solved
 
 | #  | Challenge                                         | Cause                                                                                                         | Effect                                                     | Solution                                                                                                         | Status   |
