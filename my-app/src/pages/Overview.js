@@ -256,8 +256,16 @@ const Overview = () => {
                   <span className="text-emerald-400 font-semibold">{sys.allowlist_size || 0} addresses</span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-gray-950/60 border border-gray-800 rounded">
-                  <span className="text-gray-400">Flows per second (last 60 s)</span>
+                  <span className="text-gray-400">Flows per second — live rate (last 60 s)</span>
                   <span className="text-cyan-400 font-semibold">{sys.flows_per_second_60s ?? 0}</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 bg-gray-950/60 border border-gray-800 rounded">
+                  <span className="text-gray-400">Model throughput — benchmark capacity</span>
+                  <span className="text-cyan-400 font-semibold">
+                    {sys.model_throughput_fps
+                      ? `${Math.round(sys.model_throughput_fps).toLocaleString()} flows/s`
+                      : "—"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-2.5 bg-gray-950/60 border border-gray-800 rounded">
                   <span className="text-gray-400">Time per flow, Zeek line to dashboard (median / 95%)</span>

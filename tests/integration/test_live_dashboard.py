@@ -81,6 +81,9 @@ def test_summary_has_measured_system_values(server):
     sysinfo = s["system"]
     assert sysinfo["pipeline_status"] in ("stopped", "running", "error")
     assert sysinfo["model_version"].startswith("v3.")
+    # model throughput is the saved benchmark capacity (flows/s), surfaced for the dashboard
+    assert "model_throughput_fps" in sysinfo
+    assert sysinfo["model_throughput_fps"] is None or sysinfo["model_throughput_fps"] > 0
     assert isinstance(sysinfo["auto_response"], bool) and sysinfo["allowlist_size"] >= 1
 
 

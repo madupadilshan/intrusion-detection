@@ -47,7 +47,7 @@
    - [Target 6: Usability & Administrative Audit Compliance](#target-6-usability--administrative-audit-compliance)
 4. [කොටස 3: පර්යේෂණ අරමුණු සනාථ කිරීම (Objectives O1 to O6 - Table 3)](#4-කොටස-3-පර්යේෂණ-අරමුණු-සනාථ-කිරීම-objectives-o1-to-o6)
 5. [කොටස 4: උපකල්පනය සහ පර්යේෂණ ගැටලු (Hypothesis H1 & RQ1 to RQ5)](#5-කොටස-4-උපකල්පනය-සහ-පර්යේෂණ-ගැටලු-hypothesis-h1--rq1-to-rq5)
-6. [කොටස 5: ස්වයංක්‍රීය පරීක්ෂණ කට්ටලය (Automated Test Suite - 313 Tests Passed)](#6-කොටස-5-ස්වයංක්‍රීය-පරීක්ෂණ-කට්ටලය-automated-test-suite)
+6. [කොටස 5: ස්වයංක්‍රීය පරීක්ෂණ කට්ටලය (Automated Test Suite - 315 Tests Passed)](#6-කොටස-5-ස්වයංක්‍රීය-පරීක්ෂණ-කට්ටලය-automated-test-suite)
 7. [කොටස 6: අතිරේක සජීවී ප්‍රහාර ප්‍රදර්ශනය (Live Manual Attack Playbook)](#7-කොටස-6-අතිරේක-සජීවී-ප්‍රහාර-ප්‍රදර්ශනය-live-manual-attack-playbook)
 
 ---
@@ -114,7 +114,7 @@ Zeek logs කියවන Streaming Pipeline එක, Random Forest Classifier �
 > Windows PowerShell 5.1 (සාමාන්‍ය නිල් පැහැති PowerShell) හි `Start-Process` cmdlet සඳහා `-Environment` parameter එක සහය නොදක්වයි. එබැවින් පහත දැක්වෙන **නිර්දේශිත ක්‍රමය (Recommended)** භාවිතා කරන්න. එය background logging, environment variables, health checks, සහ streaming pipeline එකද එකවර සක්‍රිය කර දෙයි.
 
 ##### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
-Python interpreter එක මඟින් `core_engine/app.py` ධාවනය කරයි. එය ආරම්භයේදීම `ml_engine/models/ids_bundle_v3.joblib` ගොනුවෙන් AI Model එක මතකයට (RAM) පටවා ගනී, MongoDB දත්ත ගබඩාවට සම්බන්ධ වේ, Zeek log tailer thread එක පණගන්වයි, සහ Port 5000 න් HTTP/WebSocket requests භාරගැනීමට සූදානම් වේ.
+Python interpreter එක මඟින් `core_engine/app.py` ධාවනය කරයි. එය ආරම්භයේදීම `ml_engine/models/ids_bundle_v3_2.joblib` (v3.2.0) ගොනුවෙන් AI Model එක මතකයට (RAM) පටවා ගනී, MongoDB දත්ත ගබඩාවට සම්බන්ධ වේ, Zeek log tailer thread එක පණගන්වයි, සහ Port 5000 න් HTTP/WebSocket requests භාරගැනීමට සූදානම් වේ.
 
 ```powershell
 # ක්‍රමය 1: නිල Lab CLI එක මඟින් Background එකේ Run කරවීම (Recommended - All PowerShell versions supported)
@@ -1503,7 +1503,7 @@ Camera RTSP Video Stream: HEALTHY & ACTIVE (Zero Drop)
 .venv\Scripts\python.exe -c "
 import time, joblib, pandas as pd
 
-b = joblib.load('ml_engine/models/ids_bundle_v3.joblib')
+b = joblib.load('ml_engine/models/ids_bundle_v3_2.joblib')
 pipe = b['pipeline']
 classes = b['class_names']
 
@@ -1620,7 +1620,7 @@ Flows 1,000 ක batch එකක් RAM එකේ සකස් කර, Scikit-lea
 ```powershell
 .venv\Scripts\python.exe -c "
 import joblib, time, pandas as pd
-b = joblib.load('ml_engine/models/ids_bundle_v3.joblib')
+b = joblib.load('ml_engine/models/ids_bundle_v3_2.joblib')
 pipe = b['pipeline']
 dummy = {'proto':'tcp','service':'-','conn_state':'SF','history':'ShADadfF','orig_port_cat':'ephemeral','resp_port_cat':'registered','duration':0.1,'orig_bytes':100,'resp_bytes':200,'missed_bytes':0,'orig_pkts':5,'orig_ip_bytes':250,'resp_pkts':5,'resp_ip_bytes':300,'orig_bytes_per_pkt':50.0,'resp_bytes_per_pkt':60.0,'byte_ratio':0.83,'pkt_ratio':1.0,'is_incomplete_flow':0,'src_conn_60s':1,'src_udst_60s':1,'src_uport_60s':1,'src_udst_ratio':1.0,'pair_conn_60s':1,'pair_gap':0.0,'pair_gap_change':0.0,'pair_fail_1h':0}
 df = pd.DataFrame([dummy] * 1000)
@@ -1816,7 +1816,7 @@ Supervisor හට පද්ධතියේ Unit සහ Integration Tests පර�
 පද්ධතියේ සෑම කොටසක්ම (Zeek log parser, feature extraction, ML classification bundle, decision engine, router firewall adapter, JWT authentication, සහ WebSockets) කිසිදු code regression එකකින් තොරව 100% ක් නිවැරදිව වැඩ කරන බව මෘදුකාංග ඉංජිනේරු විද්‍යාත්මකව (Software Engineering Rigor) ඔප්පු කිරීමටය.
 
 #### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
-Python `pytest` framework එක මඟින් `tests/` බහලුමේ ඇති test files 24 ක් සොයාගෙන, test cases 313 ම එකින් එක run කර assertions තහවුරු කරයි.
+Python `pytest` framework එක මඟින් `tests/` බහලුමේ ඇති test files 24 ක් සොයාගෙන, test cases 315 ම එකින් එක run කර assertions තහවුරු කරයි.
 
 #### 💻 ධාවනය කරන Command එක (Terminal):
 
@@ -1838,15 +1838,15 @@ Python `pytest` framework එක මඟින් `tests/` බහලුමේ ඇ
 ........................................................................ [ 69%]
 ........................................................................ [ 92%]
 .........................                                                [100%]
-313 passed, 4 warnings in 42.15s
+315 passed, 6 warnings in 103.28s
 ```
 
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
-- `313 passed`: Unit tests, Integration tests, Router tests, Model tests, සහ API tests 313 න් 313 ම කිසිදු failure එකක් නොමැතිව 100% ක් සාර්ථක විය.
-- `in 42.15s`: සම්පූර්ණ පරීක්ෂණ කට්ටලයම තත්පර 42 කදී සම්පූර්ණ විය.
+- `315 passed`: Unit tests, Integration tests, Router tests, Model tests, සහ API tests 315 න් 315 ම කිසිදු failure එකක් නොමැතිව 100% ක් සාර්ථක විය.
+- `in 103.28s`: සම්පූර්ණ පරීක්ෂණ කට්ටලයම විනාඩි 1.5 කදී සම්පූර්ණ විය.
 
 #### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, every component of our system—including the Zeek parser, feature extractor, ML inference bundle, decision engine, Linux nftables adapter, and authenticated WebSocket API—is backed by a comprehensive automated test suite of 313 unit and integration tests, all currently passing with 100% test integrity."*
+> *"Sir, every component of our system—including the Zeek parser, feature extractor, ML inference bundle, decision engine, Linux nftables adapter, and authenticated WebSocket API—is backed by a comprehensive automated test suite of 315 unit and integration tests, all currently passing with 100% test integrity."*
 
 ---
 

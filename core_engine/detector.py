@@ -127,6 +127,10 @@ class Detector:
 
         metadata = bundle.get("metadata", {})
         self.model_version = metadata.get("bundle_version", "v1.0.0")
+        # Saved Step-14 classification-capacity benchmark (flows/s on a synthetic
+        # batch during training). This is the model's throughput *capacity*, not
+        # the live rate at which the lab is reading flows.
+        self.throughput_fps = metadata.get("inference_throughput_fps")
 
         logger.info(
             "Detector loaded successfully. Model version: %s, Classes: %s, Features: %d",

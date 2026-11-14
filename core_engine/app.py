@@ -354,6 +354,7 @@ def create_app(
                 "firewall": getattr(fw, "name", "unknown"),
                 "firewall_simulated": bool(getattr(fw, "is_simulated", True)),
                 "model_version": getattr(det, "model_version", None) or "unknown",
+                "model_throughput_fps": getattr(det, "throughput_fps", None),
             },
         }
 

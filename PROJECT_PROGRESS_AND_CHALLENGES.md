@@ -1454,6 +1454,19 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 
 ---
 
+**3.82 Dashboard throughput shown honestly: live rate vs model benchmark capacity (14 November 2026)**
+
+- **Question (demo prep):** the demo wants to show "Flows Processed" and a throughput "exceeding 120,000 flows/s". The dashboard already showed *flows processed* (the "MONITORED FLOWS" card = `flows_processed`, cumulative since pipeline start, pushed live). But the only throughput row was **"Flows per second (last 60 s)"**, which is the *live* rate from Zeek and is small in the lab (peak ~500/s). The 120,000+ figure is a different thing: the model's **classification-capacity benchmark** (`inference_throughput_fps` = 125,599 flows/s), measured on a synthetic batch during Step 14 training and saved in the bundle. It is **not** the live rate of packets being read, and the guide already warns not to quote it as live speed.
+- **Fix (honest, no faked live number):** surfaced the saved benchmark as its own clearly-labelled value so the ~125k figure can be shown truthfully next to the live rate, never in place of it.
+  - `core_engine/detector.py`: expose `self.throughput_fps = metadata.get("inference_throughput_fps")`.
+  - `core_engine/app.py`: add `"model_throughput_fps"` to the `/api/summary` system payload.
+  - `my-app/src/pages/Overview.js`: renamed the live row to **"Flows per second — live rate (last 60 s)"** and added **"Model throughput — benchmark capacity"** (`125,599 flows/s`). Rebuilt `my-app/build/` (`main.13ccdd07.js`); hard-refresh the browser.
+  - `tests/integration/test_live_dashboard.py`: assert `model_throughput_fps` is present and positive (or null).
+- **How to present it:** "Flows processed" updates live and is cumulative; the live flows/s is the real lab rate; the 125,599 flows/s is the model's measured capacity (what it *could* keep up with), far above the lab's load — which is the point of the throughput claim.
+- **Files changed:** `core_engine/detector.py`, `core_engine/app.py`, `my-app/src/pages/Overview.js`, `tests/integration/test_live_dashboard.py`, rebuilt `my-app/build/` (not tracked in Git), `PROJECT_PROGRESS_AND_CHALLENGES.md`.
+
+---
+
 ## 4. Challenges and how they were solved
 
 | #  | Challenge                                         | Cause                                                                                                         | Effect                                                     | Solution                                                                                                         | Status   |
