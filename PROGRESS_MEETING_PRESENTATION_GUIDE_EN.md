@@ -477,32 +477,65 @@ Open **`http://localhost:5000/overview`** in your browser:
 
 ---
 
-#### 🧠 Step 2.0: Direct Machine Learning Model Inspection & Specification (The ML Proof):
-Before launching attacks, directly demonstrate to the supervisor that the genuine Production Random Forest model bundle is loaded, showing its architecture, 27 extracted features, 5 target classes, and Macro-F1 score (0.8777):
+#### 🧠 Step 2.0: Direct Machine Learning Model Inspection & Live Inference Proof (The ML Proof):
+
+##### 💡 Why We Are Doing This:
+To directly demonstrate to the supervisor—before launching any network attacks—that an authentic scikit-learn Random Forest model is actively loaded in memory (not simulated or relying on hardcoded prints). We verify its 100 decision trees, trained parameters, 27 flow features, Level 2 held-out validation metrics, and execute a live mathematical inference test on a sample flow.
+
+##### ⚙️ What Happens Under the Hood (Line-by-Line Breakdown):
+1. `joblib.load('...ids_bundle_v3_2.joblib')`: Deserializes the sealed model bundle from disk directly into RAM.
+2. `pipe.named_steps['model']`: Accesses the authentic scikit-learn `RandomForestClassifier` instance inside the pipeline.
+3. `clf.n_estimators`, `clf.max_depth`, `clf.min_samples_leaf`, `clf.class_weight`: Dynamically queries the model instance's attributes in memory (100 trees, depth 25, leaf 4, class-weight balanced) without any hardcoding.
+4. `len(b['feature_columns'])` and `b['class_names']`: Confirms the exact 27 input flow features and 5 attack classes expected by the pipeline.
+5. `m['level_2_macro_f1_present']` and `m['level_2_accuracy']`: Reads the authentic sealed evaluation scores from held-out IoT-23 scenario `Capture-34-1` (23,145 flows), proving 87.77% Macro-F1 (exceeding proposal target >= 85.0%) and 96.25% Accuracy.
+6. `pipe.predict(df)` and `pipe.predict_proba(df)`: Feeds a test flow into the pipeline and executes live inference across all 100 decision trees, returning the predicted class (`PortScan`) and probability distribution in real time.
+
+##### 💻 Direct Raw Command (Terminal):
 ```powershell
 .venv\Scripts\python.exe -c "
-import joblib
+import joblib, pandas as pd
+
 b = joblib.load('ml_engine/models/ids_bundle_v3_2.joblib')
-print('=== PRODUCTION ML MODEL SPECIFICATION ===')
-print('Bundle File    : ml_engine/models/ids_bundle_v3_2.joblib')
-print('Model Version  :', b['metadata'].get('bundle_version', 'v3.2.0'))
-print('Algorithm      :', type(b['pipeline'].named_steps['model']).__name__)
-print('Hyperparameters: max_depth=25, min_samples_leaf=4, class_weight=balanced')
-print('Input Features :', len(b['feature_columns']), 'Network Flow Features')
-print('Target Classes :', b['class_names'])
-print('Macro-F1 Score :', b['metadata'].get('macro_f1', 0.8777))
+pipe = b['pipeline']
+clf = pipe.named_steps['model']
+m = b['metadata']
+
+print('=== 1. REAL MODEL INSTANCE VERIFICATION ===')
+print('Model Type           :', type(clf).__name__, '({} Decision Trees)'.format(clf.n_estimators))
+print('Bundle Version       :', m['bundle_version'])
+print('Trained Dataset      : Stratosphere IoT-23 ({:,} flows)'.format(m['training_samples_count']))
+print('Hyperparameters      : max_depth={}, min_samples_leaf={}, class_weight={}'.format(clf.max_depth, clf.min_samples_leaf, clf.class_weight))
+print('Input Features       :', len(b['feature_columns']), 'Flow Features')
+print('Target Attack Classes:', b['class_names'])
+print('Held-Out Accuracy    : {:.2f}% (Scenario {})'.format(m['level_2_accuracy']*100, m['level_2_heldout_scenario']))
+print('Held-Out Macro-F1    : {:.2f}% (Proposal Target >= 85.0%)'.format(m['level_2_macro_f1_present']*100))
+
+print('\n=== 2. LIVE INFERENCE PROOF (1 SAMPLE FLOW) ===')
+sample = {col: 0.0 for col in b['feature_columns']}
+sample.update({'proto':'tcp','service':'unknown','conn_state':'S0','history':'S','orig_port_cat':'registered','resp_port_cat':'dynamic','duration':1.5,'orig_pkts':3.0,'orig_ip_bytes':180.0})
+df = pd.DataFrame([sample])
+pred_idx = pipe.predict(df)[0]
+probs = pipe.predict_proba(df)[0]
+print('Test Flow Injected   : Outbound SYN probe (conn_state=S0)')
+print('Live Prediction      :', b['class_names'][pred_idx], '(Confidence: {:.2f}%)'.format(probs[pred_idx]*100))
 "
 ```
-📋 **Verified Output:**
+
+##### 📋 Verified Output:
 ```text
-=== PRODUCTION ML MODEL SPECIFICATION ===
-Bundle File    : ml_engine/models/ids_bundle_v3_2.joblib
-Model Version  : v3.2.0
-Algorithm      : RandomForestClassifier
-Hyperparameters: max_depth=25, min_samples_leaf=4, class_weight=balanced
-Input Features : 27 Network Flow Features
-Target Classes : ['Benign', 'DDoS_DoS', 'PortScan', 'CnC', 'Malware_Download']
-Macro-F1 Score : 0.8777
+=== 1. REAL MODEL INSTANCE VERIFICATION ===
+Model Type           : RandomForestClassifier (100 Decision Trees)
+Bundle Version       : v3.2.0
+Trained Dataset      : Stratosphere IoT-23 (1,183,874 flows)
+Hyperparameters      : max_depth=25, min_samples_leaf=4, class_weight=balanced
+Input Features       : 27 Flow Features
+Target Attack Classes: ['Benign', 'DDoS_DoS', 'PortScan', 'CnC', 'Malware_Download']
+Held-Out Accuracy    : 96.25% (Scenario CTU-IoT-Malware-Capture-34-1)
+Held-Out Macro-F1    : 87.77% (Proposal Target >= 85.0%)
+
+=== 2. LIVE INFERENCE PROOF (1 SAMPLE FLOW) ===
+Test Flow Injected   : Outbound SYN probe (conn_state=S0)
+Live Prediction      : PortScan (Confidence: 37.96%)
 ```
 
 ---

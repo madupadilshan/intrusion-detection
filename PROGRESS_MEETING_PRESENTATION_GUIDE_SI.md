@@ -502,32 +502,65 @@ Supervisor ඉදිරියේ Browser එකේ **`http://localhost:5000/over
 
 ---
 
-#### 🧠 පියවර 2.0: Production Machine Learning Model Bundle එක සෘජුවම පරීක්ෂා කර ඔප්පු කිරීම (The ML Proof):
-ප්‍රහාර දියත් කිරීමට පෙර, Supervisor හට කිසිදු වෙනම script එකක් නොමැතිව, සැබෑ Production Random Forest model bundle එක ක්‍රියාකාරීව පවතින බවත්, එහි architecture එක, extract කරන features 27, target classes 5, සහ Macro-F1 score (0.8777) සෘජුවම පහත විධානය මඟින් පෙන්වන්න:
+#### 🧠 පියවර 2.0: Production Machine Learning Model Bundle එක සෘජුවම පරීක්ෂා කර සජීවී Inference සමඟ ඔප්පු කිරීම (The ML Proof):
+
+##### 💡 ඇයි මේ දේ කරන්නෙ? (Why We Are Doing This):
+ප්‍රහාර දියත් කිරීමට පෙර, පද්ධතිය තුළ සැබෑ Random Forest Machine Learning ආකෘතියක් ක්‍රියාත්මක වන බවත්, එය හුදෙක් සරල script එකක් හෝ hardcoded අගයන් නොව සැබෑ scikit-learn model object එකක් මතකයේ රඳවාගෙන සැබෑ inference සිදුකරන බවත් Supervisor හට සෘජුවම ඔප්පු කිරීමටයි. මෙහිදී Model එකේ 100 Decision Trees, Trained Hyperparameters, Flow Features 27, ස්වාධීන Held-Out පරීක්ෂණ වාර්තා (87.77% Macro-F1), සහ Sample Flow එකක් මත Live Mathematical Inference කිරීම සජීවීව පෙන්වයි.
+
+##### ⚙️ විධානයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):
+1. `joblib.load('...ids_bundle_v3_2.joblib')`: Disk එකේ ඇති මුද්‍රා තැබූ model bundle ගොනුව මතකයට (RAM) කියවා ගනී.
+2. `pipe.named_steps['model']`: Pipeline එක තුළ ඇති සැබෑ scikit-learn `RandomForestClassifier` object එක සෘජුවම ලබාගනී.
+3. `clf.n_estimators`, `clf.max_depth`, `clf.min_samples_leaf`, `clf.class_weight`: කිසිදු hardcode කිරීමකින් තොරව, model object එකේ සැබෑ ගුණාංග (attributes) සෘජුවම කියවයි (100 Trees, Depth 25, Leaf 4, Balanced).
+4. `len(b['feature_columns'])` සහ `b['class_names']`: ආකෘතිය අපේක්ෂා කරන features 27 සහ attack classes 5 සෘජුවම පරීක්ෂා කරයි.
+5. `m['level_2_macro_f1_present']` සහ `m['level_2_accuracy']`: මුද්‍රා තැබූ ස්වාධීන Held-Out scenario එක (`Capture-34-1`, flows 23,145) මත ලැබුණු Macro-F1 (87.77%) සහ Accuracy (96.25%) සනාථ කරයි.
+6. `pipe.predict(df)` සහ `pipe.predict_proba(df)`: Sample network flow එකක් (SYN probe) ලබාදී, Decision Trees 100 හරහා තත්පරයෙන් පංගුවකදී සැබෑ Live Mathematical Inference එකක් සිදුකර ප්‍රතිඵලය (`PortScan`) ලබාගනී.
+
+##### 💻 ධාවනය කරන Command එක (Terminal):
 ```powershell
 .venv\Scripts\python.exe -c "
-import joblib
+import joblib, pandas as pd
+
 b = joblib.load('ml_engine/models/ids_bundle_v3_2.joblib')
-print('=== PRODUCTION ML MODEL SPECIFICATION ===')
-print('Bundle File    : ml_engine/models/ids_bundle_v3_2.joblib')
-print('Model Version  :', b['metadata'].get('bundle_version', 'v3.2.0'))
-print('Algorithm      :', type(b['pipeline'].named_steps['model']).__name__)
-print('Hyperparameters: max_depth=25, min_samples_leaf=4, class_weight=balanced')
-print('Input Features :', len(b['feature_columns']), 'Network Flow Features')
-print('Target Classes :', b['class_names'])
-print('Macro-F1 Score :', b['metadata'].get('macro_f1', 0.8777))
+pipe = b['pipeline']
+clf = pipe.named_steps['model']
+m = b['metadata']
+
+print('=== 1. REAL MODEL INSTANCE VERIFICATION ===')
+print('Model Type           :', type(clf).__name__, '({} Decision Trees)'.format(clf.n_estimators))
+print('Bundle Version       :', m['bundle_version'])
+print('Trained Dataset      : Stratosphere IoT-23 ({:,} flows)'.format(m['training_samples_count']))
+print('Hyperparameters      : max_depth={}, min_samples_leaf={}, class_weight={}'.format(clf.max_depth, clf.min_samples_leaf, clf.class_weight))
+print('Input Features       :', len(b['feature_columns']), 'Flow Features')
+print('Target Attack Classes:', b['class_names'])
+print('Held-Out Accuracy    : {:.2f}% (Scenario {})'.format(m['level_2_accuracy']*100, m['level_2_heldout_scenario']))
+print('Held-Out Macro-F1    : {:.2f}% (Proposal Target >= 85.0%)'.format(m['level_2_macro_f1_present']*100))
+
+print('\n=== 2. LIVE INFERENCE PROOF (1 SAMPLE FLOW) ===')
+sample = {col: 0.0 for col in b['feature_columns']}
+sample.update({'proto':'tcp','service':'unknown','conn_state':'S0','history':'S','orig_port_cat':'registered','resp_port_cat':'dynamic','duration':1.5,'orig_pkts':3.0,'orig_ip_bytes':180.0})
+df = pd.DataFrame([sample])
+pred_idx = pipe.predict(df)[0]
+probs = pipe.predict_proba(df)[0]
+print('Test Flow Injected   : Outbound SYN probe (conn_state=S0)')
+print('Live Prediction      :', b['class_names'][pred_idx], '(Confidence: {:.2f}%)'.format(probs[pred_idx]*100))
 "
 ```
-📋 **තහවුරු කළ නිවැරදි ප්‍රතිදානය (Verified Output):**
+
+##### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 ```text
-=== PRODUCTION ML MODEL SPECIFICATION ===
-Bundle File    : ml_engine/models/ids_bundle_v3_2.joblib
-Model Version  : v3.2.0
-Algorithm      : RandomForestClassifier
-Hyperparameters: max_depth=25, min_samples_leaf=4, class_weight=balanced
-Input Features : 27 Network Flow Features
-Target Classes : ['Benign', 'DDoS_DoS', 'PortScan', 'CnC', 'Malware_Download']
-Macro-F1 Score : 0.8777
+=== 1. REAL MODEL INSTANCE VERIFICATION ===
+Model Type           : RandomForestClassifier (100 Decision Trees)
+Bundle Version       : v3.2.0
+Trained Dataset      : Stratosphere IoT-23 (1,183,874 flows)
+Hyperparameters      : max_depth=25, min_samples_leaf=4, class_weight=balanced
+Input Features       : 27 Flow Features
+Target Attack Classes: ['Benign', 'DDoS_DoS', 'PortScan', 'CnC', 'Malware_Download']
+Held-Out Accuracy    : 96.25% (Scenario CTU-IoT-Malware-Capture-34-1)
+Held-Out Macro-F1    : 87.77% (Proposal Target >= 85.0%)
+
+=== 2. LIVE INFERENCE PROOF (1 SAMPLE FLOW) ===
+Test Flow Injected   : Outbound SYN probe (conn_state=S0)
+Live Prediction      : PortScan (Confidence: 37.96%)
 ```
 
 ---
