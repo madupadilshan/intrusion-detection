@@ -1875,18 +1875,26 @@ docker exec ids-lab-router nft list set inet ids block_dst
 ```
 *(Result: `elements = { }` - set is clean and empty)*
 
-#### Step 2: Transmit a Live C&C Outbound Beacon from Camera to Attacker:
-```powershell
-# 1. Open Port 6667 Listener on Attacker Container:
-docker exec -d ids-lab-attacker nc -lp 6667
+#### Step 2: Transmit a Repeated C&C Beacon from the Camera to a Refused Port (the Realistic Pattern):
 
-# 2. Transmit real TCP C&C beacon from infected Camera to Attacker:
-docker exec ids-lab-camera sh -c "echo 'HELO_BOTNET_C2_BEACON' | nc -w 2 10.10.10.50 6667"
+> ⚠️ **Do NOT open a listener (`nc -lp 6667`) on the attacker, and do NOT send a single beacon.** Both will fail to block, for two reasons:
+> 1. **A listener makes the connection succeed cleanly** (`conn_state=SF`). The model does **not** alert on clean, completed connections — a real infected device repeatedly polls a **dead or unreachable** C&C address, which is what we must reproduce.
+> 2. **A single beacon is one flow.** The safety policy (Proposal 3.7, Safety Check 5) requires **3 repeated C&C alerts to the same destination within 60 seconds** before it will block. One connection can never meet that.
+
+```powershell
+# 0. Make sure NO C&C listener is running, so port 6667 stays REFUSED:
+docker exec ids-lab-attacker pkill -f "nc -lp 6667"
+
+# 1. Infected camera polls the refused C&C port 18 times (every 5 s). Each attempt is
+#    rejected (REJ). After 3 CnC alerts within 60 s, the router blocks the destination.
+docker exec ids-lab-camera sh -c 'for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do nc -z -w 2 10.10.10.50 6667; echo try $i exit=$?; sleep 5; done'
 ```
 
+> The block normally fires around attempt 4–6 (roughly 20–30 s in). You can let the loop finish or press `Ctrl+C` once you see `block_dst` populated in Step 3.
+
 ##### 🔍 Line-by-Line Breakdown:
-- `docker exec -d ids-lab-attacker nc -lp 6667`: Netcat opens port 6667 on attacker machine simulating a botnet master.
-- `echo 'HELO_BOTNET_C2_BEACON' | nc -w 2 10.10.10.50 6667`: Infected camera establishes an outbound connection through the router to report in.
+- `docker exec ids-lab-attacker pkill -f "nc -lp 6667"`: Stops any leftover listener so port 6667 is refused (a refused port is what produces the repeated-beacon alert pattern). It is fine if this prints nothing.
+- `for i in 1 2 … 18; do nc -z -w 2 10.10.10.50 6667; sleep 5; done`: The infected camera repeatedly tries to reach the C&C port every 5 seconds. Each try is refused (`exit=1`), and Zeek records each as a rejected connection, building the repeated outbound-beacon pattern the model classifies as `CnC`.
 
 #### Step 3: Show the Attacker IP Quarantined in `block_dst` with a Decaying Timer:
 ```powershell

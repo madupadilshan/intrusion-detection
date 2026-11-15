@@ -1985,18 +1985,26 @@ docker exec ids-lab-router nft list set inet ids block_dst
 ```
 *(ප්‍රතිඵලය: `elements = { }` - ලැයිස්තුව හිස්ය)*
 
-#### පියවර 2: සජීවී C&C Outbound Beaconing එකක් කැමරාවෙන් Attacker වෙත යැවීම:
-```powershell
-# 1. Attacker Container එකේ Port 6667 Listener එකක් විවෘත කිරීම:
-docker exec -d ids-lab-attacker nc -lp 6667
+#### පියවර 2: Refused Port එකකට කැමරාවෙන් C&C Beacon එක **නැවත නැවත** යැවීම (සැබෑ රටාව):
 
-# 2. ආසාදිත කැමරාවෙන් Attacker වෙත සැබෑ TCP C&C Beacon එකක් යැවීම:
-docker exec ids-lab-camera sh -c "echo 'HELO_BOTNET_C2_BEACON' | nc -w 2 10.10.10.50 6667"
+> ⚠️ **`nc -lp 6667` listener එකක් විවෘත නොකරන්න; එක් beacon එකක් පමණක් නොයවන්න.** හේතු දෙකක් නිසා මේ දෙකම block කිරීමට අසමත් වේ:
+> 1. **Listener එකක් තිබුණහොත් සම්බන්ධතාවය සාර්ථකව (`conn_state=SF`) අවසන් වේ.** පිරිසිදු, සම්පූර්ණ සම්බන්ධතා සඳහා ආකෘතිය alert නිකුත් නොකරයි — සැබෑ ආසාදිත උපකරණයක් **මිය ගිය / ළඟා විය නොහැකි** C&C ලිපිනයකට නැවත නැවත try කරයි; අප reproduce කළ යුත්තේ එයයි.
+> 2. **එක් beacon එකක් යනු එක් flow එකකි.** Safety policy (Proposal 3.7, Safety Check 5) අනුව block කිරීමට පෙර **තත්පර 60ක් ඇතුළත එකම destination එකට C&C alert 3ක්** අවශ්‍යයි. එක් සම්බන්ධතාවයකට එය සපුරාලිය නොහැක.
+
+```powershell
+# 0. C&C listener එකක් ක්‍රියාත්මක නොවන බවට සහතික කරන්න, එවිට Port 6667 REFUSED ලෙස පවතී:
+docker exec ids-lab-attacker pkill -f "nc -lp 6667"
+
+# 1. ආසාදිත කැමරාව refused C&C port එකට 18 වතාවක් (තත්පර 5කට වරක්) try කරයි. සෑම try එකක්ම
+#    reject (REJ) වේ. තත්පර 60ක් ඇතුළත C&C alert 3කට පසු, router එක destination එක block කරයි.
+docker exec ids-lab-camera sh -c 'for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do nc -z -w 2 10.10.10.50 6667; echo try $i exit=$?; sleep 5; done'
 ```
 
+> සාමාන්‍යයෙන් try 4–6 අතර (තත්පර 20–30ක් පමණ) block එක ක්‍රියාත්මක වේ. Loop එක අවසන් වන තෙක් සිටිය හැක, නැතහොත් පියවර 3 හි `block_dst` පිරී ඇති බව දුටු විට `Ctrl+C` ඔබන්න.
+
 ##### 🔍 කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):
-- `docker exec -d ids-lab-attacker nc -lp 6667`: Netcat මඟින් attacker පරිගණකයේ Port 6667 විවෘත කර Botnet Master Server එකක් ලෙස සවන් දෙන්න.
-- `echo 'HELO_BOTNET_C2_BEACON' | nc -w 2 10.10.10.50 6667`: ආසාදිත කැමරාව විසින් router එක හරහා පිටත attacker ගේ Port 6667 වෙත netcat outbound connection එකක් සාදා check-in beacon එක යවන්න.
+- `docker exec ids-lab-attacker pkill -f "nc -lp 6667"`: ඉතිරිව ඇති listener එකක් නවතා Port 6667 refused තත්ත්වයේ තබයි (refused port එකක් තමයි නැවත නැවත beacon alert රටාව සාදන්නේ). කිසිවක් මුද්‍රණය නොවූවද කමක් නැත.
+- `for i in 1 2 … 18; do nc -z -w 2 10.10.10.50 6667; sleep 5; done`: ආසාදිත කැමරාව තත්පර 5කට වරක් C&C port එකට නැවත නැවත try කරයි. සෑම try එකක්ම refuse (`exit=1`) වී Zeek මඟින් rejected connection එකක් ලෙස සටහන් වී, ආකෘතිය `CnC` ලෙස වර්ගීකරණය කරන නැවත නැවත outbound-beacon රටාව සාදයි.
 
 #### පියවර 3: Router එකේ `block_dst` ලැයිස්තුවට Attacker IP එක වැටී Countdown Timer එක දුවන බව පෙන්වීම:
 ```powershell

@@ -1554,6 +1554,31 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 
 ---
 
+**3.90 Attack-3 (C&C) playbook in the guides never blocked — command corrected (15 November 2026)**
+
+- **Problem (owner followed the guide):** ran the "Attack 3: Live C&C Beaconing" playbook exactly — started `nc -lp 6667` on the attacker, then sent one `echo 'HELO_BOTNET_C2_BEACON' | nc -w 2 10.10.10.50 6667`. Router `block_dst` stayed empty; no block. DB confirmed the beacon produced **no CnC event at all**.
+- **Root cause (two faults in the playbook command, not the engine):**
+  1. **The `nc -lp 6667` listener made the connection succeed cleanly** (`conn_state=SF`). The model does not alert on clean, completed connections — only on the realistic pattern of an infected device repeatedly polling a **refused/dead** C&C port.
+  2. **A single beacon is one flow.** Safety Check 5 (Proposal 3.7) requires **3 CnC alerts to the same destination within 60 s** before blocking, so one connection can never trigger it.
+  The manual playbook contradicted the working FR-02 Test 2.4 method (no listener + repeated refused probes).
+- **Fix (guides only — this is a guide command error the owner asked to correct):** rewrote Attack-3 Step 2 in **both** `PROGRESS_MEETING_PRESENTATION_GUIDE_EN.md` and `PROGRESS_MEETING_PRESENTATION_GUIDE_SI.md` to: (0) `pkill -f "nc -lp 6667"` so port 6667 is refused, then (1) a loop of 18 `nc -z -w 2 10.10.10.50 6667` probes every 5 s. Added a warning box explaining why a listener and a single beacon both fail, and a note that the block fires around attempt 4–6 (~20–30 s). Kept the policy unchanged (min_repeats=3 is the intended safety guarantee).
+- **Verified live:** ran the corrected loop against the lab → `block_dst = { 10.10.10.50 timeout 30m expires 29m13s }`, CnC event `conf 0.71, flows 9, resp blocked AUTO_CNC_DEST_BLOCK`. Lab reset clean afterwards.
+- **Files changed:** `PROGRESS_MEETING_PRESENTATION_GUIDE_EN.md`, `PROGRESS_MEETING_PRESENTATION_GUIDE_SI.md`, this progress entry. No code changed.
+
+---
+
+**3.91 Confirmed port scans detected but not blocked — router-SSH timeout storm fixed (15 November 2026)**
+
+- **Symptom (owner):** `nmap -p 80,554 192.168.50.30` repeated a few times — model identified `PortScan` but the IP was never blocked.
+- **Diagnosis (from the backend log + DB):** the scan WAS confirmed (`scan_confirmed=True`) and the policy fired the block, but the attack events showed `response_status=failed`. The backend log showed the router SSH command `nft add element inet ids block_src '{ 10.10.10.50 … }'` **timing out after 10 s, over and over**. A single SSH `nft add` is only ~0.18 s when idle, so SSH was healthy — the problem was a **storm**: the engine only wrote `_active_blocks` *after* a block succeeded, so while the first attempt was in flight (or failing) **every subsequent flow of the scan burst fired its own SSH command**. Dozens of concurrent `ssh.exe` calls choked the router's SSH daemon → all timed out → never cached → retried on the next flow → cascade. (Same root cause could hit C&C `block_dst` too.)
+- **Fix 1 — reserve the block before sending it (`core_engine/decision_engine.py`):** set `_active_blocks[(ip, action)] = now + 15 s` *immediately* when a block is about to be attempted, so a burst of flows collapses to **one** firewall command. On success it is extended to the full rule duration; on failure the 15 s cooldown stands, so the next flow retries a few seconds later instead of every flow hammering SSH. Added `self._block_attempt_cooldown = 15.0`.
+- **Fix 2 — retry a hung SSH on a fresh connection (`core_engine/firewall/router_adapter.py`):** `_execute_remote` now uses a 6 s per-attempt timeout and retries up to 2× (env `ROUTER_SSH_TIMEOUT`, `ROUTER_SSH_RETRIES`). A healthy command returns in <0.3 s, so if one connection stalls it is killed fast and the retry succeeds, instead of burning the whole 10 s on one hang.
+- **Verified live:** after the fix, a 3-port scan (`nmap -sS -p 23,80,554 192.168.50.30`) blocks `10.10.10.50` in `block_src` within ~6 s with **0 SSH timeouts** (previously many). Repeatable. Full suite `pytest tests/ -q` → **318 passed**. Backend restarted (pid 9604), lab reset clean.
+- **Usage note (not a bug):** a **2-port** scan (`-p 80,554`) is below the fan-out threshold (block needs ≥3 distinct ports OR ≥6 hosts in 60 s — a deliberate safety floor, Proposal 3.7). For a guaranteed block demo use **≥3 ports** (`-p 23,80,554`) or the subnet sweep.
+- **Files changed:** `core_engine/decision_engine.py`, `core_engine/firewall/router_adapter.py`, this progress entry.
+
+---
+
 ## 4. Challenges and how they were solved
 
 | #  | Challenge                                         | Cause                                                                                                         | Effect                                                     | Solution                                                                                                         | Status   |

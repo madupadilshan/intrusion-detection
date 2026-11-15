@@ -228,6 +228,12 @@ class DecisionEngine:
         # create a new firewall rule for every single flow. A rate-limited source can still be
         # blocked later by another class (for example a port scan from the same source).
         self._active_blocks: Dict[Tuple[str, str], float] = {}
+        # Seconds a (target, action) is reserved while its firewall command is in flight or
+        # after it failed, so a burst of flows from one attack does not spawn a storm of SSH
+        # commands (which overwhelmed the router's SSH and made every attempt time out). A
+        # successful block extends the reservation to the full rule duration; a failed one keeps
+        # this short cooldown so the next flow a few seconds later retries, not every flow.
+        self._block_attempt_cooldown: float = 15.0
         # Events already pushed to the dashboard: event_id -> [flows, last push time].
         # The database joins the flows of one attack burst into one event, so the dashboard
         # gets one "new_event" per event and then at most one "event_update" per second.
@@ -983,6 +989,13 @@ class DecisionEngine:
         if expires is not None and expires > now:
             outcome.response_status = "already_blocked"
             return decision
+
+        # Reserve this (target, action) BEFORE sending the firewall command. A single scan or
+        # flood produces many flows in a burst; without this reservation each flow fired its own
+        # SSH command, and the pile-up made the router's SSH time out so no block ever landed.
+        # The reservation is a short cooldown now; it becomes the full duration only on success,
+        # and stays short on failure so the next flow retries in a few seconds (not every flow).
+        self._active_blocks[block_key] = now + self._block_attempt_cooldown
 
         try:
             rule = self.execute_response(decision, event_id=outcome.event_id)

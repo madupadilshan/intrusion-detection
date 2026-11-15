@@ -68,6 +68,11 @@ class RouterAdapter(BaseFirewallAdapter):
         self.known_hosts_file = known_hosts_file or os.getenv("ROUTER_KNOWN_HOSTS")
         self.table_family = table_family
         self.table_name = table_name
+        # Per-attempt SSH timeout and retry count. A healthy router command returns in <0.3 s,
+        # so if one connection stalls we kill it quickly and retry on a fresh connection rather
+        # than waiting out one long 10 s hang (which used to make the whole block fail).
+        self._ssh_timeout: int = int(os.getenv("ROUTER_SSH_TIMEOUT", 6))
+        self._ssh_retries: int = int(os.getenv("ROUTER_SSH_RETRIES", 2))
 
         if simulate is not None:
             self._is_simulated = bool(simulate)
@@ -109,7 +114,20 @@ class RouterAdapter(BaseFirewallAdapter):
         cmd.append(remote_cmd)
 
         logger.debug("Executing remote router command: %s", " ".join(cmd))
-        return subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=10)
+        last_exc: Optional[Exception] = None
+        for attempt in range(self._ssh_retries + 1):
+            try:
+                return subprocess.run(
+                    cmd, capture_output=True, text=True, check=False, timeout=self._ssh_timeout
+                )
+            except subprocess.TimeoutExpired as exc:
+                last_exc = exc
+                logger.warning(
+                    "Router SSH command timed out after %ss (attempt %d/%d): %s",
+                    self._ssh_timeout, attempt + 1, self._ssh_retries + 1, remote_cmd,
+                )
+        # All attempts timed out; surface the last timeout to the caller.
+        raise last_exc  # type: ignore[misc]
 
     def block(
         self,
