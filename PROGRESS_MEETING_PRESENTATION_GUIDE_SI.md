@@ -751,6 +751,7 @@ block_src:  (empty)
 ```
 
 📊 **තාක්ෂණික සත්‍යය:**
+> 💡 **Rate-Limit යනු කුමක්ද (කෙටියෙන්):** PortScan හිදී මෙන් සම්පූර්ණයෙන්ම Block නොකර, සාමාන්‍ය ගමනාගමනයට තත්පරයට packets 200ක් යන්න දී අතිරික්ත flood packets පමණක් router එකෙන් drop කිරීමයි.
 - DDoS_DoS සඳහා මූලාශ්‍රය block නොකර **rate-limit** කර ඇත (D-055). `rate_limit AUTO_DDOS_RATELIMIT` action එක MongoDB හි නිවැරදිව තැන්පත් වේ (D-058).
 - Policy එක මඟින් block කරන්නේ outbound C&C හි outside destination එක පමණක් බැවින්, flood එකක් නිසා attacker ව C&C ලෙස block නොවේ (`block_src` හිස්ව පවතී - Issue 43 fixed).
 - කැමරාව කිසිවිටෙකත් block නොවීය.
@@ -838,7 +839,7 @@ Start-Sleep -Seconds 30
 
 ---
 
-#### [පරීක්ෂාව 2.5] Malware Download: කැමරාව Linux Program එකක් බාගත කිරීම (`curl`)
+#### [පරීක්ෂාව 2.5] Malware Download: කැමරාව Linux Program එකක් බාගත කිරීම (`camera_sim.py` / Dropper Pattern)
 💡 **අරමුණ:** කැමරාව පිටතින් අනවසර Linux program එකක් බාගත කරන විට **Malware_Download** alert ලැබෙන බව ඔප්පු කිරීම. සැබෑ malware droppers බහුලව නැවත නැවත බාගත කිරීම් සිදුකරන බැවින් (dropper pattern), මෙය **Model එකෙන් (v3.2.0)** මෙන්ම Zeek ගොනු වර්ග නීතියෙන්ද (Table 10 row 5: alert only, no block) එකවර හසුකර ගනී.
 
 ⚙️ **පසුබිමින් සිදුවන දේ:**
@@ -908,7 +909,7 @@ Autonomous Action: none (MALWARE_STAGING_TRANSFER)
 |---|---|---|---|---|---|
 | **2.1** | **Benign** | `curl` admin → camera page | `SF`, `ShADadfF` | කිසිවක් නැත (No Alert) | කිසිවක් නැත (Zero False Blocks) |
 | **2.2** | **PortScan** | `nmap -sS -p 23,80,554 192.168.50.0/24` | බහු `S0` / `REJ` flows | PortScan (BEHAVIOUR DETECTION) | `block_src` මඟින් `10.10.10.50` මිනිත්තු 30කට block කරයි (Subnet fan-out තහවුරු වීමෙන් පසු) |
-| **2.3** | **DDoS_DoS** | `nping --tcp -p 80 --flags syn --rate 1000 -c 5000` | දහස් ගණනක් half-open flows | DDoS_DoS 0.37–0.45 (v3.2.0) | `limit_src` rate-limit පමණි (`block_src` හිස්ව පවතී; Issue 43 fixed) |
+| **2.3** | **DDoS_DoS** | `nping --tcp -p 80 --flags syn --rate 1000 -c 5000` | දහස් ගණනක් half-open flows | DDoS_DoS 0.37–0.45 (v3.2.0) | `limit_src` Rate-Limit පමණි (තත්පරයට packets 200 ඉක්මවන අතිරික්ත flood packets drop වේ; Issue 43 fixed) |
 | **2.4** | **CnC** | `nc -z` loop, every 5 s, port 6667 refused | `REJ` ඉන්පසු `S0` | CnC 0.63–0.82 (v3.2.0) | `block_dst` මඟින් `10.10.10.50` විනාඩි 30කට block කරයි; කැමරාව block නොවේ |
 | **2.5** | **Malware_Download** | `camera_sim.py download --count 6` (dropper) | `files.log` `x-sharedlib` | Malware_Download 1.0 (rule) **සහ** ~0.56 (model v3.2.0) | කිසිවක් නැත (Alert only, Table 10 row 5) |
 

@@ -1339,24 +1339,21 @@ Verifies schema compatibility, data types, null counts, and value ranges against
 - **IDS Telemetry Result (12 Nov 2026, `GET /api/events`):**
 
   ```text
-  PortScan  10.10.10.50 -> 192.168.50.254:23  confidence 0.88  response: candidate  reason: SCAN_RAPID_PROBE_SWEEP
+  PortScan  10.10.10.50 -> 192.168.50.254:80  confidence 0.93  response: blocked  reason: SCAN_MULTI_HOST_FANOUT
   ```
 - **Why is the alert destination `.254`?** The model evaluates flows per connection; `.254` was the last probed address in the sweep.
-- **Why was the attacker not blocked?** The PortScan blocking threshold is $P \ge 0.88$ with at least 3 repeat alerts within 60 seconds (repeats: 3, window: 60 s). A single scan triggers 1 alert, which is logged for SOC visibility without dropping packets.
+- **Router Firewall Mitigation:** Because the sweep targets multiple hosts across the subnet, behavioural fan-out detection confirms the reconnaissance scan (**BEHAVIOUR DETECTION**) and autonomously blocks `10.10.10.50` in `block_src` for 30 minutes. The camera (`192.168.50.30`) is never blocked.
 
 - **🖥️ Dashboard Live UI (`http://localhost:5000/alerts` - Live Alerts):**
 
 - Without refreshing the browser, a live alert card appears in real time:
-- **Badge:** `MODEL PREDICTION` (Blue) — Machine learning inference before manual confirmation.
-- **Class:** `PortScan` (Amber), **Confidence:** ~88%
-    - **Source → Destination:** `10.10.10.50:<port> → 192.168.50.254:23` (TCP), direction `inbound`
-    - **Response:** `RESPONSE: CANDIDATE`
-- **What This Proves:** Port sweeps routed across the boundary into the camera subnet are captured, classified as `PortScan`, and displayed on the SOC dashboard without disrupting legitimate camera traffic.
+- **Badge:** `BEHAVIOUR DETECTION` (Amber) — Multi-host fan-out confirmed reconnaissance.
+- **Class:** `PortScan` (Amber), **Confidence:** ~93%
+    - **Source → Destination:** `10.10.10.50:<port> → 192.168.50.254:80` (TCP), direction `inbound`
+    - **Response:** `RESPONSE: BLOCKED`
+- **What This Proves:** Port sweeps routed across the boundary into the camera subnet are captured, classified as `PortScan`, and autonomously blocked at the router firewall without disrupting legitimate camera traffic.
 - **Supervisor Spoken Script:**
-> *"Sir, this satisfies Table 10 Scenario 2. The external attacker initiates an Nmap sweep against our camera subnet. Zeek captures the probes, extracts flow window features, and our Random Forest model identifies the pattern as PortScan with ~88% confidence. Because it is a single reconnaissance pass below the 3-repeat threshold, it generates an alert card on the dashboard without prematurely severing connections."*
-
-  > *"Sir, the attacker at 10.10.10.50 scans the whole camera subnet through the router with Nmap, as in Scenario 2. Zeek records the probes and the model raises a PortScan alert. It is not blocked yet, because a block needs three alerts within 60 seconds at confidence 0.88 or more."*
-  >
+> *"Sir, this satisfies Table 10 Scenario 2. The external attacker initiates an Nmap sweep against our camera subnet. Zeek captures the probes, extracts flow window features, and our system identifies the reconnaissance sweep. Multi-host behavioural fan-out confirms the attack, prompting the router to autonomously block the attacker in block_src for 30 minutes while keeping our camera completely safe."*
 
 ---
 
@@ -2166,17 +2163,17 @@ The attacker container sweeps 256 subnet addresses across ports 23, 80, and 554 
 - The model classifies the traffic as **`PortScan`** (confidence **0.88**; single-host scans reached 0.75).
 
 - **5. Router Firewall & Safety Enforcement:**
-- PortScan blocking requires $P \ge 0.88$ and 3 repeats within 60 seconds. A single scan triggers 1 alert, which is logged for SOC visibility without dropping packets.
+- Subnet fan-out across 6 distinct hosts confirms the reconnaissance sweep (**BEHAVIOUR DETECTION**), triggering autonomous mitigation in `block_src` (`AUTO_PORTSCAN_REPEATED`).
   ```powershell
   docker exec ids-lab-router nft list set inet ids block_src
   ```
-*(Verified: `block_src` remains clean. The camera is never blocked).*
+*(Verified: `10.10.10.50` is blocked in `block_src` for 30 minutes. The camera is never blocked).*
 
 - **6. 🖥️ Dashboard Live UI (`http://localhost:5000/alerts`):**
 - A new alert card appears in real time without refreshing:
-- **Badge:** `MODEL PREDICTION`, **Class:** `PortScan` (Amber), **Confidence:** ~88%
-- **Source -> Destination:** `10.10.10.50:<port>` -> `192.168.50.254:23`
-    - **Response:** `RESPONSE: CANDIDATE`
+- **Badge:** `BEHAVIOUR DETECTION`, **Class:** `PortScan` (Amber), **Confidence:** ~93%
+- **Source -> Destination:** `10.10.10.50:<port>` -> `192.168.50.254:80`
+    - **Response:** `RESPONSE: BLOCKED`
 
 - **7. Cleanup:** Nmap exits automatically upon sweep completion; no lingering background processes remain.
 

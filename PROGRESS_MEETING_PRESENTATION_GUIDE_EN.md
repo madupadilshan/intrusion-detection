@@ -726,6 +726,7 @@ block_src:  (empty)
 ```
 
 📊 **Technical Truth:**
+> 💡 **What Rate-Limiting Means (In Brief):** Unlike PortScan's full block, it permits up to 200 pkts/s for normal traffic while dropping all excess flood packets at the router.
 - Source is **rate-limited**, not blocked, for DDoS_DoS (D-055). `rate_limit AUTO_DDOS_RATELIMIT` action is saved in MongoDB (D-058).
 - Policy only blocks outside destinations of outbound C&C; attacker is not blocked as C&C (`block_src` remains empty - Issue 43 resolved).
 - Camera was never blocked.
@@ -812,7 +813,7 @@ Start-Sleep -Seconds 30
 
 ---
 
-#### [Test 2.5] Malware Download: Camera Downloading Linux Binary (`curl`)
+#### [Test 2.5] Malware Download: Camera Downloading Linux Binary (`camera_sim.py` / Dropper Pattern)
 💡 **Objective:** Prove that when the camera downloads an unauthorized Linux binary from outside, a **Malware_Download** alert is generated. Real malware droppers execute repeated downloads (dropper pattern); this is caught concurrently by the Model (**v3.2.0**) and the Zeek file rule (Table 10 row 5: alert only, no block).
 
 ⚙️ **What Happens Under the Hood:**
@@ -882,7 +883,7 @@ Autonomous Action: none (MALWARE_STAGING_TRANSFER)
 |---|---|---|---|---|---|
 | **2.1** | **Benign** | `curl` admin -> camera page | `SF`, `ShADadfF` | None (No Alert) | None (Zero False Blocks) |
 | **2.2** | **PortScan** | `nmap -sS -p 23,80,554 192.168.50.0/24` | Multiple `S0` / `REJ` flows | PortScan (BEHAVIOUR DETECTION) | `block_src` blocks `10.10.10.50` for 30 min (confirmed via multi-host sweep fan-out) |
-| **2.3** | **DDoS_DoS** | `nping --tcp -p 80 --flags syn --rate 1000 -c 5000` | Thousands of half-open flows | DDoS_DoS 0.37–0.45 (v3.2.0) | `limit_src` rate-limit only (`block_src` empty; Issue 43 resolved) |
+| **2.3** | **DDoS_DoS** | `nping --tcp -p 80 --flags syn --rate 1000 -c 5000` | Thousands of half-open flows | DDoS_DoS 0.37–0.45 (v3.2.0) | `limit_src` rate-limit only (drops flood packets over 200/s without full block; Issue 43 resolved) |
 | **2.4** | **CnC** | `nc -z` loop, every 5 s, port 6667 refused | `REJ` then `S0` | CnC 0.63–0.82 (v3.2.0) | `block_dst` blocks `10.10.10.50` for 30 min; camera unblocked |
 | **2.5** | **Malware_Download** | `camera_sim.py download --count 6` (dropper) | `files.log` `x-sharedlib` | Malware_Download 1.0 (rule) **and** ~0.56 (model v3.2.0) | None (Alert only, Table 10 row 5) |
 
