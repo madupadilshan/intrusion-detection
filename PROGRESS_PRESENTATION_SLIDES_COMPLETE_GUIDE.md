@@ -1,5 +1,6 @@
 # Real-Time Intrusion Detection and Response System for IP-Camera IoT Networks Using Machine Learning
 ## 🎓 Complete Progress Presentation Slide Deck & Defense Manual
+### *Grounded in Group 03 Research Proposal (July 2026), Architecture & Empirical Lab Results*
 
 ---
 
@@ -7,6 +8,7 @@
 > **Faculty:** Faculty of Technology, University of Sri Jayewardenepura  
 > **Group 03:** M A M Dilshan (ICT/22/824) · W S Dilshara (ICT/22/825) · A O P I Mendis (ICT/22/953)  
 > **Supervisors:** Dr. A.A.M. Matheeh (Main Supervisor) · Dr. Senaka Amarakeerthi (External Co-supervisor)  
+> **Proposal Alignment:** Fully aligned with Tables 1–11 and Figures 1–7 of `Group03_Proposal.pdf`  
 > **Repository:** `https://github.com/madupadilshan/intrusion-detection.git`  
 
 ---
@@ -15,7 +17,7 @@
 
 1. [PART 1: 🚀 PowerPoint-Ready Quick Copy-Paste Slide Deck (Slides 01 – 20)](#part-1--powerpoint-ready-quick-copy-paste-slide-deck)
 2. [PART 2: 🔬 In-Depth Slide Blueprints, Spoken Scripts & Sinhala Explanations](#part-2--in-depth-slide-blueprints-spoken-scripts--sinhala-explanations)
-3. [PART 3: ⚔️ Top 10 Viva / Defense Q&A Cheat-Sheet](#part-3-️-top-10-viva--defense-qa-cheat-sheet)
+3. [PART 3: ⚔️ Top 12 Viva / Defense Q&A Cheat-Sheet (Grounded in Proposal Table 11)](#part-3-️-top-12-viva--defense-qa-cheat-sheet)
 4. [PART 4: 🎨 PowerPoint Design, Typography & Color Blueprint](#part-4--powerpoint-design-typography--color-blueprint)
 
 ---
@@ -27,30 +29,28 @@
 
 ---
 
-### [Slide 01] Title Slide
+### [Slide 01] Title Slide & Research Team
 
 **Slide Header:**
 # Real-Time Intrusion Detection and Response System for IP-Camera IoT Networks Using Machine Learning
 
 **Slide Subtitle:**
-### Progress Presentation · Final Year Research Project 2026
+### Progress Presentation · Final Year Research Project (BICT Hons) 2026
 
 **Slide Body (Copy-Paste):**
-* **Academic Program:** Bachelor of Information and Communication Technology Honours (BICT Hons)
-* **Department & Faculty:** Department of ICT · Faculty of Technology
-* **Institution:** University of Sri Jayewardenepura, Sri Lanka
-* **Research Group 03:**
-  * M. A. M. Dilshan (`ICT/22/824`)
-  * W. S. Dilshara (`ICT/22/825`)
-  * A. O. P. I. Mendis (`ICT/22/953`)
-* **Supervisory Panel:**
-  * **Main Supervisor:** Dr. A.A.M. Matheeh
-  * **External Co-Supervisor:** Dr. Senaka Amarakeerthi
-* **Core Technology Badges:**
+* **Institution:** Department of Information and Communication Technology · Faculty of Technology · University of Sri Jayewardenepura
+* **Research Team (Group 03 - Proposal Table 1 & Table 2):**
+  * **M. A. M. Dilshan (`ICT/22/824`):** Backend services, traffic-processing integration & MongoDB database
+  * **W. S. Dilshara (`ICT/22/825`):** React dashboard, live WebSocket alerts, network discovery & response controls
+  * **A. O. P. I. Mendis (`ICT/22/953`):** Machine-learning pipeline, dataset preparation, feature engineering & evaluation
+* **Project Supervision:**
+  * **Main Supervisor:** Dr. A.A.M. Matheeh (Senior Lecturer, Department of ICT, FOT, USJ)
+  * **External Co-Supervisor:** Dr. Senaka Amarakeerthi (External Supervisor)
+* **Core Technological Pillars:**
   `[Passive Zeek Sniffing]` · `[Random Forest v3.2.0]` · `[Linux nftables]` · `[Zero Video Disruption]`
 
 **PowerPoint Notes (Copy-Paste to Notes Pane):**
-> Good morning respected supervisors Dr. Matheeh, Dr. Amarakeerthi, and evaluation panel members. Today Group 03 presents the progress of our final-year research: 'Real-Time Intrusion Detection and Response System for IP-Camera IoT Networks Using Machine Learning'. We will demonstrate our research methodology, zero-leakage ML model, sub-second autonomous mitigation, and live empirical validation on our virtualized laboratory testbed.
+> Good morning respected main supervisor Dr. Matheeh, external co-supervisor Dr. Amarakeerthi, and evaluation panel members. Today Group 03 presents the progress of our research project: 'Real-Time Intrusion Detection and Response System for IP-Camera IoT Networks Using Machine Learning'. In line with our proposal, Dilshan leads backend and database engineering, Dilshara oversees frontend dashboard and response controls, and Mendis leads machine learning and dataset engineering. Today we present our zero-leakage ML pipeline, sub-second autonomous mitigation, and live empirical validation.
 
 ---
 
@@ -65,17 +65,19 @@
   * IP cameras represent over 35% of all commercial and domestic IoT deployments.
   * Operate 24/7 as mission-critical physical security infrastructure.
 * **The Embedded Hardware Vulnerability Dilemma:**
-  * **Resource Constraints:** Low RAM (128–512 MB), tiny flash storage (16–64 MB), low-power embedded CPUs.
+  * **Hardware Constraints:** Low RAM (128–512 MB), tiny flash storage (16–64 MB), low-power embedded CPUs.
   * **Zero Endpoint Protection:** Incapable of hosting Antivirus, EDR, or local monitoring agents.
   * **Legacy Firmware:** Stripped-down BusyBox/Linux OS with unpatched CVEs and default credentials.
+  * **Academic Evidence (Biondi et al., 2022):** Consumer IP cameras suffer from severe denial-of-service and video-eavesdropping vulnerabilities.
+  * **Standards Context (NISTIR 8259A):** Device management alone is insufficient without continuous network-level verification.
 * **Weaponization by Malicious IoT Botnets:**
   * Heavily targeted by botnet families: **Mirai, Okiru, Bashlite, Hajime, Mozi**.
   * Enslaved cameras are weaponized for Terabit-scale Distributed Denial of Service (DDoS) and reconnaissance.
-* **Core Architectural Reality:**
-  > ⚠️ *"Perimeter Network-Level Detection is the ONLY viable line of defense for resource-constrained embedded IoT."*
+* **Core Architectural Reality (Proposal Figure 1):**
+  > ⚠️ *"Conventional camera networks have NO independent traffic analytics or automated response. Perimeter Network-Level Detection is the ONLY viable line of defense."*
 
 **PowerPoint Notes (Copy-Paste to Notes Pane):**
-> IP cameras represent one of the fastest-growing IoT segments. However, because they are resource-constrained embedded systems running lightweight firmware, they cannot host endpoint security agents like Antivirus or EDR software. As a result, IoT botnets such as Mirai routinely compromise cameras via default credentials or unpatched vulnerabilities, weaponizing them to launch global DDoS attacks. Therefore, perimeter network-level intrusion detection is the only viable defense.
+> IP cameras represent one of the fastest-growing IoT segments. However, because they are resource-constrained embedded systems running lightweight firmware, they cannot host endpoint security agents like Antivirus or EDR software. As proven by Biondi et al. (2022), cameras suffer from serious remote denial-of-service and video-eavesdropping flaws. As a result, IoT botnets such as Mirai routinely compromise cameras via default credentials or unpatched vulnerabilities, weaponizing them to launch global DDoS attacks. As shown in our proposal Figure 1, traditional setups have no independent monitoring, making perimeter network-level intrusion detection the only viable defense.
 
 ---
 
@@ -86,17 +88,19 @@
 **Slide Subtitle:** Why Existing Commercial and Academic Solutions Fail on Surveillance IoT
 
 **Slide Body (Copy-Paste):**
-* **Gap 1: Inadequacy of Traditional Enterprise Datasets:**
-  * Legacy datasets (KDD99, NSL-KDD, CIC-IDS2017) model human office browsing; completely miss machine-to-machine (M2M) IoT botnet behaviors.
+* **Gap 1: Inadequacy of Traditional Enterprise Datasets (UNSW-NB15 / CICIDS2017):**
+  * Enterprise datasets model human office workstation browsing; completely miss machine-to-machine (M2M) IoT botnet dynamics (Garcia et al., 2020).
 * **Gap 2: The Surveillance Continuity Dilemma (Blind Spots):**
   * Conventional Inline firewalls drop camera traffic on false positives, severing RTSP video feeds and blinding physical security.
-* **Gap 3: Pervasive Academic Data Leakage:**
-  * Literature heavily relies on naive random row-level train/test splits (`train_test_split(test_size=0.2)`), leaking identical botnet attack loops across train/test sets (yielding falsely inflated 99.9% accuracy).
+* **Gap 3: Pervasive Academic Data Leakage (Yang et al., 2022):**
+  * A systematic review of 119 anomaly studies revealed severe data leakage: naive random row-level splitting (`train_test_split`) leaks identical botnet loops across train/test sets, yielding falsely inflated 99.9% accuracy.
 * **Gap 4: Domain Transferability Gap (RQ3):**
   * Public datasets like Stratosphere IoT-23 contain smart lamps and door locks, but **ZERO IP cameras**. Generalization to high-bitrate video traffic remains unproven.
+* **The Core Research Question Addressed:**
+  > *"How can we design a flow-based ML system that detects IoT attacks in real time, provides tamper-evident audit logs, and responds safely without disrupting legitimate camera video?"*
 
 **PowerPoint Notes (Copy-Paste to Notes Pane):**
-> When surveying existing literature, we identified four major research gaps. First, traditional intrusion detection systems are tailored for enterprise office networks and fail on IoT machine-to-machine traffic. Second, when an automated IPS triggers a false positive, it blocks the camera, severing the RTSP video feed and blinding security. Third, published literature suffers from severe data leakage by randomly shuffling consecutive network flows between training and testing splits. Finally, existing IoT datasets contain smart lamps, but zero IP cameras, leaving domain transferability unaddressed.
+> When surveying existing literature, we identified four major research gaps. First, traditional intrusion detection datasets like UNSW-NB15 and CICIDS2017 are tailored for enterprise office networks and fail on IoT machine-to-machine traffic. Second, when an automated IPS triggers a false positive, it blocks the camera, severing the RTSP video feed and blinding security. Third, Yang et al. (2022) surveyed 119 anomaly detection papers and found that most published literature suffers from severe data leakage by randomly shuffling consecutive network flows. Finally, existing IoT datasets contain smart lamps, but zero IP cameras, leaving domain transferability unaddressed.
 
 ---
 
@@ -109,7 +113,7 @@
 **Slide Body (Copy-Paste):**
 * **Formal Research Aim:**
   > *"To design, implement, and empirically validate a lightweight, real-time machine-learning intrusion detection and autonomous response system tailored for IP-camera IoT networks, achieving sub-second mitigation without disrupting legitimate video surveillance."*
-* **The 6 Core Objectives (Proposal Table 3):**
+* **The 6 Core Objectives (Proposal Table 3 Fulfillment):**
   * **O1 (Data Pipeline):** Construct a reproducible, zero-leakage preprocessing and feature engineering pipeline on Stratosphere IoT-23.
   * **O2 (ML Modeling):** Train and calibrate a multi-class Random Forest model evaluated strictly on held-out scenarios (Target: Macro-F1 $\ge 0.85$).
   * **O3 (Live Flow Generation):** Implement passive Zeek sniffing to generate 27-feature flow vectors matching training data.
@@ -118,7 +122,7 @@
   * **O6 (Empirical Evaluation):** Measure macro-F1, FPR ($\le 5\%$), sub-second latency, and zero video drop under controlled attack scenarios.
 
 **PowerPoint Notes (Copy-Paste to Notes Pane):**
-> To solve these challenges, our aim is to design and test a real-time ML-based intrusion detection and controlled response system specifically for IP-camera networks. We established six concrete objectives in our proposal: O1 builds a repeatable IoT-23 data pipeline; O2 trains a zero-leakage multi-class model; O3 extracts matching live features via Zeek; O4 integrates the backend pipeline and dashboard; O5 enforces autonomous firewall mitigation; and O6 benchmarks detection accuracy, latency, and resource footprint.
+> To solve these challenges, our aim is to design and test a real-time ML-based intrusion detection and controlled response system specifically for IP-camera networks. We established six concrete objectives in our proposal Table 3: O1 builds a repeatable IoT-23 data pipeline; O2 trains a zero-leakage multi-class model; O3 extracts matching live features via Zeek; O4 integrates the backend pipeline and dashboard; O5 enforces autonomous firewall mitigation; and O6 benchmarks detection accuracy, latency, and resource footprint.
 
 ---
 
@@ -144,10 +148,10 @@
 
 ---
 
-### [Slide 06] End-to-End System Architecture
+### [Slide 06] End-to-End System Architecture (Figures 2 & 3)
 
 **Slide Header:**
-# End-to-End System Architecture
+# End-to-End System Architecture (Proposal Figures 2 & 3)
 **Slide Subtitle:** Telemetry Ingestion, Feature Pipeline, Inference Core, and Autonomous Mitigation
 
 **Slide Body (Copy-Paste):**
@@ -160,14 +164,14 @@
   * **Behavioral Core:** Multi-host fan-out detector for reconnaissance sweeps (`BEHAVIOUR DETECTION`).
 * **4. Policy Mitigation Controller (`nftables`):**
   * Evaluates 7 Safety Guardrails; pushes dynamic firewall rules via SSH to Linux router sets (`block_src`, `block_dst`, `limit_src`).
-* **5. Centralized SOC Dashboard & Audit Logging:**
+* **5. Centralized SOC Dashboard & Audit Logging (Figure 4):**
   * React UI updated in real time via WebSockets (<0.1s); tamper-evident MongoDB event audit trail.
-* **Dual Operation Modes Supported:**
+* **Dual Operation Modes Supported (Proposal Figure 5):**
   * **Passive SPAN Mode (Primary):** Out-of-band sniffing with gateway router mitigation.
   * **Inline Bridge Mode:** Transparent in-path filtering at wire-speed.
 
 **PowerPoint Notes (Copy-Paste to Notes Pane):**
-> Here we illustrate our overall system architecture. In our primary passive deployment, Zeek listens in promiscuous mode on the switch's SPAN mirror port, completely out-of-band, meaning zero latency is added to the camera's RTSP video stream. As Zeek writes connection logs, our Python streaming pipeline extracts rolling-window features and passes them to our Random Forest model in sub-milliseconds. When an attack is confirmed, the decision engine commands the Linux router firewall via SSH to enforce dynamic nftables rules, while broadcasting live telemetry to our React dashboard via WebSockets.
+> Here we illustrate our overall system architecture corresponding to Figures 2 and 3 of our proposal. In our primary passive deployment, Zeek listens in promiscuous mode on the switch's SPAN mirror port, completely out-of-band, meaning zero latency is added to the camera's RTSP video stream. As Zeek writes connection logs, our Python streaming pipeline extracts rolling-window features and passes them to our Random Forest model in sub-milliseconds. When an attack is confirmed, the decision engine commands the Linux router firewall via SSH to enforce dynamic nftables rules, while broadcasting live telemetry to our React dashboard via WebSockets.
 
 ---
 
@@ -200,7 +204,7 @@
 
 ---
 
-### [Slide 08] Dataset Engineering & 27-Feature Pipeline (Objective O1)
+### [Slide 08] Dataset Engineering & 27-Feature Pipeline (O1, Tables 5 & 6)
 
 **Slide Header:**
 # Dataset Engineering & 27-Feature Space (O1)
@@ -208,18 +212,22 @@
 
 **Slide Body (Copy-Paste):**
 * **Dataset Scale & Provenance:**
-  * Official **Stratosphere IoT-23 v1.0.0** (Avast AIC / CTU University, Prague).
+  * Official **Stratosphere IoT-23 v1.0.0** (Garcia et al., 2020; Avast AIC / CTU Prague).
   * Total corpus: 325,309,946 raw flows across 23 scenarios (44.13 GB).
   * Filtered, cleaned, and balanced into **1,182,984 training flows** across 22 scenarios.
-* **Eliminating Academic Data Leakage (Scenario Split):**
-  * Strictly abandoned random row-level shuffling (`train_test_split`).
-  * Entire attack capture session **`CTU-IoT-Malware-Capture-34-1`** was held out unseen for testing.
-* **The 27-Dimensional Engineered Feature Space:**
-  * **13 Base Connection Features:** `orig_bytes`, `resp_bytes`, `orig_pkts`, `resp_pkts`, `duration`, TCP connection state (`S0`, `SF`, `REJ`, etc.), transport protocol (`tcp`, `udp`, `icmp`), service (`http`, `dns`, `ssl`).
+* **Official Label Grouping (Proposal Table 5):**
+  * `Benign` $\rightarrow$ Benign (Log & summary, no block)
+  * `PartOfAHorizontalPortScan` $\rightarrow$ PortScan (Block scanner after repeat threshold)
+  * `DDoS` $\rightarrow$ DDoS/DoS (Rate-limit outside source)
+  * `C&C`, `C&C-HeartBeat`, `C&C-Torii` $\rightarrow$ C&C (Isolate or block outside destination)
+  * `Okiru`, `Mirai`, `FileDownload` $\rightarrow$ Malware_Download (Forensic alert & subtype)
+* **The 27-Dimensional Engineered Feature Space (Proposal Table 6):**
+  * **13 Base Connection Features:** `orig_bytes`, `resp_bytes`, `orig_pkts`, `resp_pkts`, `duration`, TCP connection state (`S0`, `SF`, `REJ`), transport protocol (`tcp`, `udp`, `icmp`), service (`http`, `dns`, `ssl`).
   * **14 Rolling-Window Behavioral Features (60s sliding window):** Connection frequency from source IP, distinct destination IPs probed (fan-out), distinct destination ports probed (horizontal/vertical scan), byte ratios, and half-open failure rate (`pct_s0_60s`).
+* **Zero-Leakage Partitioning:** Scenario `CTU-IoT-Malware-Capture-34-1` strictly held out unseen.
 
 **PowerPoint Notes (Copy-Paste to Notes Pane):**
-> For Objective O1, we processed the Stratosphere IoT-23 dataset, which contains over 325 million raw network flows. To ensure absolute scientific validity, we eliminated the common academic flaw of random row-level splitting, which leaks temporal state. Instead, we performed a strict scenario-level split, reserving Capture-34-1 completely unseen for testing. We engineered a 27-dimensional feature vector combining 13 instantaneous Zeek connection metrics with 14 temporal rolling-window features computed over 60-second sliding windows, capturing vital behavioral patterns such as rapid probing and half-open connection spikes.
+> For Objective O1, we processed the Stratosphere IoT-23 dataset, which contains over 325 million raw network flows. As specified in proposal Table 5, we grouped diverse botnet behaviors into five actionable classes. To ensure absolute scientific validity, we eliminated the common academic flaw of random row-level splitting. Instead, we performed a strict scenario-level split, reserving Capture-34-1 completely unseen for testing. Guided by Table 6, we engineered a 27-dimensional feature vector combining 13 instantaneous Zeek connection metrics with 14 temporal rolling-window features computed over 60-second sliding windows, capturing vital behavioral patterns such as rapid probing and half-open connection spikes.
 
 ---
 
@@ -230,7 +238,7 @@
 **Slide Subtitle:** From Baseline Failure to Production-Ready Model (v1.0 $\rightarrow$ v3.2)
 
 **Slide Body (Copy-Paste):**
-* **Model Selection:**
+* **Model Selection (Breiman 2001; Vitorino et al. 2022):**
   * Evaluated: Logistic Regression, Decision Trees, XGBoost, and **Random Forest (100 estimators, balanced weights)**.
   * **Why Random Forest Won:** Superior Macro-F1 across 5 classes, robust against feature variance, sub-millisecond latency.
 * **Chronological Model Evolution:**
@@ -243,7 +251,7 @@
   * **v3.2 Production Deployment:** Retrained with lab calibration, sub-millisecond inference (**30.88 µs/flow**), and behavioural fan-out detector integration.
 
 **PowerPoint Notes (Copy-Paste to Notes Pane):**
-> For Objective O2, we evaluated multiple machine learning algorithms. Random Forest was selected as our primary classifier due to its superior multi-class robustness and ultra-low latency. Our model underwent four key development stages: Version 1.0 using only 13 base features achieved an unacceptable Macro-F1 of 0.50, failing to distinguish port scans from SYN floods. Version 2.0 introduced our 14 rolling-window aggregates, driving Macro-F1 to 0.83. Version 3.1 achieved our formal Hypothesis H1 milestone of 0.8595 Macro-F1 on unseen held-out test data. Finally, Version 3.2 represents our production model currently running live in the virtual lab.
+> For Objective O2, we evaluated multiple machine learning algorithms based on Breiman (2001) and Vitorino et al. (2022). Random Forest was selected as our primary classifier due to its superior multi-class robustness and ultra-low latency. Our model underwent four key development stages: Version 1.0 using only 13 base features achieved an unacceptable Macro-F1 of 0.50, failing to distinguish port scans from SYN floods. Version 2.0 introduced our 14 rolling-window aggregates, driving Macro-F1 to 0.83. Version 3.1 achieved our formal Hypothesis H1 milestone of 0.8595 Macro-F1 on unseen held-out test data. Finally, Version 3.2 represents our production model currently running live in the virtual lab.
 
 ---
 
@@ -385,7 +393,7 @@
 
 ---
 
-### [Slide 16] Proposal Fulfillment & Verification Matrix
+### [Slide 16] Proposal Fulfillment & Verification Matrix (Table 9 & Figure 7)
 
 **Slide Header:**
 # Proposal Verification Matrix: Targets vs. Realized Results
@@ -407,33 +415,35 @@
 | **FR-07 (Immutable Allowlists & Audit)**| Critical IPs protected | Allowlist enforced, MongoDB log | ✅ **PASSED** |
 | **FR-08 (Forensic Data Export)** | CSV/JSON export | Structured export verified | ✅ **PASSED** |
 
+* **Methodological Flow (Proposal Figure 7):** Offline IoT-23 evaluation $\rightarrow$ Held-out benchmark $\rightarrow$ Controlled lab attack replay $\rightarrow$ Operational acceptance.
+
 **PowerPoint Notes (Copy-Paste to Notes Pane):**
-> This verification scorecard maps our proposal targets directly against our empirical results. As demonstrated, every functional requirement from FR-01 through FR-08 is fully operational and validated. Most notably, Hypothesis H1 is fulfilled with an empirical Macro-F1 score of 0.8595 against the 0.85 target, benign camera false blocks remained at zero, and end-to-end response latency was an order of magnitude faster than the 2-second threshold.
+> This verification scorecard maps our proposal targets directly against our empirical results. Following our proposal Figure 7 methodology, we transitioned from offline benchmark evaluation to live operational acceptance. As demonstrated, every functional requirement from FR-01 through FR-08 is fully operational and validated. Most notably, Hypothesis H1 is fulfilled with an empirical Macro-F1 score of 0.8595 against the 0.85 target, benign camera false blocks remained at zero, and end-to-end response latency was an order of magnitude faster than the 2-second threshold.
 
 ---
 
-### [Slide 17] Engineering Challenges Encountered & Overcome
+### [Slide 17] Engineering Challenges & Risk Management (Table 11)
 
 **Slide Header:**
-# Engineering Challenges Encountered & Overcome
-**Slide Subtitle:** Solving Difficult Practical Bottlenecks in Network ML & Firewall Orchestration
+# Engineering Challenges & Risk Management (Table 11)
+**Slide Subtitle:** Technical Hurdles & Mitigation Strategies Defined in Proposal
 
 **Slide Body (Copy-Paste):**
-* **Challenge 1: Temporal Data Leakage in Feature Engineering:**
+* **1. Temporal Data Leakage in Feature Engineering:**
   * *Problem:* Random row shuffling across sliding windows leaked historical features.
   * *Resolution:* Enforced strict scenario-level partitioning and chronological sorting.
-* **Challenge 2: Low Confidence on Lab PortScans vs. Safety Policy:**
+* **2. Low Confidence on Lab PortScans vs. Safety Policy:**
   * *Problem:* Lab Nmap sweeps produced lower per-flow ML confidence (42%) than historical botnets. Lowering the threshold would risk false blocks.
   * *Resolution:* Engineered a dual-engine architecture: combining ML prediction with multi-host fan-out behavioral confirmation (`BEHAVIOUR DETECTION`).
-* **Challenge 3: Router SSH Command Storms During Floods:**
+* **3. Encrypted Traffic Handling (Proposal Table 11 Risk 5):**
+  * *Hurdle:* Modern TLS/HTTPS hides application payload contents.
+  * *Resolution:* System relies strictly on **transport-layer flow metadata** (durations, byte ratios, TCP states, inter-packet arrival times), completely independent of packet payloads.
+* **4. Router SSH Command Storms During Floods:**
   * *Problem:* High-rate alerts spawned concurrent SSH sessions, overwhelming the router's SSH daemon.
   * *Resolution:* Developed a sliding-window coalescing cache, mitigation cooldowns, and automatic SSH socket retries.
-* **Challenge 4: Realistic C&C Beaconing vs. Dead Port Handshake:**
-  * *Problem:* Model legitimately ignores clean completed TCP connections (`SF`); malware beacons to dead/refused C&C IPs.
-  * *Resolution:* Updated test harnesses to simulate persistent refused beaconing matching the 3-repeat safety threshold.
 
 **PowerPoint Notes (Copy-Paste to Notes Pane):**
-> Throughout this project, we confronted several difficult engineering challenges. Early on, we eliminated temporal data leakage by strictly partitioning scenario streams. When lab port sweeps generated lower per-flow ML confidence than historical botnets, we refused to compromise model safety thresholds; instead, we engineered a complementary behavioral fan-out detector. To handle high-velocity flood alerts without overwhelming the router's SSH daemon, we implemented sliding-window coalescing and connection pooling. These practical solutions ensure our system is robust in production rather than just a theoretical prototype.
+> Throughout this project, we confronted several difficult engineering challenges and managed the formal risks listed in proposal Table 11. Early on, we eliminated temporal data leakage by strictly partitioning scenario streams. When lab port sweeps generated lower per-flow ML confidence than historical botnets, we refused to compromise model safety thresholds; instead, we engineered a complementary behavioral fan-out detector. Addressing Table 11 Risk 5, we ensured our system relies strictly on transport-layer flow metadata, remaining completely effective even when traffic payloads are encrypted. Finally, sliding-window coalescing was implemented to prevent SSH command storms during high-rate DDoS floods.
 
 ---
 
@@ -452,7 +462,7 @@
   * **Weeks 29–32 (Final Testing & Reporting - Current Phase):** Full integration verification (**318/318 automated tests passing**), hardware testbed preparation, final report write-up. 🔄
 
 **PowerPoint Notes (Copy-Paste to Notes Pane):**
-> This timeline charts our progress across the 32-week roadmap outlined in our proposal. We have successfully completed all core development phases—including dataset preprocessing, machine learning modeling, streaming pipeline integration, autonomous mitigation, and comprehensive testing in our virtualized testbed. Currently, all 318 automated test suites pass cleanly. We are now entering our final phase: hardware deployment validation and dissertation writing.
+> This timeline charts our progress across the 32-week roadmap outlined in our proposal Figure 6. We have successfully completed all core development phases—including dataset preprocessing, machine learning modeling, streaming pipeline integration, autonomous mitigation, and comprehensive testing in our virtualized testbed. Currently, all 318 automated test suites pass cleanly. We are now entering our final phase: hardware deployment validation and dissertation writing.
 
 ---
 
@@ -504,104 +514,125 @@
 
 ### Slide 01 Blueprint: Title & Team Credentials
 - **Slide Layout:** Dark/Navy theme, USJ Logo on top right, centered title with high-contrast text.
-- **🇱🇰 සිංහලෙන් තේරුම:** ව්‍යාපෘතියේ මූලික හැඳින්වීම, කණ්ඩායමේ සාමාජිකයින් (Group 03) සහ අධීක්ෂකවරුන් හඳුන්වා දීම.
+- **Proposal References:** Table 1 (Project personnel), Table 2 (Team focused areas).
+- **🇱🇰 සිංහලෙන් තේරුම:** ව්‍යාපෘතියේ මූලික හැඳින්වීම, කණ්ඩායමේ සාමාජිකයින් (Group 03) සහ අධීක්ෂකවරුන් හඳුන්වා දීම. Proposal එකේ Table 2 අනුව Dilshan Backend/DB, Dilshara Frontend/Alerts, Mendis ML Pipeline භාරව කටයුතු කරයි.
 
 ### Slide 02 Blueprint: Research Motivation & IoT Vulnerability
 - **Slide Layout:** 3-Box horizontal card layout: Box 1 (CCTV Growth) -> Box 2 (Embedded Hardware Constraints) -> Box 3 (Botnet Exploits).
+- **Proposal References:** Figure 1 (Conventional IP-camera network and security gap), Section 1.1, Biondi et al. (2022), NISTIR 8259A.
 - **🇱🇰 සිංහලෙන් තේරුම:** IP කැමරා වල RAM/Flash අඩු නිසා Antivirus දාන්න බැරි බවත්, Mirai වැනි Botnets මඟින් පහසුවෙන් හැක් කර DDoS ප්‍රහාර වලට යොදාගන්නා බවත් පැහැදිලි කිරීම.
 
 ### Slide 03 Blueprint: Problem Statement & Literature Gaps
 - **Slide Layout:** 4-quadrant grid displaying Gaps 1, 2, 3, and 4.
+- **Proposal References:** Section 1.4, Table 4 (Critical comparison of related work), Yang et al. (2022).
 - **🇱🇰 සිංහලෙන් තේරුම:** සාමාන්‍ය Enterprise IDS IoT වලට නොගැලපීම, වැරදි alert එකකින් කැමරාව block වී CCTV recording බිඳවැටීම (Blind spot), සහ පර්යේෂණ පත්‍රිකා වල data leakage තිබීම පෙන්වා දීම.
 
 ### Slide 04 Blueprint: Aim & Objectives Matrix
 - **Slide Layout:** Top banner with Aim quote; 6-row table showing Objectives O1 to O6.
+- **Proposal References:** Section 1.5, Table 3 (Objectives and verification measures).
 - **🇱🇰 සිංහලෙන් තේරුම:** පද්ධතියේ ප්‍රධාන අරමුණ සහ Proposal එකේ Table 3 හි සඳහන් O1 සිට O6 දක්වා අරමුණු 6 සම්පූර්ණ කළ ආකාරය.
 
 ### Slide 05 Blueprint: Hypothesis & Research Questions
 - **Slide Layout:** Left column: Hypothesis H1 in green border box; Right column: RQ1 to RQ5 cards.
+- **Proposal References:** Section 1.5 (Hypothesis H1 & RQ1–RQ5).
 - **🇱🇰 සිංහලෙන් තේරුම:** H1 උපකල්පනය (Macro-F1 85% සහ FPR 5% ට අඩු වීම) සහ පර්යේෂණ ප්‍රශ්න 5 සාක්ෂි සහිතව ඔප්පු කිරීම.
 
 ### Slide 06 Blueprint: System Architecture Diagram
 - **Slide Layout:** Horizontal workflow diagram: Traffic -> Zeek Promiscuous Sniffer -> Feature Extractor -> Random Forest -> Decision Guardrails -> nftables Firewall -> React UI.
+- **Proposal References:** Figure 2 (Proposed end-to-end architecture), Figure 3 (Detection cycle), Figure 5 (Monitoring vs Inline modes).
 - **🇱🇰 සිංහලෙන් තේරුම:** SPAN mirror port එකක් හරහා වීඩියෝවට බාධාවක් නොවී පැකට් sniff කරන ආකාරය සහ Firewall එක මඟින් attacker ව block කරන ආකාරය.
 
 ### Slide 07 Blueprint: Virtual Lab Network Topology
 - **Slide Layout:** Dual-network diagram: `camlan` (left) connected via `ids-lab-router` to `outside` (right), showing all 11 container badges.
+- **Proposal References:** Section 5.1 (Experimental Environment), Figure 2.
 - **🇱🇰 සිංහලෙන් තේරුම:** Docker මඟින් සෑදූ ජාල 2 සහ Containers 11 සැබෑ TCP/IP පැකට් හුවමාරු කරමින් ක්‍රියාත්මක වන අයුරු.
 
 ### Slide 08 Blueprint: Dataset & 27 Features
 - **Slide Layout:** 2 Columns: Left (Stratosphere IoT-23 statistics and scenario split); Right (Table of 13 Base + 14 Rolling Window Features).
+- **Proposal References:** Section 3.2, Table 5 (How we group the labels), Table 6 (Candidate flow features), Garcia et al. (2020).
 - **🇱🇰 සිංහලෙන් තේරුම:** මිලියන 325ක IoT-23 දත්ත වලින් 1,182,984ක දත්ත සමබර කරගත් අයුරු සහ තත්පර 60ක window features 14ක් ඇතුළුව features 27ක් සෑදූ අයුරු.
 
 ### Slide 09 Blueprint: ML Evolution Timeline
 - **Slide Layout:** 4-step horizontal timeline: v1.0 (13 features, F1 0.50) -> v2.0 (27 features, F1 0.83) -> v3.1 (Milestone F1 0.8595) -> v3.2 (Production).
+- **Proposal References:** Section 2.4, Section 3.4, Breiman (2001), Vitorino et al. (2022).
 - **🇱🇰 සිංහලෙන් තේරුම:** තනි පැකට් වලින් ප්‍රහාර වෙන්කරගත නොහැකි වූ නිසා window features එක්කර F1 අගය 85.95% දක්වා වර්ධනය කළ ආකාරය.
 
 ### Slide 10 Blueprint: Quantitative Results & Confusion Matrix
 - **Slide Layout:** Left: Multi-class performance table; Right: Normalized Confusion Matrix heatmap.
+- **Proposal References:** Section 6, Table 9 (Evaluation measures and acceptance criteria).
 - **🇱🇰 සිංහලෙන් තේරුම:** නොදුටු Capture-34-1 දත්ත මත Macro-F1 අගය 0.8595 ක් සහ මයික්‍රෝ තත්පර 30.88 ක sub-millisecond වේගයක් ලබාගත් බව.
 
 ### Slide 11 Blueprint: Live Attack Demonstrations Table
 - **Slide Layout:** 5-row summary table showing the 5 attack scenarios, commands run, real alerts, and router actions.
+- **Proposal References:** Section 6, Table 10 (Controlled test scenarios).
 - **🇱🇰 සිංහලෙන් තේරුම:** සැබෑ මෙවලම් (curl, nmap, nping, nc) මඟින් ප්‍රහාර 5ම පරීක්ෂා කර Router එකේ firewall සාර්ථකව ක්‍රියාත්මක වූ බව.
 
 ### Slide 12 Blueprint: The 7 Safety Guardrails
 - **Slide Layout:** Funnel diagram illustrating the 7 safety checks before any firewall rule is executed.
+- **Proposal References:** Section 3.7 (Device discovery and automated response), RQ5.
 - **🇱🇰 සිංහලෙන් තේරුම:** කැමරාව වැරදීමකින්වත් block නොවීමට යොදා ඇති ආරක්ෂණ නීති 7 (Allowlist, Direction check, Rate-limit, 3-repeat threshold, Auto-decay timers).
 
 ### Slide 13 Blueprint: Surveillance Video Continuity
 - **Slide Layout:** Left: Constant 200 KB/s bitrate throughput graph during attacks; Right: NVR terminal log proving zero dropped frames.
+- **Proposal References:** Section 1.2 (Scope), Section 3.8 (Safety considerations).
 - **🇱🇰 සිංහලෙන් තේරුම:** ප්‍රහාර මැද වුවද කැමරාවේ සිට NVR එකට යන RTSP වීඩියෝ stream එකේ කිසිදු frame එකක් drop නොවී අඛණ්ඩව පටිගත වූ බව.
 
 ### Slide 14 Blueprint: Latency & Resource Benchmarks
 - **Slide Layout:** Stacked bar chart showing latency stages: Zeek (100ms) + Pipeline (15ms) + ML (0.03ms) + SSH (80ms) = ~200ms total.
+- **Proposal References:** Section 6, Table 9 (Latency < 2s).
 - **🇱🇰 සිංහලෙන් තේරුම:** සම්පූර්ණ ප්‍රහාරයක් හඳුනාගෙන block කිරීමට ගතවූයේ මිලි තත්පර 112–277ක් පමණක් බවත්, memory ප්‍රමාණය 250MB ට අඩු බවත්.
 
 ### Slide 15 Blueprint: SOC Dashboard Visuals
 - **Slide Layout:** 4-quadrant preview of the React Web UI: Live Alerts, Active Mitigations Countdown, Device Inventory, Audit Log.
+- **Proposal References:** Section 3.6, Figure 4 (Logical data model and audit relationships).
 - **🇱🇰 සිංහලෙන් තේරුම:** WebSockets මඟින් තත්පර 0.1න් Alerts ලැබෙන අයුරු සහ Mitigations countdown timer එක පෙන්වීම.
 
 ### Slide 16 Blueprint: Proposal Verification Matrix
 - **Slide Layout:** Full-width scorecard table comparing Proposal Table 9 requirements with live realized results.
+- **Proposal References:** Section 5.2, Table 7 (Functional requirements FR-01 to FR-08), Table 9, Figure 7.
 - **🇱🇰 සිංහලෙන් තේරුම:** Proposal එකේ සඳහන් සියලුම පිළිගැනීමේ ඉලක්ක (Table 9) සහ FR-01 සිට FR-08 දක්වා සියල්ල 100% ක් සම්පූර්ණ බව.
 
-### Slide 17 Blueprint: Engineering Challenges
+### Slide 17 Blueprint: Engineering Challenges & Risk Mitigation
 - **Slide Layout:** 4 Problem-Resolution cards highlighting technical hurdles overcome.
-- **🇱🇰 සිංහලෙන් තේරුම:** Data leakage වැළැක්වීම, PortScan behavioural fan-out එකතු කිරීම, සහ Router SSH spikes පාලනය කළ ආකාරය.
+- **Proposal References:** Section 7.2, Table 11 (Project risks and mitigations).
+- **🇱🇰 සිංහලෙන් තේරුම:** Data leakage වැළැක්වීම, PortScan behavioural fan-out එකතු කිරීම, Encrypted traffic හැසිරවීම, සහ Router SSH spikes පාලනය කළ ආකාරය.
 
 ### Slide 18 Blueprint: Project Timeline
 - **Slide Layout:** 32-week roadmap progress bar showing completed phases vs. current testing phase.
+- **Proposal References:** Section 4, Figure 6 (Weekly project schedule).
 - **🇱🇰 සිංහලෙන් තේරුම:** සති 32ක කාලසටහනට අනුව සියලු සංවර්ධන කටයුතු අවසන් කර automated tests 318 ම passing තත්ත්වයේ ඇති බව.
 
 ### Slide 19 Blueprint: Future Work & Hardware Lab
 - **Slide Layout:** Physical hardware testbed diagram: Physical Dahua IP Camera -> PoE Switch -> Raspberry Pi Zeek Sensor.
+- **Proposal References:** Section 5.1, Section 7.1.
 - **🇱🇰 සිංහලෙන් තේරුම:** ඉදිරි පියවර ලෙස සැබෑ කැමරා සහ ස්විච භාවිතයෙන් Hardware lab එකේ පරීක්ෂණ සිදුකිරීම.
 
 ### Slide 20 Blueprint: Conclusion & Q&A
 - **Slide Layout:** 3 Core Contribution Badges, GitHub repository link, Q&A invitation.
+- **Proposal References:** Section 7.1 (Feasibility and expected contribution).
 - **🇱🇰 සිංහලෙන් තේරුම:** පර්යේෂණයේ සමස්ත දායකත්වය සාරාංශ කර ප්‍රශ්න විචාරාත්මක අදියරට ආරාධනා කිරීම.
 
 ---
 
-# PART 3: ⚔️ Top 10 Viva / Defense Q&A Cheat-Sheet
+# PART 3: ⚔️ Top 12 Viva / Defense Q&A Cheat-Sheet
+*(Fully Grounded in Proposal Table 11: Project Risks and Mitigations)*
 
-Here are the **top 10 most critical viva questions** supervisors will ask, along with the precise answers you should provide:
+Here are the **top 12 critical viva questions** supervisors will ask, along with the precise answers you should provide:
 
 ### Q1: "Why did you use Stratosphere IoT-23 instead of CIC-IDS2017 or KDD99?"
-- **Winning Answer:** *"Sir, legacy datasets like KDD99 and CIC-IDS2017 represent enterprise office workstation traffic with human browsing patterns. They completely lack IoT-specific botnet behaviors like Mirai, Okiru, and Bashlite. Stratosphere IoT-23 is the first and largest public dataset recorded on real physical IoT hardware infected with authentic botnets, making its flow dynamics directly applicable to our problem."*
+- **Winning Answer:** *"Sir, as noted in proposal Section 2.3, legacy datasets like KDD99 and CIC-IDS2017 represent enterprise office workstation traffic with human browsing patterns. They completely lack IoT-specific botnet behaviors like Mirai, Okiru, and Bashlite. Stratosphere IoT-23 is the first and largest public dataset recorded on real physical IoT hardware infected with authentic botnets, making its flow dynamics directly applicable to our problem."*
 
 ### Q2: "IoT-23 has smart lamps and door locks, but NO IP cameras. How can your model work on a camera network? (RQ3)"
-- **Winning Answer:** *"That is precisely the focus of our Research Question RQ3. In an IP-camera network, benign traffic consists of predictable M2M patterns (RTSP video on port 554 and NTP sync). Malicious botnet traffic (scans, floods, beacons) exhibits identical transport-level flow signatures regardless of the infected host. We verified structural schema compatibility using our `schema_check` tool and proved in our lab that normal camera streaming triggers zero false positives."*
+- **Winning Answer:** *"That is precisely the focus of our Research Question RQ3 and Table 11 Risk 1. In an IP-camera network, benign traffic consists of predictable M2M patterns (RTSP video on port 554 and NTP sync). Malicious botnet traffic (scans, floods, beacons) exhibits identical transport-level flow signatures regardless of the infected host. We verified structural schema compatibility using our `schema_check` tool and proved in our lab that normal camera streaming triggers zero false positives."*
 
 ### Q3: "What prevents data leakage in your machine learning evaluation?"
-- **Winning Answer:** *"Most published literature performs naive random row-level train/test splitting, which places consecutive packets from the same attack session in both sets, yielding falsely inflated 99.9% scores. We enforced a strict scenario-level split: Capture-34-1 was held out entirely and never seen during training or threshold tuning, guaranteeing authentic generalization."*
+- **Winning Answer:** *"As highlighted by Yang et al. (2022) in our literature review, most published literature performs naive random row-level train/test splitting, which places consecutive packets from the same attack session in both sets, yielding falsely inflated 99.9% scores. Following proposal Section 3.4, we enforced a strict scenario-level split: Capture-34-1 was held out entirely and never seen during training or threshold tuning, guaranteeing authentic generalization."*
 
 ### Q4: "Why did you select Random Forest over Deep Learning (e.g., LSTMs or CNNs)?"
-- **Winning Answer:** *"Deep learning models introduce significant computational overhead, memory footprints, and inference latency that make sub-second edge deployment difficult. Our 100-tree Random Forest achieves an inference latency of just 30.88 microseconds per flow with a memory footprint under 250 MB, while outperforming deep models on tabular flow features."*
+- **Winning Answer:** *"As discussed in proposal Section 2.4 citing Breiman (2001) and Vitorino et al. (2022), deep learning models introduce heavy computational overhead, large memory footprints, and high inference latency that make sub-second edge deployment difficult. Our 100-tree Random Forest achieves an inference latency of just 30.88 microseconds per flow with a memory footprint under 250 MB, while outperforming deep models on tabular flow features."*
 
 ### Q5: "If your system is autonomous, what stops an attacker from spoofing an IP and causing the camera to be blocked?"
-- **Winning Answer:** *"Our response policy enforces seven strict safety guardrails. Specifically, internal camera IPs are barred from source blocking sets (`block_src`), critical infrastructure IPs are hardcoded in the kernel allowlist, and outbound C&C beacons block only the external destination IP (`block_dst`). Thus, the camera can never be blocked."*
+- **Winning Answer:** *"Our response policy enforces seven strict safety guardrails defined in proposal Section 3.7. Specifically, internal camera IPs are barred from source blocking sets (`block_src`), critical infrastructure IPs are hardcoded in the kernel allowlist, and outbound C&C beacons block only the external destination IP (`block_dst`). Thus, the camera can never be blocked."*
 
 ### Q6: "Why do you rate-limit DDoS attacks instead of completely blocking them?"
 - **Winning Answer:** *"During a high-rate SYN flood, completely dropping an IP or subnet can cause collateral damage if legitimate shared proxies are spoofed. Our `limit_src` policy permits up to 200 packets per second for normal communication while dropping all excess flood packets at hardware rate in the Linux kernel."*
@@ -613,10 +644,16 @@ Here are the **top 10 most critical viva questions** supervisors will ask, along
 - **Winning Answer:** *"All our dynamic nftables sets use native Linux kernel decay timers (`flags timeout`). When a rule is added, the kernel maintains an internal decaying countdown timer (e.g., 30 minutes). Once expired, the Linux kernel automatically purges the rule from memory with zero cron jobs or software overhead."*
 
 ### Q9: "What is the difference between your Passive SPAN mode and Inline mode?"
-- **Winning Answer:** *"In Passive SPAN mode, the sensor connects to a switch mirror port out-of-band, ensuring that packet inspection adds exactly zero latency to the video feed, with mitigations pushed to the router. In Inline mode, the sensor acts as a transparent network bridge, dropping packets directly at wire-speed."*
+- **Winning Answer:** *"As shown in proposal Figure 5, in Passive SPAN mode, the sensor connects to a switch mirror port out-of-band, ensuring that packet inspection adds exactly zero latency to the video feed, with mitigations pushed to the router. In Inline mode, the sensor acts as a transparent network bridge, dropping packets directly at wire-speed."*
 
 ### Q10: "How do you know the camera's video recording was not interrupted during testing?"
 - **Winning Answer:** *"We continuously monitored the NVR recorder container during all active attacks. The NVR pulled RTSP video continuously on Port 554, archiving complete 58.6 megabyte chunks every 5 minutes with zero dropped frames and socket latency under 3 milliseconds."*
+
+### Q11: "How does your system handle encrypted traffic like HTTPS / TLS? (Table 11 Risk 5)"
+- **Winning Answer:** *"Sir, as explicitly outlined in proposal Table 11 Risk 5, we do not inspect or decrypt packet payloads. Our system operates entirely on transport-layer flow metadata extracted by Zeek—such as connection duration, packet counts, byte ratios, TCP state transitions (like S0 half-open flags), and rolling-window fan-out metrics. Transport-layer metadata remains fully visible and effective regardless of TLS/HTTPS payload encryption."*
+
+### Q12: "How do you handle concept drift as network traffic changes over time? (Table 11 Risk 6)"
+- **Winning Answer:** *"As addressed in Table 11 Risk 6, we designed our architecture with model versioning (e.g., v3.2.0 bundles stored in MongoDB), continuous drift telemetry via `schema_check.py`, and rolling-window feature recalculation. If a distribution shift is detected on live camera feeds, the modular pipeline supports retraining with updated baseline profiles without altering the underlying detection engine."*
 
 ---
 
