@@ -91,6 +91,7 @@
 **Slide Body (Copy-Paste):**
 * **Gap 1: Outdated Datasets (UNSW-NB15 / CICIDS2017):**
   * Old datasets come from office computers with people browsing the web and sending emails. They do not look like camera video traffic (Garcia et al., 2020).
+  * **Why IoT is Unique:** IoT has predictable Machine-to-Machine (M2M) traffic with zero endpoint antivirus.
 * **Gap 2: The Broken Video Problem (Blind Spots):**
   * When a standard firewall sees an alert, it blocks the entire camera. This cuts off the video recording and blinds the security guards!
 * **Gap 3: Cheating in Past Research (Data Leakage - Yang et al., 2022):**
@@ -214,6 +215,7 @@
 **Slide Body (Copy-Paste):**
 * **The Dataset (Garcia et al., 2020):**
   * Official **Stratosphere IoT-23 v1.0.0** from CTU University, Prague.
+  * **Why IoT-23:** Real IoT hardware captures authentic Machine-to-Machine (M2M) botnet traffic, unlike human-driven datasets.
   * 325,309,946 raw flows from 23 real malware captures on real IoT hardware (44 GB).
   * Balanced and filtered down to **1,182,984 training flows** across 22 scenarios.
 * **We Grouped Labels into 5 Actionable Classes (Proposal Table 5):**
@@ -623,7 +625,7 @@
 Here are the **top 12 critical viva questions** supervisors will ask, along with simple, clear answers you can speak comfortably:
 
 ### Q1: "Why did you use Stratosphere IoT-23 instead of CIC-IDS2017 or KDD99?"
-- **Simple Answer:** *"Sir, as explained in proposal Section 2.3, old datasets like KDD99 and CICIDS2017 come from normal office computers with people browsing the web. They do not have IoT malware like Mirai, Okiru, or Bashlite. Stratosphere IoT-23 is the first public dataset recorded on real IoT hardware infected with real botnets, which matches our project."*
+- **Simple Answer:** *"Sir, as explained in proposal Section 2.3, old datasets like KDD99 and CICIDS2017 come from normal office computers with people browsing the web. IoT traffic is fundamentally different: it is predictable Machine-to-Machine (M2M) communication with zero endpoint antivirus. Stratosphere IoT-23 is recorded on real IoT hardware infected with real botnets like Mirai, which matches our camera environment."*
 
 ### Q2: "IoT-23 has smart lights and locks, but NO IP cameras. How can your model work on camera video? (RQ3)"
 - **Simple Answer:** *"That is the exact focus of our Research Question RQ3 and Table 11 Risk 1. In a camera network, normal traffic has a simple pattern: RTSP video on port 554 and clock sync. Botnet attacks—like scans, floods, and beacons—look identical on the network no matter what device is infected. We checked feature compatibility with our `schema_check` tool and proved in our lab that normal camera video causes zero false alarms."*
