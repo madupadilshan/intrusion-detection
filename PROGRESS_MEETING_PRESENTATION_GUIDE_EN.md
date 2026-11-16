@@ -258,6 +258,12 @@ table inet ids {
 ```
 
 ##### 📊 Output Breakdown:
+- **`set allow` (Protected Infrastructure Allowlist):** Hardcodes 4 critical management IPs that must **NEVER** be blocked under any circumstances (`policy: ACCEPT`):
+  - **`192.168.50.1` (Core Router & Gateway - `ids-lab-router`):** Default gateway forwarding traffic between LAN and WAN. Blocking it would sever entire network connectivity.
+  - **`192.168.50.5` (IDS Asset Scanner - `ids-lab-scanner`):** Authorized scanner performing FR-05 inventory discovery; allowlisted so that authorized scanning probes never trigger false blocks.
+  - **`192.168.50.10` (Security Admin PC - `ids-lab-admin`):** Administrator workstation accessing camera management interfaces; allowlisted to prevent admin lockout.
+  - **`192.168.50.20` (NVR Storage Server - `ids-lab-nvr`):** Video recorder continuously archiving camera RTSP video on Port 554; protected to guarantee surveillance continuity.
+  *(Note: Camera `192.168.50.30` is not in this hardcoded set; it is protected by the Local-Network Guardrail Policy).*
 - `set block_dst { flags timeout }`: Dynamic destination drop set with automatic expiry timers (blocks infected camera C&C outbound beacons).
 - `set block_src { flags timeout }`: Dynamic source drop set with timeout timers (blocks inbound external attackers).
 - `set limit_src { flags timeout }`: Dynamic rate-limit set (mitigates DDoS SYN floods).
