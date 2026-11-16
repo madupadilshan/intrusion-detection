@@ -103,6 +103,23 @@ docker compose -f lab_virtual\docker-compose.yml up -d
 - `Network Created`: Two virtual Linux bridge switches (`camlan` for internal IoT LAN and `outside` for WAN/Attacker) have been created.
 - `Started (11/11)`: All 11 virtual nodes (IP camera, NVR recorder, Zeek sensor, Linux router, attacker, etc.) started cleanly without any errors.
 
+> 🔍 **Simple Component Breakdown (Lab Architecture):**
+>
+> 🌐 **2 Virtual Networks:**
+> 1. **`lab_virtual_camlan` (`192.168.50.0/24`):** Isolated internal CCTV Camera LAN hosting the cameras, NVR recorder, admin PC, and network sensor.
+> 2. **`lab_virtual_outside` (`10.10.10.0/24`):** External WAN / Internet hosting the attacker workstation and external cloud services.
+>
+> 🖥️ **11 Virtual Containers:**
+> 1. **`ids-lab-router` (`192.168.50.1` / `10.10.10.1`):** Core Gateway & Firewall. Routes traffic between WAN and LAN, enforcing dynamic `nftables` firewall rules (`block_src`, `block_dst`, `limit_src`) commanded by our IDS backend.
+> 2. **`ids-lab-camera` (`192.168.50.30`):** Target IP Camera streaming RTSP video on Port 554 and HTTP web management on Port 80.
+> 3. **`ids-lab-nvr` (`192.168.50.20`):** Network Video Recorder pulling RTSP video from the camera in real time, proving zero video loss during mitigation.
+> 4. **`ids-lab-admin` (`192.168.50.10`):** Security Administrator workstation managing camera web interfaces (allowlist-protected against lockout).
+> 5. **`ids-lab-attacker` (`10.10.10.50`):** External attack laptop launching PortScan reconnaissance, DDoS SYN flood, C&C beaconing, and malware staging.
+> 6. **`ids-lab-sensor`:** Passive Zeek IDS Sensor sniffing the `camlan` Linux bridge (SPAN/mirror port), generating real-time `conn.log` and `files.log`.
+> 7. **`ids-lab-scanner` (`192.168.50.5`):** Approved Network Scanner container used by the IDS backend for authorized asset discovery scans (FR-05).
+> 8. **`ids-lab-cloud` (`10.10.10.123`):** Legitimate external cloud server representing external vendor firmware/P2P sync services.
+> 9. **`ids-lab-camera2`, `camera3`, `camera4`:** Supplementary camera nodes across the subnet used during subnet reconnaissance sweeps to demonstrate multi-host behavioral fan-out detection.
+
 ---
 
 #### 2. Start the Python IDS Backend & Dashboard on Port 5000 in the Background:

@@ -103,6 +103,23 @@ docker compose -f lab_virtual\docker-compose.yml up -d
 - `Network Created`: කැමරා ජාලය (`camlan`) සහ පිටත අන්තර්ජාලය (`outside`) සඳහා Linux virtual switches (bridges) 2 සාර්ථකව සැකසිණි.
 - `Started (11/11)`: IP Camera, NVR Recorder, Zeek Sensor, Linux Router ඇතුළු සියලුම virtual nodes 11 ම error කිසිවක් නොමැතිව active state එකට පැමිණ ඇත.
 
+> 🔍 **මෙම Networks සහ Containers වල සරල පැහැදිලි කිරීම (Architecture Breakdown):**
+>
+> 🌐 **අතථ්‍ය ජාල 2 (Virtual Networks):**
+> 1. **`lab_virtual_camlan` (`192.168.50.0/24`):** ආරක්ෂිත අභ්‍යන්තර CCTV කැමරා ජාලය (Internal Camera LAN). කැමරා, NVR, Admin PC, සහ Sensor රැඳී ඇත්තේ මෙහිය.
+> 2. **`lab_virtual_outside` (`10.10.10.0/24`):** බාහිර අන්තර්ජාල ජාලය (External WAN / Internet). Attacker සහ Cloud Server එක රැඳී ඇත්තේ මෙහිය.
+>
+> 🖥️ **අතථ්‍ය Containers 11 (Virtual Nodes):**
+> 1. **`ids-lab-router` (`192.168.50.1` / `10.10.10.1`):** Core Gateway & Firewall. ජාල දෙක අතර traffic මෙහෙයවන සහ අපගේ IDS මඟින් attacker ව block/rate-limit කිරීමට `nftables` නීති ක්‍රියාත්මක කරන Linux Router එක.
+> 2. **`ids-lab-camera` (`192.168.50.30`):** අපගේ ප්‍රධාන පරීක්ෂණ IP කැමරාව. RTSP වීඩියෝ (Port 554) සහ HTTP Web GUI (Port 80) සපයමින් NVR එකට වීඩියෝ ලබාදෙයි.
+> 3. **`ids-lab-nvr` (`192.168.50.20`):** Network Video Recorder. කැමරාවේ වීඩියෝව නොකඩවා පටිගත කරන සේවාදායකය (ප්‍රහාර මැද වුවද වීඩියෝ stream එක බිඳ නොවැටෙන බව පෙන්වීමට).
+> 4. **`ids-lab-admin` (`192.168.50.10`):** Security Admin PC. ආරක්ෂක පරිපාලකයා කැමරාව පාලනය කරන පරිගණකය (Allowlist කර ඇති බැවින් කිසිවිටෙකත් block නොවේ).
+> 5. **`ids-lab-attacker` (`10.10.10.50`):** Outside Attacker Laptop. පිටත සිට PortScan, DDoS SYN Flood, සහ C&C ප්‍රහාර එල්ල කරන හැකර්ගේ පරිගණකය.
+> 6. **`ids-lab-sensor`:** Zeek Passive IDS Sensor. Switch mirror (SPAN) port එකක් ලෙස කැමරා ජාලයේ සියලුම traffic sniff කර `conn.log` සහ `files.log` ලියන Zeek එන්ජිම.
+> 7. **`ids-lab-scanner` (`192.168.50.5`):** Approved Network Scanner. අපගේ Dashboard එකෙන් ජාලයේ ඇති උපාංග ස්වයංක්‍රීයව හඳුනාගැනීමට (FR-05 Device Inventory) යොදාගන්නා බලයලත් ස්කෑනරය.
+> 8. **`ids-lab-cloud` (`10.10.10.123`):** Legitimate Cloud Server. කැමරාව සාමාන්‍යයෙන් සම්බන්ධ වන පිටත නීත්‍යානුකූල cloud/firmware සේවාදායකය.
+> 9. **`ids-lab-camera2`, `camera3`, `camera4`:** Subnet එකේ ඇති අතිරේක කැමරා නෝඩ්ස්. Attacker මුළු subnet එකම scan කරන විට (Multi-host fan-out) සැබෑ CCTV පරිසරයක පරිමාණය පෙන්වීමට සහ PortScan sweep තහවුරු කිරීමට යොදාගනී.
+
 ---
 
 #### 2. Python IDS Backend එක Port 5000 න් Background එකේ ධාවනය කිරීම:
