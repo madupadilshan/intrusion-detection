@@ -108,18 +108,29 @@ docker compose -f lab_virtual\docker-compose.yml up -d
 > 1. **`lab_virtual_camlan` (`192.168.50.0/24`):** ආරක්ෂිත අභ්‍යන්තර CCTV කැමරා ජාලය (Internal Camera LAN). කැමරා, NVR, Admin PC, සහ Sensor රැඳී ඇත්තේ මෙහිය.
 > 2. **`lab_virtual_outside` (`10.10.10.0/24`):** බාහිර අන්තර්ජාල ජාලය (External WAN / Internet). Attacker සහ Cloud Server එක රැඳී ඇත්තේ මෙහිය.
 >
-> 🖥️ **අතථ්‍ය Containers 11 (Virtual Containers 11):**
-> 1. **`ids-lab-router` (`192.168.50.1` / `10.10.10.1`):** Core Gateway & Firewall. ජාල දෙක අතර traffic මෙහෙයවන සහ අපගේ IDS මඟින් attacker ව block/rate-limit කිරීමට `nftables` නීති ක්‍රියාත්මක කරන Linux Router එක.
-> 2. **`ids-lab-sensor`:** Zeek Passive IDS Sensor. Switch mirror (SPAN) port එකක් ලෙස කැමරා ජාලයේ (`br-ids-lan`) සියලුම traffic sniff කර `conn.log` සහ `files.log` ලියන Zeek එන්ජිම.
-> 3. **`ids-lab-camera` (`192.168.50.30`):** අපගේ ප්‍රධාන පරීක්ෂණ IP කැමරාව. RTSP වීඩියෝ (Port 554) සහ HTTP Web GUI (Port 80) සපයමින් NVR එකට වීඩියෝ ලබාදෙයි.
-> 4. **`ids-lab-camera-net`:** කැමරාව සඳහා Gateway Routing සපයන Network Namespace Adapter container එක.
-> 5. **`ids-lab-nvr` (`192.168.50.20`):** Network Video Recorder. කැමරාවේ වීඩියෝව නොකඩවා පටිගත කරන සේවාදායකය (ප්‍රහාර මැද වුවද වීඩියෝ stream එක බිඳ නොවැටෙන බව පෙන්වීමට).
-> 6. **`ids-lab-admin` (`192.168.50.10`):** Security Admin PC. ආරක්ෂක පරිපාලකයා කැමරාව පාලනය කරන පරිගණකය (Allowlist කර ඇති බැවින් කිසිවිටෙකත් block නොවේ).
-> 7. **`ids-lab-scanner` (`192.168.50.5`):** Approved Network Scanner. අපගේ Dashboard එකෙන් ජාලයේ ඇති උපාංග ස්වයංක්‍රීයව හඳුනාගැනීමට (FR-05 Device Inventory) යොදාගන්නා බලයලත් ස්කෑනරය.
-> 8. **`ids-lab-attacker` (`10.10.10.50`):** Outside Attacker Laptop. පිටත සිට PortScan, DDoS SYN Flood, සහ C&C ප්‍රහාර එල්ල කරන හැකර්ගේ පරිගණකය.
-> 9. **`ids-lab-attack-server` (`10.10.10.50`):** Attacker Server. Port 6667 C&C Botnet Listener එක සහ Port 80 හරහා Malware Download payload ලබාදෙන සේවාදායකය.
-> 10. **`ids-lab-cloud` (`10.10.10.123`):** Legitimate Cloud Server. කැමරාව සාමාන්‍යයෙන් සම්බන්ධ වන පිටත නීත්‍යානුකූල cloud/firmware සේවාදායකය.
-> 11. **`ids-lab-cloud-net`:** Cloud Server එක සඳහා Gateway Routing සපයන Network Namespace Adapter container එක.
+> 🖥️ **අතථ්‍ය Containers 11 සහ ඒවායින් සිදුවන කාර්යයන් (What Each Container Does):**
+> 1. **`ids-lab-router` (`192.168.50.1` / `10.10.10.1` - Gateway & Firewall):**  
+>    *මෙයින් සිදුවන දේ:* පිටත ජාලය (WAN) සහ අභ්‍යන්තර කැමරා ජාලය (LAN) එකිනෙක සම්බන්ධ කරන ප්‍රධාන Router එකයි. අපගේ IDS Backend එකෙන් දෙන විධානය අනුව හැකර්ගේ ප්‍රහාර packets drop කිරීම හෝ rate-limit කිරීම මෙහිදී සිදුකරයි.
+> 2. **`ids-lab-sensor` (Zeek Passive Network Sensor):**  
+>    *මෙයින් සිදුවන දේ:* කැමරා Switch bridge එකට (`br-ids-lan` mirror port) සම්බන්ධ වී, වීඩියෝවට කිසිදු බාධාවක් හෝ ප්‍රමාදයක් නොකර ගමන් කරන සියලුම packets sniff කර `conn.log` සහ `files.log` ලියන Zeek එන්ජිමයි.
+> 3. **`ids-lab-camera` (`192.168.50.30` - Target IP Camera):**  
+>    *මෙයින් සිදුවන දේ:* සැබෑ IP කැමරාවක් අනුකරණය කරයි. NVR එකට නොකඩවා RTSP වීඩියෝව (Port 554) නිකුත් කරන අතර, කළමනාකරණය සඳහා Web Page එකක් (Port 80) සපයයි.
+> 4. **`ids-lab-camera-net` (Camera Network Host):**  
+>    *මෙයින් සිදුවන දේ:* කැමරාවට අදාළ Network Namespace එක සහ කැමරාවේ සියලුම data router එක හරහා ගමන් කිරීමට Default Gateway එක සකස් කර දෙයි.
+> 5. **`ids-lab-nvr` (`192.168.50.20` - Network Video Recorder):**  
+>    *මෙයින් සිදුවන දේ:* කැමරාවෙන් එන වීඩියෝ stream එක නොකඩවා 58.6 MB files ලෙස save කරගනී. ප්‍රහාර මැද වුවද වීඩියෝව බිඳ නොවැටී පටිගත වන බව ඔප්පු කරන්නේ මෙනිණි.
+> 6. **`ids-lab-admin` (`192.168.50.10` - Security Admin PC):**  
+>    *මෙයින් සිදුවන දේ:* කැමරාව පරිපාලනය කරන ආරක්ෂක නිලධාරියාගේ පරිගණකයයි. Allowlist කර ඇති බැවින් පද්ධතියෙන් කිසිවිටෙකත් block නොවේ.
+> 7. **`ids-lab-scanner` (`192.168.50.5` - Approved Asset Scanner):**  
+>    *මෙයින් සිදුවන දේ:* අපගේ IDS Backend එක මඟින් ජාලයේ ඇති කැමරා සහ අනෙකුත් උපාංග හඳුනාගැනීම සඳහා (FR-05 Device Inventory) පාලිත Nmap scans දියත් කිරීමට භාවිතා කරයි.
+> 8. **`ids-lab-attacker` (`10.10.10.50` - Attacker Workstation):**  
+>    *මෙයින් සිදුවන දේ:* පිටත සිටින හැකර්ගේ පරිගණකයයි. PortScan, 1,000 pkts/s DDoS SYN Flood, සහ C&C ප්‍රහාර කැමරාව වෙත එල්ල කරන්නේ මෙනිණි.
+> 9. **`ids-lab-attack-server` (`10.10.10.50` - Attack Server Infrastructure):**  
+>    *මෙයින් සිදුවන දේ:* හැකර්ගේ C&C Botnet Master Server එක (Port 6667) සහ කැමරාවට Malware binaries බාගත කිරීමට දෙන Web Server එක (Port 80) මෙහි ධාවනය වේ.
+> 10. **`ids-lab-cloud` (`10.10.10.123` - Legitimate Cloud Server):**  
+>     *මෙයින් සිදුවන දේ:* කැමරා නිෂ්පාදකයාගේ සැබෑ Cloud සේවාදායකය නිරූපණය කරයි (Heartbeat 443, NTP 123). කැමරාව සාමාන්‍ය තත්ත්වයේදී කරන නීත්‍යානුකූල සන්නිවේදනය (Benign traffic) ජාලය තුළ පවත්වා ගනී.
+> 11. **`ids-lab-cloud-net` (Cloud Network Host):**  
+>     *මෙයින් සිදුවන දේ:* Cloud Server එක සඳහා Network Namespace එක සහ default router gateway එක සකස් කර දෙයි.
 
 ---
 

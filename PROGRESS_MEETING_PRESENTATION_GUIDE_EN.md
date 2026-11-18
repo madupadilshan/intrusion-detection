@@ -635,18 +635,29 @@ docker compose -f lab_virtual\docker-compose.yml up -d
 > 1. **`lab_virtual_camlan` (`192.168.50.0/24`):** Isolated internal CCTV Camera LAN hosting the cameras, NVR recorder, admin PC, and network sensor.
 > 2. **`lab_virtual_outside` (`10.10.10.0/24`):** External WAN / Internet hosting the attacker workstation and external cloud services.
 >
-> 🖥️ **11 Virtual Containers:**
-> 1. **`ids-lab-router` (`192.168.50.1` / `10.10.10.1`):** Core Gateway & Firewall. Routes traffic between the outside WAN and the camera LAN, and enforces dynamic `nftables` firewall rules (`block_src`, `block_dst`, `limit_src`) commanded by our IDS backend.
-> 2. **`ids-lab-sensor`:** Passive Zeek IDS Sensor sniffing the camera LAN switch bridge (`br-ids-lan` mirror port), extracting real-time network flows to `conn.log` and `files.log`.
-> 3. **`ids-lab-camera` (`192.168.50.30`):** Target IP Camera streaming RTSP video on Port 554 and HTTP web management interface on Port 80.
-> 4. **`ids-lab-camera-net`:** Network namespace host container providing default gateway routing for the IP camera.
-> 5. **`ids-lab-nvr` (`192.168.50.20`):** Network Video Recorder recording RTSP video from the camera in real time, proving zero video drops during attacks and mitigations.
-> 6. **`ids-lab-admin` (`192.168.50.10`):** Security Administrator computer used to manage camera web settings (protected by an allowlist so it can never be blocked).
-> 7. **`ids-lab-scanner` (`192.168.50.5`):** Approved Network Scanner container used by the IDS backend to safely find all devices on the camera network (FR-05).
-> 8. **`ids-lab-attacker` (`10.10.10.50`):** Outside attacker workstation used to launch port scans, DDoS SYN floods, and C&C beaconing attacks.
-> 9. **`ids-lab-attack-server` (`10.10.10.50`):** Outside attack server hosting the C&C botnet listener on Port 6667 and the test malware download web server on Port 80.
-> 10. **`ids-lab-cloud` (`10.10.10.123`):** Normal external cloud server representing vendor firmware updates and cloud sync services.
-> 11. **`ids-lab-cloud-net`:** Network namespace host container providing default gateway routing for the external cloud server.
+> 🖥️ **11 Virtual Containers (What Each Container Does):**
+> 1. **`ids-lab-router` (`192.168.50.1` / `10.10.10.1` - Gateway & Firewall):**  
+>    *What it does:* Connects WAN and LAN networks. Drops attacker packets or rate-limits floods in the Linux kernel (`nftables`) when instructed by our IDS backend.
+> 2. **`ids-lab-sensor` (Zeek Passive Network Sensor):**  
+>    *What it does:* Passively sniffs packets on the camera switch bridge (`br-ids-lan` mirror port) and extracts 27 flow features into `conn.log` and `files.log` without adding any delay to live video.
+> 3. **`ids-lab-camera` (`192.168.50.30` - Target IP Camera):**  
+>    *What it does:* Simulates a real IP camera. Continuously streams RTSP video (Port 554) to the NVR and hosts an HTTP web GUI (Port 80) for administration.
+> 4. **`ids-lab-camera-net` (Camera Network Host):**  
+>    *What it does:* Manages the network interface and default gateway routing for the camera, ensuring its traffic routes properly through the router.
+> 5. **`ids-lab-nvr` (`192.168.50.20` - Network Video Recorder):**  
+>    *What it does:* Continuously ingests and records 58.6 MB video chunks from the camera over Port 554, proving video recording never stops during cyberattacks.
+> 6. **`ids-lab-admin` (`192.168.50.10` - Security Admin PC):**  
+>    *What it does:* Authorized workstation managing camera web settings. Protected by an immutable allowlist so administrators are never accidentally locked out.
+> 7. **`ids-lab-scanner` (`192.168.50.5` - Approved Asset Scanner):**  
+>    *What it does:* Used by the IDS backend to perform authorized, controlled Nmap discovery scans (FR-05) to find connected IP cameras, MAC addresses, and open ports.
+> 8. **`ids-lab-attacker` (`10.10.10.50` - Attacker Workstation):**  
+>    *What it does:* External adversary machine used to launch Nmap stealth reconnaissance scans, high-rate DDoS SYN floods (nping), and C&C beaconing attacks.
+> 9. **`ids-lab-attack-server` (`10.10.10.50` - Attack Infrastructure Server):**  
+>    *What it does:* External server running the C&C botnet listener on Port 6667 and hosting compiled Linux malware binaries on Port 80 for dropper download tests.
+> 10. **`ids-lab-cloud` (`10.10.10.123` - Legitimate Cloud Server):**  
+>     *What it does:* Simulates remote vendor cloud services (periodic heartbeats on Port 443, NTP time sync on Port 123) to generate clean benign background traffic.
+> 11. **`ids-lab-cloud-net` (Cloud Network Host):**  
+>     *What it does:* Manages the network interface and routing for the cloud server so external cloud traffic routes through the router.
 
 ---
 
