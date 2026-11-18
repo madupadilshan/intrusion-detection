@@ -277,18 +277,18 @@
   ```
 * **📋 Verified Output:**
   ```text
-  NAME                 STATUS
-  ids-lab-admin        Up
-  ids-lab-attacker     Up
-  ids-lab-camera       Up
-  ids-lab-camera2      Up
-  ids-lab-camera3      Up
-  ids-lab-camera4      Up
-  ids-lab-cloud        Up
-  ids-lab-nvr          Up
-  ids-lab-router       Up
-  ids-lab-scanner      Up
-  ids-lab-sensor       Up
+  NAME                    STATUS
+  ids-lab-admin           Up
+  ids-lab-attack-server   Up
+  ids-lab-attacker        Up
+  ids-lab-camera          Up
+  ids-lab-camera-net      Up
+  ids-lab-cloud           Up
+  ids-lab-cloud-net       Up
+  ids-lab-nvr             Up
+  ids-lab-router          Up
+  ids-lab-scanner         Up
+  ids-lab-sensor          Up
   eth0 UP 192.168.50.1/24
   eth1 UP 10.10.10.1/24
   ```
@@ -649,16 +649,16 @@ docker compose -f lab_virtual\docker-compose.yml up -d
  ✔ Network lab_virtual_camlan       Created
  ✔ Network lab_virtual_outside      Created
  ✔ Container ids-lab-router         Started
- ✔ Container ids-lab-camera         Started
- ✔ Container ids-lab-nvr            Started
- ✔ Container ids-lab-admin          Started
- ✔ Container ids-lab-attacker       Started
- ✔ Container ids-lab-sensor         Started
+ ✔ Container ids-lab-camera-net     Started
  ✔ Container ids-lab-scanner        Started
+ ✔ Container ids-lab-nvr            Started
+ ✔ Container ids-lab-cloud-net      Started
+ ✔ Container ids-lab-sensor         Started
+ ✔ Container ids-lab-attack-server  Started
+ ✔ Container ids-lab-attacker       Started
+ ✔ Container ids-lab-camera         Started
+ ✔ Container ids-lab-admin          Started
  ✔ Container ids-lab-cloud          Started
- ✔ Container ids-lab-camera2        Started
- ✔ Container ids-lab-camera3        Started
- ✔ Container ids-lab-camera4        Started
 ```
 
 ##### 📊 Output Breakdown:
@@ -672,15 +672,17 @@ docker compose -f lab_virtual\docker-compose.yml up -d
 > 2. **`lab_virtual_outside` (`10.10.10.0/24`):** External WAN / Internet hosting the attacker workstation and external cloud services.
 >
 > 🖥️ **11 Virtual Containers:**
-> 1. **`ids-lab-router` (`192.168.50.1` / `10.10.10.1`):** Core Gateway & Firewall. Routes traffic between the outside world and the camera LAN, and enforces dynamic `nftables` firewall rules (`block_src`, `block_dst`, `limit_src`) sent by our IDS backend.
-> 2. **`ids-lab-camera` (`192.168.50.30`):** Target IP Camera streaming RTSP video on Port 554 and HTTP web management on Port 80.
-> 3. **`ids-lab-nvr` (`192.168.50.20`):** Network Video Recorder recording RTSP video from the camera in real time, proving zero video drops during attacks and mitigations.
-> 4. **`ids-lab-admin` (`192.168.50.10`):** Security Administrator computer used to manage camera web settings (protected by an allowlist so it can never be blocked).
-> 5. **`ids-lab-attacker` (`10.10.10.50`):** Outside attacker computer used to launch port scans, DDoS SYN floods, C&C beaconing, and malware downloads.
-> 6. **`ids-lab-sensor`:** Passive Zeek IDS Sensor that sniffs traffic on the camera switch (SPAN/mirror port) and writes real-time `conn.log` and `files.log`.
+> 1. **`ids-lab-router` (`192.168.50.1` / `10.10.10.1`):** Core Gateway & Firewall. Routes traffic between the outside WAN and the camera LAN, and enforces dynamic `nftables` firewall rules (`block_src`, `block_dst`, `limit_src`) commanded by our IDS backend.
+> 2. **`ids-lab-sensor`:** Passive Zeek IDS Sensor sniffing the camera LAN switch bridge (`br-ids-lan` mirror port), extracting real-time network flows to `conn.log` and `files.log`.
+> 3. **`ids-lab-camera` (`192.168.50.30`):** Target IP Camera streaming RTSP video on Port 554 and HTTP web management interface on Port 80.
+> 4. **`ids-lab-camera-net`:** Network namespace host container providing default gateway routing for the IP camera.
+> 5. **`ids-lab-nvr` (`192.168.50.20`):** Network Video Recorder recording RTSP video from the camera in real time, proving zero video drops during attacks and mitigations.
+> 6. **`ids-lab-admin` (`192.168.50.10`):** Security Administrator computer used to manage camera web settings (protected by an allowlist so it can never be blocked).
 > 7. **`ids-lab-scanner` (`192.168.50.5`):** Approved Network Scanner container used by the IDS backend to safely find all devices on the camera network (FR-05).
-> 8. **`ids-lab-cloud` (`10.10.10.123`):** Normal external cloud server representing vendor firmware updates and cloud sync services.
-> 9. **`ids-lab-camera2`, `camera3`, `camera4`:** Extra camera containers across the subnet used during subnet scans to prove multi-host behavioral sweep detection.
+> 8. **`ids-lab-attacker` (`10.10.10.50`):** Outside attacker workstation used to launch port scans, DDoS SYN floods, and C&C beaconing attacks.
+> 9. **`ids-lab-attack-server` (`10.10.10.50`):** Outside attack server hosting the C&C botnet listener on Port 6667 and the test malware download web server on Port 80.
+> 10. **`ids-lab-cloud` (`10.10.10.123`):** Normal external cloud server representing vendor firmware updates and cloud sync services.
+> 11. **`ids-lab-cloud-net`:** Network namespace host container providing default gateway routing for the external cloud server.
 
 ---
 

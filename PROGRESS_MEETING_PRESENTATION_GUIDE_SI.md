@@ -87,16 +87,16 @@ docker compose -f lab_virtual\docker-compose.yml up -d
  ✔ Network lab_virtual_camlan       Created
  ✔ Network lab_virtual_outside      Created
  ✔ Container ids-lab-router         Started
- ✔ Container ids-lab-camera         Started
- ✔ Container ids-lab-nvr            Started
- ✔ Container ids-lab-admin          Started
- ✔ Container ids-lab-attacker       Started
- ✔ Container ids-lab-sensor         Started
+ ✔ Container ids-lab-camera-net     Started
  ✔ Container ids-lab-scanner        Started
+ ✔ Container ids-lab-nvr            Started
+ ✔ Container ids-lab-cloud-net      Started
+ ✔ Container ids-lab-sensor         Started
+ ✔ Container ids-lab-attack-server  Started
+ ✔ Container ids-lab-attacker       Started
+ ✔ Container ids-lab-camera         Started
+ ✔ Container ids-lab-admin          Started
  ✔ Container ids-lab-cloud          Started
- ✔ Container ids-lab-camera2        Started
- ✔ Container ids-lab-camera3        Started
- ✔ Container ids-lab-camera4        Started
 ```
 
 ##### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
@@ -109,16 +109,18 @@ docker compose -f lab_virtual\docker-compose.yml up -d
 > 1. **`lab_virtual_camlan` (`192.168.50.0/24`):** ආරක්ෂිත අභ්‍යන්තර CCTV කැමරා ජාලය (Internal Camera LAN). කැමරා, NVR, Admin PC, සහ Sensor රැඳී ඇත්තේ මෙහිය.
 > 2. **`lab_virtual_outside` (`10.10.10.0/24`):** බාහිර අන්තර්ජාල ජාලය (External WAN / Internet). Attacker සහ Cloud Server එක රැඳී ඇත්තේ මෙහිය.
 >
-> 🖥️ **අතථ්‍ය Containers 11 (Virtual Nodes):**
+> 🖥️ **අතථ්‍ය Containers 11 (Virtual Containers 11):**
 > 1. **`ids-lab-router` (`192.168.50.1` / `10.10.10.1`):** Core Gateway & Firewall. ජාල දෙක අතර traffic මෙහෙයවන සහ අපගේ IDS මඟින් attacker ව block/rate-limit කිරීමට `nftables` නීති ක්‍රියාත්මක කරන Linux Router එක.
-> 2. **`ids-lab-camera` (`192.168.50.30`):** අපගේ ප්‍රධාන පරීක්ෂණ IP කැමරාව. RTSP වීඩියෝ (Port 554) සහ HTTP Web GUI (Port 80) සපයමින් NVR එකට වීඩියෝ ලබාදෙයි.
-> 3. **`ids-lab-nvr` (`192.168.50.20`):** Network Video Recorder. කැමරාවේ වීඩියෝව නොකඩවා පටිගත කරන සේවාදායකය (ප්‍රහාර මැද වුවද වීඩියෝ stream එක බිඳ නොවැටෙන බව පෙන්වීමට).
-> 4. **`ids-lab-admin` (`192.168.50.10`):** Security Admin PC. ආරක්ෂක පරිපාලකයා කැමරාව පාලනය කරන පරිගණකය (Allowlist කර ඇති බැවින් කිසිවිටෙකත් block නොවේ).
-> 5. **`ids-lab-attacker` (`10.10.10.50`):** Outside Attacker Laptop. පිටත සිට PortScan, DDoS SYN Flood, සහ C&C ප්‍රහාර එල්ල කරන හැකර්ගේ පරිගණකය.
-> 6. **`ids-lab-sensor`:** Zeek Passive IDS Sensor. Switch mirror (SPAN) port එකක් ලෙස කැමරා ජාලයේ සියලුම traffic sniff කර `conn.log` සහ `files.log` ලියන Zeek එන්ජිම.
+> 2. **`ids-lab-sensor`:** Zeek Passive IDS Sensor. Switch mirror (SPAN) port එකක් ලෙස කැමරා ජාලයේ (`br-ids-lan`) සියලුම traffic sniff කර `conn.log` සහ `files.log` ලියන Zeek එන්ජිම.
+> 3. **`ids-lab-camera` (`192.168.50.30`):** අපගේ ප්‍රධාන පරීක්ෂණ IP කැමරාව. RTSP වීඩියෝ (Port 554) සහ HTTP Web GUI (Port 80) සපයමින් NVR එකට වීඩියෝ ලබාදෙයි.
+> 4. **`ids-lab-camera-net`:** කැමරාව සඳහා Gateway Routing සපයන Network Namespace Adapter container එක.
+> 5. **`ids-lab-nvr` (`192.168.50.20`):** Network Video Recorder. කැමරාවේ වීඩියෝව නොකඩවා පටිගත කරන සේවාදායකය (ප්‍රහාර මැද වුවද වීඩියෝ stream එක බිඳ නොවැටෙන බව පෙන්වීමට).
+> 6. **`ids-lab-admin` (`192.168.50.10`):** Security Admin PC. ආරක්ෂක පරිපාලකයා කැමරාව පාලනය කරන පරිගණකය (Allowlist කර ඇති බැවින් කිසිවිටෙකත් block නොවේ).
 > 7. **`ids-lab-scanner` (`192.168.50.5`):** Approved Network Scanner. අපගේ Dashboard එකෙන් ජාලයේ ඇති උපාංග ස්වයංක්‍රීයව හඳුනාගැනීමට (FR-05 Device Inventory) යොදාගන්නා බලයලත් ස්කෑනරය.
-> 8. **`ids-lab-cloud` (`10.10.10.123`):** Legitimate Cloud Server. කැමරාව සාමාන්‍යයෙන් සම්බන්ධ වන පිටත නීත්‍යානුකූල cloud/firmware සේවාදායකය.
-> 9. **`ids-lab-camera2`, `camera3`, `camera4`:** Subnet එකේ ඇති අතිරේක කැමරා නෝඩ්ස්. Attacker මුළු subnet එකම scan කරන විට (Multi-host fan-out) සැබෑ CCTV පරිසරයක පරිමාණය පෙන්වීමට සහ PortScan sweep තහවුරු කිරීමට යොදාගනී.
+> 8. **`ids-lab-attacker` (`10.10.10.50`):** Outside Attacker Laptop. පිටත සිට PortScan, DDoS SYN Flood, සහ C&C ප්‍රහාර එල්ල කරන හැකර්ගේ පරිගණකය.
+> 9. **`ids-lab-attack-server` (`10.10.10.50`):** Attacker Server. Port 6667 C&C Botnet Listener එක සහ Port 80 හරහා Malware Download payload ලබාදෙන සේවාදායකය.
+> 10. **`ids-lab-cloud` (`10.10.10.123`):** Legitimate Cloud Server. කැමරාව සාමාන්‍යයෙන් සම්බන්ධ වන පිටත නීත්‍යානුකූල cloud/firmware සේවාදායකය.
+> 11. **`ids-lab-cloud-net`:** Cloud Server එක සඳහා Gateway Routing සපයන Network Namespace Adapter container එක.
 
 ---
 
