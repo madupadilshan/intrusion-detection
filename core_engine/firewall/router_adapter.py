@@ -104,7 +104,12 @@ class RouterAdapter(BaseFirewallAdapter):
 
     def _execute_remote(self, remote_cmd: str) -> subprocess.CompletedProcess:
         """Execute a command on the remote router via SSH."""
-        cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", "-p", str(self.router_port)]
+        # -n redirects ssh's stdin from /dev/null. Without it, ssh inherits this long-lived
+        # service's stdin and keeps the session half-open waiting for stdin EOF, so the parent
+        # blocks reading the reply and hits the timeout below even though the remote nft command
+        # already ran and succeeded on the router. That made blocks land on the router but get
+        # recorded as "failed", so the dashboard showed "detected but not blocked".
+        cmd = ["ssh", "-n", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", "-p", str(self.router_port)]
         if self.router_key_file and os.path.exists(self.router_key_file):
             cmd.extend(["-i", self.router_key_file, "-o", "IdentitiesOnly=yes"])
         if self.known_hosts_file:
@@ -118,7 +123,8 @@ class RouterAdapter(BaseFirewallAdapter):
         for attempt in range(self._ssh_retries + 1):
             try:
                 return subprocess.run(
-                    cmd, capture_output=True, text=True, check=False, timeout=self._ssh_timeout
+                    cmd, capture_output=True, text=True, check=False,
+                    stdin=subprocess.DEVNULL, timeout=self._ssh_timeout
                 )
             except subprocess.TimeoutExpired as exc:
                 last_exc = exc

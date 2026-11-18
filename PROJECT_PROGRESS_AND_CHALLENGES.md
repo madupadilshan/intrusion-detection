@@ -1579,6 +1579,18 @@ It does not meet the proposal. The reasons are in Section 4 and in guide Part B.
 
 ---
 
+**3.92 Subnet scan detected but not blocked — the real cause was `ssh` stdin, not a storm (18 November 2026)**
+
+- **Symptom (owner):** `docker exec ids-lab-attacker nmap -sS -p 23,80,554 192.168.50.0/24` — the alert appeared on the dashboard, but `10.10.10.50` was **not** shown as blocked.
+- **Diagnosis (live, evidence-based):** the detection was perfect — the event had `scan_confirmed=True`, `udst=5`, `uport=3`, so the policy correctly fired the block. The backend log showed the same `Router SSH command timed out after 6s (attempt 1/3…)` as entry 3.91, and the event was recorded `response_status=failed`. **But two tests broke the "storm" theory:** (1) while the scan ran, standalone `ssh` calls to the router stayed at **0.15 s** — the SSH daemon was never choked; (2) after a "timed out" block, the router's `nft` set **already contained `10.10.10.50`** (`expires 29m28s`). So the firewall command *succeeded on the router*; the engine just never saw the reply.
+- **Root cause:** `router_adapter._execute_remote` spawned `ssh` with `capture_output=True` but **never redirected stdin**, and `lab.py ids-start` launches the backend **without `stdin=DEVNULL`** (`subprocess.Popen(... )`, line ~153). So the long-lived backend inherited the console's open stdin, and every `ssh` it spawned inherited that too. With an open stdin and no `-n`, `ssh` holds the session half-open waiting for stdin EOF — the remote `nft add` runs and returns, but `ssh` doesn't tear down, so the parent's `subprocess.run` blocks reading output until the 6 s timeout and raises `TimeoutExpired`. Result: **block lands on the router, but is logged as `failed` and never written to the blocklist/dashboard.** This is why it was intermittent — it depends on what the backend's stdin happened to be attached to at launch (so entry 3.91's scan succeeded, later ones failed with identical code).
+- **Fix 1 — `ssh -n` + `stdin=subprocess.DEVNULL` (`core_engine/firewall/router_adapter.py`):** `ssh` can no longer touch the backend's stdin, so it tears down immediately after the remote command and the parent reads the result in <0.3 s.
+- **Fix 2 — detach the backend's stdin (`lab_virtual/lab.py`):** `ids-start` now passes `stdin=subprocess.DEVNULL` to the backend `Popen`, so the whole process (and anything it spawns) is cleanly detached from the console. Defence in depth behind Fix 1.
+- **Verified live (18 November 2026):** restarted the fixed backend (pid 19644), cleared the stale router element, re-ran the exact owner command. Same `udst=5, uport=3`, but now the event is `response_status=blocked`, the blocklist has `10.10.10.50 AUTO_PORTSCAN_REPEATED active`, and the router set shows `10.10.10.50 timeout 30m` — **0 SSH timeouts**. Firewall adapter unit tests `11 passed`.
+- **Files changed:** `core_engine/firewall/router_adapter.py`, `lab_virtual/lab.py`, this progress entry.
+
+---
+
 ## 4. Challenges and how they were solved
 
 | #  | Challenge                                         | Cause                                                                                                         | Effect                                                     | Solution                                                                                                         | Status   |

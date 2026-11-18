@@ -150,7 +150,12 @@ def cmd_ids_start(_):
     env = dict(os.environ, IDS_SETTINGS_FILE=str(SETTINGS), DB_NAME=DB_NAME, PORT="5000", HOST="127.0.0.1")
     log = open(BACKEND_LOG, "a", encoding="utf-8")
     flags = (subprocess.CREATE_NEW_PROCESS_GROUP | 0x00000008) if os.name == "nt" else 0
-    p = subprocess.Popen([PY, "-m", "core_engine.app"], cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,
+    # stdin=DEVNULL: detach the backend from this console's stdin. Otherwise the long-lived
+    # backend inherits an open stdin, and the ssh calls it spawns to push firewall blocks keep
+    # their session half-open waiting for stdin EOF, so those blocks time out. (router_adapter
+    # also passes ssh -n as the primary guard; this makes the backend fully detached.)
+    p = subprocess.Popen([PY, "-m", "core_engine.app"], cwd=ROOT, env=env,
+                         stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
                          creationflags=flags)
     PID_FILE.write_text(str(p.pid))
     for _ in range(60):
