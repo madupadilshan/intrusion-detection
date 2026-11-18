@@ -991,25 +991,19 @@ print('System Operational Logs      :', db.system_logs.count_documents({}))
 
 ```text
 === FR-03 DATABASE PERSISTENCE PROOF (MongoDB: iot_ids_lab) ===
-Total Attack Incidents Saved : 390
-Total Firewall Action Records: 119
-Network Traffic Summaries    : 2200
+Total Attack Incidents Saved : 415
+Total Firewall Action Records: 131
+Network Traffic Summaries    : 2436
 Discovered Subnet Devices    : 6
-System Operational Logs      : 856
-```
-Attack flows saved (all time)  : 20677 in 101 incidents
-Incidents by class             : {'CnC': 56, 'DDoS_DoS': 24, 'Malware_Download': 7, 'PortScan': 14}
-Response actions saved         : 21 block/rate-limit records (active and ended)
-Active blocks / rate-limits    : 0 / 0
-Pipeline status / model        : running / v3.2.0
+System Operational Logs      : 877
 ```
 
 #### 📊 Output Breakdown:
-- `Benign flows saved (last 24 h)`: Legitimate camera video flows are aggregated into the `traffic_summaries` collection as per-minute statistical summaries, never polluting `attack_events`.
-- `Attack flows ... in incidents`: Multi-packet attack bursts are grouped into consolidated security incidents (e.g., 446 flood flows -> 1 incident event).
-- `Incidents by class`: Persistent records exist across all 4 attack categories.
-- `Response actions saved`: Complete historical log of firewall mitigations and automatic expirations.
-- `Pipeline status / model`: Verifies streaming pipeline is active and running model **v3.2.0**.
+- `Total Attack Incidents Saved`: Persistent attack incident records in `attack_events` collection across all 4 attack categories (DDoS, PortScan, CnC, Malware_Download).
+- `Total Firewall Action Records`: Complete historical log of firewall mitigations and automatic expirations stored in `blocklist`.
+- `Network Traffic Summaries`: Legitimate camera video flows aggregated into the `traffic_summaries` collection as statistical summaries, never polluting `attack_events`.
+- `Discovered Subnet Devices`: Discovered active assets (Camera, NVR, Admin PC) cataloged in `devices`.
+- `System Operational Logs`: Persistent operational audit trail in `system_logs`.
 
 ##### 🔬 Scientific Meaning / Proof:
 Proves persistent storage across separate MongoDB collections with automated 7-day and 90-day TTL (Time-To-Live) indexes in accordance with `docs/ethics/data_retention_plan.md`.
@@ -1019,8 +1013,7 @@ Show the following two screens to the supervisor:
 1. **Attack History (`http://localhost:5000/history`):**
    - Displays all historical security incidents stored in MongoDB with timestamp, class, source IP, target IP, and confidence.
 2. **Overview Page (`http://localhost:5000/overview`):**
-   - Displays the **"Benign Flows (24h)"** card showing over 7,400 benign flows aggregated from MongoDB.
-3. What to say: *"Sir, our Attack History and Overview screens directly query MongoDB, providing complete forensic persistence of all benign camera traffic and security events."*
+   - Displays the **"Benign Flows (24h)"** card showing benign camera flows aggregated from MongoDB.
 
 ---
 

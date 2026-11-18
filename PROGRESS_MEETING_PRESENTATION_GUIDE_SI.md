@@ -947,27 +947,22 @@ print('System Operational Logs      :', db.system_logs.count_documents({}))
 
 ```text
 === FR-03 DATABASE PERSISTENCE PROOF (MongoDB: iot_ids_lab) ===
-Total Attack Incidents Saved : 390
-Total Firewall Action Records: 119
-Network Traffic Summaries    : 2200
+Total Attack Incidents Saved : 415
+Total Firewall Action Records: 131
+Network Traffic Summaries    : 2436
 Discovered Subnet Devices    : 6
-System Operational Logs      : 856
-Attack flows saved (all time)  : 20677 in 101 incidents
-Incidents by class             : {'CnC': 56, 'DDoS_DoS': 24, 'Malware_Download': 7, 'PortScan': 14}
-Response actions saved         : 21 block/rate-limit records (active and ended)
-Active blocks / rate-limits    : 0 / 0
-Pipeline status / model        : running / v3.2.0
+System Operational Logs      : 877
 ```
 
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
-- `Benign flows saved (last 24 h)`: සාමාන්‍ය කැමරා වීඩියෝ flows තැන්පත් වන්නේ MongoDB `traffic_summaries` collection එකෙහි පමණි (මිනිත්තුවක counts ලෙස), ඒවා කිසිවිටෙකත් `attack_events` වෙත නොයයි.
-- `Attack flows ... in incidents`: එක් ප්‍රහාරයක flows දහස් ගණනක් තනි incident එකකට aggregate වේ (උදා: flood flows 446 → 1 event).
-- `Incidents by class`: පන්ති 4 ම සඳහා අනාවරණය වූ සිදුවීම් MongoDB තුළ ස්ථිරව සුරැකී ඇත.
-- `Response actions saved`: Firewall එකෙන් ගත් mitigations සහ auto-expiry records දත්ත ගබඩාවේ සුරැකී ඇත.
-- `Pipeline status / model`: Streaming pipeline එක සක්‍රීයව පවතින බවත් Model එක v3.2.0 බවත් සනාථ කරයි.
+- `Total Attack Incidents Saved`: ප්‍රහාරක පන්ති 4 ම (DDoS, PortScan, CnC, Malware_Download) සඳහා අනාවරණය වූ සිදුවීම් MongoDB `attack_events` collection එක තුළ ස්ථිරව සුරැකී ඇත.
+- `Total Firewall Action Records`: Firewall එකෙන් ගත් mitigations සහ auto-expiry records `blocklist` collection එකේ සුරැකී ඇත.
+- `Network Traffic Summaries`: සාමාන්‍ය කැමරා වීඩියෝ flows තැන්පත් වන්නේ MongoDB `traffic_summaries` collection එකෙහි පමණි, ඒවා කිසිවිටෙකත් `attack_events` වෙත නොයයි.
+- `Discovered Subnet Devices`: හඳුනාගත් ජාල උපාංග (Camera, NVR, Admin PC) `devices` collection එකෙහි catalog වී ඇත.
+- `System Operational Logs`: පද්ධතියේ ක්‍රියාකාරී විගණන ලඝුසටහන් `system_logs` collection එකෙහි සුරැකී ඇත.
 
 ##### 🔬 විද්‍යාත්මක සාක්ෂිය:
-MongoDB `traffic_summary` collection එක තුළ දින 7 ක TTL (Time-To-Live) index එකක් සහිතව benign flows 7,600+ ක් තැන්පත් වී ඇති අතර, security events වෙනම collection එකක සුරක්ෂිතව පවතී.
+MongoDB `traffic_summaries` collection එක තුළ දින 7 ක TTL (Time-To-Live) index එකක් සහිතව benign flows තැන්පත් වී ඇති අතර, security events වෙනම collection එකක සුරක්ෂිතව පවතී.
 
 #### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය (Dashboard Verification Steps):
 Supervisor ඉදිරියේ පහත Dashboard පිටු දෙක පෙන්වන්න:
@@ -975,8 +970,7 @@ Supervisor ඉදිරියේ පහත Dashboard පිටු දෙක ප�
    - දත්ත ගබඩාවේ (MongoDB) ස්ථිරව තැන්පත් වී ඇති සියලුම ආරක්ෂක සිදුවීම් (Alerts) කාලානුක්‍රමිකව (Timestamp, Class, Source IP, Destination IP, Confidence %) ලැයිස්තුගත වී ඇති අයුරු පෙන්වන්න.
    - ඉහළ ඇති Search / Filter බොත්තම් මඟින් ප්‍රහාරක වර්ගය අනුව (උදා: DDoS, PortScan, CnC) දත්ත පෙරහන් කර පෙන්විය හැක.
 2. **Overview පිටුවේ Benign Flows Card එක (`http://localhost:5000/overview`):**
-   - **"Benign Flows (24h)" Card** එක පෙන්වන්න. එහි MongoDB `traffic_summary` collection එකෙන් aggregate වී ඇති සාමාන්‍ය කැමරා වීඩියෝ flows ගණන (7,600+ flows) පෙන්වයි.
-3. **Supervisor ට කියන වදන:** *"Sir, our Attack History and Overview screens directly query MongoDB, providing complete forensic persistence of all benign camera traffic and security events."*
+   - **"Benign Flows (24h)" Card** එක පෙන්වන්න. එහි MongoDB `traffic_summaries` collection එකෙන් aggregate වී ඇති සාමාන්‍ය කැමරා වීඩියෝ flows ගණන පෙන්වයි.
 
 ---
 
