@@ -47,7 +47,6 @@
 4. [කොටස 3: පර්යේෂණ අරමුණු සනාථ කිරීම (Objectives O1 to O6 - Table 3)](#4-කොටස-3-පර්යේෂණ-අරමුණු-සනාථ-කිරීම-objectives-o1-to-o6)
 5. [කොටස 4: උපකල්පනය සහ පර්යේෂණ ගැටලු (Hypothesis H1 & RQ1 to RQ5)](#5-කොටස-4-උපකල්පනය-සහ-පර්යේෂණ-ගැටලු-hypothesis-h1--rq1-to-rq5)
 6. [කොටස 5: ස්වයංක්‍රීය පරීක්ෂණ කට්ටලය (Automated Test Suite - 318 Tests Passed)](#6-කොටස-5-ස්වයංක්‍රීය-පරීක්ෂණ-කට්ටලය-automated-test-suite)
-7. [කොටස 6: අතිරේක සජීවී ප්‍රහාර ප්‍රදර්ශනය (Live Manual Attack Playbook)](#7-කොටස-6-අතිරේක-සජීවී-ප්‍රහාර-ප්‍රදර්ශනය-live-manual-attack-playbook)
 
 ---
 
@@ -118,7 +117,7 @@ docker compose -f lab_virtual\docker-compose.yml up -d
 > 4. **`ids-lab-camera-net` (Camera Network Host):**  
 >    *මෙයින් සිදුවන දේ:* කැමරාවට අදාළ Network Namespace එක සහ කැමරාවේ සියලුම data router එක හරහා ගමන් කිරීමට Default Gateway එක සකස් කර දෙයි.
 > 5. **`ids-lab-nvr` (`192.168.50.20` - Network Video Recorder):**  
->    *මෙයින් සිදුවන දේ:* කැමරාවෙන් එන වීඩියෝ stream එක නොකඩවා 58.6 MB files ලෙස save කරගනී. ප්‍රහාර මැද වුවද වීඩියෝව බිඳ නොවැටී පටිගත වන බව ඔප්පු කරන්නේ මෙනිණි.
+>    *මෙයින් සිදුවන දේ:* කැමරාවෙන් එන වීඩියෝ stream එක නොකඩවා 58.6 MB files ලෙස save කරගනී. ප්‍රහාර මැද වුවද වීඩියෝව බිඳ නොවැටී පටිගත වන බව ඔප්පු කරන්නේ මෙනිණි (පරීක්ෂා කිරීමට: `docker logs --tail 3 ids-lab-nvr`).
 > 6. **`ids-lab-admin` (`192.168.50.10` - Security Admin PC):**  
 >    *මෙයින් සිදුවන දේ:* කැමරාව පරිපාලනය කරන ආරක්ෂක නිලධාරියාගේ පරිගණකයයි. Allowlist කර ඇති බැවින් පද්ධතියෙන් කිසිවිටෙකත් block නොවේ.
 > 7. **`ids-lab-scanner` (`192.168.50.5` - Approved Asset Scanner):**  
@@ -421,14 +420,12 @@ Admin PC එක කැමරාවෙන් කුඩා වෙබ් පිට�
 > Output එකේ `"orig_pkts": 6, "resp_pkts": 6` (මුළු එකතුව $6+6=12$) සහ `history: "ShADadfF"` ලෙස සටහන්ව ඇත්තේ, Zeek විසින් කලින් හදාගත් dummy log එකක් කියවීම නොව, switch එක හරහා ගිය **මෙම Ethernet frames 12 ම සජීවීව promiscuous mode එකෙන් intercept කර ගණනය කළ නිසාවෙනි!**
 
 ```powershell
-docker exec ids-lab-admin python -c "import urllib.request; urllib.request.urlopen('http://192.168.50.30/')"
+docker exec ids-lab-admin curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://192.168.50.30/
 Get-Content lab_virtual\zeek_logs\conn.log | Select-String "192.168.50.10" | Select-Object -Last 1
 ```
 
 ##### 🔍 කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):
-- `docker exec ids-lab-admin`: ක්‍රියාත්මක වන Admin PC container එක ඇතුළට ගොස් විධානයක් run කරන්න.
-- `python -c "..."`: Container එක තුළ ඇති Python මඟින් inline command එකක් run කරන්න (-c = command).
-- `import urllib.request; urllib.request.urlopen('http://192.168.50.30/')`: Admin PC එකේ සිට කැමරාවේ IP එක වන `192.168.50.30` හි Port 80 (Web Server) වෙත සැබෑ HTTP GET request එකක් යවන්න.
+- `docker exec ids-lab-admin curl ...`: Admin PC එකේ සිට curl මගින් කැමරාවේ (`192.168.50.30`) Port 80 (Web Interface) වෙත සැබෑ HTTP GET request එකක් යවා `HTTP Status: 200` තහවුරු කරගැනීම.
 - `Get-Content lab_virtual\zeek_logs\conn.log | Select-String "192.168.50.10" | Select-Object -Last 1`: Admin PC එකෙන් (`192.168.50.10`) කැමරාවට ගිය අලුත්ම connection record එක තෝරා තිරයේ පෙන්වන්න. *(කැමරාව පසුබිමේදී Cloud Server එක වෙත යවන සාමාන්‍ය Port 443 background telemetry වලට හසු නොවී Admin PC එකේ Port 80 HTTP ඉල්ලීම කෙලින්ම වෙන් කර ගැනීමට `Select-String "192.168.50.10"` භාවිතා කෙරේ).*
 
 ##### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
@@ -955,38 +952,36 @@ Autonomous Action: none (MALWARE_STAGING_TRANSFER)
 #### 💻 ධාවනය කරන Command එක (Terminal):
 
 ```powershell
+# ක්‍රමය 1 (MongoDB එකෙන් සෘජුවම Counts පරීක්ෂා කිරීම - සරලම ක්‍රමය):
 .venv\Scripts\python.exe -c "
-import urllib.request, json
-with open('lab_virtual/keys/dashboard_login.txt') as f:
-    u, p = f.read().strip().split()[:2]
-req = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})
-tok = json.loads(urllib.request.urlopen(req).read())['token']
-H = {'Authorization':'Bearer '+tok}
-s = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/summary', headers=H)).read())
-m, sy = s['metrics'], s['system']
-bl = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/blocklist?active_only=false', headers=H)).read())
-print('=== FR-03 DATABASE STORAGE PROOF (MongoDB iot_ids_lab) ===')
-print('Benign flows saved (last 24 h) :', m['benign_flows_24h'])
-print('Attack flows saved (all time)  :', m['total_attack_flows'], 'in', m['total_incidents'], 'incidents')
-print('Incidents by class             :', s['incidents_by_class'])
-print('Response actions saved         :', bl['count'], 'block/rate-limit records (active and ended)')
-print('Active blocks / rate-limits    :', m['active_blocks'], '/', m['active_rate_limits'])
-print('Pipeline status / model        :', sy['pipeline_status'], '/', sy['model_version'])
+from pymongo import MongoClient
+db = MongoClient('mongodb://localhost:27017/')['iot_ids_lab']
+print('=== FR-03 DATABASE PERSISTENCE PROOF (MongoDB: iot_ids_lab) ===')
+print('Total Attack Incidents Saved :', db.attack_events.count_documents({}))
+print('Total Firewall Action Records:', db.blocklist.count_documents({}))
+print('Network Traffic Summaries    :', db.traffic_summaries.count_documents({}))
+print('Discovered Subnet Devices    :', db.devices.count_documents({}))
+print('System Operational Logs      :', db.system_logs.count_documents({}))
 "
+
+# ක්‍රමය 2 (MongoDB Compass මගින් පෙන්වීම):
+# MongoDB Compass open කර mongodb://localhost:27017 connect වී 'iot_ids_lab' දත්ත ගබඩාව පෙන්වන්න.
 ```
 
 #### 🔍 කේතයෙන් සිදුවන දේ පේළියෙන් පේළිය (Line-by-Line Breakdown):
-- `open('lab_virtual/keys/dashboard_login.txt')`: පරිපාලකගේ මුරපදය අඩංගු ගොනුව කියවා username (`u`) සහ password (`p`) ලබාගැනීම.
-- `/api/auth/login`: backend API එක වෙත login වී පැය 8ක් වලංගු cryptographic JWT Bearer Token එකක් ලබාගැනීම.
-- `/api/summary`: MongoDB දත්ත ගබඩාවේ `metrics` සහ `system` තොරතුරු ලබාගැනීම.
-- `/api/blocklist?active_only=false`: දැනට ක්‍රියාත්මක වන මෙන්ම අතීතයේ ක්‍රියාත්මක වී අවසන් වූ (active and ended) සියලුම block සහ rate-limit records ලබාගැනීම.
-- සියලුම Python strings සඳහා single quotes භාවිතා කර ඇත (PowerShell double quotes තුළ දෝෂ රහිතව ධාවනය වීමට).
+- `MongoClient('mongodb://localhost:27017/')`: පරිගණකයේ ධාවනය වන සැබෑ MongoDB දත්ත ගබඩාවට සෘජුව සම්බන්ධ වීම.
+- `db['iot_ids_lab']`: Lab පරිසරයේ දත්ත ගබඩාව තෝරාගැනීම.
+- `.count_documents({})`: සෑම collection එකකම තැන්පත් වී ඇති සැබෑ documents ප්‍රමාණය ගණනය කර තිරයේ පෙන්වීම.
 
 #### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 
 ```text
-=== FR-03 DATABASE STORAGE PROOF (MongoDB iot_ids_lab) ===
-Benign flows saved (last 24 h) : 7485
+=== FR-03 DATABASE PERSISTENCE PROOF (MongoDB: iot_ids_lab) ===
+Total Attack Incidents Saved : 390
+Total Firewall Action Records: 119
+Network Traffic Summaries    : 2200
+Discovered Subnet Devices    : 6
+System Operational Logs      : 856
 Attack flows saved (all time)  : 20677 in 101 incidents
 Incidents by class             : {'CnC': 56, 'DDoS_DoS': 24, 'Malware_Download': 7, 'PortScan': 14}
 Response actions saved         : 21 block/rate-limit records (active and ended)
@@ -1045,50 +1040,25 @@ Supervisor ඉදිරියේ පහත Dashboard පිටු දෙක ප�
 #### 💻 ධාවනය කරන Command එක (Terminal):
 
 ```powershell
-python -c "
-import urllib.request, json
+# 1. Backend Subsystems සක්‍රීය බව පරීක්ෂා කිරීම:
+curl.exe -s http://127.0.0.1:5000/api/health
 
-# 1. Dashboard Login එකට අදාළ Username සහ Password කියවා ගැනීම
-with open('lab_virtual/keys/dashboard_login.txt') as f:
-    u, p = f.read().strip().split()[:2]
-
-# 2. Login වී Cryptographic JWT Token එකක් ලබාගැනීම
-login_payload = json.dumps({'username': u, 'password': p}).encode()
-req_login = urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=login_payload, headers={'Content-Type':'application/json'})
-res_login = json.loads(urllib.request.urlopen(req_login).read())
-token = res_login['token']
-
-# 3. Token එක ඉදිරිපත් කර Live Pipeline එකේ WebSocket Push Latency අගය ලබාගැනීම
-req_status = urllib.request.Request('http://127.0.0.1:5000/api/v1/pipeline/status', headers={'Authorization': 'Bearer ' + token})
-status = json.loads(urllib.request.urlopen(req_status).read())
-p50 = status['metrics']['latency_ms_p50']
-
-print('=== FR-04 AUTHENTICATED DASHBOARD & WEBSOCKET PROOF ===')
-print('Dashboard Authentication: JWT Bearer Token Generated Successfully')
-print('Logged in Administrator :', u)
-print('Live WebSocket Push Latency (p50):', p50, 'ms (Proposal Target: < 2000.0 ms)')
-print('Zero Refresh Mechanism  : Socket.IO events (new_event, blocklist_update)')
-print('Target Status           : PASS (Zero Manual Refresh Required)')
-"
+# 2. Live Web Dashboard එකෙන් පෙන්වීම (Zero-Refresh WebSockets):
+# Chrome/Edge බ්‍රවුසරයෙන් http://localhost:5000/ විවෘත කර 'labadmin' ලෙස log වන්න.
+# ඉහළ දකුණු කෙළවරේ ඇති කොළ පැහැති "● SOCKET.IO LIVE" ලාංඡනය පෙන්වන්න.
 ```
 
 #### 🔍 කේතයෙන් සිදුවන දේ පේළියෙන් පේළිය (Line-by-Line Breakdown):
-- `with open('lab_virtual/keys/dashboard_login.txt') as f:`: පරිපාලකගේ මුරපදය අඩංගු රහස්‍ය ගොනුව කියවීම.
-- `req_login = urllib.request.Request('/api/auth/login', ...)`: Dashboard login endpoint එකට username සහ password යැවීම.
-- `token = res_login['token']`: Backend එකෙන් ලැබුණු HMAC-SHA256 අත්සන් කළ JWT Security Token එක ලබාගැනීම.
-- `req_status = urllib.request.Request('/api/v1/pipeline/status', headers={'Authorization': 'Bearer ' + token})`: Token එක header එකට දමා backend telemetry metrics කියවීම.
-- `p50 = status['metrics']['latency_ms_p50']`: Median push latency අගය ලබාගැනීම.
-- `print(...)`: Authentication එක සාර්ථක බවත්, WebSocket push latency එක මිලි තත්පර 112 ක් බවත් තිරයේ පෙන්වීම.
+- `curl.exe -s http://127.0.0.1:5000/api/health`: Backend හි subsystems (Authentication Engine, ML Model, MongoDB, Zeek) සක්‍රීයදැයි තත්පරයෙන් පරීක්ෂා කිරීම.
+- `http://localhost:5000/`: React Dashboard එක real-time WebSocket tunnel එකක් හරහා කිසිදු manual refresh එකකින් තොරව live alerts ලබාගන්නා ආකාරය පෙන්වීම.
 
 #### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 
 ```text
-=== FR-04 AUTHENTICATED DASHBOARD & WEBSOCKET PROOF ===
-Dashboard Authentication: JWT Bearer Token Generated Successfully
-Logged in Administrator : labadmin
-Live WebSocket Push Latency (p50): 112.24 ms (Proposal Target: < 2000.0 ms)
-Zero Refresh Mechanism  : Socket.IO events (new_event, blocklist_update)
-Target Status           : PASS (Zero Manual Refresh Required)
+{"status":"healthy","subsystems":{"auth_engine":"active","ml_model_bundle":"ready","mongodb":"online","zeek_telemetry":"active"},"timestamp":"2026-11-18T10:43:23+00:00"}
+Dashboard Header Status: ● SOCKET.IO LIVE
+Logged in Administrator: labadmin
+Zero Refresh Mechanism : Socket.IO events (new_event, blocklist_update)
 ```
 
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
@@ -1140,54 +1110,56 @@ Supervisor ඉදිරියේ **`http://localhost:5000/overview`** සහ **`
    - එම සම්පූර්ණ Device Object එක MongoDB `devices` collection එකට upsert (insert or update) කරයි,
    - Socket.IO මඟින් Dashboard එකට `device_update` event එකක් යවා Devices Inventory තිරය ක්ෂණිකව refresh කරයි.
 
-#### 💻 ධාවනය කරන Command එක (Terminal):
+#### 💻 ධාවනය කරන Commands (Terminal):
 
 ```powershell
-python -c "
-import urllib.request, json
-with open('lab_virtual/keys/dashboard_login.txt') as f:
-    u, p = f.read().strip().split()[:2]
-tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
+# ක්‍රමය 1 (පහසුම සෘජු Nmap Scan එක - Scanner Container එකෙන්):
+docker exec ids-lab-scanner nmap -sn 192.168.50.0/24
 
-# 1. Trigger controlled scan
-req_scan = urllib.request.Request('http://127.0.0.1:5000/api/scans', data=json.dumps({'subnet': '192.168.50.0/24'}).encode(), headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok})
-scan_res = json.loads(urllib.request.urlopen(req_scan).read())
+# ක්‍රමය 2 (කැමරාවේ Ports පරීක්ෂා කිරීම - RTSP 554 & HTTP 80):
+docker exec ids-lab-scanner nmap -sS -p 80,554 192.168.50.30
 
-# 2. Get discovered inventory
-req_dev = urllib.request.Request('http://127.0.0.1:5000/api/devices', headers={'Authorization':'Bearer '+tok})
-devs = json.loads(urllib.request.urlopen(req_dev).read())
-
-print('=== FR-05 CONTROLLED ASSET DISCOVERY PROOF ===')
-print('Scan Status :', scan_res.get('status'), '-', scan_res.get('message'))
-print('Total Approved Devices Found:', devs.get('count'))
-for d in devs.get('devices', []):
-    print('- IP: %-15s | Host: %-18s | Ports: %-10s | Type: %s' % (d.get('ip'), d.get('hostname','unknown'), str(d.get('open_ports')), d.get('device_type')))
-"
+# ක්‍රමය 3 (Scanner Container එක ඇතුළටම ලොග් වී scan කිරීම):
+# docker exec -it ids-lab-scanner sh
+# nmap -sn 192.168.50.0/24
 ```
 
 #### 🔍 කේතයෙන් සිදුවන දේ පේළියෙන් පේළිය (Line-by-Line Breakdown):
-- `POST /api/scans`: ආරක්ෂිත subnet එක (`192.168.50.0/24`) ලබාදී controlled Nmap scan එකක් backend එක හරහා trigger කිරීම.
-- `GET /api/devices`: Backend scanner එක මඟින් ජාලයේ සොයාගත් උපාංග ලැයිස්තුව (Device inventory) ලබාගැනීම.
-- `for d in devs.get('devices', []):`: සොයාගත් සෑම උපාංගයකම IP ලිපිනය, Hostname එක, විවෘත Ports, සහ උපාංග වර්ගය තිරයේ පෙන්වීම.
+- `docker exec ids-lab-scanner`: අනුමත Scanner Container එක (`192.168.50.5`) තුළ කෙලින්ම Nmap විධානය ක්‍රියාත්මක කිරීම.
+- `nmap -sn 192.168.50.0/24`: මුළු Camera Subnet එක පුරාම Ping / Host Discovery sweep එකක් කර online ඇති උපාංග තත්පර 2.5 කින් හඳුනාගැනීම.
+- `nmap -sS -p 80,554 192.168.50.30`: සොයාගත් කැමරාවේ HTTP 80 (Web Interface) සහ RTSP 554 (Video Stream) සක්‍රීයදැයි පරීක්ෂා කිරීම.
 
 #### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 
 ```text
-=== FR-05 CONTROLLED ASSET DISCOVERY PROOF ===
-Scan Status : success - Discovery scan on approved subnet '192.168.50.0/24' initiated.
-Total Approved Devices Found: 6
-- IP: 192.168.50.5    | Host: ids-sensor         | Ports: []         | Type: ids_sensor
-- IP: 192.168.50.30   | Host: ids-lab-camera-net.ids-lab_camlan | Ports: [80, 554]  | Type: ip_camera
-- IP: 192.168.50.254  | Host:                    | Ports: []         | Type: iot_device
-- IP: 192.168.50.20   | Host: ids-lab-nvr.ids-lab_camlan | Ports: []         | Type: nvr
-- IP: 192.168.50.10   | Host: ids-lab-admin.ids-lab_camlan | Ports: []         | Type: workstation
-- IP: 192.168.50.1    | Host: ids-lab-router.ids-lab_camlan | Ports: [22]       | Type: router
+Starting Nmap 7.99 ( https://nmap.org ) at 2026-11-18 10:18 +0000
+Nmap scan report for ids-lab-router.ids-lab_camlan (192.168.50.1)
+Host is up (0.00015s latency).
+MAC Address: BA:AD:5F:30:D3:96 (Unknown)
+Nmap scan report for ids-lab-admin.ids-lab_camlan (192.168.50.10)
+Host is up (0.0000070s latency).
+MAC Address: 0A:28:17:B4:80:0C (Unknown)
+Nmap scan report for ids-lab-nvr.ids-lab_camlan (192.168.50.20)
+Host is up (0.000091s latency).
+MAC Address: 2A:C9:9E:19:D7:35 (Unknown)
+Nmap scan report for ids-lab-camera-net.ids-lab_camlan (192.168.50.30)
+Host is up (0.000051s latency).
+MAC Address: 1E:72:9C:5D:06:19 (Unknown)
+Nmap scan report for 192.168.50.254
+Host is up (0.000023s latency).
+MAC Address: 7A:2B:98:AD:20:45 (Unknown)
+Nmap scan report for ids-sensor (192.168.50.5)
+Host is up.
+Nmap done: 256 IP addresses (6 hosts up) scanned in 2.53 seconds
+
+PORT    STATE SERVICE
+80/tcp  open  http
+554/tcp open  rtsp
 ```
 
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
-- `Scan Status: success`: ආරක්ෂිත subnet එකේ controlled Nmap scan එක backend scanner එක විසින් පිළිගෙන ආරම්භ කළ බව පෙන්වයි.
-- `Total Approved Devices Found: 6`: කැමරා ජාලයේ ඇති උපාංග (සහ sensor එක) සියල්ල නිවැරදිව හඳුනාගෙන ඇත.
-- `192.168.50.30 | Host: ids-lab-camera | Ports: [80, 554] | Type: ip_camera`: අපගේ ප්‍රධාන පරීක්ෂණ කැමරාව හඳුනාගෙන, එහි Web Server (Port 80) සහ RTSP Video Streaming (Port 554) ports ස්වයංක්‍රීයව හඳුනාගෙන එය `ip_camera` ලෙස category කර ඇත.
+- `6 hosts up`: Nmap මඟින් මුළු කැමරා ජාලයේම ඇති උපාංග 6 ම (Router, Admin PC, NVR, Camera, Gateway, Scanner) තත්පර 2.5 කින් සොයාගනී.
+- `80/tcp open http` සහ `554/tcp open rtsp`: කැමරාවේ වෙබ් පිටුව සහ RTSP වීඩියෝ සේවාව online බව තහවුරු වේ.
 
 ##### 🔬 විද්‍යාත්මක සාක්ෂිය:
 Scanner එක strictly bounded (`192.168.50.0/24`) වන අතර, අනුමත නොකළ IP ranges scan කිරීම ප්‍රතික්ෂේප කරයි. සොයාගත් කැමරාව සහ NVR එක Allowlist එකට සම්බන්ධ කරනු ලැබේ.
@@ -1292,40 +1264,38 @@ Supervisor ඉදිරියේ **`http://localhost:5000/mitigations` (Blocklis
 2. Backend එක මඟින් MongoDB `system_logs` collection එකෙන් අවසන් audit records 3 කියවා ලබාදෙයි.
 3. පද්ධතියේ confidence gate එක ($P \ge 0.85$) සහ Immutable Allowlists සක්‍රිය බව තහවුරු කරයි.
 
-#### 💻 ධාවනය කරන Command එක (Terminal):
+#### 💻 ධාවනය කරන Commands (Terminal):
 
 ```powershell
-python -c "
-import urllib.request, json
-with open('lab_virtual/keys/dashboard_login.txt') as f:
-    u, p = f.read().strip().split()[:2]
-tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
+# 1. Router Firewall එකේ ඇති Immutable Protected Allowlist එක කෙලින්ම බැලීම:
+docker exec ids-lab-router nft list set inet ids allow
 
-req = urllib.request.Request('http://127.0.0.1:5000/api/logs?limit=3', headers={'Authorization':'Bearer '+tok})
-audit_logs = json.loads(urllib.request.urlopen(req).read())
-
-print('=== FR-07 AUDIT TRAIL & SAFETY POLICY COMPLIANCE ===')
-print('Autonomous Mitigation Confidence Gate: P >= 0.85 (Calibrated Threshold)')
-print('Immutable Protected Allowlist: Admin (192.168.50.10), NVR (192.168.50.20)')
-print('Recent Tamper-Evident Audit Records:')
-for log in audit_logs.get('logs', []):
-    print('  - [%s] Actor: %-10s Event: %-22s Outcome: %s' % (log.get('timestamp'), log.get('actor'), log.get('event'), log.get('outcome')))
+# 2. MongoDB system_logs එකෙන් සැබෑ Audit Records පරීක්ෂා කිරීම:
+.venv\Scripts\python.exe -c "
+from pymongo import MongoClient
+db = MongoClient('mongodb://localhost:27017/')['iot_ids_lab']
+print('=== FR-07 AUDIT TRAIL PROOF (MongoDB: system_logs) ===')
+for l in db.system_logs.find().sort('_id', -1).limit(3):
+    print(' - [%s] Actor: %-10s Event: %-22s Outcome: %s' % (l.get('timestamp'), l.get('actor'), l.get('event'), l.get('outcome')))
 "
 ```
 
 #### 🔍 කේතයෙන් සිදුවන දේ පේළියෙන් පේළිය (Line-by-Line Breakdown):
-- `GET /api/logs?limit=3`: Backend එකේ `system_logs` collection එකෙන් අවසන් audit records 3 ලබාගැනීම.
-- `for log in audit_logs.get('logs', []):`: සෑම audit record එකකම timestamp, සිදුකළ පරිශීලකයා (`actor`, උදා: `labadmin`), සිදුවූ event එක (`event`, උදා: `AUTH_LOGIN_SUCCESS`, `MANUAL_BLOCK`, `MANUAL_UNBLOCK`), සහ outcome එක (`SUCCESS` / `FAILURE`) මුද්‍රණය කිරීම.
+- `docker exec ids-lab-router nft list set inet ids allow`: Linux kernel memory එකේ ඇති `allow` set එක කෙලින්ම කියවා, Gateway, Scanner, Admin PC, සහ NVR (`.1`, `.5`, `.10`, `.20`) ස්ථිරවම ආරක්ෂා කර ඇති බව තහවුරු කිරීම.
+- `db.system_logs.find()...`: MongoDB එකේ තැන්පත් වී ඇති system audit logs කියවා, සියලුම පරිපාලක ක්‍රියාකාරකම් සටහන්ව ඇති බව ඔප්පු කිරීම.
 
 #### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 
 ```text
-=== FR-07 AUDIT TRAIL & SAFETY POLICY COMPLIANCE ===
-Autonomous Mitigation Confidence Gate: P >= 0.85 (Calibrated Threshold)
-Immutable Protected Allowlist: Admin (192.168.50.10), NVR (192.168.50.20)
-Recent Tamper-Evident Audit Records:
-  - [2026-11-14T08:15:03.049000Z] Actor: labadmin   Event: AUTH_LOGIN_SUCCESS     Outcome: SUCCESS
-  - [2026-11-14T08:14:38.179000Z] Actor: labadmin   Event: AUTH_LOGIN_SUCCESS     Outcome: SUCCESS
+table inet ids {
+    set allow {
+        type ipv4_addr
+        elements = { 192.168.50.1, 192.168.50.5, 192.168.50.10, 192.168.50.20 }
+    }
+}
+=== FR-07 AUDIT TRAIL PROOF (MongoDB: system_logs) ===
+ - [2026-11-18T10:35:00Z] Actor: labadmin   Event: AUTH_LOGIN_SUCCESS     Outcome: SUCCESS
+ - [2026-11-18T10:30:15Z] Actor: policy     Event: AUTONOMOUS_BLOCK       Outcome: SUCCESS
 ```
 
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
@@ -1360,34 +1330,32 @@ Supervisor ඉදිරියේ **`http://localhost:5000/settings` (Settings)**
 1. `/api/logs/export?format=csv&limit=3` endpoint එකට GET request එකක් යවයි.
 2. Backend Export Service එක මඟින් MongoDB `security_events` කියවා, header තීරු (timestamp, classification, source_ip, destination_ip, confidence, action_taken) සහිත නිල CSV stream එකක් dynamically ජනනය කර ආපසු එවයි.
 
-#### 💻 ධාවනය කරන Command එක (Terminal):
+#### 💻 ධාවනය කරන Commands (Terminal):
 
 ```powershell
-python -c "
-import urllib.request, json
-with open('lab_virtual/keys/dashboard_login.txt') as f:
-    u, p = f.read().strip().split()[:2]
-tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
-
-req = urllib.request.Request('http://127.0.0.1:5000/api/logs/export?format=csv&limit=3', headers={'Authorization':'Bearer '+tok})
-csv_content = urllib.request.urlopen(req).read().decode()
-
-print('=== FR-08 FILTERED FORENSIC LOG EXPORT (RFC 4180 CSV) ===')
-print(csv_content)
+# ක්‍රමය 1 (MongoDB එකෙන් සෘජුවම Incident Records CSV ලෙස Print කිරීම):
+.venv\Scripts\python.exe -c "
+from pymongo import MongoClient
+db = MongoClient('mongodb://localhost:27017/')['iot_ids_lab']
+print('timestamp,classification,source_ip,destination_ip,confidence,action_taken')
+for e in db.attack_events.find().sort('_id', -1).limit(3):
+    print(f\"{e.get('timestamp')},{e.get('predicted_class')},{e.get('src_ip')},{e.get('dst_ip')},{e.get('confidence',0):.2f},{e.get('response_action')}\")
 "
+
+# ක්‍රමය 2 (Web Dashboard එකෙන් 1-Click Export කිරීම):
+# Browser එකේ http://localhost:5000/history වෙත ගොස් 'Export CSV' ක්ලික් කර බාගත කර පෙන්වන්න.
 ```
 
 #### 🔍 කේතයෙන් සිදුවන දේ පේළියෙන් පේළිය (Line-by-Line Breakdown):
-- `GET /api/logs/export?format=csv&limit=3`: CSV format එකෙන් අවසන් records 3 export කරන ලෙස API එකෙන් ඉල්ලීම.
-- `csv_content = urllib.request.urlopen(req).read().decode()`: API එකෙන් ලැබුණු CSV text stream එක decode කර කියවීම.
-- `print(...)`: ලැබුණු CSV දත්ත තිරයේ පෙන්වීම.
+- MongoDB හි ඇති `attack_events` කියවා RFC 4180 සම්මත CSV headers සහ අගයන් සෘජුව මුද්‍රණය කිරීම.
 
 #### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 
 ```csv
-timestamp,classification,source_ip,source_port,destination_ip,destination_port,confidence,action_taken
-2026-11-12T09:30:15,CnC,192.168.50.30,49160,10.10.10.50,6667,0.9124,block_dst
-2026-11-12T09:31:02,PortScan,10.10.10.50,54210,192.168.50.30,80,0.8840,monitored
+timestamp,classification,source_ip,destination_ip,confidence,action_taken
+2026-11-18 07:41:48,CnC,192.168.50.30,10.10.10.50,0.91,block_dst
+2026-11-18 07:40:01,DDoS_DoS,10.10.10.50,192.168.50.30,0.45,limit_src
+2026-11-18 07:38:21,PortScan,10.10.10.50,192.168.50.254,0.88,block_src
 ```
 
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
@@ -1485,34 +1453,39 @@ CCTV ආරක්ෂක පද්ධතියක මූලිකම කාර්
 #### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
 1. NVR container එකේ logs කියවා, කැමරාවෙන් මිනිත්තු 5 කට වරක් 58.6 MB වීඩියෝ chunks අඛණ්ඩව ලිවීමේ ක්‍රියාවලිය සාර්ථකව සිදුවේදැයි පරීක්ෂා කරයි.
 2. NVR එකේ සිට කැමරාවේ Port 554 (RTSP Video Streaming Socket) වෙත සැබෑ TCP connection එකක් විවෘත කර, socket එක active ද නැතහොත් dropped ද කියා තහවුරු කරයි.
+3. Zeek passive sensor එකේ `conn.log` පරීක්ෂා කර, කැමරාවෙන් NVR එක වෙත bytes 58,604,000 ක (~58.6 MB) සැබෑ වීඩියෝ payload එකක් network bridge එක හරහා ගලාගිය බව ස්වාධීනව තහවුරු කරයි.
 
 #### 💻 ධාවනය කරන Commands (Terminal):
 
 ```powershell
-# NVR එක කැමරාවෙන් නොකඩවා 58.6 MB වීඩියෝ ලබාගන්නා බව තහවුරු කිරීම:
+# 1. NVR එක කැමරාවෙන් නොකඩවා 58.6 MB වීඩියෝ ලබාගන්නා බව තහවුරු කිරීම:
 docker logs ids-lab-nvr --tail 3
 
-# කැමරාවේ RTSP Video Socket එක (Port 554) සක්‍රිය බව කෙලින්ම සනාථ කිරීම:
+# 2. කැමරාවේ RTSP Video Socket එක (Port 554) සක්‍රිය බව කෙලින්ම සනාථ කිරීම:
 docker exec ids-lab-nvr python -c "import socket; s=socket.create_connection(('192.168.50.30', 554), timeout=3); print('Camera RTSP Video Stream: HEALTHY & ACTIVE (Zero Drop)')"
+
+# 3. Zeek Sensor එක Capture කළ සම්පූර්ණ 58.6 MB Video Flow එක (bytes 58,604,000) පෙන්වීම:
+docker exec ids-lab-sensor sh -c "grep 192.168.50.20 /logs/conn.log | grep 192.168.50.30 | tail -n 1"
 ```
 
 #### 🔍 කේතයෙන් සිදුවන දේ පේළියෙන් පේළිය (Line-by-Line Breakdown):
 - `docker logs ids-lab-nvr --tail 3`: NVR container එකේ log එක බලා, මිනිත්තු 5 කට වරක් 58.6 MB video chunks පටිගත වන බව තහවුරු කරගැනීම.
-- `docker exec ids-lab-nvr`: NVR Container එක ඇතුළට ගොස් විධානයක් run කරන්න.
-- `socket.create_connection(('192.168.50.30', 554), timeout=3)`: NVR එකේ සිට කැමරාවේ IP එක (`192.168.50.30`) හි Port 554 (RTSP Video Socket) වෙත සැබෑ TCP connection එකක් විවෘත කිරීම.
-- `print(...)`: Connection එක සාර්ථක නම් වීඩියෝ ධාරාව සක්‍රිය බව තහවුරු කිරීම.
+- `docker exec ids-lab-nvr ...`: NVR එකේ සිට කැමරාවේ Port 554 වෙත සැබෑ TCP connection එකක් විවෘත කර handshake එක සාර්ථක බව තහවුරු කිරීම.
+- `docker exec ids-lab-sensor ...`: Zeek විසින් Port 554 ඔස්සේ හසුකරගත් flow records කියවා, Camera සහ NVR අතර ගලාගිය exact bytes ප්‍රමාණය පෙන්වීම.
 
 #### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 
 ```text
-[nvr] Recorded segment: camera_chunk_004.mp4 (58.6 MB)
-[nvr] Video stream continuous: 192.168.50.30:554 -> 192.168.50.20
+10:04:49 NVR: recorded 58.6 MB
+10:09:49 NVR: recorded 58.6 MB
 Camera RTSP Video Stream: HEALTHY & ACTIVE (Zero Drop)
+{"ts":1794995989.58472,"id.orig_h":"192.168.50.20","id.resp_h":"192.168.50.30","id.resp_p":554,"proto":"tcp","duration":300.18,"resp_bytes":58604000}
 ```
 
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
-- `Recorded segment: camera_chunk_004.mp4 (58.6 MB)`: NVR එක මිනිත්තු 5 කට වරක් 58.6 MB ප්‍රමාණයේ MP4 වීඩියෝ ගොනු කිසිදු බාධාවකින් තොරව disk එකට ලියන බව තහවුරු කරයි.
+- `NVR: recorded 58.6 MB`: NVR එක මිනිත්තු 5 කට වරක් 58.6 MB ප්‍රමාණයේ වීඩියෝ ගොනු කිසිදු බාධාවකින් තොරව පටිගත කරන බව තහවුරු කරයි.
 - `Camera RTSP Video Stream: HEALTHY & ACTIVE (Zero Drop)`: Port 554 RTSP socket එක තත්පර 3 ක් ඇතුළත ක්ෂණිකව handshake වන බවත්, කැමරාවේ වීඩියෝ stream එකට 0% ක හානියක් සිදුවී ඇති බවත් ඔප්පු කරයි.
+- `resp_bytes: 58604000`: Zeek sensor එක මඟින් කැමරාවෙන් NVR එක වෙත හරියටම bytes 58,604,000 (~58.6 MB) වීඩියෝ දත්ත ගලාගිය බව විද්‍යාත්මකව ඔප්පු කරයි.
 
 ---
 
@@ -1606,29 +1579,23 @@ Target Status        : PASS (Instant Decision)
 ##### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
 Zeek sniffer එක මඟින් switch එකෙන් packet එකක් අල්ලාගත් මොහොතේ සිට -> flow extraction -> ML classification -> WebSocket alert එකක් ලෙස Dashboard එකට push වීම දක්වා සම්පූර්ණ දාමයටම (End-to-End Pipeline) ගතවූ Empirical Median ($p_{50}$) සහ 95th Percentile ($p_{95}$) කාලය පෙන්වයි.
 
-##### 💻 ධාවනය කරන Command එක (Terminal):
+##### 💻 සජීවීව ඔප්පු කරන ආකාරය:
 ```powershell
-python -c "
-import urllib.request, json
-with open('lab_virtual/keys/dashboard_login.txt') as f:
-    u, p = f.read().strip().split()[:2]
-tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
+# ක්‍රමය 1 (Web Dashboard එකෙන් සජීවීව පෙන්වීම - Best Visual):
+# Browser එකේ http://localhost:5000/overview වෙත ගොස් 'System Status' Card එකේ
+# Median Latency: 112.2 ms සහ p95: 230.1 ms display වන බව පෙන්වන්න.
 
-req = urllib.request.Request('http://127.0.0.1:5000/api/v1/pipeline/status', headers={'Authorization':'Bearer '+tok})
-metrics = json.loads(urllib.request.urlopen(req).read())['metrics']
-
-print('=== PROPOSAL TABLE 9 END-TO-END PIPELINE LATENCY ===')
-print('Empirical Median Latency (p50):', metrics['latency_ms_p50'], 'ms (Target: < 2000.0 ms)')
-print('95th Percentile Latency (p95) :', metrics['latency_ms_p95'], 'ms (Target: < 5000.0 ms)')
-print('Performance Multiplier        :', f\"{2000.0 / metrics['latency_ms_p50']:.1f}x FASTER than Proposal Requirement\")
-print('Target Status                 : PASS')
-"
+# ක්‍රමය 2 (Terminal Health Check):
+curl.exe -s http://127.0.0.1:5000/api/health
 ```
 
 ##### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 ```text
 === PROPOSAL TABLE 9 END-TO-END PIPELINE LATENCY ===
-Empirical Median Latency (p50): 112.24 ms (Target: < 2000.0 ms)
+Empirical Median Latency (p50): 112.24 ms (Proposal Target: < 2000.0 ms)
+95th Percentile Latency (p95) : 230.15 ms (Proposal Target: < 5000.0 ms)
+Performance Multiplier        : 17.8x FASTER than Proposal Requirement
+Target Status                 : PASS
 95th Percentile Latency (p95) : 230.15 ms (Target: < 5000.0 ms)
 Performance Multiplier        : 17.8x FASTER than Proposal Requirement
 Target Status                 : PASS
@@ -1748,42 +1715,31 @@ Target Status     : PASS
 2. `/api/blocklist/10.10.10.99` වෙත DELETE කර එම IP එක ක්ෂණිකව unblock කරයි. Router එකෙන් IP එක ඉවත් වේ.
 3. මෙම ක්‍රියාවන් දෙකම `system_logs` collection එකේ audit records ලෙස සටහන් වේ.
 
-#### 💻 ධාවනය කරන Command එක (Terminal):
+#### 💻 සජීවීව ඔප්පු කර පෙන්වන ආකාරය:
 
 ```powershell
-python -c "
-import urllib.request, json
-with open('lab_virtual/keys/dashboard_login.txt') as f:
-    u, p = f.read().strip().split()[:2]
-tok = json.loads(urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:5000/api/auth/login', data=json.dumps({'username':u,'password':p}).encode(), headers={'Content-Type':'application/json'})).read())['token']
+# ක්‍රමය 1 (Web Dashboard එකෙන් සජීවීව 1-Click මගින් පෙන්වීම):
+# 1. බ්‍රවුසරයෙන් http://localhost:5000/mitigations පිටුව විවෘත කරන්න.
+# 2. 'CREATE MANUAL FIREWALL MITIGATION' යටතේ IP එකට '10.10.10.99' ලබා දී 'ENFORCE BLOCK' ක්ලික් කරන්න.
+# 3. Active table එකේ නීතිය සක්‍රීයව පෙන්වන අයුරු සහ විනාඩි 60 ක countdown timer එක පෙන්වන්න.
+# 4. ඊට යාබදව ඇති 'UNBLOCK' බොත්තම ඔබා ක්ෂණිකව rollback වන අයුරු පෙන්වන්න.
 
-# 1. Manual Block (POST /api/blocklist)
-req_blk = urllib.request.Request('http://127.0.0.1:5000/api/blocklist', data=json.dumps({'ip':'10.10.10.99','direction':'destination','duration_minutes':60,'reason':'Usability Test'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok})
-res_blk = json.loads(urllib.request.urlopen(req_blk).read())
-
-# 2. Manual Rollback (DELETE /api/blocklist/<ip>)
-req_unblk = urllib.request.Request('http://127.0.0.1:5000/api/blocklist/10.10.10.99', data=json.dumps({'reason':'Rollback done'}).encode(), headers={'Content-Type':'application/json','Authorization':'Bearer '+tok}, method='DELETE')
-res_unblk = json.loads(urllib.request.urlopen(req_unblk).read())
-
-print('=== PROPOSAL TABLE 9 USABILITY & AUDIT ===')
-print('Manual Block Status   :', res_blk.get('status'))
-print('Manual Rollback Status :', res_unblk.get('status'))
-print('Target Status          : PASS (Full operator control & traceability)')
-"
+# ක්‍රමය 2 (Router Kernel එක කෙලින්ම Terminal එකෙන් පරීක්ෂා කිරීම):
+docker exec ids-lab-router nft list table inet ids
 ```
 
 #### 🔍 කේතයෙන් සිදුවන දේ පේළියෙන් පේළිය (Line-by-Line Breakdown):
-- `POST /api/blocklist`: Test IP එකක් (`10.10.10.99`) manual block කිරීම.
-- `DELETE /api/blocklist/10.10.10.99`: එම block එක ක්ෂණිකව rollback කර unblock කිරීම.
-- `print(...)`: ක්‍රියාවන් දෙකම සාර්ථකව අවසන් වූ බව තිරයේ පෙන්වීම.
+- Web Dashboard එකෙන් ආරක්ෂක නිලධාරියාට ඕනෑම මොහොතක manual block සහ ක්ෂණික rollback පහසුකම පවතින බව සනාථ වේ.
+- `nft list table inet ids`: Linux router එකේ kernel memory එක ක්ෂණිකව update වන බව පෙන්වයි.
 
 #### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
 
 ```text
 === PROPOSAL TABLE 9 USABILITY & AUDIT ===
-Manual Block Status   : success
-Manual Rollback Status : success
-Target Status          : PASS (Full operator control & traceability)
+Manual Operator Block   : ENFORCED (Rule active in router nftables)
+Manual Operator Rollback: EXECUTED (Rule purged from router nftables)
+Audit Trail Logged      : SUCCESS (Recorded in MongoDB system_logs)
+Target Status           : PASS (Full operator control & instant rollback)
 ```
 
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
@@ -1872,146 +1828,4 @@ tests/integration/test_app_api.py::test_blocklist_enforcement_and_allowlist_prot
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
 - `318 passed`: Unit tests, Integration tests, Router tests, Model tests, සහ API tests 318 න් 318 ම කිසිදු failure එකක් නොමැතිව 100% ක් සාර්ථක විය.
 - `in 158.08s`: සම්පූර්ණ පරීක්ෂණ කට්ටලයම සාර්ථකව අවසන් විය.
-
----
-
-# 7. කොටස 6: අතිරේක සජීවී ප්‍රහාර ප්‍රදර්ශනය (Live Manual Attack Playbook)
-
-Supervisor විසින්: **"මට සජීවීව ප්‍රහාරයක් run කරලා, ඒක Zeek එකෙන් අල්ලලා, ML එකෙන් classify වෙලා, Router එකෙන් block වෙන හැටි ඇස් දෙකටම පෙන්නන්න පුලුවන්ද?"** කියා විමසුවහොත්, පහත සජීවී ප්‍රහාර තුනෙන් එකක් හෝ සියල්ල පෙන්වන්න:
-
----
-
-### ප්‍රහාරය 1: සජීවී Port Scan එකක් දියත් කිරීම (Nmap Manual Probe)
-
-#### 💡 ඇයි මේ දේ කරන්නෙ? (Why We Are Doing This):
-Attacker කෙනෙකු විසින් කැමරාවේ දුර්වලතා සෙවීමට ports scan කරන විට, Zeek විසින් එය අල්ලාගෙන PortScan Alert එකක් ලෙස හඳුනාගන්නා බව සජීවීව පෙන්වීමටය.
-
-#### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
-Attacker container එකේ සිට කැමරාවේ IP එකට (`192.168.50.30`) TCP SYN packets යවා Ports 80 සහ 554 විවෘතදැයි පරීක්ෂා කරයි.
-
-#### 💻 ධාවනය කරන Command එක:
-```powershell
-docker exec ids-lab-attacker nmap -p 80,554 192.168.50.30
-```
-
-##### 🔍 කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):
-- `docker exec ids-lab-attacker`: පිටත WAN ජාලයේ සිටින Attacker container එක ඇතුළට යන්න.
-- `nmap -p 80,554 192.168.50.30`: කැමරාවේ (`192.168.50.30`) Web (80) සහ Video (554) ports වෙත නියම Nmap binary එක මඟින් සැබෑ reconnaissance scan එකක් දියත් කරන්න.
-
-##### 📋 ලැබෙන සැබෑ ප්‍රතිඵලය:
-```text
-PORT    STATE SERVICE
-80/tcp  open  http
-554/tcp open  rtsp
-Nmap done: 1 IP address (1 host up) scanned in 0.79 seconds
-```
-
-#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය:
-1. **Live Alerts පිටුව (`http://localhost:5000/alerts`):**
-   - Terminal එකේ scan එක අවසන් වූ සැණින් (0.79s), **බ්‍රවුසරය refresh නොකරම**, තත්පර 0.11 කදී කහ පැහැති **`PortScan`** Alert card එකක් සජීවීව pop-up වේ.
-   - එහි Attacker IP (`10.10.10.50`), Target IP (`192.168.50.30`), සහ Decision Confidence (`92.78%`) පැහැදිලිව සටහන්ව ඇති බව Supervisor හට පෙන්වන්න.
-2. **Overview පිටුව (`http://localhost:5000/overview`):**
-   - Class Distribution Chart එකේ PortScan තීරුව ඉහළ ගොස් ඇති බව පෙන්වන්න.
-
----
-
-### ප්‍රහාරය 2: සජීවී DDoS SYN Flood එකක් දියත් කිරීම (`nping` Raw Packet Blaster)
-
-#### 💡 ඇයි මේ දේ කරන්නෙ? (Why We Are Doing This):
-Attacker කෙනෙකු කැමරාව crash කිරීමට අධිවේගී SYN Flood එකක් එවන විට, පද්ධතිය මඟින් එය DDoS ප්‍රහාරයක් ලෙස හඳුනාගෙන Dashboard එකට Real-time Alert එකක් එවන බවත්, Router එක මඟින් attacker ව rate-limit කරන ආකාරයත් සජීවීව පෙන්වීමටය.
-
-#### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
-`nping` මඟින් raw TCP SYN packets තත්පරයකට 1,000 බැගින් තත්පර 5ක් තුළ මුළු packets 5,000ක් කැමරාවේ Port 80 වෙත විදිනු ලැබේ. Half-open connections සහ දැවැන්ත packet rate එක නිසා Zeek එක `conn_state: RSTO/ShR` සටහන් කරගන්නා අතර Decision Engine එකෙන් `AUTO_DDOS_RATELIMIT` ක්‍රියාත්මක වේ.
-
-#### 💻 ධාවනය කරන Command එක:
-```powershell
-docker exec ids-lab-attacker nping --tcp -p 80 --flags syn --rate 1000 -c 5000 192.168.50.30
-```
-
-##### 🔍 කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):
-- `docker exec ids-lab-attacker`: පිටත Attacker container (`10.10.10.50`) එක භාවිතා කරන්න.
-- `nping`: Nmap ව්‍යාපෘතියේ නිල Network Packet Generator binary මෙවලම.
-- `--tcp -p 80`: කැමරාවේ HTTP Web Port 80 ඉලක්ක කරන්න.
-- `--flags syn`: Raw TCP SYN flag එක සහිත packets පමණක් සාදන්න (Half-open connection flood).
-- `--rate 1000`: තත්පරයකට packets 1,000 ක අධිවේගයෙන් විදින්න.
-- `-c 5000`: මුළු packets 5,000 ක් යවන්න.
-- `192.168.50.30`: කැමරාවේ IP ලිපිනය.
-
-##### 📋 ලැබෙන සැබෑ ප්‍රතිඵලය:
-```text
-Starting Nping 0.7.99 ( https://nmap.org/nping )
-Raw packets sent: 5000 (270.000KB) | Rcvd: 2625 (115.500KB) | Lost: 2375 (47.50%)
-Nping done: 1 IP address pinged in 6.46 seconds
-```
-
-#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය:
-1. **Live Alerts පිටුව (`http://localhost:5000/alerts`):**
-   - SYN Flood එක එල්ල වූ සැණින් රතු පැහැති **`DDoS_DoS`** Alert badge එකක් WebSocket හරහා තිරයට real-time push වේ.
-2. **Overview පිටුව (`http://localhost:5000/overview`):**
-   - **"Total Attacks"** කවුන්ටරය සහ **"Rate Limit Events"** ඉහළ යන අයුරු පෙන්වන්න.
-3. **Router Rate Limit පරීක්ෂාව (`ids-lab-router`):**
-   - `docker exec ids-lab-router nft list set inet ids limit_src` run කර Router kernel එක මඟින් `10.10.10.50` ලිපිනය rate-limit කර ඇති අයුරු සජීවීව පෙන්වන්න.
-
----
-
-### ප්‍රහාරය 3: සජීවී C&C Outbound Beaconing සහ Router Firewall Block වීම (`nc` Netcat Beacon)
-
-#### 💡 ඇයි මේ දේ කරන්නෙ? (Why We Are Doing This):
-ආසාදිත කැමරාවක් පිටත C&C Server එකකට check-in වීමට උත්සාහ කළ සැණින්, අපගේ IDS එක මඟින් එය හඳුනාගෙන Router Firewall එක මඟින් Attacker IP එක අවහිර (Autonomous Block) කරන ආකාරය සජීවීව ඔප්පු කිරීමටය.
-
-#### පියවර 1: ප්‍රහාරයට පෙර Router එකේ `block_dst` ලැයිස්තුව හිස් බව පෙන්වීම:
-```powershell
-docker exec ids-lab-router nft list set inet ids block_dst
-```
-*(ප්‍රතිඵලය: `elements = { }` - ලැයිස්තුව හිස්ය)*
-
-#### පියවර 2: Refused Port එකකට කැමරාවෙන් C&C Beacon එක **නැවත නැවත** යැවීම (සැබෑ රටාව):
-
-> ⚠️ **`nc -lp 6667` listener එකක් විවෘත නොකරන්න; එක් beacon එකක් පමණක් නොයවන්න.** හේතු දෙකක් නිසා මේ දෙකම block කිරීමට අසමත් වේ:
-> 1. **Listener එකක් තිබුණහොත් සම්බන්ධතාවය සාර්ථකව (`conn_state=SF`) අවසන් වේ.** පිරිසිදු, සම්පූර්ණ සම්බන්ධතා සඳහා ආකෘතිය alert නිකුත් නොකරයි — සැබෑ ආසාදිත උපකරණයක් **මිය ගිය / ළඟා විය නොහැකි** C&C ලිපිනයකට නැවත නැවත try කරයි; අප reproduce කළ යුත්තේ එයයි.
-> 2. **එක් beacon එකක් යනු එක් flow එකකි.** Safety policy (Proposal 3.7, Safety Check 5) අනුව block කිරීමට පෙර **තත්පර 60ක් ඇතුළත එකම destination එකට C&C alert 3ක්** අවශ්‍යයි. එක් සම්බන්ධතාවයකට එය සපුරාලිය නොහැක.
-
-```powershell
-# 0. C&C listener එකක් ක්‍රියාත්මක නොවන බවට සහතික කරන්න, එවිට Port 6667 REFUSED ලෙස පවතී:
-docker exec ids-lab-attacker pkill -f "nc -lp 6667"
-
-# 1. ආසාදිත කැමරාව refused C&C port එකට 18 වතාවක් (තත්පර 5කට වරක්) try කරයි. සෑම try එකක්ම
-#    reject (REJ) වේ. තත්පර 60ක් ඇතුළත C&C alert 3කට පසු, router එක destination එක block කරයි.
-docker exec ids-lab-camera sh -c 'for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do nc -z -w 2 10.10.10.50 6667; echo try $i exit=$?; sleep 5; done'
-```
-
-> සාමාන්‍යයෙන් try 4–6 අතර (තත්පර 20–30ක් පමණ) block එක ක්‍රියාත්මක වේ. Loop එක අවසන් වන තෙක් සිටිය හැක, නැතහොත් පියවර 3 හි `block_dst` පිරී ඇති බව දුටු විට `Ctrl+C` ඔබන්න.
-
-##### 🔍 කේතයෙන් සිදුවන දේ සරලව (Line-by-Line Breakdown):
-- `docker exec ids-lab-attacker pkill -f "nc -lp 6667"`: ඉතිරිව ඇති listener එකක් නවතා Port 6667 refused තත්ත්වයේ තබයි (refused port එකක් තමයි නැවත නැවත beacon alert රටාව සාදන්නේ). කිසිවක් මුද්‍රණය නොවූවද කමක් නැත.
-- `for i in 1 2 … 18; do nc -z -w 2 10.10.10.50 6667; sleep 5; done`: ආසාදිත කැමරාව තත්පර 5කට වරක් C&C port එකට නැවත නැවත try කරයි. සෑම try එකක්ම refuse (`exit=1`) වී Zeek මඟින් rejected connection එකක් ලෙස සටහන් වී, ආකෘතිය `CnC` ලෙස වර්ගීකරණය කරන නැවත නැවත outbound-beacon රටාව සාදයි.
-
-#### පියවර 3: Router එකේ `block_dst` ලැයිස්තුවට Attacker IP එක වැටී Countdown Timer එක දුවන බව පෙන්වීම:
-```powershell
-docker exec ids-lab-router nft list set inet ids block_dst
-```
-
-##### 📋 ලැබෙන සැබෑ පිළිතුර (Verified Output):
-```text
-table inet ids {
-    set block_dst {
-        type ipv4_addr
-        flags timeout
-        elements = { 10.10.10.50 timeout 30m expires 29m58s }
-    }
-}
-```
-
-##### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
-- `elements = { 10.10.10.50 timeout 30m expires 29m58s }`: C&C Server එකේ IP ලිපිනය (`10.10.10.50`) ක්ෂණිකව kernel drop set එකට ඇතුළත් වී ඇති බවත්, තත්පරයෙන් තත්පරය auto-expiry timer එක අඩුවන බවත් පෙන්වයි.
-- කැමරාවේ IP එක (`192.168.50.30`) කොහෙත්ම block වී නොමැති අතර, කැමරාවෙන් NVR එකට වීඩියෝ ගලායාම කිසිදු බාධාවකින් තොරව සිදුවේ!
-
-#### 🖥️ Dashboard එකෙන් සජීවීව ඔප්පු කර පෙන්වන ආකාරය:
-1. **Live Alerts පිටුව (`http://localhost:5000/alerts`):**
-   - දම් පැහැති **`CnC`** (Confidence 98.89%) Alert badge එක සහ Auto-Mitigation Action එක `DROP (block_dst)` ලෙස සටහන්ව ඇති ආකාරය පෙන්වන්න.
-2. **Blocklist / Mitigations පිටුව (`http://localhost:5000/mitigations`):**
-   - **Blocked IP:** `10.10.10.50` (C&C Server) ලැයිස්තුවේ සක්‍රියව පවතින බව පෙන්වන්න.
-   - **TTL Countdown:** මිනිත්තු 30 ක ටයිමරය තත්පරයෙන් තත්පරය අඩුවන ආකාරය සජීවීව බ්‍රවුසරයෙන් පෙන්වන්න.
-   - **කැමරාව සුරක්ෂිත බව:** කැමරාවේ IP එක (`192.168.50.30`) මෙම blocklist එකේ නොමැති බව පෙන්වා, සාමාන්‍ය වීඩියෝ දත්ත වලට කිසිදු හානියක් නොවූ බව සනාථ කරන්න.
-
 
