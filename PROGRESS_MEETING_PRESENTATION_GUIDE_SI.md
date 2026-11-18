@@ -13,7 +13,7 @@
 > 🎯 **මෙම ලේඛනයේ අරමුණ (Purpose of this Guide):**  
 > Supervisor (Dr. Matheeh & Dr. Amarakeerthi) සමඟ පැවැත්වෙන Progress Meeting එකේදී, අපගේ Research Proposal එකේ සඳහන් කර ඇති සියලුම **ක්‍රියාකාරී අවශ්‍යතා (Functional Requirements FR-01 සිට FR-08)**, **පිළිගැනීමේ ඉලක්ක (Proposal Table 9 Targets)**, **පර්යේෂණ අරමුණු (Objectives O1 සිට O6)**, සහ **පර්යේෂණ ගැටලු (RQ1 සිට RQ5 & Hypothesis H1)** අප ව්‍යාපෘතිය මඟින් 100% ක් ප්‍රායෝගිකව සාක්ෂාත් කර ඇති බව **[`docs/requirements_checklist.md`](docs/requirements_checklist.md) හි අනුපිළිවෙලටම** එකින් එක සජීවීව Terminal Commands ගසා ඔප්පු කිරීම සඳහා මෙම මාර්ගෝපදේශය සකස් කර ඇත.
 >
-> ⚠️ **විශේෂ නීතිය (Presentation Principle):**  
+> ⚠️ **විශේෂ නීතිය (Verification Principle):**  
 > මෙහි කිසිදු wrapper ස්ක්‍රිප්ට් එකක් හෝ කෙටි commands භාවිත නොවේ. සෑම සාක්ෂියක් සඳහාම:
 > 1. **💡 ඇයි මේ දේ කරන්නෙ? (Why We Are Doing This - අවශ්‍යතාවය සහ අරමුණ)**
 > 2. **⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood When Run)**
@@ -21,8 +21,7 @@
 > 4. **🔍 කේතයෙන් සිදුවන දේ පේළියෙන් පේළිය සරලව (Line-by-Line Breakdown)**
 > 5. **📋 ලැබෙන සැබෑ පිළිතුර (Verified Output)**
 > 6. **📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown - ලැබෙන පිළිතුරේ සෑම අගයක්ම පැහැදිලි කිරීම)**
-> 7. **🔬 විද්‍යාත්මක සාක්ෂිය සහ අර්ථය (Scientific Meaning / Proof)**
-> 8. **🗣️ Supervisor හට ඉංග්‍රීසියෙන් පැහැදිලි කරන ආකාරය (Spoken English Script)**
+> 7. **🔬 විද්‍යාත්මක සාක්ෂිය සහ අර්ථය (Scientific Meaning / Technical Proof)**
 
 ---
 
@@ -318,11 +317,6 @@ Supervisor විසින් ඔබෙන්: **"මේ ඔයාලා කර�
     - **Admin Workstation (`ids-lab-admin` / `192.168.50.10`):** කැමරාව කළමනාකරණය කරන පරිගණකය.
     - **Attacker Laptop (`ids-lab-attacker` / `10.10.10.50`):** පිටත WAN ජාලයේ සිට Nmap scans, DDoS flood, සහ C&C සේවාදායකය දුවන හැකර් මැෂිම.
 
-#### 3. Supervisor හට ආරම්භයේදීම කියන Spoken English Speech (Opening Statement):
-> *"Good morning Sir. Before demonstrating our live intrusion detection and autonomous response, I would like to clarify our testbed setup."*  
-> *"As formally approved in our research proposal Section 5.1, we have implemented the complete end-to-end architecture inside a realistic Docker virtual testbed."*  
-> *"Sir, in this testbed: the network packets, Zeek sensor, Random Forest ML classifier (v3.2.0), Linux nftables router firewall, and the React dashboard are all 100% REAL. The network endpoints—our IP camera, NVR recorder, and outside attacker—are containerized simulations so we can safely evaluate high-rate attacks without risking physical hardware damage. Final physical camera validation will be conducted in the hardware lab as per our proposal timeline."*
-
 ---
 
 # 2. කොටස 1: ක්‍රියාකාරී අවශ්‍යතා සනාථ කිරීම (FR-01 to FR-08)
@@ -494,9 +488,6 @@ Supervisor ඉදිරියේ Browser එකේ **`http://localhost:5000/over
    - **Flows Processed:** Zeek sensor එක මඟින් ජාලයෙන් sniff කර සකස් කරන ලද මුළු connection flows සංඛ්‍යාව (උදා: `7,600+ flows`) සජීවීව update වන අයුරු පෙන්වන්න.
    - **Throughput:** තත්පරයට flows 120,000+ කට අධික වේගයකින් packets කියවා process වන බව පෙන්වන්න.
 2. **Supervisor ට කියන වදන:** *"Sir, as shown on our Overview Dashboard, the live pipeline status is 'Running', and Zeek is actively capturing and streaming flows in real-time without packet loss."*
-
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, to prove FR-01, our Zeek sensor passively sniffs the camera switch br-ids-lan in promiscuous mode. When I trigger a live HTTP request from our Admin PC, Zeek intercepts the exact 12 link-layer Ethernet frames within 1.5 milliseconds, recording the TCP state machine flags 'ShADadfF'. Furthermore, our automated schema audit on 20,929 live flows confirms a 100% schema match with IoT-23 with zero training-serving skew, satisfying both FR-01 and Research Question RQ3."*
 
 ---
 
@@ -934,9 +925,6 @@ Autonomous Action: none (MALWARE_STAGING_TRANSFER)
 
 සියලුම alerts Model version එක (**v3.2.0**, හෝ `rule:files.log`) සහිතව Zeek line එක කියවා තත්පර 0.1 ක් වැනි සුළු කාලයකදී Dashboard Live Alerts පිටුවට ළඟා වේ.
 
-#### 🗣️ Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, for FR-02 we used authentic standard networking tools, and our Machine Learning model recognises all four attack types. Normal admin access with curl gave no alert. A subnet sweep with nmap was behaviourally confirmed through multi-host fan-out, prompting the router to autonomously block the attacker in block_src for 30 minutes while keeping our camera completely safe. An nping SYN flood was identified as DDoS and the router rate-limited the attacker without blocking. When the camera attempted to beacon an external C&C server with netcat, the model identified C&C and the router autonomously blocked the outside server in block_dst—the camera itself was never blocked. A repeated program download, following the realistic malware dropper pattern, is now caught by our retrained Random Forest model v3.2.0 as Malware_Download, and every download is simultaneously captured by our Zeek files.log MIME rule; both operate as alert-only as Table 10 specifies. Every single alert carries the predicted class, confidence, and model version v3.2.0, reaching the dashboard within a tenth of a second."*
-
 ---
 
 ### FR-03: Database Storage for Benign, Attacks & Mitigations (Must / DB Test)
@@ -1013,9 +1001,6 @@ Supervisor ඉදිරියේ පහත Dashboard පිටු දෙක ප�
 2. **Overview පිටුවේ Benign Flows Card එක (`http://localhost:5000/overview`):**
    - **"Benign Flows (24h)" Card** එක පෙන්වන්න. එහි MongoDB `traffic_summary` collection එකෙන් aggregate වී ඇති සාමාන්‍ය කැමරා වීඩියෝ flows ගණන (7,600+ flows) පෙන්වයි.
 3. **Supervisor ට කියන වදන:** *"Sir, our Attack History and Overview screens directly query MongoDB, providing complete forensic persistence of all benign camera traffic and security events."*
-
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, for FR-03, our MongoDB database persistently stores all network events with TTL retention. Over 7,600 benign camera flows have been ingested without data loss, alongside security incidents and firewall actions, fully accessible through our authenticated management API."*
 
 ---
 
@@ -1111,9 +1096,6 @@ Supervisor ඉදිරියේ **`http://localhost:5000/overview`** සහ **`
    - Alert card එකේ ප්‍රහාරක පන්තියේ badge එක (PortScan නම් කහ පැහැයෙන්, DDoS නම් රතු පැහැයෙන්, CnC නම් දම් පැහැයෙන්), Confidence ප්‍රතිශතය, Source/Destination IPs සහ Time ක්ෂණිකව බලාගත හැක.
 3. **Supervisor ට කියන වදන:** *"Sir, notice that without pressing the browser refresh button even once, the alert card pops up instantly via Socket.IO WebSockets within 112 milliseconds, satisfying both FR-04 and Objective O4."*
 
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, this satisfies FR-04 and Objective O4. Access to our SOC dashboard requires cryptographic JWT authentication. The live pipeline achieves an empirical median latency of 112 milliseconds, utilizing Socket.IO WebSockets to push live security events directly to the browser with zero manual page refreshing."*
-
 ---
 
 ### FR-05: Controlled Nmap Asset Discovery (Should / Inventory Test)
@@ -1206,9 +1188,6 @@ Supervisor ඉදිරියේ **`http://localhost:5000/devices` (Devices & Sc
 3. **Live Scan Trigger:** අවශ්‍ය නම් ඉහළ දකුණු කෙළවරේ ඇති **"Scan Subnet"** බොත්තම click කර, `192.168.50.0/24` subnet එක සඳහා සජීවීව Nmap scan එකක් trigger වන ආකාරය පෙන්වන්න.
 4. **Supervisor ට කියන වදන:** *"Sir, on our Devices & Scans page, our controlled Nmap scanner has discovered our IP cameras, verified open RTSP/HTTP ports, and cataloged them into our asset inventory."*
 
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, to prove FR-05, our inventory discovery service runs strictly bounded Nmap sweeps over our authorized subnet 192.168.50.0/24. It identifies all active devices, flags our camera at .30 with open ports 80 and 554, and registers the verified camera into our management allowlist."*
-
 ---
 
 ### FR-06: Router Firewall Ruleset, Auto-Expiry & Timers (Must / Firewall Test)
@@ -1287,9 +1266,6 @@ Supervisor ඉදිරියේ **`http://localhost:5000/mitigations` (Blocklis
    - පරිපාලකවරයාට අවශ්‍ය නම් වහාම නීතිය අවලංගු කළ හැකි **"Unblock"** බොත්තම පෙන්වන්න.
 4. **Supervisor ට කියන වදන:** *"Sir, on our Mitigations page, you can see the active router firewall block with its live auto-expiry countdown, matching the nftables kernel state."*
 
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, this satisfies FR-06 and Objective O5. Our mitigation subsystem manages native Linux nftables in the router kernel. Notice the dynamic set 'block_dst' holding the attacker destination 10.10.10.50 with a strict 30-minute auto-expiry countdown, proving that firewall rules are enforced, listed, and automatically timed out directly in kernel memory."*
-
 ---
 
 ### FR-07: Immutable Allowlists, Thresholds & Audit Trail (Must / Safety Test)
@@ -1359,9 +1335,6 @@ Supervisor ඉදිරියේ **`http://localhost:5000/settings` (Settings)**
    - Settings පිටුවේ ඇති **"Protected Allowlist"** කොටස පෙන්වන්න: Admin PC (`192.168.50.10`) සහ NVR Recorder (`192.168.50.20`) කිසිම ප්‍රහාරයකදී block නොවන පරිදි ස්ථිරව ආරක්ෂා කර ඇති බව පෙන්වන්න.
 3. **Supervisor ට කියන වදන:** *"Sir, on our Settings dashboard, administrators can dynamically adjust decision thresholds and inspect the immutable allowlist protecting our camera management subnet."*
 
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, to satisfy FR-07 and RQ5, our safety guardrails enforce an immutable allowlist that prevents our camera, NVR, and admin workstation from ever being blocked. Every administrative modification—including manual blocks and rollback events—is permanently logged in our audit trail with timestamps and user identities."*
-
 ---
 
 ### FR-08: Filtered Forensic Log Export (Should / Export Test)
@@ -1428,9 +1401,6 @@ Supervisor ඉදිරියේ **`http://localhost:5000/export` (Logs & Export
    - ගොනුව Excel හෝ Notepad මඟින් විවෘත කර, timestamp, 27 flow features, attack class, confidence %, සහ firewall mitigation actions සියල්ල නියමිත RFC 4180 format එකෙන් සුරක්ෂිතව සටහන්ව ඇති බව Supervisor ඉදිරියේ ඔප්පු කරන්න.
 3. **Supervisor ට කියන වදන:** *"Sir, on our Logs & Export dashboard, security analysts can filter and download complete cryptographic audit trails and forensic incident records in RFC 4180 CSV format with a single click."*
 
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, this satisfies FR-08. Our export service allows administrators to filter forensic incident records and export them in standardized RFC 4180 CSV format for external analysis and academic compliance."*
-
 ---
 
 # 3. කොටස 2: පිළිගැනීමේ ඉලක්ක සනාථ කිරීම (Proposal Table 9 Targets)
@@ -1494,9 +1464,6 @@ Benign predicted attack   : 5.72% (IoT-23 benign flows of 34-1)
 - `Accuracy 96.25%`: සම්පූර්ණ නිරවද්‍යතාවය 96.25% ක් දක්වා ඉහළ ගොස් ඇත.
 - `Weighted F1 Score 96.41%`: දත්ත අසමතුලිතතාවය (Class Imbalance) සැලකිල්ලට ගත් Weighted F1 අගය 96.41% කි.
 
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, regarding our primary Table 9 Model Target: evaluated under Level 2 Zero-Scenario-Leakage protocol on the unseen scenario Capture-34-1 containing 23,145 flows, our production Random Forest bundle v3.2.0 achieved an overall accuracy of 96.25% and a Macro-F1 of 87.77% over classes present, successfully surpassing our proposal benchmark of 85.0%."*
-
 ---
 
 ### Target 2: Benign Safety (Zero Video Disruption & Benign Safety)
@@ -1535,9 +1502,6 @@ Camera RTSP Video Stream: HEALTHY & ACTIVE (Zero Drop)
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
 - `Recorded segment: camera_chunk_004.mp4 (58.6 MB)`: NVR එක මිනිත්තු 5 කට වරක් 58.6 MB ප්‍රමාණයේ MP4 වීඩියෝ ගොනු කිසිදු බාධාවකින් තොරව disk එකට ලියන බව තහවුරු කරයි.
 - `Camera RTSP Video Stream: HEALTHY & ACTIVE (Zero Drop)`: Port 554 RTSP socket එක තත්පර 3 ක් ඇතුළත ක්ෂණිකව handshake වන බවත්, කැමරාවේ වීඩියෝ stream එකට 0% ක හානියක් සිදුවී ඇති බවත් ඔප්පු කරයි.
-
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, this satisfies our Table 9 Benign Safety target and Hypothesis H1. The NVR actively records continuous 58.6 MB video chunks from the camera over port 554 with zero packet drops, proving that legitimate camera operations remain 100% uninterrupted."*
 
 ---
 
@@ -1663,9 +1627,6 @@ Target Status                 : PASS
 Supervisor ඉදිරියේ **`http://localhost:5000/overview`** පිටුව විවෘත කරන්න:
 - **"System Status" Card** එකේ **`Median Latency: 112.2 ms`** සහ **`p95 Latency: 230.1 ms`** සජීවීව display වන බව පෙන්වන්න.
 
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, regarding Target 3 on Decision Latency: our research proposal required a decision latency under 2.0 seconds. As demonstrated live with our stopwatch benchmark, our Random Forest engine makes a classification decision in just 30.8 milliseconds—running 65 times faster than required. Across our entire end-to-end streaming pipeline, from raw Zeek packet capture to WebSocket dashboard push, the empirical median latency is only 112.2 milliseconds, decisively crushing our proposal latency target."*
-
 ---
 
 ### Target 4: Throughput & Resource Efficiency
@@ -1719,9 +1680,6 @@ Target Status         : PASS (Keeps up with maximum lab line rate)
 - `Inference Throughput: 125,599 flows/sec`: අපගේ AI Model එකට තත්පරයකදී network flows 125,000 කට වඩා වැඩි ප්‍රමාණයක් තනි CPU core එකක් මත classify කළ හැක!
 - `Per-Flow Latency: 7.96 microseconds`: තනි flow එකක් classify කිරීමට ගතවන්නේ මයික්‍රෝ තත්පර 7.96 ක් පමණි. එබැවින් අධික තදබදයකදී පවා queue එකක් ගොඩගැසීමක් (bottleneck) සිදු නොවේ.
 
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, for Target 4, our inference pipeline achieves a sustained throughput of over 125,000 flows per second, requiring only 7.9 microseconds per flow. This ensures our detector never drops flows even under intense network saturation."*
-
 ---
 
 ### Target 5: Reliability & Clean State Recovery
@@ -1766,9 +1724,6 @@ Target Status     : PASS
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
 - `Router SSH Health: OK`: SSH Daemon එක සහ Ed25519 key authentication එක crash-safe බව පෙන්වයි.
 - `nftables Invariant: Table inet ids exists and responsive`: Router එක reboot වූ සැණින් startup script එක මඟින් firewall tables නැවත සාදා සූදානම් කර ඇති බව තහවුරු කරයි.
-
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, for Target 5, our autonomous response subsystem uses idempotent SSH key authentication to manage the router, ensuring complete and crash-safe state recovery after any unexpected system reboot."*
 
 ---
 
@@ -1823,9 +1778,6 @@ Target Status          : PASS (Full operator control & traceability)
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
 - `Manual Block Status: success`: පරිපාලකගේ ඉල්ලීම පරිදි router එකේ firewall එක තුළ IP එක ක්ෂණිකව block විය.
 - `Manual Rollback Status: success`: පරිපාලකගේ ඉල්ලීම පරිදි කිසිදු ප්‍රමාදයකින් තොරව IP එක unblock වී සාමාන්‍ය තත්ත්වයට පත් විය.
-
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, this satisfies Target 6. Administrators retain full operational sovereignty with instant manual block and rollback capabilities, backed by comprehensive tamper-evident audit trails."*
 
 ---
 
@@ -1909,9 +1861,6 @@ tests/integration/test_app_api.py::test_blocklist_enforcement_and_allowlist_prot
 #### 📊 ලැබුණු Output එකෙන් කියවෙන්නේ කුමක්ද? (Output Breakdown):
 - `318 passed`: Unit tests, Integration tests, Router tests, Model tests, සහ API tests 318 න් 318 ම කිසිදු failure එකක් නොමැතිව 100% ක් සාර්ථක විය.
 - `in 158.08s`: සම්පූර්ණ පරීක්ෂණ කට්ටලයම සාර්ථකව අවසන් විය.
-
-#### Supervisor ට කියන Script එක (Spoken English):
-> *"Sir, every component of our system—including the Zeek parser, feature extractor, ML inference bundle, decision engine, Linux nftables adapter, and authenticated WebSocket API—is backed by a comprehensive automated test suite of 318 unit and integration tests, all currently passing with 100% test integrity."*
 
 ---
 
@@ -2054,10 +2003,4 @@ table inet ids {
    - **TTL Countdown:** මිනිත්තු 30 ක ටයිමරය තත්පරයෙන් තත්පරය අඩුවන ආකාරය සජීවීව බ්‍රවුසරයෙන් පෙන්වන්න.
    - **කැමරාව සුරක්ෂිත බව:** කැමරාවේ IP එක (`192.168.50.30`) මෙම blocklist එකේ නොමැති බව පෙන්වා, සාමාන්‍ය වීඩියෝ දත්ත වලට කිසිදු හානියක් නොවූ බව සනාථ කරන්න.
 
-> 🎯 **Supervisor හට පෙන්වන අවසාන සාක්ෂිය:**  
-> *"Sir, look at the terminal! The instant our infected camera sent the C&C beacon, our Zeek sensor sniffed the flow, our Random Forest model classified it, our decision engine evaluated the safety invariants, and our router firewall autonomously injected '10.10.10.50' into kernel memory with a 30-minute auto-expiry countdown—all completed in just 112 milliseconds!"*
 
----
-
-### 🎓 Supervisor හට ඉදිරිපත් කිරීමේ අවසාන සාරාංශය (Closing Statement):
-> *"Sir, as demonstrated in our presentation today, our implementation satisfies all 8 Functional Requirements (FR-01 to FR-08), achieves our Proposal Table 9 benchmarks with an empirical decision latency of 112 ms, meets our Macro-F1 target on held-out data, and enforces strict safety invariants that protect IP camera streams from interruption. The entire virtual testbed is live, validated, and ready for physical camera deployment."*

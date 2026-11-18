@@ -14,15 +14,14 @@
 > This manual is made for our live progress meeting with our supervisors (Dr. Matheeh & Dr. Amarakeerthi). It gives a clear, step-by-step guide to prove that our project meets 100% of all **Functional Requirements (FR-01 to FR-08)**, **Acceptance Targets (Proposal Table 9)**, **Research Objectives (O1 to O6)**, and **Research Questions (RQ1 to RQ5 & Hypothesis H1)** in the exact order written in **[`docs/requirements_checklist.md`](docs/requirements_checklist.md)** using direct terminal commands.
 >
 > ⚠️ **Presentation Principles:**  
-> We do not use wrapper scripts or hidden shortcuts. Every single proof follows an easy-to-follow, clear 8-point structure:
+> We do not use wrapper scripts or hidden shortcuts. Every single proof follows an easy-to-follow, clear 7-point structure:
 > 1. **💡 Why We Are Doing This (Requirement and Goal)**
 > 2. **⚙️ What Happens Under the Hood When Run**
 > 3. **💻 Direct Raw Command**
 > 4. **🔍 Line-by-Line Breakdown**
 > 5. **📋 Verified Output**
 > 6. **📊 Output Breakdown (Explaining Every Key Value)**
-> 7. **🔬 Scientific Meaning / Proof**
-> 8. **🗣️ Spoken English Script (What to Say to the Supervisor)**
+> 7. **🔬 Scientific Meaning / Technical Proof**
 
 ---
 
@@ -75,7 +74,7 @@
 > 💡 **How to Use This Section During the Presentation:**  
 > While presenting your 17 slides, if any supervisor or examiner interrupts and says:  
 > **"Prove that claim right now!"** or **"Show me the terminal command for that!"**,  
-> jump straight to the matching Slide number below. Each slide has an instant terminal command, verified output, simple English explanation, and a spoken script you can read out loud.
+> jump straight to the matching Slide number below. Each slide has an instant terminal command, verified output, and clear technical explanation.
 
 ---
 
@@ -94,8 +93,6 @@
   8773bd4 docs: enrich EN presentation guide with real-world hacker comparisons and complete live proof playbook
   ```
 * **🔍 Simple Explanation:** Proves the project repository is active, clean, and synchronized with GitHub, with team contributions clearly tracked.
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, here is our project repository on branch main. All team contributions, commits, and codebase revisions are tracked and synchronized on GitHub."*
 
 ---
 
@@ -125,8 +122,6 @@
       chain forward {
   ```
 * **🔍 Simple Explanation:** Shows all 3 stages of our network defense running live: passive packet sniffing, machine learning inference, and firewall control.
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, as shown on Slide 2, we built a 3-step network-layer defense: Zeek passively listens to camera traffic on the switch, our Random Forest model classifies flows in memory, and our router firewall applies timed drop rules—protecting the camera without installing any software on the camera itself."*
 
 ---
 
@@ -155,8 +150,6 @@
   elements = { 192.168.50.1, 192.168.50.5, 192.168.50.10, 192.168.50.20 }
   ```
 * **🔍 Simple Explanation:** Proves each of the four research solutions directly from the running system: zero data leakage, real camera traffic, 100% feature match, and complete allowlist protection.
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, we systematically solved all four gaps: we evaluated our model on the unseen capture 34-1 without random row leaks; we stream real RTSP video; our live Zeek features pass 100% schema alignment with IoT-23; and our router allowlist ensures our camera and video recorder can never be blocked."*
 
 ---
 
@@ -193,8 +186,6 @@
   O5 (Firewall Blocking)  : DONE   | nftables auto-drop + manual undo verified in lab
   O6 (Speed & Resources)  : PARTLY | 112 ms median latency, 125k flows/sec; HW pending
   ```
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, 4 of our 6 objectives are completely finished and verified today. Objectives O3 and O6 are fully validated in our virtual lab and only await final confirmation on physical hardware."*
 
 ---
 
@@ -228,8 +219,6 @@
   RQ2 (Per-Class F1 on 34-1)   : {'Benign': 0.8466, 'DDoS_DoS': 0.9947, 'PortScan': 0.7331, 'CnC': 0.9364, 'Malware_Download': 0.0}
   RQ4 (Latency Target < 2.0 s) : Measured Pipeline Median = 112.24 ms (0.11 s) -> PASS
   ```
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, we have proven Part 1 of Hypothesis H1 with an 87.77% Macro-F1 score on unseen data, beating our 85% target. Our pipeline median latency is 112 milliseconds, answering RQ4. As stated honestly on our slide, Part 2 of H1 waits for the hardware lab."*
 
 ---
 
@@ -256,8 +245,6 @@
   #!/usr/bin/env bash
   # Inline bridge setup script for the physical hardware sensor machine
   ```
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, our system operates primarily on a passive switch mirror port so that network monitoring never slows down video streaming. We also wrote the inline bridge code in our hardware lab folder so we can test inline mode during hardware validation."*
 
 ---
 
@@ -292,8 +279,6 @@
   eth0 UP 192.168.50.1/24
   eth1 UP 10.10.10.1/24
   ```
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, as shown on Slide 7, all 11 containers are active across our two subnets. The router has .1 on both sides without NAT. Every network packet, firewall rule, and model prediction is 100% real."*
 
 ---
 
@@ -321,8 +306,6 @@
   Target Classes       : ['Benign', 'DDoS_DoS', 'PortScan', 'CnC', 'Malware_Download']
   Held-out Capture     : CTU-IoT-Malware-Capture-34-1 (23,145 flows)
   ```
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, here is the exact feature list from our production model bundle: exactly 19 connection features and 8 rolling history features. Neither IP addresses nor raw port numbers are given to the model, preventing memorization."*
 
 ---
 
@@ -351,8 +334,6 @@
   v3.2.0 (in the lab)     : Macro-F1 = 87.77%
   ```
 * **🔍 Simple Explanation:** Proves how adding 8 rolling history features caused the massive jump from 56.62% to 79.21%, and fine-tuning with lab download rows brought it to 87.77%.
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, this terminal test proves the model evolution on Slide 9: looking at one connection alone gave only 57% F1. When we added 60-second history features tracking connection bursts and unique destination ports, Macro-F1 jumped to 79%, and reached 87.77% in our current v3.2.0 bundle."*
 
 ---
 
@@ -392,8 +373,6 @@
   Grouped CV Macro-F1  : 70.97%
   Out-of-fold macro-F1, highest first: HistGradientBoosting 0.7391; Random Forest 0.7097; Logistic Regression 0.6257.
   ```
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, we openly report all metrics: DDoS and C&C achieve over 93% F1, while PortScan is our weakest class at 73.3%. In cross-validation, HistGradientBoosting scored 0.74 while Random Forest scored 0.71; we kept Random Forest because its decision paths are transparent and its inference takes only 8 microseconds."*
 
 ---
 
@@ -433,8 +412,6 @@
       set block_dst { type ipv4_addr; flags timeout; }
       set limit_src { type ipv4_addr; flags timeout; }
   ```
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, an AI prediction alone never blocks a device directly. As shown on Slide 11, seven safety rules protect the network: critical management IPs are allowlisted, the camera LAN cannot be blocked, 3 matching alerts are required, and all router rules expire automatically within 30 minutes."*
 
 ---
 
@@ -468,8 +445,6 @@
   Test Class Malware_Download  :     7 flows recorded
   ```
 * **🔍 Deep-Dive Link:** For the live manual execution commands for any of these 6 tests, see [Part 6: Live Manual Attack Playbook](#7-part-6-live-manual-attack-playbook).
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, all six Table 10 scenarios have been executed in our virtual lab and stored in MongoDB. If you would like to see any attack run live right now—such as PortScan, SYN flood, or C&C beaconing—I can execute it in the terminal immediately."*
 
 ---
 
@@ -505,8 +480,6 @@
   [nvr] Recorded segment: camera_chunk_004.mp4 (58.6 MB)
   [nvr] Video stream continuous: 192.168.50.30:554 -> 192.168.50.20
   ```
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, as shown on Slide 13, our Random Forest model takes only 7.96 microseconds per flow, capable of processing over 125,000 flows per second. Even during active 1,000 pkts/sec floods and port scans, our NVR continuously saved 58.6 MB video chunks with zero dropped frames."*
 
 ---
 
@@ -533,8 +506,6 @@
   ..............................                                           [100%]
   318 passed, 6 warnings in 158.08s
   ```
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, our system is unified under a single React dashboard over Socket.IO WebSockets on Port 5000. Data is saved across 9 collections in MongoDB with automated TTL cleanup, and software quality is backed by 318 unit and integration tests, all passing."*
 
 ---
 
@@ -558,8 +529,6 @@
   RULE_NAME = "RULE_EXECUTABLE_DOWNLOAD"
   MIME_TYPE = "application/x-sharedlib"
   ```
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, we solved four key real-world challenges: we added history features so scans are separated from floods, we introduced the 3-alert rule to prevent false blocks, we blocked outside C&C destinations instead of the camera, and we added Zeek file-inspection rules for binary downloads."*
 
 ---
 
@@ -583,8 +552,6 @@
   README.md
   settings.hardware.yaml
   ```
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, 4 major parts of our project are fully done, 2 are partly done and verified in our virtual lab, and the remaining 2 strictly require physical hardware. All deployment scripts and configuration files for the hardware lab are already written and ready in our repository."*
 
 ---
 
@@ -608,11 +575,8 @@
     local_networks: ["192.168.1.0/24"]
     sensor_mirror_interface: "eth1"
   ```
-* **🗣️ Spoken Script to the Examiner:**  
-  > *"Sir, in conclusion: our complete intrusion detection and response system works, has passed 318 automated tests, and has been thoroughly verified across all six cyberattack scenarios in our virtual lab. Our next step is moving onto physical hardware to collect real-camera false alarm rates and finalize our dissertation."*
 
 ---
-
 
 # 1. Pre-Meeting Lab Initialization (Cold Start)
 
@@ -857,7 +821,7 @@ Provides a real-time web dashboard (SOC interface) to monitor network traffic, a
 
 ### 💡 Key Concept to Clarify Upfront: Why We Built This Virtual Testbed
 
-If the supervisor asks: **"Are you running this virtually? What is this lab environment?"**, or when introducing the setup at the start of the meeting, present the following points and spoken script:
+If the supervisor asks: **"Are you running this virtually? What is this lab environment?"**, or when introducing the setup, the following technical architectural facts apply:
 
 #### 1. Core Rationale per Proposal Section 5.1:
 * As approved in Section 5.1 of our Research Proposal, **before deploying to physical devices in the hardware lab**, we built this **realistic Docker virtual testbed** to safely test our complete system (Zeek Sniffer, Random Forest AI Model, Linux nftables Router Firewall, and React Dashboard).
@@ -877,11 +841,6 @@ If the supervisor asks: **"Are you running this virtually? What is this lab envi
     - **NVR Recorder (`ids-lab-nvr` / `192.168.50.20`):** Video recorder continuously pulling camera RTSP streams and saving 58.6 MB chunks every 5 minutes.
     - **Admin Workstation (`ids-lab-admin` / `192.168.50.10`):** Authorized client workstation managing camera settings.
     - **Attacker Machine (`ids-lab-attacker` / `10.10.10.50`):** Outside workstation launching Nmap scans, DDoS floods, and hosting malicious binaries.
-
-#### 3. Opening Statement to the Supervisor (Spoken English Script):
-> *"Good morning Sir. Before demonstrating our live system, I would like to briefly explain our lab testbed."*  
-> *"As approved in Section 5.1 of our research proposal, we built this complete system inside a realistic Docker virtual testbed."*  
-> *"Sir, in this testbed: the network packets, Zeek sensor, Random Forest AI model (v3.2.0), Linux router firewall, and React dashboard are all 100% REAL. The end devices—our IP camera, NVR recorder, and attacker machine—run in Docker containers so we can safely test heavy attacks without damaging physical devices. We will do the final physical camera testing on actual hardware in the hardware lab as planned in our proposal timeline."*
 
 ---
 
@@ -1037,9 +996,6 @@ Open **`http://localhost:5000/overview`** in your browser:
    - **Flows Processed:** Shows live updating total count (e.g., `7,600+ flows`).
    - **Throughput:** Shows sustained processing rate exceeding 120,000 flows/sec.
 2. What to say to the supervisor: *"Sir, as shown on our Overview Dashboard, the live pipeline status is 'Running', and Zeek is actively capturing and streaming flows in real-time without packet loss."*
-
-#### 🗣️ Spoken English Script:
-> *"Sir, to prove FR-01, our Zeek sensor listens to the camera switch br-ids-lan in promiscuous mode. When I send a live HTTP request from our Admin PC, Zeek captures the exact 12 Ethernet packets within 1.5 milliseconds and records the TCP state flags 'ShADadfF'. In addition, our automated schema check on 20,929 live flows shows a 100% match with the IoT-23 dataset with zero training-serving skew, proving both FR-01 and Research Question RQ3."*
 
 ---
 
@@ -1533,9 +1489,6 @@ Autonomous Action: none (MALWARE_STAGING_TRANSFER)
 
 All alerts carry model version tag **v3.2.0** (or `rule:files.log`) and reach the browser Live Alerts page within approximately 0.1 seconds of Zeek writing the log.
 
-#### 🗣️ Spoken English Script for FR-02:
-> *"Sir, for FR-02, we used real standard networking tools, and our AI model correctly detects all four attack types. Normal admin access using curl produced zero alerts. A subnet sweep using nmap was confirmed by our multi-host detector, causing the router to automatically block the attacker in block_src for 30 minutes while keeping our camera completely safe. An nping SYN flood was identified as DDoS, and the router automatically rate-limited the attacker without blocking. When the camera attempted to call an outside C&C server using netcat, the model identified C&C, and the router automatically blocked the outside server in block_dst—the camera itself was never blocked. A repeated binary download, following real malware dropper behavior, is caught by our retrained Random Forest model v3.2.0 as Malware_Download, and is also caught by our Zeek file MIME rule; both operate as alert-only as planned in Table 10. Every single alert shows the predicted class, confidence score, and model version v3.2.0, reaching our web dashboard in just 0.1 seconds."*
-
 ---
 
 ### FR-03: Database Storage for Benign, Attacks & Mitigations (Must / DB Test)
@@ -1612,9 +1565,6 @@ Show the following two screens to the supervisor:
    - Displays the **"Benign Flows (24h)"** card showing over 7,400 benign flows aggregated from MongoDB.
 3. What to say: *"Sir, our Attack History and Overview screens directly query MongoDB, providing complete forensic persistence of all benign camera traffic and security events."*
 
-#### 🗣️ Spoken English Script:
-> *"Sir, for FR-03, our MongoDB database permanently saves all network events with automatic TTL retention. Over 7,400 benign camera flows have been saved without data loss, alongside security incidents and firewall actions, accessible anytime through our secure management API."*
-
 ---
 
 ### FR-04: Authenticated Dashboard & Real-Time WebSocket Push (Must / Socket.IO Test)
@@ -1690,9 +1640,6 @@ Eliminates HTTP polling overhead, achieving push latencies under 120 ms over bid
 2. Log in using credentials from `lab_virtual/keys/dashboard_login.txt`.
 3. Open **`http://localhost:5000/alerts`**: Run any attack in the terminal and demonstrate the alert card appearing dynamically on the screen without touching the browser refresh button.
 
-#### 🗣️ Spoken English Script:
-> *"Sir, for FR-04, our dashboard requires secure JWT password authentication. Security events are pushed live over Socket.IO WebSockets with an average speed of just 112.2 milliseconds. This completely removes the need to refresh the browser and is 18 times faster than our proposal requirement."*
-
 ---
 
 ### FR-05: Controlled Nmap Asset Discovery (Should / Inventory Test)
@@ -1763,9 +1710,6 @@ Satisfies the inventory requirement (FR-05) by automatically maintaining an auth
 #### 🖥️ Dashboard Verification Steps:
 - Open **`http://localhost:5000/inventory`**: Point out the complete device table displaying IP, MAC, device type badges, and open port tags.
 
-#### 🗣️ Spoken English Script:
-> *"Sir, for FR-05, our system runs safe, controlled Nmap scans across the camera subnet. It accurately finds all devices on the network, identifies camera RTSP video and HTTP web services on ports 554 and 80, and maintains a complete inventory in MongoDB."*
-
 ---
 
 ### FR-06: Router Firewall Ruleset, Auto-Expiry & Timers (Must / Firewall Test)
@@ -1829,9 +1773,6 @@ Proves kernel-enforced, stateful, autonomous mitigation with guaranteed rule cle
 #### 🖥️ Dashboard Verification Steps:
 - Open **`http://localhost:5000/mitigations`**: Show the **Active Mitigations** table. Highlight the blocked IP (`10.10.10.50`), the `BLOCK_DST` action badge, and the real-time countdown timer ticking down in the browser.
 
-#### 🗣️ Spoken English Script:
-> *"Sir, for FR-06, our automatic firewall rules run directly inside the Linux router kernel using nftables timeout lists. When an outside C&C server is blocked, a 30-minute countdown timer runs inside the kernel, guaranteeing automatic removal when the time is up without any manual work."*
-
 ---
 
 ### FR-07: Immutable Allowlists, Thresholds & Audit Trail (Must / Safety Test)
@@ -1893,9 +1834,6 @@ Guarantees zero denial-of-service against camera surveillance while maintaining 
 #### 🖥️ Dashboard Verification Steps:
 - Open **`http://localhost:5000/logs`**: Show the live **System Logs** page, demonstrating that every mitigation, allowlist suppression, and user login is indexed and filterable.
 
-#### 🗣️ Spoken English Script:
-> *"Sir, for FR-07, our system uses protected allowlists to safeguard our IP camera and NVR recorder. Even during heavy attacks, our legitimate cameras and recorders can never be blocked. In addition, every action—whether automatic or manual—is recorded with timestamp and username in our MongoDB audit log."*
-
 ---
 
 ### FR-08: Filtered Forensic Incident Log Export (Should / Export Test)
@@ -1951,9 +1889,6 @@ Satisfies forensic compliance (FR-08) by providing standardized, exportable evid
 
 #### 🖥️ Dashboard Verification Steps:
 - Open **`http://localhost:5000/history`**: Click the **"Export CSV"** button on the top right. Show that the browser immediately downloads `security_events_export.csv`.
-
-#### 🗣️ Spoken English Script:
-> *"Sir, for FR-08, our platform provides instant, filtered forensic log exports in standard RFC 4180 CSV format. This allows easy sharing with external security teams, SIEM tools, and auditors."*
 
 ---
 
@@ -2018,9 +1953,6 @@ Benign predicted attack   : 5.72% (IoT-23 benign flows of 34-1)
 - `Accuracy 96.25%`: Overall classification accuracy reaches 96.25%.
 - `Weighted F1 Score 96.41%`: Weighted F1 score considering class imbalances is 96.41%.
 
-#### 🗣️ Spoken English Script:
-> *"Sir, regarding our primary Table 9 Model Target: tested under strict Zero-Scenario-Leakage on the unseen scenario Capture-34-1 containing 23,145 flows, our production Random Forest model v3.2.0 achieved 96.25% overall accuracy and an 87.77% Macro-F1 score, successfully beating our proposal benchmark of 85.0%."*
-
 ---
 
 ### Target 2: Benign Safety (Zero Video Disruption & Benign Safety)
@@ -2059,9 +1991,6 @@ Camera RTSP Video Stream: HEALTHY & ACTIVE (Zero Drop)
 #### 📊 Output Breakdown:
 - `Recorded segment: camera_chunk_004.mp4 (58.6 MB)`: Confirms that 58.6 MB MP4 video segments are written to disk without interruption.
 - `Camera RTSP Video Stream: HEALTHY & ACTIVE (Zero Drop)`: RTSP socket handshake succeeds instantaneously, proving zero impact on camera video feeds.
-
-#### 🗣️ Spoken English Script:
-> *"Sir, this satisfies our Table 9 Benign Safety target and Hypothesis H1. The NVR recorder continuously saves 58.6 MB video files from the camera over port 554 with zero dropped frames, proving that video surveillance continues 100% uninterrupted."*
 
 ---
 
@@ -2186,9 +2115,6 @@ Target Status                 : PASS
 #### 🖥️ Dashboard Verification Steps:
 - Open **`http://localhost:5000/overview`**: Show the **"System Status" Card** displaying **`Median Latency: 112.2 ms`** and **`p95 Latency: 230.1 ms`** live.
 
-#### 🗣️ Spoken English Script:
-> *"Sir, regarding Target 3 on Decision Latency: our research proposal required a decision time under 2.0 seconds. As shown live with our stopwatch test, our Random Forest model makes a classification decision in just 30.8 milliseconds—65 times faster than required. Across our entire system, from raw Zeek packet capture to the web dashboard alert, the average latency is only 112.2 milliseconds, easily beating our proposal target."*
-
 ---
 
 ### Target 4: Throughput & Resource Efficiency
@@ -2241,9 +2167,6 @@ Target Status         : PASS (Keeps up with maximum lab line rate)
 - `Inference Throughput: 125,599 flows/sec`: Can process over 125,000 flows/sec on a single CPU core.
 - `Per-Flow Latency: 7.96 microseconds`: Requires only 7.96 microseconds per flow, guaranteeing zero queue bottlenecks.
 
-#### 🗣️ Spoken English Script:
-> *"Sir, for Target 4, our AI engine can process over 125,000 flows per second, taking only 7.9 microseconds per flow. This ensures our detector never falls behind, even during massive cyberattacks."*
-
 ---
 
 ### Target 5: Reliability & Clean State Recovery
@@ -2287,9 +2210,6 @@ Target Status     : PASS
 
 #### 📊 Output Breakdown:
 - Proves SSH daemon and key authentication are crash-safe and that firewall tables restore immediately upon reboot.
-
-#### 🗣️ Spoken English Script:
-> *"Sir, for Target 5, our automatic response system connects to the router using secure SSH keys, ensuring that firewall rules restore cleanly and safely after any unexpected reboot."*
 
 ---
 
@@ -2341,9 +2261,6 @@ Target Status          : PASS (Full operator control & traceability)
 
 #### 📊 Output Breakdown:
 - Verifies immediate enforcement and instantaneous rollback with zero delay.
-
-#### 🗣️ Spoken English Script:
-> *"Sir, this satisfies Target 6. Administrators keep full control, with the ability to instantly block or unblock any IP, backed by complete audit logs of every action taken."*
 
 ---
 
@@ -2428,9 +2345,6 @@ tests/integration/test_app_api.py::test_blocklist_enforcement_and_allowlist_prot
 - `318 passed`: All 318 unit, integration, router, model, and API tests passed with zero failures.
 - `in 158.08s`: Full test suite completed cleanly.
 
-#### 🗣️ Spoken English Script:
-> *"Sir, every part of our system—including the Zeek parser, feature extractor, AI model bundle, decision engine, Linux firewall adapter, and authenticated WebSocket API—is tested by a full automated test suite of 318 tests, and all 318 tests are passing cleanly."*
-
 ---
 
 # 7. Part 6: Live Manual Attack Playbook (Live Demonstration Reference)
@@ -2497,9 +2411,6 @@ table inet ids {
    - Show the detection origin badge: **`BEHAVIOUR DETECTION`** (confirmed via multi-host fan-out sweep).
 2. **Active Mitigations (`http://localhost:5000/mitigations`):**
    - Point out `10.10.10.50` active in the blocklist with a live ticking countdown timer.
-
-#### 🗣️ Spoken Script to the Examiner:
-> *"Sir, as you can see, when the attacker ran a real Nmap stealth scan probing ports 23, 80, and 554, our Zeek sensor captured the probe packets. Our Random Forest model classified the flow as PortScan with 92.9% confidence, and our multi-host detector confirmed the sweep across the subnet. The Linux router immediately blocked the attacker's IP in the kernel for 30 minutes, while our camera video continued streaming without any interruption."*
 
 ##### 🧹 Cleanup Before Next Attack:
 ```powershell
@@ -2568,9 +2479,6 @@ table inet ids {
    - Confidence: ~43.2% (highest among all classes, exceeding the 0.30 DDoS threshold).
 2. **Active Mitigations (`http://localhost:5000/mitigations`):**
    - Show `10.10.10.50` active in the **Rate-Limit** table with a live decaying countdown timer.
-
-#### 🗣️ Spoken Script to the Examiner:
-> *"Sir! In the real world, botnets like Mirai flood cameras with raw TCP SYN packets to overflow the connection queue and crash video recording. Here, nping sent 5,000 raw TCP SYN packets at 1,000 packets per second. Our Zeek sensor caught the half-open flows, our Random Forest model classified it as DDoS_DoS, and our Decision Engine enforced Safety Rule 4: placing the attacker into 'limit_src' to drop excess flood packets in the kernel. As you can see on the terminal, nearly 50% of the flood was dropped by the router, while our camera video kept streaming without interruption!"*
 
 ##### 🧹 Cleanup Before Next Attack:
 ```powershell
@@ -2648,9 +2556,6 @@ table inet ids {
    - **TTL Countdown:** 30-minute countdown timer ticks down live on the browser screen.
    - **Camera Protection:** Camera IP (`192.168.50.30`) is absent from the blocklist, proving surveillance preservation.
 
-#### 🗣️ Spoken Script to the Examiner:
-> *"Sir, look at the terminal! The instant our infected camera sent the C&C beacon, our Zeek sensor captured the flow, our Random Forest model classified it, our decision engine verified safety rules, and our router firewall automatically blocked '10.10.10.50' in kernel memory with a 30-minute auto-expiry countdown—all finished in just 112 milliseconds without stopping camera video!"*
-
 ##### 🧹 Cleanup Before Next Attack:
 ```powershell
 Start-Sleep -Seconds 30
@@ -2703,9 +2608,6 @@ Get-Content lab_virtual\zeek_logs\files.log | Select-String "application/x-share
      - Card 2: **`FILE-TYPE RULE`** (Teal Badge) with class `Malware_Download` (Confidence 1.00 / 100%).
    - Action: `NONE (ALERT ONLY)` as required by Proposal Table 10. Camera remains streaming video.
 
-#### 🗣️ Spoken Script to the Examiner:
-> *"Sir! When the camera downloads an unauthorized file, our system proves defense-in-depth: our Random Forest model detects the repeated download flow pattern, while our Zeek MIME file checker inspects the file payload and flags the Linux executable with 100% confidence. Both fire independently within 0.1 seconds, creating forensic logs without interrupting video surveillance."*
-
 ##### 🧹 Cleanup Before Next Attack:
 ```powershell
 .venv\Scripts\python.exe lab_virtual\lab.py reset
@@ -2739,11 +2641,5 @@ docker logs ids-lab-nvr --tail 5
 [nvr] Ingested 58.6 MB chunk (100% integrity, 0 dropped frames)
 ```
 
-#### 🗣️ Spoken Script to the Examiner:
-> *"Sir, this is our most important operational proof. Typical commercial firewalls cut off the camera when an alarm fires, blinding security guards. But as proven right here by our NVR socket check and recording logs, our direction-aware firewall rules and passive sniffing ensure that video surveillance continues 100% of the time with zero dropped frames, even during active cyber attacks!"*
-
 ---
-
-### 🎓 Closing Statement to the Supervisor:
-> *"Sir, as demonstrated in our presentation today, our project satisfies all 8 Functional Requirements (FR-01 to FR-08), achieves our Proposal Table 9 targets with an average decision time of 112 ms, meets our Macro-F1 target on unseen data, and protects IP camera video from ever being interrupted. The complete testbed is live, verified, and ready for physical camera testing."*
 
