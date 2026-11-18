@@ -918,29 +918,8 @@ To prove live packet processing: sending a real HTTP request from the Admin PC t
 ##### ⚙️ What Happens Under the Hood:
 1. The Admin PC (`ids-lab-admin`) sends a real HTTP request to `http://192.168.50.30/`.
 2. The Admin PC and Camera complete a full TCP 3-way handshake, exchange the HTTP web page, and close the connection.
-3. Zeek intercepts all 12 Ethernet packets, tracks TCP connection flags, and writes the completed flow to `lab_virtual/zeek_logs/conn.log`.
-4. Python reads and displays the last line of `conn.log` as clean JSON.
-
-##### ❓ What are "These 12 Frames"? Where Did 12 Come From? (The 12 Frames Deep-Dive):
-When requesting the web page from the camera, 12 discrete Ethernet frames traverse the network switch:
-1. **TCP 3-Way Handshake (3 frames):**
-   - Frame 1: Admin -> Camera `[SYN]` (Initiates connection)
-   - Frame 2: Camera -> Admin `[SYN, ACK]` (Acknowledges and agrees)
-   - Frame 3: Admin -> Camera `[ACK]` (Handshake established)
-2. **HTTP Request & Response Payload (5 frames):**
-   - Frame 4: Admin -> Camera `[PSH, ACK]` (HTTP `GET / HTTP/1.1`)
-   - Frame 5: Camera -> Admin `[ACK]` (TCP acknowledgment of GET)
-   - Frame 6: Camera -> Admin `[PSH, ACK]` (HTTP `200 OK` header + chunk payload)
-   - Frame 7: Admin -> Camera `[ACK]` (Acknowledgment of data)
-   - Frame 8: Camera -> Admin `[PSH, ACK]` (Final data chunk)
-3. **TCP 4-Way Connection Teardown (4 frames):**
-   - Frame 9: Admin -> Camera `[FIN, ACK]` (Client requests closure)
-   - Frame 10: Camera -> Admin `[ACK]` (Server acknowledges closure)
-   - Frame 11: Camera -> Admin `[FIN, ACK]` (Server requests closure)
-   - Frame 12: Admin -> Camera `[ACK]` (Client acknowledges; connection closed)
-
-**Total = Exactly 12 raw Ethernet frames (`orig_pkts: 6`, `resp_pkts: 6`)!**  
-Zeek tracks this exact state sequence inside `history: "ShADadfF"`, proving deep packet inspection fidelity.
+3. Zeek intercepts the Ethernet packets, tracks TCP connection flags, and writes the completed flow to `lab_virtual/zeek_logs/conn.log`.
+4. The latest line of `conn.log` is displayed as clean JSON.
 
 ##### 💻 Direct Raw Command (Terminal):
 
