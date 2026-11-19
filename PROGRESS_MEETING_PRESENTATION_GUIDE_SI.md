@@ -45,6 +45,7 @@
    - [Target 5: Reliability & Clean State Recovery](#target-5-reliability--clean-state-recovery)
    - [Target 6: Usability & Administrative Audit Compliance](#target-6-usability--administrative-audit-compliance)
 4. [කොටස 3: පර්යේෂණ අරමුණු සනාථ කිරීම (Objectives O1 to O6 - Table 3)](#4-කොටස-3-පර්යේෂණ-අරමුණු-සනාථ-කිරීම-objectives-o1-to-o6)
+5. [පරිශිෂ්ටය: Router එක ඇතුළටම Log වී Interactive ලෙස පරීක්ෂා කිරීම](#5-පරිශිෂ්ටය-router-එක-ඇතුළටම-log-වී-interactive-ලෙස-පරීක්ෂා-කිරීම-manual-router-inspection--firewall-control)
 
 ---
 
@@ -1745,4 +1746,49 @@ Supervisor ඉදිරියේ **[`docs/requirements_checklist.md`](docs/requi
    - C&C හඳුනාගත් සැණින් Router එකේ `block_dst` ලැයිස්තුවට Autonomous Drop rule එක වැටෙන අතර, පරිපාලකයාට Dashboard UI එකෙන් හෝ API එකෙන් ඕනෑම මොහොතක Manual Block/Unblock කළ හැක.
 6. **Objective O6 (Detection Quality, Speed & Resource Use):**  
    - Sub-second latency (112 ms), 7.96 $\mu\text{s}$ inference speed, zero camera disruption.
+
+---
+
+# 5. පරිශිෂ්ටය: Router එක ඇතුළටම Log වී Interactive ලෙස පරීක්ෂා කිරීම (Manual Router Inspection & Firewall Control)
+
+Supervisor හට Router (`ids-lab-router`) එක තුළ firewall rules ක්‍රියාත්මක වන ආකාරය සජීවීව පරීක්ෂා කර පෙන්වීමට අවශ්‍ය නම්, පහත පියවර අනුගමනය කරන්න:
+
+#### 💡 ඇයි මේ දේ කරන්නෙ? (Why We Are Doing This):
+පද්ධතිය ස්වයංක්‍රීයව backend එක මඟින් SSH හරහා firewall rules යෙදුවද, අවශ්‍ය ඕනෑම අවස්ථාවක network administrator කෙනෙකුට router එක ඇතුළටම log වී `nftables` firewall rules සජීවීව පරීක්ෂා කිරීමට, manual block කිරීමට, හෝ unblock කිරීමට හැකි බව ප්‍රායෝගිකව ඔප්පු කිරීම සඳහාය.
+
+#### ⚙️ Command එක run කළ විට සිදුවන්නේ කුමක්ද? (What Happens Under the Hood):
+- `docker exec -it ids-lab-router sh` මඟින් Router container එකේ Linux shell එක විවෘත වේ.
+- Router එක තුළ Linux `nftables` මඟින් නඩත්තු කරන `block_dst` (C&C Attacker Destination block) සහ `block_src` (PortScan Attacker Source block) kernel sets සෘජුවම බලාගත හැක.
+
+#### 💻 සජීවීව ධාවනය කරන පියවර (Interactive Terminal Steps):
+
+```powershell
+# 1. Router Container එකේ Linux shell එක ඇතුළට log වීම:
+docker exec -it ids-lab-router sh
+
+# 2. දැනට Block වී ඇති IP ලැයිස්තුව (Sets) බැලීම:
+# Destination Block ලැයිස්තුව (C&C Attacker IP):
+nft list set inet ids block_dst
+
+# Source Block ලැයිස්තුව (PortScan Attacker IP):
+nft list set inet ids block_src
+
+# 3. අතින් IP එකක් Block කිරීම (Manual Block):
+nft add element inet ids block_dst { 10.10.10.50 }
+
+# 4. අතින් Unblock කිරීම (Manual Unblock):
+nft delete element inet ids block_dst { 10.10.10.50 }
+
+# 5. සම්පූර්ණ Firewall Ruleset එකම බැලීම:
+nft list ruleset
+
+# 6. Router එකෙන් ඉවත් වීම:
+exit
+```
+
+#### 💡 කෙටි ක්‍රමය (Container එක ඇතුළට නොගොස් Windows එකෙන්ම බැලීමට):
+```powershell
+# Router එකේ Destination Block ලැයිස්තුව Windows PowerShell එකෙන් සෘජුවම බැලීම:
+docker exec ids-lab-router nft list set inet ids block_dst
+```
 

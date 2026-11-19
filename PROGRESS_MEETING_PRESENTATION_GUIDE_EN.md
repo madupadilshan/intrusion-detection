@@ -45,6 +45,7 @@
    - [Target 5: Reliability & Clean State Recovery](#target-5-reliability--clean-state-recovery)
    - [Target 6: Usability & Administrative Audit Compliance](#target-6-usability--administrative-audit-compliance)
 4. [Part 3: Research Objectives (Objectives O1 to O6 - Table 3)](#4-part-3-research-objectives-objectives-o1-to-o6)
+5. [Appendix: Interactive Router Inspection & Manual Firewall Control](#5-appendix-interactive-router-inspection--manual-firewall-control-ids-lab-router)
 
 ---
 
@@ -1710,4 +1711,49 @@ Here is how our project meets all 6 research objectives from Section 3 of **[`do
    - Automatic drop rules are added to the router's `block_dst` list when C&C is detected, with full manual block and unblock controls on the web dashboard and API.
 6. **Objective O6 (Fast Speed, High Quality & Low Resource Use):**  
    - Fast pipeline response time (112 ms), 7.96 microseconds per-flow AI speed, and zero video recording interruptions.
+
+---
+
+# 5. Appendix: Interactive Router Inspection & Manual Firewall Control (ids-lab-router)
+
+If the supervisor requests live verification directly inside the Linux Router (`ids-lab-router`), follow these interactive terminal steps:
+
+#### 💡 Why We Are Doing This:
+To prove that although the IDS backend automatically dispatches mitigation rules over SSH within 112 ms, a network administrator can also log directly into the router at any time to inspect `nftables` kernel sets, verify active drop rules, and perform manual blocks or rollbacks.
+
+#### ⚙️ What Happens Under the Hood:
+- `docker exec -it ids-lab-router sh` opens the Linux shell of the lab router.
+- Direct `nftables` CLI queries inspect the kernel sets `block_dst` (C&C Botnet Destination blocks) and `block_src` (PortScan Attacker Source blocks).
+
+#### 💻 Interactive Terminal Steps:
+
+```powershell
+# 1. Log directly into the Router container's Linux shell:
+docker exec -it ids-lab-router sh
+
+# 2. Inspect active blocked IP sets in nftables:
+# Destination Block Set (C&C Botnet Destination):
+nft list set inet ids block_dst
+
+# Source Block Set (PortScan Attacker IP):
+nft list set inet ids block_src
+
+# 3. Manually enforce a block rule:
+nft add element inet ids block_dst { 10.10.10.50 }
+
+# 4. Manually roll back / unblock the IP:
+nft delete element inet ids block_dst { 10.10.10.50 }
+
+# 5. View complete active nftables ruleset:
+nft list ruleset
+
+# 6. Exit the router shell back to Windows:
+exit
+```
+
+#### 💡 Direct One-Line Verification (Without Entering Container):
+```powershell
+# Directly query the Router's Destination Block set from Windows PowerShell:
+docker exec ids-lab-router nft list set inet ids block_dst
+```
 
